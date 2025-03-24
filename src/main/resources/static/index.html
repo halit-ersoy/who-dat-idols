@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Who Dat Idols? - Streaming Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Poppins:wght@300;400;600&display=swap"
+          rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<!-- Fixed navigation header -->
+<header id="header">
+    <div class="logo">WDI</div>
+    <div class="search">
+        <input type="text" placeholder="Film veya dizi ara..." aria-label="Film veya dizi ara">
+    </div>
+    <button class="login-btn" aria-label="Oturum aç">OTURUM AÇ</button>
+</header>
+
+<!-- Hero section with multiple video backgrounds -->
+<section class="hero">
+    <div class="hero-videos">
+        <!-- First video container -->
+        <div class="hero-video-container active" data-index="0">
+            <video class="hero-bg-video" autoplay muted playsinline>
+                <source src="https://customer-342mt1gy0ibqe0dl.cloudflarestream.com/cfb68fa53d7bbc3eaaa36f022b1ad291/downloads/default.mp4"
+                        type="video/mp4">
+                <img class="hero-bg" src="https://i.ibb.co/kGhv2cT/mutya-hero.jpg" alt="Hero Background">
+            </video>
+            <div class="hero-overlay"></div>
+            <div class="hero-content animate-fade-in">
+                <div class="hero-badge animate-slide-up">YENİ DİZİ</div>
+                <h1 class="animate-slide-up">Ang Mutya ng Section E</h1>
+                <p class="animate-slide-up">Tamamen erkeklerden oluşan kötü şohretli bir sınıf, transfer olan bir kız
+                    öğrencinin gelişiyle beklenmedik değişimler yaşar. Zıt karakterlerin arasında filizlenen sıradışı
+                    bir hikaye...</p>
+
+                <div class="hero-info animate-slide-up">
+                    <div class="hero-stat"><i class="fas fa-star"></i> 8.9 Puan</div>
+                    <div class="hero-stat"><i class="fas fa-film"></i> 12 Bölüm</div>
+                    <div class="hero-stat"><i class="fas fa-calendar"></i> 2023</div>
+                    <div class="hero-stat"><i class="fas fa-clock"></i> 45 dk</div>
+                </div>
+
+                <div class="hero-tags animate-slide-up">
+                    <span class="hero-tag">Drama</span>
+                    <span class="hero-tag">Romantik</span>
+                    <span class="hero-tag">Gençlik</span>
+                    <span class="hero-tag">Okul</span>
+                </div>
+
+                <div class="hero-buttons animate-slide-up">
+                    <button onclick="window.location.href='/watch?id=1'" class="pulse-button"><i
+                            class="fas fa-play"></i> ŞİMDİ İZLE
+                    </button>
+                    <button class="glow-button"><i class="fas fa-film"></i> FRAGMANI İZLE</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Second video container -->
+        <div class="hero-video-container" data-index="1">
+            <video class="hero-bg-video" muted playsinline>
+                <source src="https://customer-342mt1gy0ibqe0dl.cloudflarestream.com/cfb68fa53d7bbc3eaaa36f022b1ad291/downloads/default.mp4"
+                        type="video/mp4">
+                <img class="hero-bg" src="https://i.ibb.co/ZM7SxXh/bl-1.jpg" alt="Hero Background 2">
+            </video>
+            <div class="hero-overlay"></div>
+            <div class="hero-content animate-fade-in">
+                <div class="hero-badge animate-slide-up">POPÜLER</div>
+                <h1 class="animate-slide-up">Love in the Air</h1>
+                <p class="animate-slide-up">İki zıt kutup arasında gelişen duygusal ilişki. Hayatları kesişince
+                    birbirlerinden etkilenmeye başlayan iki öğrencinin hikayesi...</p>
+
+                <div class="hero-info animate-slide-up">
+                    <div class="hero-stat"><i class="fas fa-star"></i> 9.2 Puan</div>
+                    <div class="hero-stat"><i class="fas fa-film"></i> 10 Bölüm</div>
+                    <div class="hero-stat"><i class="fas fa-calendar"></i> 2022</div>
+                    <div class="hero-stat"><i class="fas fa-clock"></i> 50 dk</div>
+                </div>
+
+                <div class="hero-tags animate-slide-up">
+                    <span class="hero-tag">Romantik</span>
+                    <span class="hero-tag">Komedi</span>
+                    <span class="hero-tag">Gençlik</span>
+                </div>
+
+                <div class="hero-buttons animate-slide-up">
+                    <button onclick="window.location.href='/watch?id=2'" class="pulse-button"><i
+                            class="fas fa-play"></i> ŞİMDİ İZLE
+                    </button>
+                    <button class="glow-button"><i class="fas fa-film"></i> FRAGMANI İZLE</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Third video container -->
+        <div class="hero-video-container" data-index="2">
+            <video class="hero-bg-video" muted playsinline>
+                <source src="https://customer-342mt1gy0ibqe0dl.cloudflarestream.com/cfb68fa53d7bbc3eaaa36f022b1ad291/downloads/default.mp4"
+                        type="video/mp4">
+                <img class="hero-bg" src="https://i.ibb.co/y5QfMxk/kdrama-1.jpg" alt="Hero Background 3">
+            </video>
+            <div class="hero-overlay"></div>
+            <div class="hero-content animate-fade-in">
+                <div class="hero-badge animate-slide-up">TREND</div>
+                <h1 class="animate-slide-up">Extraordinary You</h1>
+                <p class="animate-slide-up">Bir çizgi roman karakteri olduğunu fark eden genç bir kız, kaderini
+                    değiştirmek için mücadele eder. Kendi hikayesinin yazarına karşı çıkan bir karakterin sıra dışı
+                    macerası...</p>
+
+                <div class="hero-info animate-slide-up">
+                    <div class="hero-stat"><i class="fas fa-star"></i> 8.7 Puan</div>
+                    <div class="hero-stat"><i class="fas fa-film"></i> 16 Bölüm</div>
+                    <div class="hero-stat"><i class="fas fa-calendar"></i> 2021</div>
+                    <div class="hero-stat"><i class="fas fa-clock"></i> 60 dk</div>
+                </div>
+
+                <div class="hero-tags animate-slide-up">
+                    <span class="hero-tag">Fantastik</span>
+                    <span class="hero-tag">Romantik</span>
+                    <span class="hero-tag">Gençlik</span>
+                </div>
+
+                <div class="hero-buttons animate-slide-up">
+                    <button onclick="window.location.href='/watch?id=3'" class="pulse-button"><i
+                            class="fas fa-play"></i> ŞİMDİ İZLE
+                    </button>
+                    <button class="glow-button"><i class="fas fa-film"></i> FRAGMANI İZLE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation controls -->
+    <button class="hero-nav prev-hero" aria-label="Önceki"><i class="fas fa-chevron-left"></i></button>
+    <button class="hero-nav next-hero" aria-label="Sonraki"><i class="fas fa-chevron-right"></i></button>
+
+    <!-- Video indicators -->
+    <div class="hero-indicators">
+        <span class="hero-indicator active" data-index="0"></span>
+        <span class="hero-indicator" data-index="1"></span>
+        <span class="hero-indicator" data-index="2"></span>
+    </div>
+
+    <div class="scroll-indicator"><i class="fas fa-chevron-down"></i></div>
+</section>
+
+<!-- Hero section ends here -->
+
+<!-- Weekly Best section with grid layout -->
+<section class="section new-content weekly-best-section">
+    <div class="section-header">
+        <h2>HAFTANIN EN İYİLERİ</h2>
+        <a href="#" class="view-all">Tümünü Gör <i class="fas fa-chevron-right"></i></a>
+    </div>
+
+    <!-- Fixed grid of 6 movies -->
+    <div class="weekly-best-grid">
+        <a href="/watch?id=4" class="weekly-card" data-number="1">
+            <div class="card-image-container">
+                <img src="https://i.ibb.co/hRMtw0k/bl-2.jpg" alt="Bad Buddy">
+                <div class="play-icon"><i class="fas fa-play"></i></div>
+            </div>
+            <div class="card-content">
+                <p class="card-title">Bad Buddy</p>
+                <p class="card-info">2022 • Komedi • 55 dk</p>
+            </div>
+        </a>
+        <a href="/watch?id=8" class="weekly-card" data-number="2">
+            <div class="card-image-container">
+                <img src="https://i.ibb.co/M2BgHph/cdrama-1.jpg" alt="The Untamed">
+                <div class="play-icon"><i class="fas fa-play"></i></div>
+            </div>
+            <div class="card-content">
+                <p class="card-title">The Untamed</p>
+                <p class="card-info">2019 • Fantastik • 45 dk</p>
+            </div>
+        </a>
+        <a href="/watch?id=7" class="weekly-card" data-number="3">
+            <div class="card-image-container">
+                <img src="https://i.ibb.co/YB0BnF3/jdrama-1.jpg" alt="Alice in Borderland">
+                <div class="play-icon"><i class="fas fa-play"></i></div>
+            </div>
+            <div class="card-content">
+                <p class="card-title">Alice in Borderland</p>
+                <p class="card-info">2021 • Aksiyon • 50 dk</p>
+            </div>
+        </a>
+        <a href="/watch?id=3" class="weekly-card" data-number="4">
+            <div class="card-image-container">
+                <img src="https://i.ibb.co/y5QfMxk/kdrama-1.jpg" alt="Extraordinary You">
+                <div class="play-icon"><i class="fas fa-play"></i></div>
+            </div>
+            <div class="card-content">
+                <p class="card-title">Extraordinary You</p>
+                <p class="card-info">2021 • Fantastik • 60 dk</p>
+            </div>
+        </a>
+        <a href="/watch?id=5" class="weekly-card" data-number="5">
+            <div class="card-image-container">
+                <img src="https://i.ibb.co/Ntf5Rkx/kdrama-2.jpg" alt="My Roommate is a Gumiho">
+                <div class="play-icon"><i class="fas fa-play"></i></div>
+            </div>
+            <div class="card-content">
+                <p class="card-title">My Roommate is a Gumiho</p>
+                <p class="card-info">2023 • Fantastik • 45 dk</p>
+            </div>
+        </a>
+        <a href="/watch?id=1" class="weekly-card" data-number="6">
+            <div class="card-image-container">
+                <img src="https://i.ibb.co/gW6K4T1/mutya-card.jpg" alt="Mutya Episode 1">
+                <div class="play-icon"><i class="fas fa-play"></i></div>
+            </div>
+            <div class="card-content">
+                <p class="card-title">Mutya - Bölüm 1</p>
+                <p class="card-info">2023 • Drama • 45 dk</p>
+            </div>
+        </a>
+    </div>
+</section>
+
+<!-- Trending section with horizontal carousel -->
+<section class="section trending">
+    <div class="section-header">
+        <h2>TRENDING</h2>
+        <a href="#" class="view-all">Tümünü Gör <i class="fas fa-chevron-right"></i></a>
+    </div>
+
+    <!-- Carousel container with navigation buttons -->
+    <div class="carousel-container">
+        <button class="carousel-nav prev-btn" data-carousel="trending-carousel" aria-label="Önceki"><i
+                class="fas fa-chevron-left"></i></button>
+
+        <div class="carousel" id="trending-carousel">
+            <a href="/watch?id=1" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/gW6K4T1/mutya-card.jpg" alt="Mutya Episode 1">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">Mutya - Bölüm 1</p>
+                    <p class="card-info">2023 • Drama • 45 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=2" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/ZM7SxXh/bl-1.jpg" alt="BL Drama">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">Love in the Air</p>
+                    <p class="card-info">2022 • Romantik • 50 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=3" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/y5QfMxk/kdrama-1.jpg" alt="Korean Drama">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">Extraordinary You</p>
+                    <p class="card-info">2021 • Fantastik • 60 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=4" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/hRMtw0k/bl-2.jpg" alt="BL Drama 2">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">Bad Buddy</p>
+                    <p class="card-info">2022 • Komedi • 55 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=5" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/Ntf5Rkx/kdrama-2.jpg" alt="Korean Drama 2">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">My Roommate is a Gumiho</p>
+                    <p class="card-info">2023 • Fantastik • 45 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=6" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/jzy6zDm/bl-3.jpg" alt="BL Drama 3">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">2gether</p>
+                    <p class="card-info">2020 • Romantik • 40 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=7" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/YB0BnF3/jdrama-1.jpg" alt="J-Drama">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">Alice in Borderland</p>
+                    <p class="card-info">2021 • Aksiyon • 50 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=1" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/gW6K4T1/mutya-card.jpg" alt="Mutya Episode 1">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">Mutya - Bölüm 1</p>
+                    <p class="card-info">2023 • Drama • 45 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=2" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/ZM7SxXh/bl-1.jpg" alt="BL Drama">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">Love in the Air</p>
+                    <p class="card-info">2022 • Romantik • 50 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=3" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/y5QfMxk/kdrama-1.jpg" alt="Korean Drama">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">Extraordinary You</p>
+                    <p class="card-info">2021 • Fantastik • 60 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=4" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/hRMtw0k/bl-2.jpg" alt="BL Drama 2">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">Bad Buddy</p>
+                    <p class="card-info">2022 • Komedi • 55 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=5" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/Ntf5Rkx/kdrama-2.jpg" alt="Korean Drama 2">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">My Roommate is a Gumiho</p>
+                    <p class="card-info">2023 • Fantastik • 45 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=6" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/jzy6zDm/bl-3.jpg" alt="BL Drama 3">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">2gether</p>
+                    <p class="card-info">2020 • Romantik • 40 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=7" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/YB0BnF3/jdrama-1.jpg" alt="J-Drama">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">Alice in Borderland</p>
+                    <p class="card-info">2021 • Aksiyon • 50 dk</p>
+                </div>
+            </a>
+        </div>
+
+        <button class="carousel-nav next-btn" data-carousel="trending-carousel" aria-label="Sonraki"><i
+                class="fas fa-chevron-right"></i></button>
+    </div>
+</section>
+
+<!-- New content section with horizontal carousel -->
+<section class="section new-content">
+    <div class="section-header">
+        <h2>YENİ EKLENENLER</h2>
+        <a href="#" class="view-all">Tümünü Gör <i class="fas fa-chevron-right"></i></a>
+    </div>
+
+    <!-- Carousel container with navigation buttons -->
+    <div class="carousel-container">
+        <button class="carousel-nav prev-btn" data-carousel="new-carousel" aria-label="Önceki"><i
+                class="fas fa-chevron-left"></i></button>
+
+        <div class="carousel" id="new-carousel">
+            <a href="/watch?id=5" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/Ntf5Rkx/kdrama-2.jpg" alt="Korean Drama 2">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">My Roommate is a Gumiho</p>
+                    <p class="card-info">2023 • Fantastik • 45 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=6" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/jzy6zDm/bl-3.jpg" alt="BL Drama 3">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">2gether</p>
+                    <p class="card-info">2020 • Romantik • 40 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=7" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/YB0BnF3/jdrama-1.jpg" alt="J-Drama">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">Alice in Borderland</p>
+                    <p class="card-info">2021 • Aksiyon • 50 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=8" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/M2BgHph/cdrama-1.jpg" alt="C-Drama">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">The Untamed</p>
+                    <p class="card-info">2019 • Fantastik • 45 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=9" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/gW6K4T1/mutya-card.jpg" alt="Mutya Episode 2">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">Mutya - Bölüm 2</p>
+                    <p class="card-info">2023 • Drama • 45 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=10" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/ZM7SxXh/bl-1.jpg" alt="BL Drama">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">Love By Chance</p>
+                    <p class="card-info">2022 • Romantik • 50 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=11" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/y5QfMxk/kdrama-1.jpg" alt="Korean Drama">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">Love By Chance</p>
+                    <p class="card-info">2022 • Romantik • 50 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=5" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/Ntf5Rkx/kdrama-2.jpg" alt="Korean Drama 2">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">My Roommate is a Gumiho</p>
+                    <p class="card-info">2023 • Fantastik • 45 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=6" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/jzy6zDm/bl-3.jpg" alt="BL Drama 3">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">2gether</p>
+                    <p class="card-info">2020 • Romantik • 40 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=7" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/YB0BnF3/jdrama-1.jpg" alt="J-Drama">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">Alice in Borderland</p>
+                    <p class="card-info">2021 • Aksiyon • 50 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=8" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/M2BgHph/cdrama-1.jpg" alt="C-Drama">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">The Untamed</p>
+                    <p class="card-info">2019 • Fantastik • 45 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=9" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/gW6K4T1/mutya-card.jpg" alt="Mutya Episode 2">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">Mutya - Bölüm 2</p>
+                    <p class="card-info">2023 • Drama • 45 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=10" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/ZM7SxXh/bl-1.jpg" alt="BL Drama">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">Love By Chance</p>
+                    <p class="card-info">2022 • Romantik • 50 dk</p>
+                </div>
+            </a>
+            <a href="/watch?id=11" class="card">
+                <div class="card-image-container">
+                    <img src="https://i.ibb.co/y5QfMxk/kdrama-1.jpg" alt="Korean Drama">
+                    <div class="play-icon"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">Love By Chance</p>
+                    <p class="card-info">2022 • Romantik • 50 dk</p>
+                </div>
+            </a>
+        </div>
+
+        <button class="carousel-nav next-btn" data-carousel="new-carousel" aria-label="Sonraki"><i
+                class="fas fa-chevron-right"></i></button>
+    </div>
+</section>
+
+<div class="announcement">
+    <i class="fas fa-bullhorn"></i> DUYURU: Sitemizde bulunan "BL Drama Turkey, Asian Drama House, Asian Drama Alarm"
+    içerikleri kendi sitemiz ve ortak olduğumuz sitelerdir. Çalma veya emek hırsızlığı gibi bir durum yoktur!
+</div>
+
+<footer>
+    <div class="footer-links">
+        <a href="#">Hakkımızda</a>
+        <a href="#">İletişim</a>
+        <a href="#">Gizlilik Politikası</a>
+        <a href="#">Kullanım Şartları</a>
+        <a href="#">SSS</a>
+    </div>
+    &copy; 2025 Who Dat Idols? Tüm hakları saklıdır.
+</footer>
+<script src="main.js"></script>
+</body>
+</html>

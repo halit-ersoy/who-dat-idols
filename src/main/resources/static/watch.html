@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dizi İzle - Who Dat Idols?</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/watch.css">
+</head>
+<body>
+<header>
+    <div class="logo">WDI</div>
+    <nav>
+        <a href="/" class="back-button"><i class="fas fa-arrow-left"></i> Anasayfaya Dön</a>
+    </nav>
+</header>
+
+<div class="content-wrapper">
+    <div class="watch-container">
+        <div class="video-title" id="title">Yükleniyor...</div>
+
+        <div class="video-wrapper">
+            <video id="videoPlayer" controls controlsList="nodownload" oncontextmenu="return false">
+                <source id="videoSource" src="" type="video/mp4">
+                Tarayıcınız video etiketini desteklemiyor.
+            </video>
+        </div>
+
+        <div class="video-controls">
+            <button class="control-button" id="backwardButton"><i class="fas fa-backward"></i> 10s</button>
+            <div class="volume-control-wrapper">
+                <i class="fas fa-volume-up"></i>
+                <input type="range" id="volumeControl" min="0" max="1" step="0.1" value="1">
+            </div>
+            <button class="control-button" id="forwardButton">10s <i class="fas fa-forward"></i></button>
+        </div>
+
+        <div class="info-bar">
+            <span id="videoInfo">İlgili bölüm bilgisi buraya gelecek</span>
+            <button class="glow-button"><i class="fas fa-plus"></i> İstek Listesine Ekle</button>
+        </div>
+
+        <div class="episode-navigation">
+            <button id="prevEpisode" class="nav-button" disabled><i class="fas fa-step-backward"></i> Önceki Bölüm</button>
+            <button id="nextEpisode" class="nav-button"><i class="fas fa-step-forward"></i> Sonraki Bölüm</button>
+        </div>
+    </div>
+
+    <div class="recommendation-section">
+        <h3>Benzer İçerikler</h3>
+        <div class="recommendation-cards">
+            <div class="rec-card">
+                <div class="rec-image"></div>
+                <div class="rec-title">Öneri 1</div>
+            </div>
+            <div class="rec-card">
+                <div class="rec-image"></div>
+                <div class="rec-title">Öneri 2</div>
+            </div>
+            <div class="rec-card">
+                <div class="rec-image"></div>
+                <div class="rec-title">Öneri 3</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <div class="footer-links">
+        <a href="#">Hakkımızda</a>
+        <a href="#">Gizlilik Politikası</a>
+        <a href="#">İletişim</a>
+    </div>
+    <p>&copy; 2025 Who Dat Idols? Tüm hakları saklıdır.</p>
+</footer>
+<!-- Remove the existing script tag and add this at the bottom of the body tag -->
+<script src="watch.js"></script>
+</body>
+</html>
