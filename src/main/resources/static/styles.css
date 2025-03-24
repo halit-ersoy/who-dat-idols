@@ -480,28 +480,47 @@ header.scrolled {
     }
 }
 
-/* Fixed Weekly Best Grid Styles */
+/* Enhanced Weekly Best Section */
 .weekly-best-section {
     padding: 60px 5% 70px;
     overflow: hidden;
+    position: relative;
+}
+
+/* Add background glow effect */
+.weekly-best-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 50% 50%, rgba(30, 215, 96, 0.05), transparent 70%);
+    z-index: 0;
 }
 
 .weekly-best-grid {
     display: flex;
     margin-top: 20px;
-    gap: 12px;
+    gap: 16px;
     width: 100%;
+    position: relative;
+    z-index: 1;
+    max-width: 1600px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .weekly-card {
     flex: 1;
     position: relative;
     background-color: #181818;
-    border-radius: 8px;
+    border-radius: 12px;
     overflow: hidden;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    min-width: 0; /* Prevents flex items from overflowing */
+    min-width: 0;
+    max-width: calc(16.66% - 14px); /* Limit width on large screens */
 }
 
 .weekly-card::before {
@@ -519,13 +538,14 @@ header.scrolled {
 }
 
 .weekly-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.4);
-    z-index: 1;
+    transform: translateY(-12px) scale(1.05);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4), 0 0 30px rgba(30, 215, 96, 0.2);
+    z-index: 2;
 }
 
 .weekly-card:hover::before {
-    color: rgba(30, 215, 96, 0.12);
+    color: rgba(30, 215, 96, 0.15);
+    transform: scale(1.1);
 }
 
 .weekly-card .card-image-container {
@@ -534,39 +554,86 @@ header.scrolled {
     aspect-ratio: 2/3;
 }
 
+/* Spotlight effect on hover */
+.weekly-card .card-image-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(
+            circle at 50% 50%,
+            rgba(255, 255, 255, 0.1) 0%,
+            transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 2;
+}
+
+.weekly-card:hover .card-image-container::after {
+    opacity: 1;
+}
+
 .weekly-card img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.5s ease;
+    transition: transform 0.7s ease;
 }
 
 .weekly-card:hover img {
-    transform: scale(1.1);
+    transform: scale(1.12);
+}
+
+/* Enhanced play button */
+.weekly-card .play-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    width: 60px;
+    height: 60px;
+    background-color: #1ed760;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 3;
+    box-shadow: 0 0 20px rgba(30, 215, 96, 0.5);
+}
+
+.weekly-card:hover .play-icon {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
 }
 
 .weekly-card .card-content {
-    padding: 12px;
+    padding: 15px;
     position: relative;
-    z-index: 1;
+    z-index: 3;
+    transition: transform 0.3s ease;
+}
+
+.weekly-card:hover .card-content {
+    transform: translateY(-5px);
 }
 
 .weekly-card .card-title {
     font-weight: 600;
     margin: 0 0 5px 0;
-    font-size: 14px;
+    font-size: 16px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    transition: color 0.3s ease;
 }
 
-.weekly-card .card-info {
-    font-size: 12px;
-    color: #aaa;
-    margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.weekly-card:hover .card-title {
+    color: #1ed760;
 }
 
 /* Section Styles */
@@ -778,12 +845,149 @@ footer {
     color: #1ed760;
 }
 
-/* Responsive adjustments */
-@media (max-width: 1200px) {
-    .weekly-card::before {
-        font-size: 70px;
-        bottom: -10px;
-        right: -5px;
+@media (min-width: 1600px) {
+    .weekly-best-grid {
+        gap: 20px;
+    }
+}
+
+/* Trending All Section */
+.trending-all-section {
+    background-color: #121212;
+    overflow: hidden;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    max-height: 3000px;
+    opacity: 1;
+    padding-bottom: 80px;
+}
+
+.trending-all-section.hidden {
+    max-height: 0;
+    opacity: 0;
+    padding: 0;
+    pointer-events: none;
+}
+
+.trending-all-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+    width: 100%;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+.trending-item {
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeInUp 0.5s forwards;
+    background-color: #181818;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.trending-item:hover {
+    background-color: #282828;
+    transform: translateY(-10px) scale(1.03);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    z-index: 2;
+}
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.close-all-btn {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 18px;
+}
+
+.close-all-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+}
+
+.load-more-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 40px;
+}
+
+.load-more-btn {
+    background-color: rgba(30, 215, 96, 0.1);
+    color: #1ed760;
+    border: 2px solid #1ed760;
+    border-radius: 30px;
+    padding: 12px 30px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    opacity: 1;
+}
+
+.load-more-btn:hover {
+    background-color: rgba(30, 215, 96, 0.2);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(30, 215, 96, 0.2);
+}
+
+.load-more-btn.hidden {
+    opacity: 0;
+    pointer-events: none;
+    height: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.load-more-btn i {
+    transition: transform 0.3s ease;
+}
+
+.load-more-btn:hover i {
+    transform: translateY(3px);
+}
+
+/* Responsive styles for trending grid */
+@media (max-width: 1400px) {
+    .trending-all-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 992px) {
+    .trending-all-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .trending-all-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .trending-all-grid {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -815,8 +1019,9 @@ footer {
     }
 
     .weekly-card {
-        flex-basis: calc(33.33% - 8px);
-        margin-bottom: 15px;
+        flex-basis: calc(33.33% - 12px);
+        max-width: calc(33.33% - 12px);
+        margin-bottom: 20px;
     }
 }
 
@@ -948,20 +1153,7 @@ footer {
     }
 
     .weekly-card {
-        flex-basis: calc(50% - 6px);
-    }
-
-    .weekly-card::before {
-        font-size: 60px;
-    }
-}
-
-@media (max-width: 400px) {
-    .weekly-best-grid {
-        gap: 8px;
-    }
-
-    .weekly-card::before {
-        font-size: 50px;
+        flex-basis: calc(50% - 8px);
+        max-width: calc(50% - 8px);
     }
 }
