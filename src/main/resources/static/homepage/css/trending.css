@@ -1,0 +1,154 @@
+/* ----------------------- *
+ *      TRENDING  CSS      *
+ * ----------------------- */
+
+/* Ana trending bölümleri ve yeni içerik arka planları */
+.trending {
+    background-color: #121212;
+}
+
+.new-content {
+    background-color: #0f0f0f;
+}
+
+/* Trending All Section (Açılır/kapanır liste) */
+.trending-all-section {
+    background-color: #121212;
+    overflow: hidden;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    max-height: 3000px;
+    opacity: 1;
+    padding-bottom: 80px;
+}
+
+.trending-all-section.hidden {
+    max-height: 0;
+    opacity: 0;
+    padding: 0;
+    pointer-events: none;
+}
+
+.trending-all-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+    width: 100%;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+.trending-item {
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeInUp 0.5s forwards;
+    background-color: #181818;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.trending-item:hover {
+    background-color: #282828;
+    transform: translateY(-10px) scale(1.03);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    z-index: 2;
+}
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Kapanış butonu */
+.close-all-btn {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 18px;
+}
+
+.close-all-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+}
+
+/* Load More özelliği */
+.load-more-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 40px;
+}
+
+.load-more-btn {
+    background-color: rgba(30, 215, 96, 0.1);
+    color: #1ed760;
+    border: 2px solid #1ed760;
+    border-radius: 30px;
+    padding: 12px 30px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    opacity: 1;
+}
+
+.load-more-btn:hover {
+    background-color: rgba(30, 215, 96, 0.2);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(30, 215, 96, 0.2);
+}
+
+.load-more-btn.hidden {
+    opacity: 0;
+    pointer-events: none;
+    height: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.load-more-btn i {
+    transition: transform 0.3s ease;
+}
+
+.load-more-btn:hover i {
+    transform: translateY(3px);
+}
+
+/* Responsive grid ayarları */
+@media (max-width: 1400px) {
+    .trending-all-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 992px) {
+    .trending-all-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .trending-all-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .trending-all-grid {
+        grid-template-columns: 1fr;
+    }
+}

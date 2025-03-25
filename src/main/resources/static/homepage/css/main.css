@@ -1,0 +1,36 @@
+/* main.css */
+
+/* 1) Temel reset ve global ayarlar */
+@import url('base.css');
+
+/* 2) Header */
+@import url('header.css');
+
+/* 3) Hero */
+@import url('hero.css');
+
+/* 4) Weekly Best */
+@import url('weekly-best.css');
+
+/* 5) Trending */
+@import url('trending.css');
+
+/* 6) Cards */
+@import url('cards.css');
+
+/* 7) Footer */
+@import url('footer.css');
+
+/* 8) Carousel */
+@import url('carousel.css');
+
+/* 9) Animations */
+@import url('animations.css');
+
+/* 10) Sections */
+@import url('sections.css');
+
+/* 11) Responsive */
+@import url('responsive.css');
+
+/* Gerekirse main.css içinde kendi özel stillerin de olabilir */

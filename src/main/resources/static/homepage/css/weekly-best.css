@@ -1,0 +1,155 @@
+/* ---------------------------- *
+ *    WEEKLY BEST SECTION CSS   *
+ * ---------------------------- */
+
+/* Enhanced Weekly Best Section */
+.weekly-best-section {
+    padding: 60px 5% 70px;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Add background glow effect */
+.weekly-best-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 50% 50%, rgba(30, 215, 96, 0.05), transparent 70%);
+    z-index: 0;
+}
+
+.weekly-best-grid {
+    display: flex;
+    margin-top: 20px;
+    gap: 16px;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+    max-width: 1600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.weekly-card {
+    flex: 1;
+    position: relative;
+    background-color: #181818;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    min-width: 0;
+    max-width: calc(16.66% - 14px); /* Daha büyük ekranlarda genişlik limiti */
+}
+
+.weekly-card::before {
+    content: attr(data-number);
+    position: absolute;
+    bottom: -15px;
+    right: -5px;
+    font-size: 90px;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.08);
+    line-height: 1;
+    z-index: 0;
+    transition: all 0.3s ease;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.weekly-card:hover {
+    transform: translateY(-12px) scale(1.05);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4), 0 0 30px rgba(30, 215, 96, 0.2);
+    z-index: 2;
+}
+
+.weekly-card:hover::before {
+    color: rgba(30, 215, 96, 0.15);
+    transform: scale(1.1);
+}
+
+.weekly-card .card-image-container {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 2/3;
+}
+
+/* Spotlight effect on hover */
+.weekly-card .card-image-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 2;
+}
+
+.weekly-card:hover .card-image-container::after {
+    opacity: 1;
+}
+
+.weekly-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.7s ease;
+}
+
+.weekly-card:hover img {
+    transform: scale(1.12);
+}
+
+/* Enhanced play button */
+.weekly-card .play-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    width: 60px;
+    height: 60px;
+    background-color: #1ed760;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 3;
+    box-shadow: 0 0 20px rgba(30, 215, 96, 0.5);
+}
+
+.weekly-card:hover .play-icon {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.weekly-card .card-content {
+    padding: 15px;
+    position: relative;
+    z-index: 3;
+    transition: transform 0.3s ease;
+}
+
+.weekly-card:hover .card-content {
+    transform: translateY(-5px);
+}
+
+.weekly-card .card-title {
+    font-weight: 600;
+    margin: 0 0 5px 0;
+    font-size: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.3s ease;
+}
+
+.weekly-card:hover .card-title {
+    color: #1ed760;
+}
