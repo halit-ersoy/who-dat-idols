@@ -15,7 +15,7 @@ public class HomeController {
     @GetMapping("/")
     public ResponseEntity<Resource> getIndex() {
         try {
-            Resource htmlPage = new ClassPathResource("static/index.html");
+            Resource htmlPage = new ClassPathResource("static/homepage/html/index.html");
             if (!htmlPage.exists()) {
                 return ResponseEntity.notFound().build();
             }
