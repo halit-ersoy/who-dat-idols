@@ -1,0 +1,35 @@
+/* New Content All Section */
+.new-content {
+    background-color: #0f0f0f;
+}
+
+.new-content-all-section {
+    background-color: #0f0f0f;
+    overflow: hidden;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    max-height: 3000px;
+    opacity: 1;
+    padding-bottom: 80px;
+}
+
+.new-content-all-section.hidden {
+    max-height: 0;
+    opacity: 0;
+    padding: 0;
+    pointer-events: none;
+}
+
+.new-content-all-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+    width: 100%;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+.new-content-item {
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeInUp 0.5s forwards;
+}

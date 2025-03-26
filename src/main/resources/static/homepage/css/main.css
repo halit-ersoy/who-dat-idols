@@ -33,4 +33,7 @@
 /* 11) Responsive */
 @import url('responsive.css');
 
+/* 12) New Content */
+@import url('new-content.css');
+
 /* Gerekirse main.css içinde kendi özel stillerin de olabilir */

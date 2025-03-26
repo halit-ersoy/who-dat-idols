@@ -154,7 +154,6 @@
 <section class="section new-content weekly-best-section">
     <div class="section-header">
         <h2>HAFTANIN EN İYİLERİ</h2>
-        <a href="#" class="view-all">Tümünü Gör <i class="fas fa-chevron-right"></i></a>
     </div>
 
     <!-- Fixed grid of 6 movies -->
@@ -558,6 +557,25 @@
 
         <button class="carousel-nav next-btn" data-carousel="new-carousel" aria-label="Sonraki"><i
                 class="fas fa-chevron-right"></i></button>
+    </div>
+</section>
+
+<!-- Add this after the new-content section -->
+<section id="new-content-all" class="section new-content-all-section hidden">
+    <div class="section-header">
+        <h2>TÜM YENİ EKLENENLER</h2>
+        <button class="close-all-btn"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="new-content-all-grid">
+        <!-- Items will be loaded here dynamically -->
+    </div>
+
+    <div class="load-more-container">
+        <button id="load-more-new-content" class="load-more-btn">
+            <span>DAHA FAZLA YÜKLE</span>
+            <i class="fas fa-chevron-down"></i>
+        </button>
     </div>
 </section>
 
