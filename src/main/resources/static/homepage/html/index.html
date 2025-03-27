@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Who Dat Idols? - Streaming Platform</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Poppins:wght@300;400;600&display=swap"
           rel="stylesheet">
@@ -17,6 +17,53 @@
         <input type="text" placeholder="Film veya dizi ara..." aria-label="Film veya dizi ara">
     </div>
     <button class="login-btn" aria-label="Oturum aç">OTURUM AÇ</button>
+    <!-- Login Modal -->
+    <div class="login-modal-overlay" id="login-modal">
+        <div class="login-modal">
+            <button class="close-modal" id="close-modal">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="login-header">
+                <div class="login-logo">WhoDatIdols</div>
+                <h2 class="login-title">Hoşgeldiniz</h2>
+                <p class="login-subtitle">Hesabınıza giriş yapın</p>
+            </div>
+            <div class="login-form">
+                <div class="form-group">
+                    <label for="email">E-posta veya kullanıcı adı</label>
+                    <input type="text" class="form-control" id="email" placeholder="E-posta veya kullanıcı adı">
+                    <span class="highlight"></span>
+                </div>
+                <div class="form-group">
+                    <label for="password">Şifre</label>
+                    <input type="password" class="form-control" id="password" placeholder="Şifreniz">
+                    <span class="highlight"></span>
+                </div>
+                <div class="forgot-password">
+                    <a href="#">Şifremi unuttum</a>
+                </div>
+                <button class="login-btn-page" id="login-submit">Giriş Yap</button>
+                <div class="login-divider">veya</div>
+                <div class="social-login">
+                    <button class="social-btn">
+                        <i class="fab fa-google"></i>
+                    </button>
+                    <button class="social-btn">
+                        <i class="fab fa-facebook-f"></i>
+                    </button>
+                    <button class="social-btn">
+                        <i class="fab fa-twitter"></i>
+                    </button>
+                    <button class="social-btn">
+                        <i class="fab fa-apple"></i>
+                    </button>
+                </div>
+                <div class="register-link">
+                    Hesabınız yok mu? <a href="#">Hesap oluştur</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </header>
 
 <!-- Hero section with multiple video backgrounds -->

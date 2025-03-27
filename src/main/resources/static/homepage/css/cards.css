@@ -70,10 +70,53 @@
     font-weight: 600;
     margin: 0 0 5px 0;
     font-size: 16px;
+    white-space: nowrap;      /* Keep text on single line */
+    overflow: hidden;         /* Hide overflow text */
+    text-overflow: ellipsis;  /* Add ellipsis for overflow text */
 }
 
 .card-info {
     font-size: 14px;
     color: #aaa;
     margin: 0;
+}
+
+/* Mobile card improvements */
+@media (max-width: 576px) {
+    .card {
+        flex: 0 0 160px; /* Smaller card width on mobile */
+    }
+
+    .card-content {
+        padding: 10px; /* Reduce padding on mobile */
+    }
+
+    .card-title {
+        font-size: 14px; /* Smaller font on mobile */
+    }
+
+    .card-info {
+        font-size: 12px; /* Smaller info text */
+    }
+}
+
+/* Make play icons more touch-friendly */
+@media (max-width: 576px) {
+    .play-icon {
+        opacity: 0.8; /* Always slightly visible */
+        transform: translate(-50%, -50%) scale(0.8); /* Start slightly visible */
+        width: 44px; /* Minimum touch target size */
+        height: 44px;
+    }
+
+    .card:hover .play-icon {
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+/* For very small screens */
+@media (max-width: 400px) {
+    .card {
+        flex: 0 0 140px; /* Even smaller on very small screens */
+    }
 }

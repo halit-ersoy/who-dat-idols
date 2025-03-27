@@ -71,9 +71,25 @@ header.scrolled {
     font-weight: 600;
     font-size: 16px;
     transition: all 0.2s ease;
+    white-space: nowrap; /* Prevent text wrapping */
 }
 
 .login-btn:hover {
     background-color: #1fdf64;
     transform: scale(1.05);
+}
+
+/* Responsive adjustments for login button */
+@media (max-width: 576px) {
+    .login-btn {
+        padding: 8px 16px; /* Smaller padding */
+        font-size: 14px;  /* Smaller font */
+    }
+}
+
+@media (max-width: 400px) {
+    .login-btn {
+        padding: 7px 14px;
+        font-size: 13px;
+    }
 }

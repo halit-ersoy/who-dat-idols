@@ -1,10 +1,15 @@
-/* New Content All Section */
+/* -------------------------- *
+ *    NEW CONTENT CSS         *
+ * -------------------------- */
+
+/* New Content Section */
 .new-content {
-    background-color: #0f0f0f;
+    background-color: #121212;
 }
 
+/* New Content All Section (Expanded View) */
 .new-content-all-section {
-    background-color: #0f0f0f;
+    background-color: #121212;
     overflow: hidden;
     transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     max-height: 3000px;
@@ -32,4 +37,41 @@
     opacity: 0;
     transform: translateY(30px);
     animation: fadeInUp 0.5s forwards;
+    background-color: #181818;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.new-content-item:hover {
+    background-color: #282828;
+    transform: translateY(-10px) scale(1.03);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    z-index: 2;
+}
+
+/* Responsive grid adjustments */
+@media (max-width: 1400px) {
+    .new-content-all-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 992px) {
+    .new-content-all-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .new-content-all-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .new-content-all-grid {
+        grid-template-columns: 1fr;
+    }
 }

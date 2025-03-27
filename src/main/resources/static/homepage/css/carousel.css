@@ -58,3 +58,24 @@
 .next-btn {
     right: -20px;
 }
+
+/* Mobile carousel adjustments */
+@media (max-width: 576px) {
+    .carousel {
+        gap: 10px; /* Reduce gap between cards */
+        padding: 10px 0; /* Less padding */
+    }
+
+    .carousel-nav {
+        width: 32px; /* Smaller buttons */
+        height: 32px;
+    }
+
+    .prev-btn {
+        left: -10px; /* Position closer to edge */
+    }
+
+    .next-btn {
+        right: -10px;
+    }
+}

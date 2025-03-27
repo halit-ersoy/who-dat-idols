@@ -153,3 +153,24 @@
 .weekly-card:hover .card-title {
     color: #1ed760;
 }
+
+/* Mobile weekly cards */
+@media (max-width: 768px) {
+    .weekly-best-grid {
+        flex-wrap: wrap; /* Allow wrapping */
+        justify-content: center;
+    }
+
+    .weekly-card {
+        flex: 0 0 45%; /* 2 per row */
+        max-width: 45%;
+        margin-bottom: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .weekly-card {
+        flex: 0 0 80%; /* 1 per row */
+        max-width: 80%;
+    }
+}

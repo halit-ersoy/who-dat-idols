@@ -48,3 +48,14 @@
     margin: 20px 5%;
     border-radius: 4px;
 }
+
+/* Mobile section spacing */
+@media (max-width: 576px) {
+    .section {
+        padding: 40px 3%; /* Less padding on mobile */
+    }
+
+    .section h2 {
+        font-size: 22px; /* Smaller headings */
+    }
+}
