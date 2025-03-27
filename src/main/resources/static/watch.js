@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
     volumeControl.addEventListener('input', function() {
         videoPlayer.volume = this.value;
         updateVolumeIcon(this.value);
+        updateVolumeSliderBackground(); // Add this call here to update background on change
     });
 
     // Function to update volume icon based on volume level
@@ -36,6 +37,12 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             volumeIcon.className = 'fas fa-volume-up';
         }
+    }
+
+    // Update volume slider background based on value
+    function updateVolumeSliderBackground() {
+        const value = volumeControl.value * 100;
+        volumeControl.style.background = `linear-gradient(to right, #1ed760 0%, #1ed760 ${value}%, #555 ${value}%, #555 100%)`;
     }
 
     // Function to skip video time - centralized to ensure consistency
@@ -85,12 +92,36 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(function() {
             volumeControl.value = videoPlayer.volume;
             updateVolumeIcon(videoPlayer.volume);
+            updateVolumeSliderBackground();
         }, 100);
     });
 
     videoPlayer.addEventListener('play', function() {
         volumeControl.value = videoPlayer.volume;
         updateVolumeIcon(videoPlayer.volume);
+        updateVolumeSliderBackground();
+    });
+
+    // Hide spinner when video starts playing
+    videoPlayer.addEventListener('playing', function() {
+        this.classList.add('playing');
+    });
+
+    // Add play/pause button with animation
+    const videoWrapper = document.querySelector('.video-wrapper');
+    const playButton = document.createElement('div');
+    playButton.className = 'play-pause-button';
+    playButton.innerHTML = '<i class="fas fa-play"></i>';
+    videoWrapper.appendChild(playButton);
+
+    playButton.addEventListener('click', function() {
+        if (videoPlayer.paused) {
+            videoPlayer.play();
+            this.innerHTML = '<i class="fas fa-pause"></i>';
+        } else {
+            videoPlayer.pause();
+            this.innerHTML = '<i class="fas fa-play"></i>';
+        }
     });
 
     // Error handling for video

@@ -59,35 +59,71 @@ header {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
 }
 
+/* Video Title Animation */
 .video-title {
+    position: relative;
     font-size: 28px;
     margin-bottom: 30px;
     font-weight: 700;
     font-family: 'Montserrat', sans-serif;
     color: #fff;
+    opacity: 0;
+    animation: fadeInDown 0.8s forwards;
+    display: inline-block;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Video Wrapper Styles */
 .video-wrapper {
     position: relative;
-    border-radius: 8px;
+    border-radius: 12px;
     overflow: hidden;
     margin-bottom: 20px;
     box-shadow: 0 0 40px rgba(30, 215, 96, 0.25);
     margin-top: 10px;
+    transition: box-shadow 0.5s ease, transform 0.3s ease;
 }
 
-.video-wrapper::after {
+.video-wrapper:hover {
+    box-shadow: 0 0 50px rgba(30, 215, 96, 0.35);
+    transform: scale(1.01);
+}
+
+/* Video Pulse Loading Animation */
+.video-wrapper::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    border-radius: 8px;
-    box-shadow: inset 0 0 30px rgba(30, 215, 96, 0.15);
-    pointer-events: none;
+    background: radial-gradient(circle, rgba(30, 215, 96, 0.1) 0%, rgba(18, 18, 18, 0) 70%);
     z-index: 1;
+    opacity: 0;
+    animation: pulse-bg 3s infinite;
+    pointer-events: none;
+}
+
+@keyframes pulse-bg {
+    0% { opacity: 0; }
+    50% { opacity: 0.7; }
+    100% { opacity: 0; }
+}
+
+/* Video Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 video {
@@ -96,17 +132,29 @@ video {
     border-radius: 8px;
     box-shadow: 0 0 30px rgba(30, 215, 96, 0.4);
     background-color: #000;
+    opacity: 0;
+    animation: fadeIn 0.8s forwards;
+    animation-delay: 0.2s;
+    transition: transform 0.3s ease;
 }
 
-/* Video Controls Styles */
+/* Video Controls Animation */
 .video-controls {
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 20px;
     margin: 15px 0;
+    opacity: 0.8;
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
+.video-controls:hover {
+    opacity: 1;
+    transform: translateY(-2px);
+}
+
+/* Improved Button Animations */
 .control-button {
     background-color: #282828;
     color: #fff;
@@ -115,57 +163,105 @@ video {
     border-radius: 50px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     display: flex;
     align-items: center;
     gap: 5px;
+    position: relative;
+    overflow: hidden;
 }
 
 .control-button:hover {
     background-color: #333;
     color: #1ed760;
-    box-shadow: 0 0 10px rgba(30, 215, 96, 0.3);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
 }
 
-/* Volume Control Styles */
+.control-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.control-button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(30, 215, 96, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: translate(-50%, -50%) scale(1);
+    transition: all 0.4s ease;
+}
+
+.control-button:active::after {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(20);
+    transition: all 0s;
+}
+
+/* Enhanced Volume Control */
 .volume-control-wrapper {
     display: flex;
     align-items: center;
     gap: 8px;
     background-color: #282828;
-    padding: 5px 15px;
+    padding: 8px 18px;
     border-radius: 50px;
     transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
 }
 
 .volume-control-wrapper:hover {
     background-color: #333;
-    box-shadow: 0 0 10px rgba(30, 215, 96, 0.3);
+    box-shadow: 0 0 15px rgba(30, 215, 96, 0.3);
 }
 
 .volume-control-wrapper i {
     color: #fff;
     font-size: 14px;
     min-width: 16px;
+    transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.volume-control-wrapper:hover i {
+    color: #1ed760;
+    transform: scale(1.1);
 }
 
 #volumeControl {
     width: 80px;
     height: 5px;
     appearance: none;
-    background-color: #555;
+    background: linear-gradient(to right, #1ed760 0%, #1ed760 50%, #555 50%, #555 100%);
     border-radius: 2px;
     outline: none;
     cursor: pointer;
+    transition: height 0.2s ease;
+}
+
+#volumeControl:hover {
+    height: 7px;
 }
 
 #volumeControl::-webkit-slider-thumb {
     appearance: none;
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
     background-color: #1ed760;
     border-radius: 50%;
     cursor: pointer;
+    box-shadow: 0 0 10px rgba(30, 215, 96, 0.7);
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+#volumeControl:hover::-webkit-slider-thumb {
+    transform: scale(1.2);
+    box-shadow: 0 0 15px rgba(30, 215, 96, 0.9);
 }
 
 #volumeControl::-moz-range-thumb {
@@ -194,12 +290,12 @@ video {
     font-size: 14px;
 }
 
-/* Glow Button Styles */
+/* Glow Button Animation */
 .glow-button {
-    background-color: #1ed760;
+    background: linear-gradient(45deg, #1ed760, #1db954);
     color: #000;
     border: none;
-    padding: 10px 20px;
+    padding: 10px 22px;
     border-radius: 50px;
     font-weight: 600;
     font-size: 14px;
@@ -210,35 +306,57 @@ video {
     display: flex;
     align-items: center;
     gap: 8px;
+    box-shadow: 0 0 10px rgba(30, 215, 96, 0.4);
+    z-index: 1;
 }
 
 .glow-button:hover {
     transform: scale(1.05);
-    background-color: #1fdf64;
-    box-shadow: 0 0 15px rgba(30, 215, 96, 0.5);
+    box-shadow: 0 0 20px rgba(30, 215, 96, 0.7);
 }
 
-.glow-button::after {
+.glow-button i {
+    transition: transform 0.3s ease;
+}
+
+.glow-button:hover i {
+    transform: rotate(90deg);
+}
+
+.glow-button::before {
     content: '';
     position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: rgba(255, 255, 255, 0.1);
-    transform: rotate(30deg);
-    transition: transform 0.6s;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, #1ed760, #28d86a, #13a346, #1ed760);
+    background-size: 400% 400%;
+    border-radius: 50px;
+    z-index: -1;
+    animation: glowing 3s ease infinite;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
-.glow-button:hover::after {
-    transform: rotate(30deg) translate(10%, 10%);
+.glow-button:hover::before {
+    opacity: 1;
 }
 
-/* Episode Navigation Styles */
+@keyframes glowing {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Episode Navigation Enhancements */
 .episode-navigation {
     display: flex;
     justify-content: space-between;
     margin-top: 20px;
+    opacity: 0;
+    animation: fadeIn 0.8s forwards;
+    animation-delay: 0.4s;
 }
 
 .nav-button {
@@ -249,15 +367,51 @@ video {
     border-radius: 50px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
 }
 
 .nav-button:hover:not([disabled]) {
     background-color: #333;
     color: #1ed760;
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 7px 15px rgba(0, 0, 0, 0.2);
+}
+
+.nav-button:active:not([disabled]) {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+
+.nav-button i {
+    transition: transform 0.3s ease;
+}
+
+.nav-button:hover:not([disabled]) i {
+    transform: scale(1.2);
+}
+
+.nav-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, transparent 50%, rgba(30, 215, 96, 0.1) 50%);
+    background-size: 200% 200%;
+    background-position: 100% 0;
+    transition: background-position 0.5s ease;
+    z-index: -1;
+}
+
+.nav-button:hover:not([disabled])::before {
+    background-position: 0 100%;
 }
 
 .nav-button:disabled {
@@ -335,17 +489,43 @@ footer {
     color: #1ed760;
 }
 
-/* Animation for loading */
-@keyframes pulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(30, 215, 96, 0.7);
-    }
-    70% {
-        box-shadow: 0 0 0 10px rgba(30, 215, 96, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(30, 215, 96, 0);
-    }
+/* Play/Pause Button Overlay */
+.play-pause-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    width: 80px;
+    height: 80px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 5;
+}
+
+.play-pause-button i {
+    color: #1ed760;
+    font-size: 32px;
+    transition: transform 0.2s ease;
+}
+
+.video-wrapper:hover .play-pause-button {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.play-pause-button:hover {
+    background: rgba(0, 0, 0, 0.8);
+    box-shadow: 0 0 20px rgba(30, 215, 96, 0.7);
+}
+
+.play-pause-button:hover i {
+    transform: scale(1.2);
 }
 
 /* Responsive Styles */
