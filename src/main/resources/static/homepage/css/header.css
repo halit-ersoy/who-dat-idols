@@ -52,7 +52,7 @@ header.scrolled {
 
 .search::after {
     content: "\f002";
-    font-family: "Font Awesome 6 Free";
+    font-family: "Font Awesome 6 Free", serif;
     font-weight: 900;
     position: absolute;
     right: 15px;
