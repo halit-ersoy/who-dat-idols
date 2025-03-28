@@ -1,0 +1,25 @@
+/* watch.css - Main stylesheet for video watching page */
+
+/* 1) Global styles and basic resets */
+@import url('base.css');
+
+/* 2) Layout structures */
+@import url('layout.css');
+
+/* 3) Header and footer */
+@import url('header-footer.css');
+
+/* 4) Video player components */
+@import url('video-player.css');
+
+/* 5) Recommendations section */
+@import url('recommendations.css');
+
+/* 6) Comments section */
+@import url('comments.css');
+
+/* 7) Button styles */
+@import url('buttons.css');
+
+/* 8) Responsive styles (always last to override) */
+@import url('responsive.css');

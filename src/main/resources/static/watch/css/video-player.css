@@ -1,0 +1,177 @@
+/* Video Wrapper Styles */
+.video-wrapper {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    box-shadow: 0 0 40px rgba(30, 215, 96, 0.25);
+    margin-top: 10px;
+    transition: box-shadow 0.5s ease, transform 0.3s ease;
+}
+
+.video-wrapper:hover {
+    box-shadow: 0 0 50px rgba(30, 215, 96, 0.35);
+    transform: scale(1.01);
+}
+
+/* Video Pulse Loading Animation */
+.video-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle, rgba(30, 215, 96, 0.1) 0%, rgba(18, 18, 18, 0) 70%);
+    z-index: 1;
+    opacity: 0;
+    animation: pulse-bg 3s infinite;
+    pointer-events: none;
+}
+
+video {
+    width: 100%;
+    display: block;
+    border-radius: 8px;
+    box-shadow: 0 0 30px rgba(30, 215, 96, 0.4);
+    background-color: #000;
+    opacity: 0;
+    animation: fadeIn 0.8s forwards;
+    animation-delay: 0.2s;
+    transition: transform 0.3s ease;
+}
+
+/* Video Controls Animation */
+.video-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin: 15px 0;
+    opacity: 0.8;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.video-controls:hover {
+    opacity: 1;
+    transform: translateY(-2px);
+}
+
+/* Enhanced Volume Control */
+.volume-control-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #282828;
+    padding: 8px 18px;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.volume-control-wrapper:hover {
+    background-color: #333;
+    box-shadow: 0 0 15px rgba(30, 215, 96, 0.3);
+}
+
+.volume-control-wrapper i {
+    color: #fff;
+    font-size: 14px;
+    min-width: 16px;
+    transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.volume-control-wrapper:hover i {
+    color: #1ed760;
+    transform: scale(1.1);
+}
+
+#volumeControl {
+    width: 80px;
+    height: 5px;
+    appearance: none;
+    background: linear-gradient(to right, #1ed760 0%, #1ed760 50%, #555 50%, #555 100%);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    transition: height 0.2s ease;
+}
+
+#volumeControl:hover {
+    height: 7px;
+}
+
+#volumeControl::-webkit-slider-thumb {
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background-color: #1ed760;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(30, 215, 96, 0.7);
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+#volumeControl:hover::-webkit-slider-thumb {
+    transform: scale(1.2);
+    box-shadow: 0 0 15px rgba(30, 215, 96, 0.9);
+}
+
+#volumeControl::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    background-color: #1ed760;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+/* Play/Pause Button Overlay */
+.play-pause-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    width: 80px;
+    height: 80px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 5;
+}
+
+.play-pause-button i {
+    color: #1ed760;
+    font-size: 32px;
+    transition: transform 0.2s ease;
+}
+
+.video-wrapper:hover .play-pause-button {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.play-pause-button:hover {
+    background: rgba(0, 0, 0, 0.8);
+    box-shadow: 0 0 20px rgba(30, 215, 96, 0.7);
+}
+
+.play-pause-button:hover i {
+    transform: scale(1.2);
+}
+
+/* Episode Navigation Styles */
+.episode-navigation {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    opacity: 0;
+    animation: fadeIn 0.8s forwards;
+    animation-delay: 0.4s;
+}

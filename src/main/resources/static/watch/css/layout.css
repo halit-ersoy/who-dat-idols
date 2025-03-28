@@ -1,0 +1,45 @@
+/* Content Wrapper */
+.content-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px 5%;
+}
+
+/* Watch Container Styles */
+.watch-container {
+    background-color: #181818;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 40px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+/* Video Title Animation */
+.video-title {
+    position: relative;
+    font-size: 28px;
+    margin-bottom: 30px;
+    font-weight: 700;
+    font-family: 'Montserrat', sans-serif;
+    color: #fff;
+    opacity: 0;
+    animation: fadeInDown 0.8s forwards;
+    display: inline-block;
+}
+
+/* Info Bar Styles */
+.info-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20px 0;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.info-bar span {
+    color: #aaa;
+    font-size: 14px;
+}

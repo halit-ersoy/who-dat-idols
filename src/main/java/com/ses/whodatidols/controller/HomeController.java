@@ -30,7 +30,7 @@ public class HomeController {
     @GetMapping("/watch")
     public ResponseEntity<Resource> watchPage(@RequestParam("id") int id) {
         try {
-            ClassPathResource htmlPage = new ClassPathResource("static/watch.html");
+            ClassPathResource htmlPage = new ClassPathResource("static/watch/html/watch.html");
             if (!htmlPage.exists()) {
                 return ResponseEntity.notFound().build();
             }

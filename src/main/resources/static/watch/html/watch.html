@@ -6,13 +6,13 @@
     <title>Dizi İzle - Who Dat Idols?</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/watch.css">
+    <link rel="stylesheet" href="/watch/css/watch.css">
 </head>
 <body>
 <header>
     <div class="logo">WDI</div>
     <nav>
-        <a href="/" class="back-button"><i class="fas fa-arrow-left"></i> Anasayfaya Dön</a>
+        <a href="/static" class="back-button"><i class="fas fa-arrow-left"></i> Anasayfaya Dön</a>
     </nav>
 </header>
 
@@ -64,6 +64,30 @@
             </div>
         </div>
     </div>
+
+    <!-- Comments Section -->
+    <div class="comments-section">
+        <h3>Yorumlar</h3>
+        <div class="comments-container">
+            <div id="comments-list">
+                <!-- Comments will be loaded here -->
+            </div>
+
+            <div class="comment-form">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <form id="commentForm">
+                    <textarea id="commentText" placeholder="Bu dizi hakkında düşünceleriniz neler?"></textarea>
+                    <div class="form-actions">
+                        <button type="submit" class="comment-submit-btn">
+                            <i class="fas fa-paper-plane"></i> Yorum Yap
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
 <footer>
@@ -75,6 +99,6 @@
     <p>&copy; 2025 Who Dat Idols? Tüm hakları saklıdır.</p>
 </footer>
 <!-- Remove the existing script tag and add this at the bottom of the body tag -->
-<script src="watch.js"></script>
+<script src="/watch/js/watch.js"></script>
 </body>
 </html>

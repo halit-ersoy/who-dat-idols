@@ -1,0 +1,41 @@
+/* Recommendation Section Styles */
+.recommendation-section {
+    margin-top: 40px;
+}
+
+.recommendation-section h3 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    font-family: 'Montserrat', sans-serif;
+    color: #fff;
+}
+
+.recommendation-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.rec-card {
+    background-color: #181818;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.rec-card:hover {
+    background-color: #282828;
+    transform: translateY(-5px);
+}
+
+.rec-image {
+    height: 120px;
+    background-color: #333;
+    position: relative;
+}
+
+.rec-title {
+    padding: 12px;
+    font-weight: 500;
+}

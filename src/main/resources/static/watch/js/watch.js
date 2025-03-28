@@ -100,11 +100,16 @@ document.addEventListener('DOMContentLoaded', function() {
         volumeControl.value = videoPlayer.volume;
         updateVolumeIcon(videoPlayer.volume);
         updateVolumeSliderBackground();
+        playButton.innerHTML = '<i class="fas fa-pause"></i>';
     });
 
     // Hide spinner when video starts playing
     videoPlayer.addEventListener('playing', function() {
         this.classList.add('playing');
+    });
+
+    videoPlayer.addEventListener('pause', function() {
+        playButton.innerHTML = '<i class="fas fa-play"></i>';
     });
 
     // Add play/pause button with animation
@@ -174,4 +179,116 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
     }, true);
+
+    // Comments functionality
+    const commentForm = document.getElementById('commentForm');
+    const commentsList = document.getElementById('comments-list');
+    const commentText = document.getElementById('commentText');
+
+    // Load comments from local storage (this would be replaced with API calls in production)
+    function loadComments() {
+        const videoId = new URLSearchParams(window.location.search).get('id');
+        if (!videoId) return;
+
+        const storageKey = `video_comments_${videoId}`;
+        let comments = JSON.parse(localStorage.getItem(storageKey) || '[]');
+
+        if (comments.length === 0) {
+            commentsList.innerHTML = '<div class="no-comments">Bu video için henüz yorum yapılmamış. İlk yorumu siz yapın!</div>';
+            return;
+        }
+
+        // Sort comments by date (newest first)
+        comments.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // Render comments
+        commentsList.innerHTML = '';
+        comments.forEach(comment => {
+            const commentElement = createCommentElement(comment);
+            commentsList.appendChild(commentElement);
+        });
+    }
+
+    // Create a single comment element
+    function createCommentElement(comment) {
+        const commentCard = document.createElement('div');
+        commentCard.className = 'comment-card';
+
+        const formattedDate = new Date(comment.date).toLocaleDateString('tr-TR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        commentCard.innerHTML = `
+            <div class="comment-header">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="comment-user">${comment.username || 'Misafir'}</div>
+                <div class="comment-date">${formattedDate}</div>
+            </div>
+            <div class="comment-content">${comment.text}</div>
+        `;
+
+        return commentCard;
+    }
+
+    // Handle comment submission
+    if (commentForm) {
+        commentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const text = commentText.value.trim();
+            if (!text) {
+                // Animate the textarea to indicate error
+                commentText.style.borderColor = '#ff3860';
+                setTimeout(() => {
+                    commentText.style.borderColor = '#333';
+                }, 1000);
+                return;
+            }
+
+            const videoId = new URLSearchParams(window.location.search).get('id');
+            if (!videoId) return;
+
+            const newComment = {
+                id: Date.now(),
+                text: text,
+                username: 'Kullanıcı', // In a real app, get from logged in user
+                date: new Date().toISOString()
+            };
+
+            // Save to local storage (would be an API call in production)
+            const storageKey = `video_comments_${videoId}`;
+            let comments = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            comments.push(newComment);
+            localStorage.setItem(storageKey, JSON.stringify(comments));
+
+            // Clear form and reload comments
+            commentText.value = '';
+
+            // Add the new comment with animation
+            const commentElement = createCommentElement(newComment);
+            commentElement.style.opacity = '0';
+
+            if (commentsList.querySelector('.no-comments')) {
+                commentsList.innerHTML = '';
+            }
+
+            commentsList.insertBefore(commentElement, commentsList.firstChild);
+
+            // Trigger animation
+            setTimeout(() => {
+                commentElement.style.opacity = '1';
+            }, 10);
+        });
+    }
+
+    // Initialize comments when page loads
+    if (commentsList) {
+        loadComments();
+    }
 });
