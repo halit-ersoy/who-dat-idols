@@ -16,6 +16,9 @@ public class PersonRepository {
     private static final String INSERT_PERSON =
             "INSERT INTO [WhoDatIdols].[dbo].[Person] (nickname, name, surname, email, password) VALUES (?, ?, ?, ?, ?)";
 
+    private static final String CHECK_NICKNAME_EXISTS =
+            "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Person] WHERE nickname = ?";
+
     private static final String VALIDATE_BY_NICKNAME =
             "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Person] WHERE nickname = ? AND password = ?";
 
@@ -36,6 +39,14 @@ public class PersonRepository {
     }
 
     public void registerPerson(Person person) {
+        // Check if nickname already exists
+        Integer count = jdbcTemplate.queryForObject(
+                CHECK_NICKNAME_EXISTS, Integer.class, person.getNickname());
+
+        if (count != null && count > 0) {
+            throw new RuntimeException("Bu kullanıcı adı zaten kullanılmaktadır.");
+        }
+
         jdbcTemplate.update(INSERT_PERSON,
                 person.getNickname(),
                 person.getName(),

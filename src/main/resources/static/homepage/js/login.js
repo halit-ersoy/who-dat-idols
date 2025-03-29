@@ -146,6 +146,11 @@ export function initLogin() {
         }
     });
 
+    function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
     // Handle register API call on register submit button click
     if (registerSubmit) {
         registerSubmit.addEventListener('click', function () {
@@ -155,7 +160,22 @@ export function initLogin() {
             const email = document.getElementById('register-email').value;
             const password = document.getElementById('register-password').value;
             if (!firstName || !lastName || !nickname || !email || !password) {
-                alert('Lütfen tüm alanları doldurunuz.');
+                this.innerHTML = '<i class="fas fa-times"></i> Tüm alanları doldurun';
+                this.style.backgroundColor = '#e74c3c';
+                setTimeout(() => {
+                    this.innerHTML = 'Kayıt Ol';
+                    this.style.backgroundColor = '';
+                }, 3000);
+                return;
+            }
+            // Validate email format
+            if (!isValidEmail(email)) {
+                this.innerHTML = '<i class="fas fa-times"></i> Geçerli bir e-posta adresi giriniz';
+                this.style.backgroundColor = '#e74c3c';
+                setTimeout(() => {
+                    this.innerHTML = 'Kayıt Ol';
+                    this.style.backgroundColor = '';
+                }, 3000);
                 return;
             }
             this.classList.add('loading');
@@ -199,13 +219,14 @@ export function initLogin() {
                 })
                 .catch(error => {
                     this.classList.remove('loading');
-                    this.innerHTML = '<i class="fas fa-times"></i> Hata';
+                    // Display the error message directly in the button instead of using alert
+                    this.innerHTML = '<i class="fas fa-times"></i> ' + error.message;
                     this.style.backgroundColor = '#e74c3c';
-                    alert(error.message);
+                    // Extend the timeout to give users enough time to read the error message
                     setTimeout(() => {
                         this.innerHTML = 'Kayıt Ol';
                         this.style.backgroundColor = '';
-                    }, 2000);
+                    }, 3000);
                 });
         });
 
