@@ -56,8 +56,13 @@ public class HomeController {
     public ResponseEntity<?> registerUser(@RequestBody Person person) {
         try {
             personRepository.registerPerson(person);
-            Map<String, String> response = new HashMap<>();
+
+            // Create a cookie for the newly registered user
+            String cookieValue = personRepository.createCookie(person.getNickname());
+            Map<String, Object> response = new HashMap<>();
             response.put("message", "User registered successfully");
+            response.put("success", true);
+            response.put("cookie", cookieValue);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, String> errorResponse = new HashMap<>();

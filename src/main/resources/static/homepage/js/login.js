@@ -11,6 +11,69 @@ export function initLogin() {
     const registerSubmit = document.getElementById('register-submit');
     const formInputs = document.querySelectorAll('.form-control');
 
+    // Check for existing cookie on page load
+    function checkAuthStatus() {
+        const authCookie = localStorage.getItem('wdiUserToken');
+        const userNickname = localStorage.getItem('wdiUserNickname');
+
+        if (authCookie && userNickname) {
+            // Replace login button with profile section
+            if (loginBtn) {
+                // Create profile button with dropdown
+                const profileSection = document.createElement('div');
+                profileSection.className = 'profile-section';
+                profileSection.innerHTML = `
+                    <button class="profile-btn" aria-label="Profil">
+                        <span class="profile-avatar">${userNickname.charAt(0).toUpperCase()}</span>
+                        <span class="profile-name">${userNickname}</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="profile-dropdown">
+                        <a href="/profile"><i class="fas fa-user"></i> Profilim</a>
+                        <a href="/favorites"><i class="fas fa-heart"></i> Favorilerim</a>
+                        <a href="/settings"><i class="fas fa-cog"></i> Ayarlar</a>
+                        <a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</a>
+                    </div>
+                `;
+
+                // Replace login button with profile section
+                loginBtn.parentNode.replaceChild(profileSection, loginBtn);
+
+                // Add event listener for profile dropdown toggle
+                const profileBtn = document.querySelector('.profile-btn');
+                profileBtn.addEventListener('click', function() {
+                    document.querySelector('.profile-dropdown').classList.toggle('active');
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    const dropdown = document.querySelector('.profile-dropdown');
+                    const profileBtn = document.querySelector('.profile-btn');
+
+                    if (dropdown && profileBtn && !profileBtn.contains(e.target) && !dropdown.contains(e.target)) {
+                        dropdown.classList.remove('active');
+                    }
+                });
+
+                // Add logout functionality
+                document.getElementById('logout-btn').addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    // Clear cookies and localStorage
+                    localStorage.removeItem('wdiUserToken');
+                    localStorage.removeItem('wdiUserNickname');
+                    document.cookie = 'wdiAuth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
+                    // Refresh the page to show login button again
+                    window.location.reload();
+                });
+            }
+        }
+    }
+
+    // Run authentication check on page load
+    checkAuthStatus();
+
     // Open login modal on login button click
     loginBtn.addEventListener('click', function (e) {
         e.preventDefault();
@@ -110,7 +173,16 @@ export function initLogin() {
                     this.classList.remove('loading');
                     this.innerHTML = '<i class="fas fa-check"></i> Başarılı';
                     this.style.backgroundColor = '#1ed760';
-                    localStorage.setItem('auth_cookie', data.cookie);
+
+                    // Store the authentication data with consistent keys
+                    localStorage.setItem('wdiUserToken', data.cookie);
+                    localStorage.setItem('wdiUserNickname', usernameOrEmail);
+
+                    // Set cookie with 30-day expiration
+                    const expiryDate = new Date();
+                    expiryDate.setDate(expiryDate.getDate() + 30);
+                    document.cookie = `wdiAuth=${data.cookie}; expires=${expiryDate.toUTCString()}; path=/`;
+
                     setTimeout(() => {
                         loginModal.classList.remove('active');
                         document.body.style.overflow = '';
@@ -159,6 +231,8 @@ export function initLogin() {
             const nickname = document.getElementById('nickname').value;
             const email = document.getElementById('register-email').value;
             const password = document.getElementById('register-password').value;
+
+            // Check if any field is empty
             if (!firstName || !lastName || !nickname || !email || !password) {
                 this.innerHTML = '<i class="fas fa-times"></i> Tüm alanları doldurun';
                 this.style.backgroundColor = '#e74c3c';
@@ -168,6 +242,7 @@ export function initLogin() {
                 }, 3000);
                 return;
             }
+
             // Validate email format
             if (!isValidEmail(email)) {
                 this.innerHTML = '<i class="fas fa-times"></i> Geçerli bir e-posta adresi giriniz';
@@ -178,6 +253,7 @@ export function initLogin() {
                 }, 3000);
                 return;
             }
+
             this.classList.add('loading');
             const userData = {
                 name: firstName,
@@ -186,55 +262,53 @@ export function initLogin() {
                 email: email,
                 password: password
             };
+
             fetch('/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(userData)
             })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.json().then(err => {
-                            throw new Error(err.error || 'Kayıt işlemi başarısız oldu.');
-                        });
-                    }
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(data => {
                     this.classList.remove('loading');
-                    this.innerHTML = '<i class="fas fa-check"></i> Başarılı';
-                    this.style.backgroundColor = '#1ed760';
-                    setTimeout(() => {
-                        registerModal.classList.remove('active');
-                        document.body.style.overflow = '';
+
+                    if (data.success) {
+                        // Store the cookie
+                        localStorage.setItem('wdiUserToken', data.cookie);
+                        localStorage.setItem('wdiUserNickname', nickname);
+
+                        // Set cookie with 30-day expiration
+                        const expiryDate = new Date();
+                        expiryDate.setDate(expiryDate.getDate() + 30);
+                        document.cookie = `wdiAuth=${data.cookie}; expires=${expiryDate.toUTCString()}; path=/`;
+
+                        // Update UI to show success and redirect
+                        this.innerHTML = '<i class="fas fa-check"></i> Başarılı';
+                        this.style.backgroundColor = '#2ecc71';
+
+                        setTimeout(() => {
+                            registerModal.classList.remove('active');
+                            document.body.style.overflow = '';
+                            window.location.reload(); // Refresh to show logged-in state
+                        }, 1500);
+                    } else {
+                        this.innerHTML = '<i class="fas fa-times"></i> ' + (data.error || 'Kayıt başarısız');
+                        this.style.backgroundColor = '#e74c3c';
                         setTimeout(() => {
                             this.innerHTML = 'Kayıt Ol';
                             this.style.backgroundColor = '';
-                            document.getElementById('first-name').value = '';
-                            document.getElementById('last-name').value = '';
-                            document.getElementById('nickname').value = '';
-                            document.getElementById('register-email').value = '';
-                            document.getElementById('register-password').value = '';
-                        }, 500);
-                    }, 1000);
+                        }, 3000);
+                    }
                 })
                 .catch(error => {
                     this.classList.remove('loading');
-                    // Display the error message directly in the button instead of using alert
-                    this.innerHTML = '<i class="fas fa-times"></i> ' + error.message;
+                    this.innerHTML = '<i class="fas fa-times"></i> ' + (error.message || 'Bir hata oluştu');
                     this.style.backgroundColor = '#e74c3c';
-                    // Extend the timeout to give users enough time to read the error message
                     setTimeout(() => {
                         this.innerHTML = 'Kayıt Ol';
                         this.style.backgroundColor = '';
                     }, 3000);
                 });
-        });
-
-        // Enable "Enter" key submission for register (register password field)
-        document.getElementById('register-password').addEventListener('keyup', function (e) {
-            if (e.key === 'Enter') {
-                registerSubmit.click();
-            }
         });
     }
 

@@ -19,6 +19,9 @@ public class PersonRepository {
     private static final String CHECK_NICKNAME_EXISTS =
             "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Person] WHERE nickname = ?";
 
+    private static final String CHECK_EMAIL_EXISTS =
+            "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Person] WHERE email = ?";
+
     private static final String VALIDATE_BY_NICKNAME =
             "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Person] WHERE nickname = ? AND password = ?";
 
@@ -34,17 +37,27 @@ public class PersonRepository {
     private static final String UPDATE_COOKIE =
             "UPDATE [WhoDatIdols].[dbo].[Cookies] SET cookie = ? WHERE nickname = ?";
 
+    private static final String CHECK_COOKIE_EXISTS =
+            "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Cookies] WHERE nickname = ?";
+
     public PersonRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
     public void registerPerson(Person person) {
         // Check if nickname already exists
-        Integer count = jdbcTemplate.queryForObject(
+        Integer nicknameCount = jdbcTemplate.queryForObject(
                 CHECK_NICKNAME_EXISTS, Integer.class, person.getNickname());
 
-        if (count != null && count > 0) {
+        Integer emailCount = jdbcTemplate.queryForObject(
+                CHECK_EMAIL_EXISTS, Integer.class, person.getEmail());
+
+        if (nicknameCount != null && nicknameCount > 0) {
             throw new RuntimeException("Bu kullanıcı adı zaten kullanılmaktadır.");
+        }
+
+        if (emailCount != null && emailCount > 0) {
+            throw new RuntimeException("Bu e-posta adresi zaten kullanılmaktadır.");
         }
 
         jdbcTemplate.update(INSERT_PERSON,
@@ -80,12 +93,20 @@ public class PersonRepository {
 
         String cookieValue = UUID.randomUUID().toString();
 
-        try {
+        // Check if cookie record already exists
+        Integer count = jdbcTemplate.queryForObject(
+                CHECK_COOKIE_EXISTS,
+                Integer.class, nickname);
+
+        if (count != null && count > 0) {
+            // Update existing record
             jdbcTemplate.update(UPDATE_COOKIE, cookieValue, nickname);
-        } catch (EmptyResultDataAccessException e) {
+        } else {
+            // Insert new record
             jdbcTemplate.update(INSERT_COOKIE, nickname, cookieValue);
         }
 
         return cookieValue;
     }
+
 }
