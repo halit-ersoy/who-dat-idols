@@ -1,6 +1,4 @@
-// Content carousels navigation functionality
 export function initContentCarousels() {
-    // Set up click handlers for all carousel navigation buttons
     document.querySelectorAll('.carousel-nav').forEach(button => {
         button.addEventListener('click', function () {
             const carouselId = this.getAttribute('data-carousel');
@@ -13,14 +11,12 @@ export function initContentCarousels() {
                 behavior: 'smooth'
             });
 
-            // Update button states after scrolling
             setTimeout(() => {
                 updateCarouselNavButtons(carousel);
             }, 500);
         });
     });
 
-    // Function to update nav button states
     function updateCarouselNavButtons(carousel) {
         const carouselId = carousel.id;
         const prevBtn = document.querySelector(`.prev-btn[data-carousel="${carouselId}"]`);
@@ -39,11 +35,8 @@ export function initContentCarousels() {
         }
     }
 
-    // Initial check for all carousels
     document.querySelectorAll('.carousel').forEach(carousel => {
         updateCarouselNavButtons(carousel);
-
-        // Listen for scroll events to update buttons
         carousel.addEventListener('scroll', function () {
             updateCarouselNavButtons(this);
         });

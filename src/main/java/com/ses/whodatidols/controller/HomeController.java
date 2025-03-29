@@ -15,7 +15,6 @@ import java.util.Map;
 
 @Controller
 public class HomeController {
-
     private final PersonRepository personRepository;
 
     public HomeController(PersonRepository personRepository) {
@@ -44,7 +43,6 @@ public class HomeController {
             if (!htmlPage.exists()) {
                 return ResponseEntity.notFound().build();
             }
-
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
                     .body(htmlPage);
@@ -74,14 +72,9 @@ public class HomeController {
         try {
             String usernameOrEmail = loginRequest.get("usernameOrEmail");
             String password = loginRequest.get("password");
-
-            // Check if credentials are valid
             boolean isValid = personRepository.validateCredentials(usernameOrEmail, password);
-
             if (isValid) {
-                // Create a cookie for session
                 String cookieValue = personRepository.createCookie(usernameOrEmail);
-
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", true);
                 response.put("message", "Login successful");
@@ -100,5 +93,4 @@ public class HomeController {
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }
-
 }

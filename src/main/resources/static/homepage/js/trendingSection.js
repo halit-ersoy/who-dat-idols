@@ -1,6 +1,6 @@
 // Trending "View All" functionality
 export function initTrendingSection() {
-    // Sample trending items data (in practice, this would come from your backend)
+    // Generate sample trending items data (in practice, data would come from the backend)
     const trendingItems = Array.from({ length: 60 }, (_, i) => ({
         id: i + 1,
         title: `Trending Title ${i + 1}`,
@@ -19,6 +19,7 @@ export function initTrendingSection() {
         ][i % 8]
     }));
 
+    // Select DOM elements
     const viewAllBtn = document.querySelector('.trending .view-all');
     const trendingAllSection = document.getElementById('trending-all');
     const trendingAllGrid = document.querySelector('.trending-all-grid');
@@ -28,23 +29,23 @@ export function initTrendingSection() {
     let currentItemsLoaded = 0;
     const itemsPerLoad = 20;
 
-    // Create single trending item HTML
+    // Creates HTML for a single trending item card
     function createTrendingItemHTML(item, index) {
         return `
-            <a href="/watch?id=${item.id}" class="card trending-item" style="animation-delay: ${index * 0.05}s">
-                <div class="card-image-container">
-                    <img src="${item.image}" alt="${item.title}">
-                    <div class="play-icon"><i class="fas fa-play"></i></div>
-                </div>
-                <div class="card-content">
-                    <p class="card-title">${item.title}</p>
-                    <p class="card-info">${item.year} • ${item.genre} • ${item.duration}</p>
-                </div>
-            </a>
-        `;
+      <a href="/watch?id=${item.id}" class="card trending-item" style="animation-delay: ${index * 0.05}s">
+        <div class="card-image-container">
+          <img src="${item.image}" alt="${item.title}">
+          <div class="play-icon"><i class="fas fa-play"></i></div>
+        </div>
+        <div class="card-content">
+          <p class="card-title">${item.title}</p>
+          <p class="card-info">${item.year} • ${item.genre} • ${item.duration}</p>
+        </div>
+      </a>
+    `;
     }
 
-    // Load items in batches
+    // Loads a batch of trending items starting from a given index
     function loadItems(startIndex, count) {
         const fragment = document.createDocumentFragment();
         const endIndex = Math.min(startIndex + count, trendingItems.length);
@@ -59,30 +60,24 @@ export function initTrendingSection() {
         trendingAllGrid.appendChild(fragment);
         currentItemsLoaded = endIndex;
 
-        // Hide load more button if all items loaded
+        // Hide "Load More" button if all items are loaded
         if (currentItemsLoaded >= trendingItems.length) {
             loadMoreBtn.classList.add('hidden');
         }
     }
 
-    // View All button click event
-    viewAllBtn.addEventListener('click', function(e) {
+    // "View All" button click event handler
+    viewAllBtn.addEventListener('click', function (e) {
         e.preventDefault();
 
-        // Reset grid and counter
         trendingAllGrid.innerHTML = '';
         currentItemsLoaded = 0;
 
-        // Show the section
         trendingAllSection.classList.remove('hidden');
-
-        // Scroll to the section
         trendingAllSection.scrollIntoView({ behavior: 'smooth' });
 
-        // Load initial items
         loadItems(0, itemsPerLoad);
 
-        // Show load more button if needed
         if (trendingItems.length > itemsPerLoad) {
             loadMoreBtn.classList.remove('hidden');
         } else {
@@ -90,13 +85,13 @@ export function initTrendingSection() {
         }
     });
 
-    // Load More button click event
-    loadMoreBtn.addEventListener('click', function() {
+    // "Load More" button click event handler
+    loadMoreBtn.addEventListener('click', function () {
         loadItems(currentItemsLoaded, itemsPerLoad);
     });
 
-    // Close button click event
-    closeAllBtn.addEventListener('click', function() {
+    // "Close" button click event handler
+    closeAllBtn.addEventListener('click', function () {
         trendingAllSection.classList.add('hidden');
     });
 }
