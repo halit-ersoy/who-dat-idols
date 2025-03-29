@@ -1,0 +1,179 @@
+/* terms_of_use.css */
+
+/* Import base styles from homepage */
+@import url('/homepage/css/base.css');
+@import url('/homepage/css/header.css');
+@import url('/homepage/css/footer.css');
+@import url('/homepage/css/animations.css');
+
+/* Terms of Use specific styles */
+.terms-hero {
+    height: 50vh;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    margin-top: 0;
+    padding-top: 70px;
+    background-image: url('https://i.ibb.co/M2BgHph/cdrama-1.jpg');
+    background-size: cover;
+    background-position: center;
+}
+
+.terms-hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to right,
+    rgba(0,0,0,0.95) 20%,
+    rgba(0,0,0,0.8) 40%,
+    rgba(0,0,0,0.6) 60%,
+    rgba(0,0,0,0.4) 80%);
+    z-index: 0;
+    backdrop-filter: blur(2px);
+}
+
+.terms-hero-content {
+    padding: 0 7%;
+    max-width: 800px;
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    margin: 0 auto;
+}
+
+.back-button {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: color 0.3s ease;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.back-button:hover {
+    color: #1ed760;
+}
+
+.terms-hero-content h1 {
+    font-size: 48px;
+    margin-bottom: 20px;
+    font-weight: 800;
+    font-family: 'Montserrat', sans-serif;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    color: #ffffff;
+}
+
+.terms-hero-content p {
+    font-size: 18px;
+    margin-bottom: 32px;
+    line-height: 1.7;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    color: #f0f0f0;
+    font-weight: 300;
+}
+
+.terms-section {
+    padding: 60px 0;
+    background-color: #121212;
+    color: #ffffff;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.section-title {
+    font-size: 32px;
+    margin-bottom: 30px;
+    color: #1ed760;
+    font-weight: 700;
+    position: relative;
+    padding-bottom: 15px;
+}
+
+.section-title:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background-color: #1ed760;
+}
+
+.terms-content {
+    margin-bottom: 40px;
+}
+
+.terms-text {
+    font-size: 16px;
+    line-height: 1.8;
+}
+
+.terms-text p {
+    margin-bottom: 20px;
+}
+
+.terms-text ul {
+    margin-bottom: 20px;
+    padding-left: 20px;
+}
+
+.terms-text ul li {
+    margin-bottom: 10px;
+    list-style-type: disc;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.contact-item i {
+    font-size: 20px;
+    width: 30px;
+    color: #1ed760;
+}
+
+.contact-item p {
+    margin: 0 0 0 15px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .terms-hero-content h1 {
+        font-size: 36px;
+    }
+
+    .terms-hero-content p {
+        font-size: 16px;
+    }
+
+    .section-title {
+        font-size: 28px;
+    }
+}
+
+@media (max-width: 576px) {
+    .terms-hero-content h1 {
+        font-size: 30px;
+    }
+
+    .terms-hero {
+        height: 40vh;
+    }
+
+    .section-title {
+        font-size: 24px;
+    }
+}

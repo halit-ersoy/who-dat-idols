@@ -36,6 +36,66 @@ public class HomeController {
         }
     }
 
+    @GetMapping("/about")
+    public ResponseEntity<Resource> getAboutPage() {
+        try {
+            Resource htmlPage = new ClassPathResource("static/about/html/about.html");
+            if (!htmlPage.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
+                    .body(htmlPage);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @GetMapping("/privacy_policy")
+    public ResponseEntity<Resource> getPrivacyPolicyPage() {
+        try {
+            Resource htmlPage = new ClassPathResource("static/privacy_policy/html/privacy_policy.html");
+            if (!htmlPage.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
+                    .body(htmlPage);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @GetMapping("/terms_of_use")
+    public ResponseEntity<Resource> getTermsOfUsePage() {
+        try {
+            Resource htmlPage = new ClassPathResource("static/terms_of_use/html/terms_of_use.html");
+            if (!htmlPage.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
+                    .body(htmlPage);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @GetMapping("/sss")
+    public ResponseEntity<Resource> getFAQPage() {
+        try {
+            Resource htmlPage = new ClassPathResource("static/sss/html/sss.html");
+            if (!htmlPage.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
+                    .body(htmlPage);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
     @GetMapping("/watch")
     public ResponseEntity<Resource> watchPage(@RequestParam("id") int id) {
         try {

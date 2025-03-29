@@ -28,3 +28,8 @@ footer {
 .footer-links a:hover {
     color: #1ed760;
 }
+
+.footer-links a.active {
+    color: #1ed760;
+    font-weight: 600;
+}
