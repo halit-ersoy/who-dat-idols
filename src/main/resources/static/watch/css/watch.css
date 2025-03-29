@@ -18,6 +18,9 @@
 /* 6) Comments section */
 @import url('comments.css');
 
+/* 6.5) Content details section */
+@import url('content-details.css');
+
 /* 7) Button styles */
 @import url('buttons.css');
 

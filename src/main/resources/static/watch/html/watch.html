@@ -41,6 +41,63 @@
             <button class="glow-button"><i class="fas fa-plus"></i> İstek Listesine Ekle</button>
         </div>
 
+        <div class="content-details-section">
+            <div class="details-toggle">
+                <span>İçerik Detayları</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+
+            <div class="content-details-container">
+                <div class="details-grid">
+                    <div class="details-poster">
+                        <img id="contentPoster" src="" alt="Content Poster">
+                        <div class="rating-badge">
+                            <span id="contentRating">9.2</span>
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+
+                    <div class="details-info">
+                        <h2 id="contentTitle">Yükleniyor...</h2>
+
+                        <div class="genre-tags" id="genreTags">
+                            <!-- Genre tags will be added dynamically -->
+                        </div>
+
+                        <div class="details-meta">
+                            <span id="releaseYear">2024</span>
+                            <span class="separator">•</span>
+                            <span id="contentDuration">45 dk</span>
+                            <span class="separator">•</span>
+                            <span id="contentLanguage">Türkçe</span>
+                        </div>
+
+                        <div class="plot-summary">
+                            <p id="contentPlot">Yükleniyor...</p>
+                        </div>
+
+                        <div class="details-section">
+                            <h3>Oyuncular</h3>
+                            <div class="cast-list" id="castList">
+                                <!-- Cast members will be added dynamically -->
+                            </div>
+                        </div>
+
+                        <div class="details-section">
+                            <h3>Sezon & Bölüm Bilgisi</h3>
+                            <div class="season-info" id="seasonInfo">
+                                <span id="seasonNumber">Sezon 1</span>
+                                <span class="separator">•</span>
+                                <span id="episodeNumber">Bölüm 1</span>
+                                <span class="separator">•</span>
+                                <span id="totalEpisodes">Toplam 10 Bölüm</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="episode-navigation">
             <button id="prevEpisode" class="nav-button" disabled><i class="fas fa-step-backward"></i> Önceki Bölüm</button>
             <button id="nextEpisode" class="nav-button"><i class="fas fa-step-forward"></i> Sonraki Bölüm</button>

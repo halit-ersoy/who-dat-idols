@@ -185,34 +185,43 @@ document.addEventListener('DOMContentLoaded', function() {
     const commentsList = document.getElementById('comments-list');
     const commentText = document.getElementById('commentText');
 
-    // Load comments from local storage (this would be replaced with API calls in production)
-    function loadComments() {
-        const videoId = new URLSearchParams(window.location.search).get('id');
-        if (!videoId) return;
+    // Enhanced Comments Functionality
+    // Add character counter to comment textarea
+    if (commentText) {
+        // Add character counter
+        const charCounter = document.createElement('div');
+        charCounter.className = 'char-counter';
+        commentText.parentNode.appendChild(charCounter);
 
-        const storageKey = `video_comments_${videoId}`;
-        let comments = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        commentText.addEventListener('input', function() {
+            const remaining = 500 - this.value.length;
+            charCounter.textContent = `${this.value.length}/500`;
 
-        if (comments.length === 0) {
-            commentsList.innerHTML = '<div class="no-comments">Bu video için henüz yorum yapılmamış. İlk yorumu siz yapın!</div>';
-            return;
-        }
+            if (remaining < 0) {
+                charCounter.style.color = '#ff3860';
+            } else {
+                charCounter.style.color = '#888';
+            }
+        });
 
-        // Sort comments by date (newest first)
-        comments.sort((a, b) => new Date(b.date) - new Date(a.date));
+        // Add placeholder animation
+        commentText.addEventListener('focus', function() {
+            this.setAttribute('placeholder', 'Düşüncelerinizi paylaşın...');
+        });
 
-        // Render comments
-        commentsList.innerHTML = '';
-        comments.forEach(comment => {
-            const commentElement = createCommentElement(comment);
-            commentsList.appendChild(commentElement);
+        commentText.addEventListener('blur', function() {
+            this.setAttribute('placeholder', 'Bu dizi hakkında düşünceleriniz neler?');
         });
     }
 
-    // Create a single comment element
+    // Update comment loader function to include animations and actions
     function createCommentElement(comment) {
         const commentCard = document.createElement('div');
         commentCard.className = 'comment-card';
+
+        // Randomize animation delay for staggered effect
+        const delay = Math.random() * 0.5;
+        commentCard.style.animationDelay = `${delay}s`;
 
         const formattedDate = new Date(comment.date).toLocaleDateString('tr-TR', {
             year: 'numeric',
@@ -231,9 +240,78 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="comment-date">${formattedDate}</div>
             </div>
             <div class="comment-content">${comment.text}</div>
+            <div class="comment-actions">
+                <button class="action-button like-btn" data-id="${comment.id}">
+                    <i class="far fa-heart"></i> <span>0</span>
+                </button>
+                <button class="action-button">
+                    <i class="far fa-comment"></i> Yanıtla
+                </button>
+            </div>
         `;
 
+        // Add like functionality
+        setTimeout(() => {
+            const likeBtn = commentCard.querySelector('.like-btn');
+            if (likeBtn) {
+                likeBtn.addEventListener('click', function() {
+                    const icon = this.querySelector('i');
+                    const count = this.querySelector('span');
+
+                    if (icon.classList.contains('far')) {
+                        icon.classList.remove('far');
+                        icon.classList.add('fas');
+                        icon.classList.add('like-animation');
+                        count.textContent = parseInt(count.textContent) + 1;
+                        this.classList.add('liked');
+                    } else {
+                        icon.classList.remove('fas');
+                        icon.classList.add('far');
+                        count.textContent = parseInt(count.textContent) - 1;
+                        this.classList.remove('liked');
+                    }
+
+                    setTimeout(() => {
+                        icon.classList.remove('like-animation');
+                    }, 500);
+                });
+            }
+        }, 500);
+
         return commentCard;
+    }
+
+    // Update loadComments function to show comment count
+    function loadComments() {
+        const videoId = new URLSearchParams(window.location.search).get('id');
+        if (!videoId) return;
+
+        const storageKey = `video_comments_${videoId}`;
+        let comments = JSON.parse(localStorage.getItem(storageKey) || '[]');
+
+        // Update comment count in title
+        const commentsTitle = document.querySelector('.comments-section h3');
+        if (commentsTitle) {
+            const countSpan = document.createElement('span');
+            countSpan.className = 'comment-count';
+            countSpan.textContent = comments.length;
+            commentsTitle.appendChild(countSpan);
+        }
+
+        if (comments.length === 0) {
+            commentsList.innerHTML = '<div class="no-comments">Bu video için henüz yorum yapılmamış. İlk yorumu siz yapın!</div>';
+            return;
+        }
+
+        // Sort comments by date (newest first)
+        comments.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // Render comments
+        commentsList.innerHTML = '';
+        comments.forEach(comment => {
+            const commentElement = createCommentElement(comment);
+            commentsList.appendChild(commentElement);
+        });
     }
 
     // Handle comment submission
@@ -242,6 +320,9 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
 
             const text = commentText.value.trim();
+            const MAX_CHARS = 500;
+
+            // Check for empty comments
             if (!text) {
                 // Animate the textarea to indicate error
                 commentText.style.borderColor = '#ff3860';
@@ -251,9 +332,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            // Check for comment length exceeding limit
+            if (text.length > MAX_CHARS) {
+                // Animate the textarea to indicate error
+                commentText.style.borderColor = '#ff3860';
+
+                // Add a shake animation
+                commentText.classList.add('error-shake');
+                setTimeout(() => {
+                    commentText.style.borderColor = '#333';
+                    commentText.classList.remove('error-shake');
+                }, 1000);
+
+                // Make the character counter more visible
+                const charCounter = document.querySelector('.char-counter');
+                if (charCounter) {
+                    charCounter.style.color = '#ff3860';
+                    charCounter.style.fontWeight = 'bold';
+                    setTimeout(() => {
+                        charCounter.style.fontWeight = 'normal';
+                    }, 2000);
+                }
+
+                // Show tooltip or alert
+                alert(`Yorumunuz çok uzun! Lütfen ${MAX_CHARS} karakterden az olacak şekilde düzenleyin.`);
+                return;
+            }
+
             const videoId = new URLSearchParams(window.location.search).get('id');
             if (!videoId) return;
 
+            // Rest of the comment submission code remains the same...
             const newComment = {
                 id: Date.now(),
                 text: text,
@@ -284,11 +393,107 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => {
                 commentElement.style.opacity = '1';
             }, 10);
+
+            // Update the comment count
+            const countSpan = document.querySelector('.comment-count');
+            if (countSpan) {
+                countSpan.textContent = parseInt(countSpan.textContent) + 1;
+            } else {
+                // Create it if it doesn't exist
+                const commentsTitle = document.querySelector('.comments-section h3');
+                if (commentsTitle) {
+                    const newCountSpan = document.createElement('span');
+                    newCountSpan.className = 'comment-count';
+                    newCountSpan.textContent = '1';
+                    commentsTitle.appendChild(newCountSpan);
+                }
+            }
         });
     }
 
     // Initialize comments when page loads
     if (commentsList) {
         loadComments();
+    }
+    // Content details toggle functionality
+    const detailsToggle = document.querySelector('.details-toggle');
+    const detailsContainer = document.querySelector('.content-details-container');
+
+    if (detailsToggle && detailsContainer) {
+        detailsToggle.addEventListener('click', function() {
+            detailsToggle.classList.toggle('active');
+            detailsContainer.classList.toggle('open');
+        });
+    }
+
+// Load content details
+    function loadContentDetails(videoId) {
+        // In a real app, this would fetch from an API
+        // For now we'll use mock data
+        const mockData = {
+            title: "Who Dat Idols - Grup Belgeseli",
+            poster: "https://picsum.photos/400/600", // Placeholder image
+            rating: "9.2",
+            year: "2024",
+            duration: "45 dk",
+            language: "Türkçe",
+            plot: "K-Pop dünyasının yeni yıldızları 'Who Dat Idols' grubunun oluşum hikayesi, kariyerlerindeki zorluklar ve başarıları konu alan bu belgesel, müzik endüstrisinin perde arkasını gözler önüne seriyor.",
+            genres: ["Belgesel", "Müzik", "Biyografi"],
+            season: 1,
+            episode: videoId || 1,
+            totalEpisodes: 10,
+            cast: [
+                { name: "Ji-soo Park", role: "Kendisi", avatar: "https://picsum.photos/200" },
+                { name: "Min-ho Lee", role: "Kendisi", avatar: "https://picsum.photos/201" },
+                { name: "Jae-hyun Kim", role: "Kendisi", avatar: "https://picsum.photos/202" },
+                { name: "Yuna Choi", role: "Anlatıcı", avatar: "https://picsum.photos/203" },
+                { name: "Seo-jun Jung", role: "Yapımcı", avatar: "https://picsum.photos/204" }
+            ]
+        };
+
+        // Update UI elements with content data
+        document.getElementById('contentTitle').textContent = mockData.title;
+        document.getElementById('contentPoster').src = mockData.poster;
+        document.getElementById('contentRating').textContent = mockData.rating;
+        document.getElementById('releaseYear').textContent = mockData.year;
+        document.getElementById('contentDuration').textContent = mockData.duration;
+        document.getElementById('contentLanguage').textContent = mockData.language;
+        document.getElementById('contentPlot').textContent = mockData.plot;
+
+        // Update season info
+        document.getElementById('seasonNumber').textContent = `Sezon ${mockData.season}`;
+        document.getElementById('episodeNumber').textContent = `Bölüm ${mockData.episode}`;
+        document.getElementById('totalEpisodes').textContent = `Toplam ${mockData.totalEpisodes} Bölüm`;
+
+        // Add genre tags
+        const genreTags = document.getElementById('genreTags');
+        genreTags.innerHTML = '';
+        mockData.genres.forEach(genre => {
+            const tag = document.createElement('span');
+            tag.className = 'genre-tag';
+            tag.textContent = genre;
+            genreTags.appendChild(tag);
+        });
+
+        // Add cast members
+        const castList = document.getElementById('castList');
+        castList.innerHTML = '';
+        mockData.cast.forEach(member => {
+            const castMember = document.createElement('div');
+            castMember.className = 'cast-member';
+            castMember.innerHTML = `
+            <div class="cast-avatar">
+                <img src="${member.avatar}" alt="${member.name}">
+            </div>
+            <div class="cast-name">${member.name}</div>
+            <div class="cast-role">${member.role}</div>
+        `;
+            castList.appendChild(castMember);
+        });
+    }
+
+// Call this function when the page loads
+    if (id) {
+        loadContentDetails(id);
     }
 });
