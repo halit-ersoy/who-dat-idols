@@ -2,7 +2,14 @@
  *   RESPONSIVE  CSS (Media Queries)
  * ------------------------- */
 
-/* 1600px ve üzeri için */
+@import "/elements/scrool.css";
+
+/* For Firefox */
+html {
+    scrollbar-width: thin;
+    scrollbar-color: #333 #0f0f0f;
+}
+
 @media (min-width: 1600px) {
     .weekly-best-grid {
         gap: 20px;

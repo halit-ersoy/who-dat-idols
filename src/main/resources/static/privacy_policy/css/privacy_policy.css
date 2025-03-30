@@ -2,6 +2,7 @@
 @import url('/homepage/css/header.css');
 @import url('/homepage/css/footer.css');
 @import url('/homepage/css/animations.css');
+@import url('/elements/scrool.css');
 
 /* Privacy Policy Hero Section */
 .privacy-hero {
