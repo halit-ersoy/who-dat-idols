@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Controller
 public class HomeController {
@@ -97,7 +98,7 @@ public class HomeController {
     }
 
     @GetMapping("/watch")
-    public ResponseEntity<Resource> watchPage(@RequestParam("id") int id) {
+    public ResponseEntity<Resource> watchPage(@RequestParam("id") UUID id) {
         try {
             ClassPathResource htmlPage = new ClassPathResource("static/watch/html/watch.html");
             if (!htmlPage.exists()) {

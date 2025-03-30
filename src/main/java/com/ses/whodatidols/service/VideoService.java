@@ -1,9 +1,6 @@
 package com.ses.whodatidols.service;
 
 import com.ses.whodatidols.repository.ContentRepository;
-import com.ses.whodatidols.util.FFmpegUtils;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
@@ -13,23 +10,21 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.util.UUID;
 
 @Service
 public class VideoService {
     private final ContentRepository contentRepository;
-    private final Map<String, String> transcodedCache = new HashMap<>();
 
     public VideoService(ContentRepository contentRepository) {
         this.contentRepository = contentRepository;
     }
 
-    public String getVideoPath(int id) {
+    public String getVideoPath(UUID id) {
         return contentRepository.findVideoUrlById(id);
     }
 
-    public ResponseEntity<StreamingResponseBody> streamVideo(int id, String rangeHeader) {
+    public ResponseEntity<StreamingResponseBody> streamVideo(UUID id, String rangeHeader) {
         try {
             String videoPath = getVideoPath(id);
             if (videoPath == null || videoPath.isEmpty()) {

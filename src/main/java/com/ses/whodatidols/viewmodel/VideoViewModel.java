@@ -1,7 +1,7 @@
 package com.ses.whodatidols.viewmodel;
 
 public class VideoViewModel {
-    private int id;
+    private String id;
     private String title;
     private String info;
     private String thumbnailUrl;
@@ -9,7 +9,7 @@ public class VideoViewModel {
 
     public VideoViewModel() {}
 
-    public VideoViewModel(int id, String title, String info, String thumbnailUrl, String videoUrl) {
+    public VideoViewModel(String id, String title, String info, String thumbnailUrl, String videoUrl) {
         this.id = id;
         this.title = title;
         this.info = info;
@@ -18,11 +18,11 @@ public class VideoViewModel {
     }
 
     // Getters and setters
-    public int getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 

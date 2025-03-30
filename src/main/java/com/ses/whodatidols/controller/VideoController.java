@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/video")
 public class VideoController {
@@ -20,14 +22,14 @@ public class VideoController {
 
     @GetMapping("/stream")
     public ResponseEntity<StreamingResponseBody> streamVideo(
-            @RequestParam("id") int id,
+            @RequestParam("id") UUID id,
             @RequestHeader(value = "Range", required = false) String rangeHeader) {
         return videoService.streamVideo(id, rangeHeader);
     }
 
     @GetMapping("/transcode")
     public ResponseEntity<ResourceRegion> getTranscodedVideo(
-            @RequestParam("id") int id,
+            @RequestParam("id") UUID id,
             @RequestParam(value = "res", defaultValue = "720") int resolution,
             @RequestHeader(value = "Range", required = false) String rangeHeader) throws Exception {
         String originalPath = videoService.getVideoPath(id);
