@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to update volume icon based on volume level
     function updateVolumeIcon(volume) {
         const volumeIcon = volumeControl.previousElementSibling;
-        if (volume == 0) {
+        if (volume === 0) {
             volumeIcon.className = 'fas fa-volume-mute';
         } else if (volume < 0.5) {
             volumeIcon.className = 'fas fa-volume-down';
