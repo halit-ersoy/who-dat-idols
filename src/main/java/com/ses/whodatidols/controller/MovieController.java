@@ -33,8 +33,6 @@ public class MovieController {
                     vm.setTitle(movie.getName());
                     vm.setInfo(movie.getYear() + " • " + movie.getCategory() + " • " + movie.getTime() + " dk");
 
-                    // Generate a thumbnail URL from the banner path
-                    // This assumes you have an endpoint to serve images
                     String thumbnailUrl = "/api/images/movie?id=" + movie.getId();
                     vm.setThumbnailUrl(thumbnailUrl);
 

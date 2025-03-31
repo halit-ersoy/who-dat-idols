@@ -42,26 +42,7 @@ public class SoapOperaRepository {
             soapOpera.setName(rs.getString("name"));
             soapOpera.setCategory(rs.getString("category"));
             soapOpera.setContent(rs.getString("_content"));
-
-            // Fix for the time field - parse as String instead of int
-            String timeStr = rs.getString("time");
-            // Extract minutes from time format (e.g., "45:00" -> 45)
-            int minutes = 0;
-            if (timeStr != null && !timeStr.isEmpty()) {
-                try {
-                    // Handle potential formats like "45:00"
-                    if (timeStr.contains(":")) {
-                        minutes = Integer.parseInt(timeStr.split(":")[0]);
-                    } else {
-                        minutes = Integer.parseInt(timeStr);
-                    }
-                } catch (NumberFormatException e) {
-                    // Default to 0 if parsing fails
-                    minutes = 0;
-                }
-            }
-            soapOpera.setTime(minutes);
-
+            soapOpera.setTime(rs.getInt("time"));
             soapOpera.setLanguage(rs.getString("language"));
             soapOpera.setYear(rs.getInt("year"));
             soapOpera.setSourcePath(rs.getString("sourcePath"));

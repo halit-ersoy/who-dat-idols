@@ -42,7 +42,6 @@ public class TranscodingService {
     public ResponseEntity<ResourceRegion> getTranscodedVideo(String originalVideoPath, String videoId,
                                                              int targetRes, String rangeHeader) throws IOException {
         try {
-            // Get original dimensions
             int[] dimensions = FFmpegUtils.getVideoWidthHeight(originalVideoPath);
             if (dimensions == null) {
                 return ResponseEntity.status(500).build();
@@ -51,28 +50,23 @@ public class TranscodingService {
             int originalWidth = dimensions[0];
             int originalHeight = dimensions[1];
 
-            // Calculate target resolution
             int maxDimension = Math.max(originalWidth, originalHeight);
             int actualTargetRes = (targetRes > maxDimension) ? maxDimension : targetRes;
 
-            // Calculate new dimensions preserving aspect ratio
             int newHeight = actualTargetRes;
             int newWidth = (int) ((double) originalWidth / (double) originalHeight * newHeight);
 
-            // Check cache
             String cacheKey = videoId + "-" + actualTargetRes;
             String transcodedPath = transcodedCache.get(cacheKey);
 
-            // Transcode if needed
             if (transcodedPath == null || !Files.exists(Paths.get(transcodedPath))) {
                 String tempDir = System.getProperty("java.io.tmpdir");
                 String outFile = tempDir + File.separator + "transcoded_" + videoId + "_" + actualTargetRes + ".mp4";
 
-                // This is where we're handling the InterruptedException
                 try {
                     FFmpegUtils.transcodeVideo(originalVideoPath, outFile, newWidth, newHeight);
                 } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt(); // Restore interrupted state
+                    Thread.currentThread().interrupt();
                     return ResponseEntity.status(500).body(null);
                 }
 
@@ -80,7 +74,6 @@ public class TranscodingService {
                 transcodedPath = outFile;
             }
 
-            // Return file
             FileSystemResource videoResource = new FileSystemResource(transcodedPath);
             if (!videoResource.exists()) {
                 return ResponseEntity.notFound().build();
@@ -98,7 +91,6 @@ public class TranscodingService {
                     .contentType(mediaType)
                     .body(region);
         } catch (Exception e) {
-            // Handle any other unexpected exceptions
             e.printStackTrace();
             return ResponseEntity.status(500).body(null);
         }

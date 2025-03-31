@@ -14,7 +14,6 @@ public class ContentRepository {
     }
 
     public String findVideoUrlById(UUID id) {
-        // First, try to find in the Movie table
         String sqlMovie = "SELECT [sourcePath] FROM [WhoDatIdols].[dbo].[Movie] WHERE [ID] = ?";
         try {
             String path = jdbcTemplate.queryForObject(sqlMovie, String.class, id.toString());
@@ -22,10 +21,8 @@ public class ContentRepository {
                 return path;
             }
         } catch (Exception e) {
-            // Not found in Movie table, continue to SoapOpera
         }
 
-        // If not found or exception occurred, try the SoapOpera table
         String sqlSoapOpera = "SELECT [sourcePath] FROM [WhoDatIdols].[dbo].[SoapOpera] WHERE [ID] = ?";
         try {
             return jdbcTemplate.queryForObject(sqlSoapOpera, String.class, id.toString());
