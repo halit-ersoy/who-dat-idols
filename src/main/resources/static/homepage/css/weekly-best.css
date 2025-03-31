@@ -61,6 +61,43 @@
     color: #fff;
 }
 
+/* Loading state for weekly best section */
+.weekly-best-grid.loading {
+    position: relative;
+    min-height: 300px;
+}
+
+.weekly-best-grid.loading::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(15, 15, 15, 0.7);
+    backdrop-filter: blur(3px);
+    z-index: 2;
+}
+
+.weekly-best-grid.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(30, 215, 96, 0.3);
+    border-radius: 50%;
+    border-top-color: #1ed760;
+    animation: spin 1s linear infinite;
+    z-index: 3;
+}
+
+@keyframes spin {
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
 /* Loading spinner styles */
 .loading-spinner {
     width: 40px;
@@ -70,10 +107,6 @@
     border-top-color: #1ed760;
     animation: spin 1s linear infinite;
     margin: 50px auto;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
 }
 
 .error-message {
