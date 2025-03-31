@@ -6,19 +6,26 @@ export function initNewSoapOperasSection() {
     const closeAllBtn = document.querySelector('#new-soap-operas-all .close-all-btn');
     const newSoapOperasCarousel = document.querySelector('.new-soap-operas .carousel');
 
+    if (!viewAllBtn || !newSoapOperasAllSection || !newSoapOperasAllGrid || !loadMoreBtn || !closeAllBtn || !newSoapOperasCarousel) {
+        console.error('New Soap Operas Section: Gerekli elementler bulunamadı.');
+        return;
+    }
+
     let allSoapOperas = [];
     let currentItemsLoaded = 0;
     const itemsPerLoad = 20;
 
-    // Fetch soap opera data from the backend
-    function fetchSoapOperas(day = 20) {
-        return fetch(`/api/soapoperas/recent?day=${day}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            });
+    async function fetchSoapOperas(day = 20) {
+        try {
+            const response = await fetch(`/api/soapoperas/recent?day=${day}`);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Soap Operas Section - Hata:', error);
+            return [];
+        }
     }
 
     function createSoapOperaItemHTML(item, index) {
@@ -39,30 +46,20 @@ export function initNewSoapOperasSection() {
     function loadItems(startIndex, count) {
         const fragment = document.createDocumentFragment();
         const endIndex = Math.min(startIndex + count, allSoapOperas.length);
-
         for (let i = startIndex; i < endIndex; i++) {
-            const itemHTML = createSoapOperaItemHTML(allSoapOperas[i], i - startIndex);
             const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = itemHTML;
+            tempDiv.innerHTML = createSoapOperaItemHTML(allSoapOperas[i], i - startIndex);
             fragment.appendChild(tempDiv.firstElementChild);
         }
-
         newSoapOperasAllGrid.appendChild(fragment);
         currentItemsLoaded = endIndex;
-
-        if (currentItemsLoaded >= allSoapOperas.length) {
-            loadMoreBtn.classList.add('hidden');
-        }
+        loadMoreBtn.classList.toggle('hidden', currentItemsLoaded >= allSoapOperas.length);
     }
 
     function populateCarousel(soapOperas) {
-        // Clear existing content (except for buttons)
-        const existingItems = newSoapOperasCarousel.querySelectorAll('.card');
-        existingItems.forEach(item => item.remove());
-
-        // Add first 14 soap operas to carousel
+        newSoapOperasCarousel.innerHTML = '';
         soapOperas.slice(0, 14).forEach(soapOpera => {
-            const itemHTML = `
+            newSoapOperasCarousel.innerHTML += `
                 <a href="${soapOpera.videoUrl}" class="card">
                     <div class="card-image-container">
                         <img src="${soapOpera.thumbnailUrl}" alt="${soapOpera.title}">
@@ -74,59 +71,35 @@ export function initNewSoapOperasSection() {
                     </div>
                 </a>
             `;
-            newSoapOperasCarousel.innerHTML += itemHTML;
         });
     }
 
-    // Initialize the section
-    fetchSoapOperas().then(soapOperas => {
-        allSoapOperas = soapOperas;
-        populateCarousel(soapOperas);
-    }).catch(error => {
-        console.error('Error fetching soap operas:', error);
-    });
+    // Başlangıçta carousel dolduruluyor
+    (async () => {
+        allSoapOperas = await fetchSoapOperas();
+        populateCarousel(allSoapOperas);
+    })();
 
-    // "View All" button click event handler
-    viewAllBtn.addEventListener('click', function(e) {
+    viewAllBtn.addEventListener('click', async (e) => {
         e.preventDefault();
-
         newSoapOperasAllGrid.innerHTML = '';
         currentItemsLoaded = 0;
-
         newSoapOperasAllSection.classList.remove('hidden');
         newSoapOperasAllSection.scrollIntoView({ behavior: 'smooth' });
 
-        // If we already have data, load it immediately
         if (allSoapOperas.length > 0) {
             loadItems(0, itemsPerLoad);
-            if (allSoapOperas.length > itemsPerLoad) {
-                loadMoreBtn.classList.remove('hidden');
-            } else {
-                loadMoreBtn.classList.add('hidden');
-            }
         } else {
-            // Otherwise fetch first
-            fetchSoapOperas().then(soapOperas => {
-                allSoapOperas = soapOperas;
-                loadItems(0, itemsPerLoad);
-                if (allSoapOperas.length > itemsPerLoad) {
-                    loadMoreBtn.classList.remove('hidden');
-                } else {
-                    loadMoreBtn.classList.add('hidden');
-                }
-            }).catch(error => {
-                console.error('Error fetching soap operas:', error);
-            });
+            allSoapOperas = await fetchSoapOperas();
+            loadItems(0, itemsPerLoad);
         }
     });
 
-    // "Load More" button click event handler
-    loadMoreBtn.addEventListener('click', function() {
+    loadMoreBtn.addEventListener('click', () => {
         loadItems(currentItemsLoaded, itemsPerLoad);
     });
 
-    // "Close" button click event handler
-    closeAllBtn.addEventListener('click', function() {
+    closeAllBtn.addEventListener('click', () => {
         newSoapOperasAllSection.classList.add('hidden');
     });
 }

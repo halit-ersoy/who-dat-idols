@@ -10,11 +10,11 @@
     display: flex;
     align-items: center;
     margin-top: 0;
-    padding-top: 70px; /* Header yüksekliğini telafi etmek için */
+    padding-top: 70px;
 }
 
 .hero-bg-video {
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     width: 100%;

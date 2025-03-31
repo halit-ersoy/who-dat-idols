@@ -2,10 +2,9 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no">
     <title>Who Dat Idols? - Streaming Platform</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Poppins:wght@300;400;600&display=swap"
-          rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/homepage/css/main.css">
 </head>
@@ -13,14 +12,12 @@
 <div id="loading-screen">
     <div class="loading-text">WDI</div>
 </div>
-<!-- Fixed navigation header -->
 <header id="header">
     <div class="logo">WDI</div>
     <div class="search">
         <input type="text" placeholder="Film veya dizi ara..." aria-label="Film veya dizi ara">
     </div>
     <button class="login-btn" aria-label="Oturum aç">OTURUM AÇ</button>
-    <!-- Login Modal -->
     <div class="login-modal-overlay" id="login-modal">
         <div class="login-modal">
             <button class="close-modal" id="close-modal">
@@ -67,7 +64,6 @@
             </div>
         </div>
     </div>
-    <!-- Registration Modal -->
     <div class="login-modal-overlay" id="register-modal">
         <div class="login-modal">
             <button class="close-modal" id="close-register-modal">
@@ -122,139 +118,127 @@
         </div>
     </div>
 </header>
-
-<!-- Hero section with multiple video backgrounds -->
 <section class="hero">
     <div class="hero-videos">
-        <!-- First video container -->
         <div class="hero-video-container active" data-index="0">
             <video class="hero-bg-video" autoplay muted playsinline>
-                <source src="https://customer-342mt1gy0ibqe0dl.cloudflarestream.com/cfb68fa53d7bbc3eaaa36f022b1ad291/downloads/default.mp4"
-                        type="video/mp4">
+                <source src="https://customer-342mt1gy0ibqe0dl.cloudflarestream.com/cfb68fa53d7bbc3eaaa36f022b1ad291/downloads/default.mp4" type="video/mp4">
                 <img class="hero-bg" src="https://i.ibb.co/kGhv2cT/mutya-hero.jpg" alt="Hero Background">
             </video>
             <div class="hero-overlay"></div>
             <div class="hero-content animate-fade-in">
                 <div class="hero-badge animate-slide-up">YENİ DİZİ</div>
                 <h1 class="animate-slide-up">Ang Mutya ng Section E</h1>
-                <p class="animate-slide-up">Tamamen erkeklerden oluşan kötü şohretli bir sınıf, transfer olan bir kız
-                    öğrencinin gelişiyle beklenmedik değişimler yaşar. Zıt karakterlerin arasında filizlenen sıradışı
-                    bir hikaye...</p>
-
+                <p class="animate-slide-up">
+                    Tamamen erkeklerden oluşan kötü şohretli bir sınıf, transfer olan bir kız öğrencinin gelişiyle
+                    beklenmedik değişimler yaşar. Zıt karakterlerin arasında filizlenen sıradışı bir hikaye...
+                </p>
                 <div class="hero-info animate-slide-up">
                     <div class="hero-stat"><i class="fas fa-star"></i> 8.9 Puan</div>
                     <div class="hero-stat"><i class="fas fa-film"></i> 12 Bölüm</div>
                     <div class="hero-stat"><i class="fas fa-calendar"></i> 2023</div>
                     <div class="hero-stat"><i class="fas fa-clock"></i> 45 dk</div>
                 </div>
-
                 <div class="hero-tags animate-slide-up">
                     <span class="hero-tag">Drama</span>
                     <span class="hero-tag">Romantik</span>
                     <span class="hero-tag">Gençlik</span>
                     <span class="hero-tag">Okul</span>
                 </div>
-
                 <div class="hero-buttons animate-slide-up">
-                    <button onclick="window.location.href='/watch?id=1'" class="pulse-button"><i
-                            class="fas fa-play"></i> ŞİMDİ İZLE
+                    <button onclick="window.location.href='/watch?id=1'" class="pulse-button">
+                        <i class="fas fa-play"></i> ŞİMDİ İZLE
                     </button>
-                    <button class="glow-button"><i class="fas fa-film"></i> FRAGMANI İZLE</button>
+                    <button class="glow-button">
+                        <i class="fas fa-film"></i> FRAGMANI İZLE
+                    </button>
                 </div>
             </div>
         </div>
-
-        <!-- Second video container -->
         <div class="hero-video-container" data-index="1">
             <video class="hero-bg-video" muted playsinline>
-                <source src="https://customer-342mt1gy0ibqe0dl.cloudflarestream.com/cfb68fa53d7bbc3eaaa36f022b1ad291/downloads/default.mp4"
-                        type="video/mp4">
+                <source src="https://customer-342mt1gy0ibqe0dl.cloudflarestream.com/cfb68fa53d7bbc3eaaa36f022b1ad291/downloads/default.mp4" type="video/mp4">
                 <img class="hero-bg" src="https://i.ibb.co/ZM7SxXh/bl-1.jpg" alt="Hero Background 2">
             </video>
             <div class="hero-overlay"></div>
             <div class="hero-content animate-fade-in">
                 <div class="hero-badge animate-slide-up">POPÜLER</div>
                 <h1 class="animate-slide-up">Love in the Air</h1>
-                <p class="animate-slide-up">İki zıt kutup arasında gelişen duygusal ilişki. Hayatları kesişince
-                    birbirlerinden etkilenmeye başlayan iki öğrencinin hikayesi...</p>
-
+                <p class="animate-slide-up">
+                    İki zıt kutup arasında gelişen duygusal ilişki. Hayatları kesişince birbirlerinden etkilenmeye
+                    başlayan iki öğrencinin hikayesi...
+                </p>
                 <div class="hero-info animate-slide-up">
                     <div class="hero-stat"><i class="fas fa-star"></i> 9.2 Puan</div>
                     <div class="hero-stat"><i class="fas fa-film"></i> 10 Bölüm</div>
                     <div class="hero-stat"><i class="fas fa-calendar"></i> 2022</div>
                     <div class="hero-stat"><i class="fas fa-clock"></i> 50 dk</div>
                 </div>
-
                 <div class="hero-tags animate-slide-up">
                     <span class="hero-tag">Romantik</span>
                     <span class="hero-tag">Komedi</span>
                     <span class="hero-tag">Gençlik</span>
                 </div>
-
                 <div class="hero-buttons animate-slide-up">
-                    <button onclick="window.location.href='/watch?id=2'" class="pulse-button"><i
-                            class="fas fa-play"></i> ŞİMDİ İZLE
+                    <button onclick="window.location.href='/watch?id=2'" class="pulse-button">
+                        <i class="fas fa-play"></i> ŞİMDİ İZLE
                     </button>
-                    <button class="glow-button"><i class="fas fa-film"></i> FRAGMANI İZLE</button>
+                    <button class="glow-button">
+                        <i class="fas fa-film"></i> FRAGMANI İZLE
+                    </button>
                 </div>
             </div>
         </div>
-
-        <!-- Third video container -->
         <div class="hero-video-container" data-index="2">
             <video class="hero-bg-video" muted playsinline>
-                <source src="https://customer-342mt1gy0ibqe0dl.cloudflarestream.com/cfb68fa53d7bbc3eaaa36f022b1ad291/downloads/default.mp4"
-                        type="video/mp4">
+                <source src="https://customer-342mt1gy0ibqe0dl.cloudflarestream.com/cfb68fa53d7bbc3eaaa36f022b1ad291/downloads/default.mp4" type="video/mp4">
                 <img class="hero-bg" src="https://i.ibb.co/y5QfMxk/kdrama-1.jpg" alt="Hero Background 3">
             </video>
             <div class="hero-overlay"></div>
             <div class="hero-content animate-fade-in">
                 <div class="hero-badge animate-slide-up">TREND</div>
                 <h1 class="animate-slide-up">Extraordinary You</h1>
-                <p class="animate-slide-up">Bir çizgi roman karakteri olduğunu fark eden genç bir kız, kaderini
-                    değiştirmek için mücadele eder. Kendi hikayesinin yazarına karşı çıkan bir karakterin sıra dışı
-                    macerası...</p>
-
+                <p class="animate-slide-up">
+                    Bir çizgi roman karakteri olduğunu fark eden genç bir kız, kaderini değiştirmek için
+                    mücadele eder. Kendi hikayesinin yazarına karşı çıkan bir karakterin sıra dışı macerası...
+                </p>
                 <div class="hero-info animate-slide-up">
                     <div class="hero-stat"><i class="fas fa-star"></i> 8.7 Puan</div>
                     <div class="hero-stat"><i class="fas fa-film"></i> 16 Bölüm</div>
                     <div class="hero-stat"><i class="fas fa-calendar"></i> 2021</div>
                     <div class="hero-stat"><i class="fas fa-clock"></i> 60 dk</div>
                 </div>
-
                 <div class="hero-tags animate-slide-up">
                     <span class="hero-tag">Fantastik</span>
                     <span class="hero-tag">Romantik</span>
                     <span class="hero-tag">Gençlik</span>
                 </div>
-
                 <div class="hero-buttons animate-slide-up">
-                    <button onclick="window.location.href='/watch?id=3'" class="pulse-button"><i
-                            class="fas fa-play"></i> ŞİMDİ İZLE
+                    <button onclick="window.location.href='/watch?id=3'" class="pulse-button">
+                        <i class="fas fa-play"></i> ŞİMDİ İZLE
                     </button>
-                    <button class="glow-button"><i class="fas fa-film"></i> FRAGMANI İZLE</button>
+                    <button class="glow-button">
+                        <i class="fas fa-film"></i> FRAGMANI İZLE
+                    </button>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Navigation controls -->
-    <button class="hero-nav prev-hero" aria-label="Önceki"><i class="fas fa-chevron-left"></i></button>
-    <button class="hero-nav next-hero" aria-label="Sonraki"><i class="fas fa-chevron-right"></i></button>
-
-    <!-- Video indicators -->
+    <button class="hero-nav prev-hero" aria-label="Önceki">
+        <i class="fas fa-chevron-left"></i>
+    </button>
+    <button class="hero-nav next-hero" aria-label="Sonraki">
+        <i class="fas fa-chevron-right"></i>
+    </button>
     <div class="hero-indicators">
         <span class="hero-indicator active" data-index="0"></span>
         <span class="hero-indicator" data-index="1"></span>
         <span class="hero-indicator" data-index="2"></span>
     </div>
-
-    <div class="scroll-indicator"><i class="fas fa-chevron-down"></i></div>
+    <div class="scroll-indicator">
+        <i class="fas fa-chevron-down"></i>
+    </div>
 </section>
-
-<!-- Hero section ends here -->
-
-<!-- Weekly Best section with grid layout -->
 <section class="section weekly-best-content weekly-best-section">
     <div class="section-header">
         <h2>HAFTANIN EN İYİLERİ</h2>
@@ -265,35 +249,31 @@
             </div>
         </div>
     </div>
-
-    <!-- Fixed grid of 6 movies -->
     <div class="weekly-best-grid"></div>
 </section>
-
-<!-- New Soap Operas section with horizontal carousel -->
 <section class="section new-soap-operas">
     <div class="section-header">
         <h2>YENİ EKLENEN DİZİLER</h2>
-        <a href="#" class="view-all">Tümünü Gör <i class="fas fa-chevron-right"></i></a>
+        <a href="#" class="view-all">
+            Tümünü Gör <i class="fas fa-chevron-right"></i>
+        </a>
     </div>
-
-    <!-- Carousel container with navigation buttons -->
     <div class="carousel-container">
-        <button class="carousel-nav prev-btn" data-carousel="new-soap-operas-carousel" aria-label="Önceki"><i
-                class="fas fa-chevron-left"></i></button>
-
+        <button class="carousel-nav prev-btn" data-carousel="new-soap-operas-carousel" aria-label="Önceki">
+            <i class="fas fa-chevron-left"></i>
+        </button>
         <div class="carousel" id="new-soap-operas-carousel"></div>
-
-        <button class="carousel-nav next-btn" data-carousel="new-soap-operas-carousel" aria-label="Sonraki"><i
-                class="fas fa-chevron-right"></i></button>
+        <button class="carousel-nav next-btn" data-carousel="new-soap-operas-carousel" aria-label="Sonraki">
+            <i class="fas fa-chevron-right"></i>
+        </button>
     </div>
 </section>
-
-<!-- Add this after the new soap operas section -->
 <section id="new-soap-operas-all" class="section new-soap-operas-all-section hidden">
     <div class="section-header">
         <h2>TÜM YENİ EKLENEN DİZİLER</h2>
-        <button class="close-all-btn"><i class="fas fa-times"></i></button>
+        <button class="close-all-btn">
+            <i class="fas fa-times"></i>
+        </button>
     </div>
     <div class="new-soap-operas-all-grid"></div>
     <div class="load-more-container">
@@ -303,35 +283,31 @@
         </button>
     </div>
 </section>
-
-<!-- New content section with horizontal carousel -->
 <section class="section new-movies">
     <div class="section-header">
         <h2>YENİ EKLENEN FİLMLER</h2>
-        <a href="#" class="view-all">Tümünü Gör <i class="fas fa-chevron-right"></i></a>
+        <a href="#" class="view-all">
+            Tümünü Gör <i class="fas fa-chevron-right"></i>
+        </a>
     </div>
-
-    <!-- Carousel container with navigation buttons -->
     <div class="carousel-container">
-        <button class="carousel-nav prev-btn" data-carousel="new-movies-carousel" aria-label="Önceki"><i
-                class="fas fa-chevron-left"></i></button>
+        <button class="carousel-nav prev-btn" data-carousel="new-movies-carousel" aria-label="Önceki">
+            <i class="fas fa-chevron-left"></i>
+        </button>
         <div class="carousel" id="new-movies-carousel"></div>
-        <button class="carousel-nav next-btn" data-carousel="new-movies-carousel" aria-label="Sonraki"><i
-                class="fas fa-chevron-right"></i></button>
+        <button class="carousel-nav next-btn" data-carousel="new-movies-carousel" aria-label="Sonraki">
+            <i class="fas fa-chevron-right"></i>
+        </button>
     </div>
 </section>
-
-<!-- Add this after the new-content section -->
 <section id="new-movies-all" class="section new-movies-all-section hidden">
     <div class="section-header">
         <h2>TÜM YENİ EKLENEN FİLMLER</h2>
-        <button class="close-all-btn"><i class="fas fa-times"></i></button>
+        <button class="close-all-btn">
+            <i class="fas fa-times"></i>
+        </button>
     </div>
-
-    <div class="new-movies-all-grid">
-        <!-- Items will be loaded here dynamically -->
-    </div>
-
+    <div class="new-movies-all-grid"></div>
     <div class="load-more-container">
         <button id="load-more-new-movies" class="load-more-btn">
             <span>DAHA FAZLA YÜKLE</span>
@@ -339,12 +315,11 @@
         </button>
     </div>
 </section>
-
 <div class="announcement">
-    <i class="fas fa-bullhorn"></i> DUYURU: Sitemizde bulunan "BL Drama Turkey, Asian Drama House, Asian Drama Alarm"
-    içerikleri kendi sitemiz ve ortak olduğumuz sitelerdir. Çalma veya emek hırsızlığı gibi bir durum yoktur!
+    <i class="fas fa-bullhorn"></i>
+    DUYURU: Sitemizde bulunan "BL Drama Turkey, Asian Drama House, Asian Drama Alarm" içerikleri kendi sitemiz ve
+    ortak olduğumuz sitelerdir. Çalma veya emek hırsızlığı gibi bir durum yoktur!
 </div>
-
 <footer>
     <div class="footer-links">
         <a href="/" class="active">Anasayfa</a>
