@@ -35,7 +35,7 @@ public class MovieController {
 
                     // Generate a thumbnail URL from the banner path
                     // This assumes you have an endpoint to serve images
-                    String thumbnailUrl = "/api/images?id=" + movie.getId();
+                    String thumbnailUrl = "/api/images/movie?id=" + movie.getId();
                     vm.setThumbnailUrl(thumbnailUrl);
 
                     // Set video URL based on the ID

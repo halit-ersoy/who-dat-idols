@@ -1,6 +1,7 @@
 package com.ses.whodatidols.controller;
 
 import com.ses.whodatidols.repository.MovieRepository;
+import com.ses.whodatidols.repository.SoapOperaRepository;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,37 +19,37 @@ import java.util.UUID;
 @RequestMapping("/api/images")
 public class ImageController {
     private final MovieRepository movieRepository;
+    private final SoapOperaRepository soapOperaRepository;
 
-    public ImageController(MovieRepository movieRepository) {
+    public ImageController(MovieRepository movieRepository, SoapOperaRepository soapOperaRepository) {
         this.movieRepository = movieRepository;
+        this.soapOperaRepository = soapOperaRepository;
     }
 
-    @GetMapping
-    public ResponseEntity<?> getImage(@RequestParam("id") UUID id) {
-        try {
+    @GetMapping("/movie")
+    public ResponseEntity<?> getImageMovie(@RequestParam("id") UUID id) {
+        return getImageResponse(id, movieRepository::getImagePathById);
+    }
 
-            // Get image path from repository
-            String imagePath = movieRepository.getImagePathById(id);
+    @GetMapping("/soap-opera")
+    public ResponseEntity<?> getImageSoapOpera(@RequestParam("id") UUID id) {
+        return getImageResponse(id, soapOperaRepository::getImagePathById);
+    }
+
+    private ResponseEntity<?> getImageResponse(UUID id, ImagePathProvider imagePathProvider) {
+        try {
+            String imagePath = imagePathProvider.getImagePath(id);
 
             if (imagePath == null || imagePath.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
 
-            // Create file object and check if it exists
             File file = new File(imagePath);
             if (!file.exists()) {
                 return ResponseEntity.notFound().build();
             }
 
-            // Determine media type
-            MediaType mediaType;
-            String contentType = Files.probeContentType(file.toPath());
-            if (contentType != null) {
-                mediaType = MediaType.parseMediaType(contentType);
-            } else {
-                mediaType = MediaType.APPLICATION_OCTET_STREAM;
-            }
-
+            MediaType mediaType = determineMediaType(file);
             return ResponseEntity.ok()
                     .contentType(mediaType)
                     .body(new FileSystemResource(file));
@@ -58,5 +59,15 @@ public class ImageController {
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body("Error reading image file");
         }
+    }
+
+    private MediaType determineMediaType(File file) throws IOException {
+        String contentType = Files.probeContentType(file.toPath());
+        return (contentType != null) ? MediaType.parseMediaType(contentType) : MediaType.APPLICATION_OCTET_STREAM;
+    }
+
+    @FunctionalInterface
+    private interface ImagePathProvider {
+        String getImagePath(UUID id);
     }
 }

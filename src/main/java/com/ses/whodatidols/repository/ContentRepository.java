@@ -14,10 +14,21 @@ public class ContentRepository {
     }
 
     public String findVideoUrlById(UUID id) {
-        // Change this to query the Movie table instead of the non-existent contents table
-        String sql = "SELECT [sourcePath] FROM [WhoDatIdols].[dbo].[Movie] WHERE [ID] = ?";
+        // First, try to find in the Movie table
+        String sqlMovie = "SELECT [sourcePath] FROM [WhoDatIdols].[dbo].[Movie] WHERE [ID] = ?";
         try {
-            return jdbcTemplate.queryForObject(sql, String.class, id.toString());
+            String path = jdbcTemplate.queryForObject(sqlMovie, String.class, id.toString());
+            if (path != null && !path.isEmpty()) {
+                return path;
+            }
+        } catch (Exception e) {
+            // Not found in Movie table, continue to SoapOpera
+        }
+
+        // If not found or exception occurred, try the SoapOpera table
+        String sqlSoapOpera = "SELECT [sourcePath] FROM [WhoDatIdols].[dbo].[SoapOpera] WHERE [ID] = ?";
+        try {
+            return jdbcTemplate.queryForObject(sqlSoapOpera, String.class, id.toString());
         } catch (Exception e) {
             return null;
         }
