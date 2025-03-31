@@ -1,30 +1,29 @@
-// Main functionality for Terms of Use page
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize header scroll effect
-    initHeaderScroll();
+// terms_of_use.js - Main functionality for Terms of Use page
 
-    // Initialize login functionality if needed
+document.addEventListener('DOMContentLoaded', () => {
+    initHeaderScroll();
     initLogin();
 });
 
 // Header background change on scroll
 function initHeaderScroll() {
-    window.addEventListener('scroll', function () {
+    const header = document.getElementById('header');
+    if (!header) return;
+    window.addEventListener('scroll', () => {
         if (window.scrollY > 50) {
-            document.getElementById('header').classList.add('scrolled');
+            header.classList.add('scrolled');
         } else {
-            document.getElementById('header').classList.remove('scrolled');
+            header.classList.remove('scrolled');
         }
     });
 }
 
-// Login functionality - Can be imported from main login.js if needed
+// Basic login functionality for Terms page
 function initLogin() {
     const loginBtn = document.querySelector('.login-btn');
-
     if (loginBtn) {
-        loginBtn.addEventListener('click', function() {
-            // Redirect to homepage with login modal open or handle login
+        loginBtn.addEventListener('click', () => {
+            // Redirect to homepage with login modal open, or handle login logic
             window.location.href = '/?login=open';
         });
     }

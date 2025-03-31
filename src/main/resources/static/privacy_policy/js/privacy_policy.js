@@ -1,7 +1,11 @@
-window.addEventListener('scroll', function () {
+// privacy_policy.js - Basit scroll tabanlı header kontrolü ve diğer başlangıç işlemleri
+
+window.addEventListener('scroll', () => {
+    const header = document.getElementById('header');
+    if (!header) return;
     if (window.scrollY > 50) {
-        document.getElementById('header').classList.add('scrolled');
+        header.classList.add('scrolled');
     } else {
-        document.getElementById('header').classList.remove('scrolled');
+        header.classList.remove('scrolled');
     }
 });

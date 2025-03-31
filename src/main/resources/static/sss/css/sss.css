@@ -1,13 +1,28 @@
 /* sss.css */
 
-/* Import base styles from homepage */
+/* Import Base and Shared Styles */
 @import url('/homepage/css/base.css');
 @import url('/homepage/css/header.css');
 @import url('/homepage/css/footer.css');
 @import url('/homepage/css/animations.css');
 @import url('/elements/scrool.css');
 
-/* FAQ specific styles */
+.back-button {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: color 0.3s ease;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.back-button:hover {
+    color: #1ed760;
+}
+
+/* FAQ Hero Section */
 .faq-hero {
     height: 50vh;
     position: relative;
@@ -28,12 +43,9 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(to right,
-    rgba(0,0,0,0.95) 20%,
-    rgba(0,0,0,0.8) 40%,
-    rgba(0,0,0,0.6) 60%,
-    rgba(0,0,0,0.4) 80%);
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.95) 20%, rgba(0, 0, 0, 0.8) 40%, rgba(0, 0, 0, 0.6) 60%, rgba(0, 0, 0, 0.4) 80%);
     z-index: 0;
+    -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
 }
 
@@ -53,7 +65,7 @@
     font-family: 'Montserrat', sans-serif;
     letter-spacing: -0.5px;
     line-height: 1.2;
-    text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
     color: #ffffff;
     animation: slideInUp 0.8s ease-out;
 }
@@ -62,45 +74,13 @@
     font-size: 18px;
     margin-bottom: 32px;
     line-height: 1.7;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     color: #f0f0f0;
     font-weight: 300;
     animation: slideInUp 0.8s ease-out 0.2s backwards;
 }
 
-.back-button {
-    color: #fff;
-    text-decoration: none;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    transition: all 0.3s ease;
-    font-family: 'Montserrat', sans-serif;
-    position: relative;
-    overflow: hidden;
-}
-
-.back-button::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background-color: #1ed760;
-    transition: width 0.3s ease;
-}
-
-.back-button:hover {
-    color: #1ed760;
-    transform: translateX(-3px);
-}
-
-.back-button:hover::after {
-    width: 100%;
-}
-
+/* FAQ Section */
 .faq-section {
     padding: 60px 0;
     background-color: #121212;
@@ -138,6 +118,7 @@
     border-color: rgba(30, 215, 96, 0.3);
 }
 
+/* FAQ Question */
 .faq-question {
     padding: 20px 25px;
     display: flex;
@@ -146,6 +127,7 @@
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
+    overflow: hidden;
 }
 
 .faq-question::before {
@@ -169,6 +151,7 @@
     font-size: 18px;
     font-weight: 500;
     color: #ffffff;
+    position: relative;
     z-index: 1;
     transition: transform 0.3s ease, color 0.3s ease;
 }
@@ -181,10 +164,11 @@
 .faq-icon {
     color: #1ed760;
     transition: all 0.4s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+    position: relative;
     z-index: 1;
 }
 
-/* Geliştirilmiş SSS cevap animasyonları */
+/* FAQ Answer */
 .faq-answer {
     max-height: 0;
     overflow: hidden;
@@ -213,129 +197,64 @@
     transition: max-height 0.6s cubic-bezier(0.33, 1, 0.68, 1), padding 0.5s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.5s ease;
 }
 
-/* İçerik elementleri için sıralı animasyonlar */
-.faq-answer p, .faq-answer ul, .faq-answer div {
+/* FAQ Answer Content Animations */
+.faq-answer p,
+.faq-answer ul,
+.faq-answer div {
     opacity: 0;
     transform: translateY(10px);
-    transition: all 0s;
+    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .faq-item.active .faq-answer p {
     opacity: 1;
     transform: translateY(0);
-    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     transition-delay: 0.1s;
 }
 
 .faq-item.active .faq-answer ul {
     opacity: 1;
     transform: translateY(0);
-    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     transition-delay: 0.2s;
 }
 
-/* Liste itemleri için kayan animasyonlar */
 .faq-item.active .faq-answer li {
     opacity: 0;
     transform: translateX(-8px);
-    transition: all 0s;
+    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .faq-item.active .faq-answer li:nth-child(1) {
     opacity: 1;
     transform: translateX(0);
-    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     transition-delay: 0.25s;
 }
 
 .faq-item.active .faq-answer li:nth-child(2) {
     opacity: 1;
     transform: translateX(0);
-    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     transition-delay: 0.35s;
 }
 
 .faq-item.active .faq-answer li:nth-child(3) {
     opacity: 1;
     transform: translateX(0);
-    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     transition-delay: 0.45s;
 }
 
 .faq-item.active .faq-answer li:nth-child(n+4) {
     opacity: 1;
     transform: translateX(0);
-    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     transition-delay: 0.55s;
 }
 
 .faq-item.active .faq-answer div {
     opacity: 1;
     transform: translateY(0);
-    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     transition-delay: 0.3s;
 }
 
-/* İletişim öğeleri animasyonu */
-.faq-item.active .contact-item {
-    opacity: 0;
-    transform: translateX(-10px);
-    transition: all 0s;
-}
-
-.faq-item.active .contact-item:nth-child(1) {
-    opacity: 1;
-    transform: translateX(0);
-    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    transition-delay: 0.6s;
-}
-
-.faq-item.active .contact-item:nth-child(2) {
-    opacity: 1;
-    transform: translateX(0);
-    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    transition-delay: 0.7s;
-}
-
-/* Geliştirilmiş link animasyonu */
-.faq-answer a {
-    opacity: 0;
-    transform: translateY(5px);
-    transition: all 0s;
-}
-
-.faq-item.active .faq-answer a {
-    opacity: 1;
-    transform: translateY(0);
-    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.3s ease;
-    transition-delay: 0.5s;
-}
-
-.faq-answer p {
-    margin-top: 0;
-    line-height: 1.7;
-    color: #ddd;
-}
-
-.faq-answer ul {
-    margin: 15px 0;
-    padding-left: 20px;
-}
-
-.faq-answer ul li {
-    margin-bottom: 8px;
-    color: #ddd;
-    position: relative;
-}
-
-.faq-answer ul li:before {
-    content: '•';
-    color: #1ed760;
-    font-weight: bold;
-    position: absolute;
-    left: -15px;
-}
-
+/* Link Animations */
 .faq-answer a {
     color: #1ed760;
     text-decoration: none;
@@ -355,14 +274,11 @@
     transition: width 0.3s ease;
 }
 
-.faq-answer a:hover {
-    text-decoration: none;
-}
-
 .faq-answer a:hover::after {
     width: 100%;
 }
 
+/* Contact Items */
 .contact-item {
     display: flex;
     align-items: center;
@@ -389,10 +305,14 @@
     margin: 0 0 0 10px;
 }
 
-/* New animations */
+/* New Animations */
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes slideInUp {
@@ -406,7 +326,6 @@
     }
 }
 
-/* Geliştirilmiş FadeInUp animasyonu */
 @keyframes fadeInUp {
     0% {
         opacity: 0;
@@ -421,7 +340,7 @@
     }
 }
 
-/* Responsive adjustments */
+/* Responsive Adjustments */
 @media (max-width: 768px) {
     .faq-hero-content h1 {
         font-size: 36px;
