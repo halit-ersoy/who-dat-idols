@@ -1,9 +1,9 @@
-// Trending "View All" functionality
-export function initTrendingSection() {
-    // Generate sample trending items data (in practice, data would come from the backend)
-    const trendingItems = Array.from({ length: 60 }, (_, i) => ({
+// new-soap-operas "View All" functionality
+export function initNewSoapOperasSection() {
+    // Generate sample new-soap-operas items data (in practice, data would come from the backend)
+    const newSoapOperasItems = Array.from({ length: 60 }, (_, i) => ({
         id: i + 1,
-        title: `Trending Title ${i + 1}`,
+        title: `NewSoapOperas Title ${i + 1}`,
         year: 2023 - Math.floor(i / 10),
         genre: ['Romantik', 'Komedi', 'Drama', 'Aksiyon', 'Fantastik'][i % 5],
         duration: `${40 + i % 20} dk`,
@@ -20,19 +20,19 @@ export function initTrendingSection() {
     }));
 
     // Select DOM elements
-    const viewAllBtn = document.querySelector('.trending .view-all');
-    const trendingAllSection = document.getElementById('trending-all');
-    const trendingAllGrid = document.querySelector('.trending-all-grid');
-    const loadMoreBtn = document.getElementById('load-more-trending');
-    const closeAllBtn = document.querySelector('.close-all-btn');
+    const viewAllBtn = document.querySelector('.new-soap-operas .view-all');
+    const newSoapOperasAllSection = document.getElementById('new-soap-operas-all');
+    const newSoapOperasAllGrid = document.querySelector('.new-soap-operas-all-grid');
+    const loadMoreBtn = document.getElementById('load-more-new-soap-operas');
+    const closeAllBtn = document.querySelector('#new-soap-operas-all .close-all-btn');
 
     let currentItemsLoaded = 0;
     const itemsPerLoad = 20;
 
-    // Creates HTML for a single trending item card
-    function createTrendingItemHTML(item, index) {
+    // Creates HTML for a single new-soap-operas item card
+    function createNewSoapOperasItemHTML(item, index) {
         return `
-      <a href="/watch?id=${item.id}" class="card trending-item" style="animation-delay: ${index * 0.05}s">
+      <a href="/watch?id=${item.id}" class="card new-soap-operas-item" style="animation-delay: ${index * 0.05}s">
         <div class="card-image-container">
           <img src="${item.image}" alt="${item.title}">
           <div class="play-icon"><i class="fas fa-play"></i></div>
@@ -45,23 +45,23 @@ export function initTrendingSection() {
     `;
     }
 
-    // Loads a batch of trending items starting from a given index
+    // Loads a batch of new-soap-operas items starting from a given index
     function loadItems(startIndex, count) {
         const fragment = document.createDocumentFragment();
-        const endIndex = Math.min(startIndex + count, trendingItems.length);
+        const endIndex = Math.min(startIndex + count, newSoapOperasItems.length);
 
         for (let i = startIndex; i < endIndex; i++) {
-            const itemHTML = createTrendingItemHTML(trendingItems[i], i - startIndex);
+            const itemHTML = createNewSoapOperasItemHTML(newSoapOperasItems[i], i - startIndex);
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = itemHTML;
             fragment.appendChild(tempDiv.firstElementChild);
         }
 
-        trendingAllGrid.appendChild(fragment);
+        newSoapOperasAllGrid.appendChild(fragment);
         currentItemsLoaded = endIndex;
 
         // Hide "Load More" button if all items are loaded
-        if (currentItemsLoaded >= trendingItems.length) {
+        if (currentItemsLoaded >= newSoapOperasItems.length) {
             loadMoreBtn.classList.add('hidden');
         }
     }
@@ -70,15 +70,15 @@ export function initTrendingSection() {
     viewAllBtn.addEventListener('click', function (e) {
         e.preventDefault();
 
-        trendingAllGrid.innerHTML = '';
+        newSoapOperasAllGrid.innerHTML = '';
         currentItemsLoaded = 0;
 
-        trendingAllSection.classList.remove('hidden');
-        trendingAllSection.scrollIntoView({ behavior: 'smooth' });
+        newSoapOperasAllSection.classList.remove('hidden');
+        newSoapOperasAllSection.scrollIntoView({ behavior: 'smooth' });
 
         loadItems(0, itemsPerLoad);
 
-        if (trendingItems.length > itemsPerLoad) {
+        if (newSoapOperasItems.length > itemsPerLoad) {
             loadMoreBtn.classList.remove('hidden');
         } else {
             loadMoreBtn.classList.add('hidden');
@@ -92,6 +92,6 @@ export function initTrendingSection() {
 
     // "Close" button click event handler
     closeAllBtn.addEventListener('click', function () {
-        trendingAllSection.classList.add('hidden');
+        newSoapOperasAllSection.classList.add('hidden');
     });
 }

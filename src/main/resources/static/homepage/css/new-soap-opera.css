@@ -1,14 +1,14 @@
 /* ----------------------- *
- *      TRENDING  CSS      *
+ *      new-soap-operas  CSS      *
  * ----------------------- */
 
-/* Ana trending bölümleri ve yeni içerik arka planları */
-.trending {
+/* Ana new-soap-operas bölümleri ve yeni içerik arka planları */
+.new-soap-operas {
     background-color: #121212;
 }
 
-/* Trending All Section (Açılır/kapanır liste) */
-.trending-all-section {
+/* new-soap-operas All Section (Açılır/kapanır liste) */
+.new-soap-operas-all-section {
     background-color: #121212;
     overflow: hidden;
     transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -17,14 +17,14 @@
     padding-bottom: 80px;
 }
 
-.trending-all-section.hidden {
+.new-soap-operas-all-section.hidden {
     max-height: 0;
     opacity: 0;
     padding: 0;
     pointer-events: none;
 }
 
-.trending-all-grid {
+.new-soap-operas-all-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 20px;
@@ -33,7 +33,7 @@
     margin: 0 auto;
 }
 
-.trending-item {
+.new-soap-operas-item {
     opacity: 0;
     transform: translateY(30px);
     animation: fadeInUp 0.5s forwards;
@@ -44,7 +44,7 @@
     position: relative;
 }
 
-.trending-item:hover {
+.new-soap-operas-item:hover {
     background-color: #282828;
     transform: translateY(-10px) scale(1.03);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
@@ -126,25 +126,25 @@
 
 /* Responsive grid ayarları */
 @media (max-width: 1400px) {
-    .trending-all-grid {
+    .new-soap-operas-all-grid {
         grid-template-columns: repeat(4, 1fr);
     }
 }
 
 @media (max-width: 992px) {
-    .trending-all-grid {
+    .new-soap-operas-all-grid {
         grid-template-columns: repeat(3, 1fr);
     }
 }
 
 @media (max-width: 768px) {
-    .trending-all-grid {
+    .new-soap-operas-all-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
 @media (max-width: 480px) {
-    .trending-all-grid {
+    .new-soap-operas-all-grid {
         grid-template-columns: 1fr;
     }
 }

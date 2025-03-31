@@ -2,8 +2,8 @@
 import { initHeaderScroll } from './headerScroll.js';
 import { initHeroCarousel } from './heroCarousel.js';
 import { initContentCarousels } from './contentCarousel.js';
-import { initTrendingSection } from './trendingSection.js';
-import { initNewContentSection } from './newContentSection.js';
+import { initNewSoapOperasSection } from './newSoapOperasSection.js';
+import { initNewMoviesSection } from './newMoviesSection.js';
 import { initLogin } from './login.js';
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initHeaderScroll();
     initHeroCarousel();
     initContentCarousels();
-    initTrendingSection();
-    initNewContentSection();
+    initNewSoapOperasSection();
+    initNewMoviesSection();
     initLogin();
 });

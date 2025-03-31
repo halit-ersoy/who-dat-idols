@@ -3,6 +3,11 @@
  * ---------------------------- */
 
 /* Enhanced Weekly Best Section */
+
+.weekly-best-content {
+    background-color: #121212;
+}
+
 .weekly-best-section {
     padding: 60px 5% 70px;
     overflow: hidden;

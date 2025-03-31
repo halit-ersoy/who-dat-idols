@@ -1,10 +1,10 @@
-export function initNewContentSection() {
-    const viewAllBtn = document.querySelector('.new-content .view-all');
-    const newContentAllSection = document.getElementById('new-content-all');
-    const newContentAllGrid = document.querySelector('.new-content-all-grid');
-    const loadMoreBtn = document.getElementById('load-more-new-content');
-    const closeAllBtn = document.querySelector('.new-content-all-section .close-all-btn');
-    const newCarousel = document.getElementById('new-carousel');
+export function initNewMoviesSection() {
+    const viewAllBtn = document.querySelector('.new-movies .view-all');
+    const newMoviesAllSection = document.getElementById('new-movies-all');
+    const newMoviesAllGrid = document.querySelector('.new-movies-all-grid');
+    const loadMoreBtn = document.getElementById('load-more-new-movies');
+    const closeAllBtn = document.querySelector('.new-movies-all-section .close-all-btn');
+    const newMoviesCarousel = document.getElementById('new-movies-carousel');
 
     let allMovies = [];
     let currentItemsLoaded = 0;
@@ -21,9 +21,9 @@ export function initNewContentSection() {
             });
     }
 
-    function createNewContentItemHTML(item, index) {
+    function createNewMoviesItemHTML(item, index) {
         return `
-      <a href="${item.videoUrl}" class="card new-content-item" style="animation-delay: ${index * 0.05}s">
+      <a href="${item.videoUrl}" class="card new-movies-item" style="animation-delay: ${index * 0.05}s">
         <div class="card-image-container">
           <img src="${item.thumbnailUrl}" alt="${item.title}">
           <div class="play-icon"><i class="fas fa-play"></i></div>
@@ -40,12 +40,12 @@ export function initNewContentSection() {
         const fragment = document.createDocumentFragment();
         const endIndex = Math.min(startIndex + count, allMovies.length);
         for (let i = startIndex; i < endIndex; i++) {
-            const itemHTML = createNewContentItemHTML(allMovies[i], i - startIndex);
+            const itemHTML = createNewMoviesItemHTML(allMovies[i], i - startIndex);
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = itemHTML;
             fragment.appendChild(tempDiv.firstElementChild);
         }
-        newContentAllGrid.appendChild(fragment);
+        newMoviesAllGrid.appendChild(fragment);
         currentItemsLoaded = endIndex;
         if (currentItemsLoaded >= allMovies.length) {
             loadMoreBtn.classList.add('hidden');
@@ -54,7 +54,7 @@ export function initNewContentSection() {
 
     function populateCarousel(movies) {
         // Clear existing content
-        newCarousel.innerHTML = '';
+        newMoviesCarousel.innerHTML = '';
 
         // Add first 14 movies to carousel
         movies.slice(0, 14).forEach(movie => {
@@ -72,7 +72,7 @@ export function initNewContentSection() {
             `;
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = itemHTML;
-            newCarousel.appendChild(tempDiv.firstElementChild);
+            newMoviesCarousel.appendChild(tempDiv.firstElementChild);
         });
     }
 
@@ -86,10 +86,10 @@ export function initNewContentSection() {
 
     viewAllBtn.addEventListener('click', function(e) {
         e.preventDefault();
-        newContentAllGrid.innerHTML = '';
+        newMoviesAllGrid.innerHTML = '';
         currentItemsLoaded = 0;
-        newContentAllSection.classList.remove('hidden');
-        newContentAllSection.scrollIntoView({ behavior: 'smooth' });
+        newMoviesAllSection.classList.remove('hidden');
+        newMoviesAllSection.scrollIntoView({ behavior: 'smooth' });
 
         // If we already have movies, load them immediately
         if (allMovies.length > 0) {
@@ -120,6 +120,6 @@ export function initNewContentSection() {
     });
 
     closeAllBtn.addEventListener('click', function() {
-        newContentAllSection.classList.add('hidden');
+        newMoviesAllSection.classList.add('hidden');
     });
 }

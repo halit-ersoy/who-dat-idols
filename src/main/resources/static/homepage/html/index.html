@@ -252,7 +252,7 @@
 <!-- Hero section ends here -->
 
 <!-- Weekly Best section with grid layout -->
-<section class="section new-content weekly-best-section">
+<section class="section weekly-best-content weekly-best-section">
     <div class="section-header">
         <h2>HAFTANIN EN İYİLERİ</h2>
     </div>
@@ -322,19 +322,19 @@
     </div>
 </section>
 
-<!-- Trending section with horizontal carousel -->
-<section class="section trending">
+<!-- New Soap Operas section with horizontal carousel -->
+<section class="section new-soap-operas">
     <div class="section-header">
-        <h2>TRENDING</h2>
+        <h2>YENİ EKLENEN DİZİLER</h2>
         <a href="#" class="view-all">Tümünü Gör <i class="fas fa-chevron-right"></i></a>
     </div>
 
     <!-- Carousel container with navigation buttons -->
     <div class="carousel-container">
-        <button class="carousel-nav prev-btn" data-carousel="trending-carousel" aria-label="Önceki"><i
+        <button class="carousel-nav prev-btn" data-carousel="new-soap-operas-carousel" aria-label="Önceki"><i
                 class="fas fa-chevron-left"></i></button>
 
-        <div class="carousel" id="trending-carousel">
+        <div class="carousel" id="new-soap-operas-carousel">
             <a href="/watch?id=1" class="card">
                 <div class="card-image-container">
                     <img src="https://i.ibb.co/gW6K4T1/mutya-card.jpg" alt="Mutya Episode 1">
@@ -477,24 +477,20 @@
             </a>
         </div>
 
-        <button class="carousel-nav next-btn" data-carousel="trending-carousel" aria-label="Sonraki"><i
+        <button class="carousel-nav next-btn" data-carousel="new-soap-operas-carousel" aria-label="Sonraki"><i
                 class="fas fa-chevron-right"></i></button>
     </div>
 </section>
 
-<!-- Add this after the trending section -->
-<section id="trending-all" class="section trending-all-section hidden">
+<!-- Add this after the new soap operas section -->
+<section id="new-soap-operas-all" class="section new-soap-operas-all-section hidden">
     <div class="section-header">
-        <h2>TÜM TRENDING İÇERİKLER</h2>
+        <h2>TÜM YENİ EKLENEN DİZİLER</h2>
         <button class="close-all-btn"><i class="fas fa-times"></i></button>
     </div>
-
-    <div class="trending-all-grid">
-        <!-- Items will be loaded here dynamically -->
-    </div>
-
+    <div class="new-soap-operas-all-grid"></div>
     <div class="load-more-container">
-        <button id="load-more-trending" class="load-more-btn">
+        <button id="load-more-new-soap-operas" class="load-more-btn">
             <span>DAHA FAZLA YÜKLE</span>
             <i class="fas fa-chevron-down"></i>
         </button>
@@ -502,35 +498,35 @@
 </section>
 
 <!-- New content section with horizontal carousel -->
-<section class="section new-content">
+<section class="section new-movies">
     <div class="section-header">
-        <h2>YENİ EKLENENLER</h2>
+        <h2>YENİ EKLENEN FİLMLER</h2>
         <a href="#" class="view-all">Tümünü Gör <i class="fas fa-chevron-right"></i></a>
     </div>
 
     <!-- Carousel container with navigation buttons -->
     <div class="carousel-container">
-        <button class="carousel-nav prev-btn" data-carousel="new-carousel" aria-label="Önceki"><i
+        <button class="carousel-nav prev-btn" data-carousel="new-movies-carousel" aria-label="Önceki"><i
                 class="fas fa-chevron-left"></i></button>
-        <div class="carousel" id="new-carousel"></div>
-        <button class="carousel-nav next-btn" data-carousel="new-carousel" aria-label="Sonraki"><i
+        <div class="carousel" id="new-movies-carousel"></div>
+        <button class="carousel-nav next-btn" data-carousel="new-movies-carousel" aria-label="Sonraki"><i
                 class="fas fa-chevron-right"></i></button>
     </div>
 </section>
 
 <!-- Add this after the new-content section -->
-<section id="new-content-all" class="section new-content-all-section hidden">
+<section id="new-movies-all" class="section new-movies-all-section hidden">
     <div class="section-header">
-        <h2>TÜM YENİ EKLENENLER</h2>
+        <h2>TÜM YENİ EKLENEN FİLMLER</h2>
         <button class="close-all-btn"><i class="fas fa-times"></i></button>
     </div>
 
-    <div class="new-content-all-grid">
+    <div class="new-movies-all-grid">
         <!-- Items will be loaded here dynamically -->
     </div>
 
     <div class="load-more-container">
-        <button id="load-more-new-content" class="load-more-btn">
+        <button id="load-more-new-movies" class="load-more-btn">
             <span>DAHA FAZLA YÜKLE</span>
             <i class="fas fa-chevron-down"></i>
         </button>

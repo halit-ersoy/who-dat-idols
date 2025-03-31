@@ -18,7 +18,7 @@ html {
 
 /* 1400px altı */
 @media (max-width: 1400px) {
-    .trending-all-grid {
+    .new-soap-operas-all-grid {
         grid-template-columns: repeat(4, 1fr);
     }
 }
