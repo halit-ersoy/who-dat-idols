@@ -1,36 +1,45 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
 
-    // Get the video player element
+    // Video ve kontrol elemanlarını seçelim, mevcutluk kontrolü yapalım
     const videoPlayer = document.getElementById('videoPlayer');
     const videoSource = document.getElementById('videoSource');
     const volumeControl = document.getElementById('volumeControl');
+    const backwardBtn = document.getElementById('backwardButton');
+    const forwardBtn = document.getElementById('forwardButton');
+    const playPauseWrapper = document.querySelector('.video-wrapper');
+    const glowButton = document.querySelector('.glow-button');
 
-    // Set a specific skip amount variable that can be used consistently
+    if (!videoPlayer || !videoSource || !volumeControl || !playPauseWrapper) {
+        console.error('Gerekli video oynatıcı elementleri bulunamadı.');
+        return;
+    }
+
+    // Kullanılacak sabitler
     const SKIP_SECONDS = 10;
 
-    // Hide the native volume control
+    // Native volume kontrolünü gizlemek için stil ekle
     const style = document.createElement('style');
     style.textContent = `
-        video::-webkit-media-controls-volume-slider,
-        video::-webkit-media-controls-mute-button {
-            display: none !important;
-        }
-    `;
+    video::-webkit-media-controls-volume-slider,
+    video::-webkit-media-controls-mute-button {
+      display: none !important;
+    }
+  `;
     document.head.appendChild(style);
 
-    // Initialize volume control
-    volumeControl.addEventListener('input', function() {
+    // Volume kontrolü ve ilgili arayüz güncellemeleri
+    volumeControl.addEventListener('input', function () {
         videoPlayer.volume = this.value;
         updateVolumeIcon(this.value);
-        updateVolumeSliderBackground(); // Add this call here to update background on change
+        updateVolumeSliderBackground();
     });
 
-    // Function to update volume icon based on volume level
     function updateVolumeIcon(volume) {
         const volumeIcon = volumeControl.previousElementSibling;
-        if (volume === 0) {
+        if (!volumeIcon) return;
+        if (volume == 0) {
             volumeIcon.className = 'fas fa-volume-mute';
         } else if (volume < 0.5) {
             volumeIcon.className = 'fas fa-volume-down';
@@ -39,13 +48,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Update volume slider background based on value
     function updateVolumeSliderBackground() {
         const value = volumeControl.value * 100;
         volumeControl.style.background = `linear-gradient(to right, #1ed760 0%, #1ed760 ${value}%, #555 ${value}%, #555 100%)`;
     }
 
-    // Function to skip video time - centralized to ensure consistency
+    // Video ileri/geri atlama fonksiyonu
     function skipVideo(seconds) {
         if (videoPlayer && !isNaN(videoPlayer.duration)) {
             if (seconds < 0) {
@@ -56,53 +64,54 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Add click event listeners for the skip buttons
-    document.getElementById('backwardButton').addEventListener('click', function() {
-        skipVideo(-SKIP_SECONDS);
-    });
+    // Skip butonlarının varlığını kontrol edip event ekleyelim
+    if (backwardBtn) {
+        backwardBtn.addEventListener('click', () => skipVideo(-SKIP_SECONDS));
+    }
+    if (forwardBtn) {
+        forwardBtn.addEventListener('click', () => skipVideo(SKIP_SECONDS));
+    }
 
-    document.getElementById('forwardButton').addEventListener('click', function() {
-        skipVideo(SKIP_SECONDS);
-    });
+    // Önceki/sonraki ok tuşlarının varsayılan davranışını devre dışı bırak
+    window.addEventListener(
+        'keydown',
+        (e) => {
+            if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') &&
+                document.activeElement.tagName !== 'INPUT' &&
+                document.activeElement.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+            }
+        },
+        true
+    );
 
-    // Completely disable default arrow key behaviors
-    window.addEventListener('keydown', function(e) {
-        if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') &&
-            document.activeElement.tagName !== 'INPUT' &&
-            document.activeElement.tagName !== 'TEXTAREA') {
-            e.preventDefault();
-        }
-    }, true); // Use capturing phase
-
-    // Add our custom arrow key handler
-    document.addEventListener('keydown', function(e) {
+    // Özel ok tuşu atlama işlemi
+    document.addEventListener('keydown', (e) => {
         if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
             if (e.key === 'ArrowLeft') {
                 skipVideo(-SKIP_SECONDS);
-                console.log("Skipped back " + SKIP_SECONDS + " seconds to: " + videoPlayer.currentTime);
+                console.log(`Skipped back ${SKIP_SECONDS} seconds to: ${videoPlayer.currentTime}`);
             } else if (e.key === 'ArrowRight') {
                 skipVideo(SKIP_SECONDS);
-                console.log("Skipped forward " + SKIP_SECONDS + " seconds to: " + videoPlayer.currentTime);
+                console.log(`Skipped forward ${SKIP_SECONDS} seconds to: ${videoPlayer.currentTime}`);
             }
         }
     });
 
-    // Ensure volume control is properly synced when the video loads/plays
-    videoPlayer.addEventListener('loadedmetadata', function() {
-        setTimeout(function() {
+    // Volume kontrolü senkronizasyonu video yüklendiğinde
+    videoPlayer.addEventListener('loadedmetadata', () => {
+        setTimeout(() => {
             volumeControl.value = videoPlayer.volume;
             updateVolumeIcon(videoPlayer.volume);
             updateVolumeSliderBackground();
         }, 100);
     });
 
-    // Function to increment view count
+    // İzlenme sayısını arttıran fonksiyon (fetch hata kontrolü eklenmiş)
     function incrementViewCount(videoId) {
         fetch(`/api/video/increment-view?id=${videoId}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Content-Type': 'application/json' }
         })
             .then(response => {
                 if (!response.ok) {
@@ -115,34 +124,36 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     let firstPlay = true;
-    videoPlayer.addEventListener('play', function() {
-        if (firstPlay) {
+    videoPlayer.addEventListener('play', () => {
+        if (firstPlay && id) {
             incrementViewCount(id);
             firstPlay = false;
         }
         volumeControl.value = videoPlayer.volume;
         updateVolumeIcon(videoPlayer.volume);
         updateVolumeSliderBackground();
-        playButton.innerHTML = '<i class="fas fa-pause"></i>';
+        if (playButton) {
+            playButton.innerHTML = '<i class="fas fa-pause"></i>';
+        }
     });
 
-    // Hide spinner when video starts playing
-    videoPlayer.addEventListener('playing', function() {
+    videoPlayer.addEventListener('playing', function () {
         this.classList.add('playing');
     });
 
-    videoPlayer.addEventListener('pause', function() {
-        playButton.innerHTML = '<i class="fas fa-play"></i>';
+    videoPlayer.addEventListener('pause', function () {
+        if (playButton) {
+            playButton.innerHTML = '<i class="fas fa-play"></i>';
+        }
     });
 
-    // Add play/pause button with animation
-    const videoWrapper = document.querySelector('.video-wrapper');
+    // Play/Pause butonunu ekleyelim
     const playButton = document.createElement('div');
     playButton.className = 'play-pause-button';
     playButton.innerHTML = '<i class="fas fa-play"></i>';
-    videoWrapper.appendChild(playButton);
+    playPauseWrapper.appendChild(playButton);
 
-    playButton.addEventListener('click', function() {
+    playButton.addEventListener('click', function () {
         if (videoPlayer.paused) {
             videoPlayer.play();
             this.innerHTML = '<i class="fas fa-pause"></i>';
@@ -152,50 +163,56 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Error handling for video
-    videoPlayer.addEventListener('error', function() {
-        document.getElementById('title').innerText = "Video yüklenirken hata oluştu.";
-        document.getElementById('videoInfo').innerText = "Video dosyası bulunamadı veya oynatılamıyor.";
+    // Video hata durumunda mesaj göster
+    videoPlayer.addEventListener('error', () => {
+        const titleEl = document.getElementById('title');
+        const infoEl = document.getElementById('videoInfo');
+        if (titleEl) titleEl.innerText = "Video yüklenirken hata oluştu.";
+        if (infoEl) infoEl.innerText = "Video dosyası bulunamadı veya oynatılamıyor.";
     });
 
+    // Video ID mevcutsa video kaynaklarını ve bölüm navigasyonunu ayarla
     if (id) {
-        // Set the video source with the ID parameter
         videoSource.src = `/api/video/stream?id=${id}`;
-        videoPlayer.load(); // Important: Must reload the video with the new source
+        videoPlayer.load();
+        const titleEl = document.getElementById('title');
+        const infoEl = document.getElementById('videoInfo');
+        if (titleEl) titleEl.innerText = `Video ${id}`;
+        if (infoEl) infoEl.innerText = `Video ID: ${id}`;
 
-        // Update UI with video info
-        document.getElementById('title').innerText = `Video ${id}`;
-        document.getElementById('videoInfo').innerText = `Video ID: ${id}`;
-
-        // Configure episode navigation buttons
         const prevEpisodeBtn = document.getElementById('prevEpisode');
         const nextEpisodeBtn = document.getElementById('nextEpisode');
 
-        // Disable previous button if we're at episode 1
-        prevEpisodeBtn.disabled = (id <= 1);
+        if (prevEpisodeBtn) {
+            prevEpisodeBtn.disabled = (parseInt(id) <= 1);
+            prevEpisodeBtn.addEventListener('click', () => {
+                if (parseInt(id) > 1) {
+                    window.location.href = `/watch?id=${parseInt(id) - 1}`;
+                }
+            });
+        }
 
-        // Set up navigation handlers
-        prevEpisodeBtn.addEventListener('click', function() {
-            if (id > 1) {
-                window.location.href = `/watch?id=${parseInt(id) - 1}`;
-            }
-        });
-
-        nextEpisodeBtn.addEventListener('click', function() {
-            window.location.href = `/watch?id=${parseInt(id) + 1}`;
-        });
+        if (nextEpisodeBtn) {
+            nextEpisodeBtn.addEventListener('click', () => {
+                window.location.href = `/watch?id=${parseInt(id) + 1}`;
+            });
+        }
     } else {
-        document.getElementById('title').innerText = "Video bulunamadı";
-        document.getElementById('videoInfo').innerText = "Geçerli bir video ID'si belirtilmedi.";
+        const titleEl = document.getElementById('title');
+        const infoEl = document.getElementById('videoInfo');
+        if (titleEl) titleEl.innerText = "Video bulunamadı";
+        if (infoEl) infoEl.innerText = "Geçerli bir video ID'si belirtilmedi.";
         videoPlayer.style.display = 'none';
     }
 
-    document.querySelector('.glow-button').addEventListener('click', function() {
-        alert('İstek listesine eklendi!');
-    });
+    if (glowButton) {
+        glowButton.addEventListener('click', () => {
+            alert('İstek listesine eklendi!');
+        });
+    }
 
-    // Disable any default HTML5 video player keyboard shortcuts
-    videoPlayer.addEventListener('keydown', function(e) {
+    // Disable HTML5 video player varsayılan ok tuşu kısayollarını engelle
+    videoPlayer.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
             e.preventDefault();
             e.stopPropagation();
@@ -203,49 +220,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, true);
 
-    // Comments functionality
+    // Yorumlar bölümü
     const commentForm = document.getElementById('commentForm');
     const commentsList = document.getElementById('comments-list');
     const commentText = document.getElementById('commentText');
 
-    // Enhanced Comments Functionality
-    // Add character counter to comment textarea
     if (commentText) {
-        // Add character counter
         const charCounter = document.createElement('div');
         charCounter.className = 'char-counter';
         commentText.parentNode.appendChild(charCounter);
 
-        commentText.addEventListener('input', function() {
+        commentText.addEventListener('input', function () {
             const remaining = 500 - this.value.length;
             charCounter.textContent = `${this.value.length}/500`;
-
-            if (remaining < 0) {
-                charCounter.style.color = '#ff3860';
-            } else {
-                charCounter.style.color = '#888';
-            }
+            charCounter.style.color = remaining < 0 ? '#ff3860' : '#888';
         });
 
-        // Add placeholder animation
-        commentText.addEventListener('focus', function() {
+        commentText.addEventListener('focus', function () {
             this.setAttribute('placeholder', 'Düşüncelerinizi paylaşın...');
         });
-
-        commentText.addEventListener('blur', function() {
+        commentText.addEventListener('blur', function () {
             this.setAttribute('placeholder', 'Bu dizi hakkında düşünceleriniz neler?');
         });
     }
 
-    // Update comment loader function to include animations and actions
     function createCommentElement(comment) {
         const commentCard = document.createElement('div');
         commentCard.className = 'comment-card';
-
-        // Randomize animation delay for staggered effect
         const delay = Math.random() * 0.5;
         commentCard.style.animationDelay = `${delay}s`;
-
         const formattedDate = new Date(comment.date).toLocaleDateString('tr-TR', {
             year: 'numeric',
             month: 'long',
@@ -253,38 +256,35 @@ document.addEventListener('DOMContentLoaded', function() {
             hour: '2-digit',
             minute: '2-digit'
         });
-
         commentCard.innerHTML = `
-            <div class="comment-header">
-                <div class="user-avatar">
-                    <i class="fas fa-user"></i>
-                </div>
-                <div class="comment-user">${comment.username || 'Misafir'}</div>
-                <div class="comment-date">${formattedDate}</div>
-            </div>
-            <div class="comment-content">${comment.text}</div>
-            <div class="comment-actions">
-                <button class="action-button like-btn" data-id="${comment.id}">
-                    <i class="far fa-heart"></i> <span>0</span>
-                </button>
-                <button class="action-button">
-                    <i class="far fa-comment"></i> Yanıtla
-                </button>
-            </div>
-        `;
+      <div class="comment-header">
+        <div class="user-avatar">
+          <i class="fas fa-user"></i>
+        </div>
+        <div class="comment-user">${comment.username || 'Misafir'}</div>
+        <div class="comment-date">${formattedDate}</div>
+      </div>
+      <div class="comment-content">${comment.text}</div>
+      <div class="comment-actions">
+        <button class="action-button like-btn" data-id="${comment.id}">
+          <i class="far fa-heart"></i> <span>0</span>
+        </button>
+        <button class="action-button">
+          <i class="far fa-comment"></i> Yanıtla
+        </button>
+      </div>
+    `;
 
-        // Add like functionality
+        // Like buton işlevselliği
         setTimeout(() => {
             const likeBtn = commentCard.querySelector('.like-btn');
             if (likeBtn) {
-                likeBtn.addEventListener('click', function() {
+                likeBtn.addEventListener('click', function () {
                     const icon = this.querySelector('i');
                     const count = this.querySelector('span');
-
                     if (icon.classList.contains('far')) {
                         icon.classList.remove('far');
-                        icon.classList.add('fas');
-                        icon.classList.add('like-animation');
+                        icon.classList.add('fas', 'like-animation');
                         count.textContent = parseInt(count.textContent) + 1;
                         this.classList.add('liked');
                     } else {
@@ -293,7 +293,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         count.textContent = parseInt(count.textContent) - 1;
                         this.classList.remove('liked');
                     }
-
                     setTimeout(() => {
                         icon.classList.remove('like-animation');
                     }, 500);
@@ -304,15 +303,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return commentCard;
     }
 
-    // Update loadComments function to show comment count
     function loadComments() {
         const videoId = new URLSearchParams(window.location.search).get('id');
-        if (!videoId) return;
-
+        if (!videoId || !commentsList) return;
         const storageKey = `video_comments_${videoId}`;
         let comments = JSON.parse(localStorage.getItem(storageKey) || '[]');
 
-        // Update comment count in title
         const commentsTitle = document.querySelector('.comments-section h3');
         if (commentsTitle) {
             const countSpan = document.createElement('span');
@@ -326,103 +322,63 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Sort comments by date (newest first)
         comments.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        // Render comments
         commentsList.innerHTML = '';
         comments.forEach(comment => {
-            const commentElement = createCommentElement(comment);
-            commentsList.appendChild(commentElement);
+            commentsList.appendChild(createCommentElement(comment));
         });
     }
 
-    // Handle comment submission
     if (commentForm) {
-        commentForm.addEventListener('submit', function(e) {
+        commentForm.addEventListener('submit', function (e) {
             e.preventDefault();
-
             const text = commentText.value.trim();
             const MAX_CHARS = 500;
-
-            // Check for empty comments
             if (!text) {
-                // Animate the textarea to indicate error
                 commentText.style.borderColor = '#ff3860';
-                setTimeout(() => {
-                    commentText.style.borderColor = '#333';
-                }, 1000);
+                setTimeout(() => commentText.style.borderColor = '#333', 1000);
                 return;
             }
-
-            // Check for comment length exceeding limit
             if (text.length > MAX_CHARS) {
-                // Animate the textarea to indicate error
                 commentText.style.borderColor = '#ff3860';
-
-                // Add a shake animation
                 commentText.classList.add('error-shake');
                 setTimeout(() => {
                     commentText.style.borderColor = '#333';
                     commentText.classList.remove('error-shake');
                 }, 1000);
-
-                // Make the character counter more visible
                 const charCounter = document.querySelector('.char-counter');
                 if (charCounter) {
                     charCounter.style.color = '#ff3860';
                     charCounter.style.fontWeight = 'bold';
-                    setTimeout(() => {
-                        charCounter.style.fontWeight = 'normal';
-                    }, 2000);
+                    setTimeout(() => (charCounter.style.fontWeight = 'normal'), 2000);
                 }
-
-                // Show tooltip or alert
                 alert(`Yorumunuz çok uzun! Lütfen ${MAX_CHARS} karakterden az olacak şekilde düzenleyin.`);
                 return;
             }
-
             const videoId = new URLSearchParams(window.location.search).get('id');
             if (!videoId) return;
-
-            // Rest of the comment submission code remains the same...
             const newComment = {
                 id: Date.now(),
-                text: text,
-                username: 'Kullanıcı', // In a real app, get from logged in user
+                text,
+                username: 'Kullanıcı', // Gerçek uygulamada oturum açan kullanıcı bilgisi kullanılmalı
                 date: new Date().toISOString()
             };
-
-            // Save to local storage (would be an API call in production)
             const storageKey = `video_comments_${videoId}`;
             let comments = JSON.parse(localStorage.getItem(storageKey) || '[]');
             comments.push(newComment);
             localStorage.setItem(storageKey, JSON.stringify(comments));
-
-            // Clear form and reload comments
             commentText.value = '';
-
-            // Add the new comment with animation
             const commentElement = createCommentElement(newComment);
             commentElement.style.opacity = '0';
-
             if (commentsList.querySelector('.no-comments')) {
                 commentsList.innerHTML = '';
             }
-
             commentsList.insertBefore(commentElement, commentsList.firstChild);
-
-            // Trigger animation
-            setTimeout(() => {
-                commentElement.style.opacity = '1';
-            }, 10);
-
-            // Update the comment count
+            setTimeout(() => (commentElement.style.opacity = '1'), 10);
             const countSpan = document.querySelector('.comment-count');
             if (countSpan) {
                 countSpan.textContent = parseInt(countSpan.textContent) + 1;
             } else {
-                // Create it if it doesn't exist
                 const commentsTitle = document.querySelector('.comments-section h3');
                 if (commentsTitle) {
                     const newCountSpan = document.createElement('span');
@@ -434,28 +390,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Initialize comments when page loads
-    if (commentsList) {
-        loadComments();
-    }
-    // Content details toggle functionality
+    if (commentsList) loadComments();
+
     const detailsToggle = document.querySelector('.details-toggle');
     const detailsContainer = document.querySelector('.content-details-container');
-
     if (detailsToggle && detailsContainer) {
-        detailsToggle.addEventListener('click', function() {
+        detailsToggle.addEventListener('click', function () {
             detailsToggle.classList.toggle('active');
             detailsContainer.classList.toggle('open');
         });
     }
 
-// Load content details
     function loadContentDetails(videoId) {
-        // In a real app, this would fetch from an API
-        // For now we'll use mock data
+        // Örnek veri; gerçek uygulamada API çağrısı yapılabilir
         const mockData = {
             title: "Who Dat Idols - Grup Belgeseli",
-            poster: "https://picsum.photos/400/600", // Placeholder image
+            poster: "https://picsum.photos/400/600",
             rating: "9.2",
             year: "2024",
             duration: "45 dk",
@@ -474,7 +424,6 @@ document.addEventListener('DOMContentLoaded', function() {
             ]
         };
 
-        // Update UI elements with content data
         document.getElementById('contentTitle').textContent = mockData.title;
         document.getElementById('contentPoster').src = mockData.poster;
         document.getElementById('contentRating').textContent = mockData.rating;
@@ -482,40 +431,39 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('contentDuration').textContent = mockData.duration;
         document.getElementById('contentLanguage').textContent = mockData.language;
         document.getElementById('contentPlot').textContent = mockData.plot;
-
-        // Update season info
         document.getElementById('seasonNumber').textContent = `Sezon ${mockData.season}`;
         document.getElementById('episodeNumber').textContent = `Bölüm ${mockData.episode}`;
         document.getElementById('totalEpisodes').textContent = `Toplam ${mockData.totalEpisodes} Bölüm`;
 
-        // Add genre tags
         const genreTags = document.getElementById('genreTags');
-        genreTags.innerHTML = '';
-        mockData.genres.forEach(genre => {
-            const tag = document.createElement('span');
-            tag.className = 'genre-tag';
-            tag.textContent = genre;
-            genreTags.appendChild(tag);
-        });
+        if (genreTags) {
+            genreTags.innerHTML = '';
+            mockData.genres.forEach(genre => {
+                const tag = document.createElement('span');
+                tag.className = 'genre-tag';
+                tag.textContent = genre;
+                genreTags.appendChild(tag);
+            });
+        }
 
-        // Add cast members
         const castList = document.getElementById('castList');
-        castList.innerHTML = '';
-        mockData.cast.forEach(member => {
-            const castMember = document.createElement('div');
-            castMember.className = 'cast-member';
-            castMember.innerHTML = `
-            <div class="cast-avatar">
-                <img src="${member.avatar}" alt="${member.name}">
-            </div>
-            <div class="cast-name">${member.name}</div>
-            <div class="cast-role">${member.role}</div>
+        if (castList) {
+            castList.innerHTML = '';
+            mockData.cast.forEach(member => {
+                const castMember = document.createElement('div');
+                castMember.className = 'cast-member';
+                castMember.innerHTML = `
+          <div class="cast-avatar">
+            <img src="${member.avatar}" alt="${member.name}">
+          </div>
+          <div class="cast-name">${member.name}</div>
+          <div class="cast-role">${member.role}</div>
         `;
-            castList.appendChild(castMember);
-        });
+                castList.appendChild(castMember);
+            });
+        }
     }
 
-// Call this function when the page loads
     if (id) {
         loadContentDetails(id);
     }

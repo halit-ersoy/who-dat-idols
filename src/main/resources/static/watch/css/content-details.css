@@ -276,7 +276,6 @@
     .details-grid {
         grid-template-columns: 1fr;
     }
-
     .details-poster {
         height: 250px;
         max-width: 180px;
@@ -288,12 +287,10 @@
     .details-grid {
         padding: 15px;
     }
-
     .details-meta {
         flex-direction: column;
         gap: 5px;
     }
-
     .separator {
         display: none;
     }

@@ -19,7 +19,7 @@
 
 .comments-section h3::before {
     content: '\f075';
-    font-family: 'Font Awesome 5 Free';
+    font-family: 'Font Awesome 5 Free', serif;
     color: #1ed760;
 }
 
@@ -78,7 +78,7 @@
     flex-direction: column;
     gap: 10px;
     position: relative;
-    width: calc(100% - 65px); /* Account for avatar width + gap */
+    width: calc(100% - 65px);
     box-sizing: border-box;
 }
 
@@ -96,7 +96,6 @@
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     box-sizing: border-box;
     overflow-wrap: break-word;
-    word-wrap: break-word;
     white-space: pre-wrap;
 }
 
@@ -128,7 +127,6 @@
     align-items: center;
 }
 
-/* Enhanced Comments List */
 #comments-list {
     margin-bottom: 25px;
 }
@@ -196,7 +194,7 @@
 
 .comment-date::before {
     content: '\f017';
-    font-family: 'Font Awesome 5 Free';
+    font-family: 'Font Awesome 5 Free', serif;
     font-weight: 400;
 }
 
@@ -205,8 +203,6 @@
     line-height: 1.7;
     font-size: 15px;
     word-wrap: break-word;
-    overflow-wrap: break-word;
-    word-break: break-word;
     white-space: normal;
     max-width: 100%;
 }
@@ -285,7 +281,7 @@
 }
 
 .error-shake {
-    animation: errorShake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+    animation: errorShake 0.5s cubic-bezier(0.36,0.07,0.19,0.97) both;
 }
 
 @media (max-width: 768px) {
@@ -294,19 +290,15 @@
         align-items: center;
         gap: 10px;
     }
-
     #commentForm {
         width: 100%;
     }
-
     #commentText {
         min-height: 60px;
     }
-
     .char-counter {
-        bottom: 65px; /* Adjust for smaller textarea on mobile */
+        bottom: 65px;
     }
-
     .user-avatar {
         margin-bottom: 5px;
     }

@@ -44,7 +44,7 @@
 .control-button:active::after {
     opacity: 1;
     transform: translate(-50%, -50%) scale(20);
-    transition: all 0s;
+    transition: none;
 }
 
 /* Navigation Button Styles */
