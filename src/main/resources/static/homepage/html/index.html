@@ -10,6 +10,51 @@
     <link rel="stylesheet" href="/homepage/css/main.css">
 </head>
 <body>
+
+<!-- Add this overlay in your index page (e.g. `index.html`) -->
+<div id="loading-screen">
+    <div class="loading-text">WDI</div>
+</div>
+
+<style>
+    /* Centered overlay covering the whole page */
+    #loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #0f0f0f;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+
+    .loading-text {
+        font-size: 32px;
+        font-weight: bold;
+        color: #1ed760;
+        animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+</style>
+
+<script>
+    // Simulate server-side data loading
+    window.addEventListener('load', function() {
+        // Remove the loading overlay once everything is ready
+        const loadingScreen = document.getElementById('loading-screen');
+        if (loadingScreen) {
+            loadingScreen.style.display = 'none';
+        }
+    });
+</script>
+
 <!-- Fixed navigation header -->
 <header id="header">
     <div class="logo">WDI</div>
