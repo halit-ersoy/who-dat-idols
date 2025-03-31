@@ -35,4 +35,14 @@ public class VideoController {
         String originalPath = videoService.getVideoPath(id);
         return transcodingService.getTranscodedVideo(originalPath, String.valueOf(id), resolution, rangeHeader);
     }
+
+    @PostMapping("/increment-view")
+    public ResponseEntity<?> incrementViewCount(@RequestParam("id") UUID id) {
+        try {
+            videoService.incrementViewCount(id);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Failed to increment view count");
+        }
+    }
 }

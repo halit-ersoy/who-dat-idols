@@ -13,6 +13,11 @@ public class ContentRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    public void incrementViewCount(UUID id) {
+        String sql = "EXEC IncrementContentCountById @id = ?";
+        jdbcTemplate.update(sql, id);
+    }
+
     public String findVideoUrlById(UUID id) {
         String sqlMovie = "SELECT [sourcePath] FROM [WhoDatIdols].[dbo].[Movie] WHERE [ID] = ?";
         try {

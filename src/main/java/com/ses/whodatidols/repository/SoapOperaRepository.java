@@ -25,6 +25,10 @@ public class SoapOperaRepository {
         return jdbcTemplate.query(GET_RECENT_SOAP_OPERAS, new SoapOperaRowMapper(), day);
     }
 
+    public List<SoapOpera> findTop6SoapOperasByCount() {
+        return jdbcTemplate.query("EXEC GetTop6SoapOperaIdsByCount", new SoapOperaRowMapper());
+    }
+
     public String getImagePathById(UUID soapOperaId) {
         String sql = "SELECT [bannerPath] FROM [WhoDatIdols].[dbo].[SoapOpera] WHERE [ID] = ?";
         try {

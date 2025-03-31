@@ -24,6 +24,10 @@ public class VideoService {
         return contentRepository.findVideoUrlById(id);
     }
 
+    public void incrementViewCount(UUID id) {
+        contentRepository.incrementViewCount(id);
+    }
+
     public ResponseEntity<StreamingResponseBody> streamVideo(UUID id, String rangeHeader) {
         try {
             String videoPath = getVideoPath(id);

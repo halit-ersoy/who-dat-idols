@@ -7,16 +7,6 @@ public class VideoViewModel {
     private String thumbnailUrl;
     private String videoUrl;
 
-    public VideoViewModel() {}
-
-    public VideoViewModel(String id, String title, String info, String thumbnailUrl, String videoUrl) {
-        this.id = id;
-        this.title = title;
-        this.info = info;
-        this.thumbnailUrl = thumbnailUrl;
-        this.videoUrl = videoUrl;
-    }
-
     // Getters and setters
     public String getId() {
         return id;

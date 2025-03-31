@@ -96,7 +96,30 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 100);
     });
 
+    // Function to increment view count
+    function incrementViewCount(videoId) {
+        fetch(`/api/video/increment-view?id=${videoId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    console.error('Failed to increment view count');
+                }
+            })
+            .catch(error => {
+                console.error('Error incrementing view count:', error);
+            });
+    }
+
+    let firstPlay = true;
     videoPlayer.addEventListener('play', function() {
+        if (firstPlay) {
+            incrementViewCount(id);
+            firstPlay = false;
+        }
         volumeControl.value = videoPlayer.volume;
         updateVolumeIcon(videoPlayer.volume);
         updateVolumeSliderBackground();

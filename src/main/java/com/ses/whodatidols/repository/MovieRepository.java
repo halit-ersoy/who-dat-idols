@@ -27,6 +27,10 @@ public class MovieRepository {
         return jdbcTemplate.query(GET_RECENT_MOVIES, new MovieRowMapper(), day);
     }
 
+    public List<Movie> findTop6MoviesByCount() {
+        return jdbcTemplate.query("EXEC GetTop6MovieIdsByCount", new MovieRowMapper());
+    }
+
     public String getImagePathById(UUID movieId) {
         String sql = "SELECT [bannerPath] FROM [WhoDatIdols].[dbo].[Movie] WHERE [ID] = ?";
         try {
