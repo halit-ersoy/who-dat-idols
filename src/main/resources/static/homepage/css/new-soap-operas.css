@@ -1,16 +1,15 @@
 /* ----------------------- *
- *      new-soap-operas  CSS      *
+ *      NEW SOAP OPERAS CSS      *
  * ----------------------- */
 
-/* Ana new-soap-operas bölümleri ve yeni içerik arka planları */
 .new-soap-operas {
     background-color: #121212;
 }
 
-/* new-soap-operas All Section (Açılır/kapanır liste) */
 .new-soap-operas-all-section {
     background-color: #121212;
     overflow: hidden;
+    -webkit-transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     max-height: 3000px;
     opacity: 1;
@@ -35,30 +34,42 @@
 
 .new-soap-operas-item {
     opacity: 0;
+    -webkit-transform: translateY(30px);
     transform: translateY(30px);
+    -webkit-animation: fadeInUp 0.5s forwards;
     animation: fadeInUp 0.5s forwards;
     background-color: #181818;
     border-radius: 8px;
     overflow: hidden;
+    -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
     position: relative;
 }
 
 .new-soap-operas-item:hover {
     background-color: #282828;
+    -webkit-transform: translateY(-10px) scale(1.03);
     transform: translateY(-10px) scale(1.03);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
     z-index: 2;
 }
 
+@-webkit-keyframes fadeInUp {
+    to {
+        opacity: 1;
+        -webkit-transform: translateY(0);
+        transform: translateY(0);
+    }
+}
 @keyframes fadeInUp {
     to {
         opacity: 1;
+        -webkit-transform: translateY(0);
         transform: translateY(0);
     }
 }
 
-/* Kapanış butonu */
+/* Close Button */
 .close-all-btn {
     background-color: rgba(255, 255, 255, 0.1);
     color: white;
@@ -70,16 +81,18 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
     font-size: 18px;
 }
 
 .close-all-btn:hover {
     background-color: rgba(255, 255, 255, 0.2);
+    -webkit-transform: rotate(90deg);
     transform: rotate(90deg);
 }
 
-/* Load More özelliği */
+/* Load More */
 .load-more-container {
     display: flex;
     justify-content: center;
@@ -98,12 +111,14 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
     opacity: 1;
 }
 
 .load-more-btn:hover {
     background-color: rgba(30, 215, 96, 0.2);
+    -webkit-transform: translateY(-3px);
     transform: translateY(-3px);
     box-shadow: 0 5px 15px rgba(30, 215, 96, 0.2);
 }
@@ -117,14 +132,16 @@
 }
 
 .load-more-btn i {
+    -webkit-transition: transform 0.3s ease;
     transition: transform 0.3s ease;
 }
 
 .load-more-btn:hover i {
+    -webkit-transform: translateY(3px);
     transform: translateY(3px);
 }
 
-/* Responsive grid ayarları */
+/* Responsive grid */
 @media (max-width: 1400px) {
     .new-soap-operas-all-grid {
         grid-template-columns: repeat(4, 1fr);

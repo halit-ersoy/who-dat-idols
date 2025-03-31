@@ -12,8 +12,8 @@
 /* 4) Weekly Best */
 @import url('weekly-best.css');
 
-/* 5) Trending */
-@import url('new-soap-opera.css');
+/* 5) Trending (new soap opera) */
+@import url('new-soap-operas.css');
 
 /* 6) Cards */
 @import url('cards.css');
@@ -33,7 +33,7 @@
 /* 11) Responsive */
 @import url('responsive.css');
 
-/* 12) New Content */
+/* 12) New Content (new movies) */
 @import url('new-movies.css');
 
 /* 13) Login */

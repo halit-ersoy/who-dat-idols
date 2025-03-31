@@ -2,7 +2,6 @@
  *      SECTIONS  CSS       *
  * ------------------------ */
 
-/* Ortak section tasarımı */
 .section {
     padding: 60px 5%;
     position: relative;
@@ -15,7 +14,6 @@
     margin-bottom: 30px;
 }
 
-/* Başlıklar (örnek: .section h2) */
 .section h2 {
     font-size: 28px;
     font-weight: 600;
@@ -23,13 +21,13 @@
     font-family: 'Montserrat', sans-serif;
 }
 
-/* View All linki */
 .view-all {
     color: #1ed760;
     font-weight: 500;
     display: flex;
     align-items: center;
     gap: 5px;
+    -webkit-transition: color 0.3s ease;
     transition: color 0.3s ease;
 }
 
@@ -37,7 +35,6 @@
     color: #1fdf64;
 }
 
-/* Duyuru/Announcement Bileşeni */
 .announcement {
     background-color: rgba(30, 215, 96, 0.1);
     color: #1ed760;
@@ -49,13 +46,11 @@
     border-radius: 4px;
 }
 
-/* Mobile section spacing */
 @media (max-width: 576px) {
     .section {
-        padding: 40px 3%; /* Less padding on mobile */
+        padding: 40px 3%;
     }
-
     .section h2 {
-        font-size: 22px; /* Smaller headings */
+        font-size: 22px;
     }
 }

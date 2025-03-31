@@ -2,9 +2,7 @@
  *   RESPONSIVE  CSS (Media Queries)
  * ------------------------- */
 
-@import "/elements/scrool.css";
-
-/* For Firefox */
+/* Firefox scrollbar styling */
 html {
     scrollbar-width: thin;
     scrollbar-color: #333 #0f0f0f;
@@ -28,28 +26,22 @@ html {
     .hero h1 {
         font-size: 42px;
     }
-
     .hero p {
         font-size: 17px;
         max-width: 100%;
     }
-
     .search {
         margin: 0 20px;
     }
-
     .hero-badge {
         font-size: 12px;
     }
-
     .hero-stat {
         font-size: 14px;
     }
-
     .weekly-best-grid {
         flex-wrap: wrap;
     }
-
     .weekly-card {
         flex-basis: calc(33.33% - 12px);
         max-width: calc(33.33% - 12px);
@@ -62,70 +54,55 @@ html {
     header {
         padding: 10px 15px;
     }
-
     .hero {
         height: 75vh;
         align-items: flex-start;
         padding-top: 100px;
     }
-
     .hero-content {
         padding: 0 5%;
-        top: 45%; /* mobilde biraz yukarı */
+        top: 45%;
     }
-
     .hero h1 {
         font-size: 36px;
     }
-
     .hero-buttons {
         flex-wrap: wrap;
     }
-
     .hero-info {
         gap: 8px;
     }
-
     .hero-tags {
         gap: 6px;
     }
-
     .hero-tag {
         font-size: 12px;
         padding: 4px 10px;
     }
-
     .search {
         margin: 0 10px;
     }
-
     .section {
         padding: 40px 3%;
     }
-
     .carousel-nav {
         width: 35px;
         height: 35px;
     }
-
     .card {
         flex: 0 0 180px;
     }
-
     .scroll-indicator {
         bottom: 15px;
     }
-
     .hero-nav {
         width: 40px;
         height: 40px;
         font-size: 16px;
     }
-
     .prev-hero, .next-hero {
         top: 40%;
     }
-
     .hero-indicators {
         bottom: 60px;
     }
@@ -136,56 +113,44 @@ html {
     .logo {
         font-size: 24px;
     }
-
     .hero {
         height: 70vh;
         padding-top: 80px;
     }
-
     .hero h1 {
         font-size: 32px;
         margin-bottom: 15px;
     }
-
     .hero p {
         font-size: 15px;
         margin-bottom: 25px;
     }
-
     .hero-buttons button {
         padding: 12px 24px;
         font-size: 14px;
     }
-
     .hero-badge {
         font-size: 11px;
         padding: 4px 12px;
     }
-
     .hero-stat {
         font-size: 13px;
     }
-
     .hero-tags {
         margin-bottom: 20px;
     }
-
     .section h2 {
         font-size: 24px;
     }
-
     .carousel {
         gap: 15px;
     }
-
     .card {
         flex: 0 0 160px;
     }
-
     .footer-links {
         gap: 15px;
     }
-
     .weekly-card {
         flex-basis: calc(50% - 8px);
         max-width: calc(50% - 8px);

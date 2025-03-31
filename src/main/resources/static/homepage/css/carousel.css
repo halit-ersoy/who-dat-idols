@@ -17,7 +17,7 @@
     padding: 20px 0;
     gap: 20px;
     scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
+    -ms-overflow-style: none; /* IE ve Edge */
 }
 
 .carousel::-webkit-scrollbar {
@@ -62,19 +62,16 @@
 /* Mobile carousel adjustments */
 @media (max-width: 576px) {
     .carousel {
-        gap: 10px; /* Reduce gap between cards */
-        padding: 10px 0; /* Less padding */
+        gap: 10px;
+        padding: 10px 0;
     }
-
     .carousel-nav {
-        width: 32px; /* Smaller buttons */
+        width: 32px;
         height: 32px;
     }
-
     .prev-btn {
-        left: -10px; /* Position closer to edge */
+        left: -10px;
     }
-
     .next-btn {
         right: -10px;
     }

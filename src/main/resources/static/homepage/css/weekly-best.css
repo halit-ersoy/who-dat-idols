@@ -2,13 +2,10 @@
  *    WEEKLY BEST SECTION CSS   *
  * ---------------------------- */
 
-/* Enhanced Weekly Best Section */
-
 .weekly-best-content {
     background-color: #121212;
 }
 
-/* Add to weekly-best.css */
 .weekly-best-toggle {
     display: flex;
     background-color: rgba(255, 255, 255, 0.07);
@@ -28,6 +25,7 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
+    -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
     position: relative;
     z-index: 2;
@@ -39,7 +37,6 @@
     color: #000;
 }
 
-/* Add this for the sliding background effect */
 .weekly-best-toggle::after {
     content: '';
     position: absolute;
@@ -49,11 +46,13 @@
     width: calc(50% - 4px);
     background-color: #1ed760;
     border-radius: 25px;
+    -webkit-transition: transform 0.3s ease;
     transition: transform 0.3s ease;
     z-index: 1;
 }
 
 .weekly-best-toggle.tv-active::after {
+    -webkit-transform: translateX(100%);
     transform: translateX(100%);
 }
 
@@ -61,7 +60,6 @@
     color: #fff;
 }
 
-/* Loading state for weekly best section */
 .weekly-best-grid.loading {
     position: relative;
     min-height: 300px;
@@ -75,6 +73,7 @@
     width: 100%;
     height: 100%;
     background-color: rgba(15, 15, 15, 0.7);
+    -webkit-backdrop-filter: blur(3px);
     backdrop-filter: blur(3px);
     z-index: 2;
 }
@@ -84,27 +83,32 @@
     position: absolute;
     top: 50%;
     left: 50%;
+    -webkit-transform: translate(-50%, -50%);
     transform: translate(-50%, -50%);
     width: 40px;
     height: 40px;
     border: 3px solid rgba(30, 215, 96, 0.3);
     border-radius: 50%;
     border-top-color: #1ed760;
+    -webkit-animation: spin 1s linear infinite;
     animation: spin 1s linear infinite;
     z-index: 3;
 }
 
+@-webkit-keyframes spin {
+    to { -webkit-transform: translate(-50%, -50%) rotate(360deg); transform: translate(-50%, -50%) rotate(360deg); }
+}
 @keyframes spin {
-    to { transform: translate(-50%, -50%) rotate(360deg); }
+    to { -webkit-transform: translate(-50%, -50%) rotate(360deg); transform: translate(-50%, -50%) rotate(360deg); }
 }
 
-/* Loading spinner styles */
 .loading-spinner {
     width: 40px;
     height: 40px;
     border: 3px solid rgba(255, 255, 255, 0.2);
     border-radius: 50%;
     border-top-color: #1ed760;
+    -webkit-animation: spin 1s linear infinite;
     animation: spin 1s linear infinite;
     margin: 50px auto;
 }
@@ -122,7 +126,6 @@
     position: relative;
 }
 
-/* Add background glow effect */
 .weekly-best-section::before {
     content: '';
     position: absolute;
@@ -144,6 +147,16 @@
     max-width: 1600px;
     margin-left: auto;
     margin-right: auto;
+    -webkit-transition: opacity 0.3s ease;
+    transition: opacity 0.3s ease;
+}
+
+.weekly-best-grid.fade-out {
+    opacity: 0.3;
+}
+
+.weekly-best-grid.fade-in {
+    opacity: 1;
 }
 
 .weekly-card {
@@ -152,10 +165,11 @@
     background-color: #181818;
     border-radius: 12px;
     overflow: hidden;
+    -webkit-transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     min-width: 0;
-    max-width: calc(16.66% - 14px); /* Daha büyük ekranlarda genişlik limiti */
+    max-width: calc(16.66% - 14px);
 }
 
 .weekly-card::before {
@@ -168,11 +182,13 @@
     color: rgba(255, 255, 255, 0.08);
     line-height: 1;
     z-index: 0;
+    -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
     font-family: 'Montserrat', sans-serif;
 }
 
 .weekly-card:hover {
+    -webkit-transform: translateY(-12px) scale(1.05);
     transform: translateY(-12px) scale(1.05);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4), 0 0 30px rgba(30, 215, 96, 0.2);
     z-index: 2;
@@ -180,6 +196,7 @@
 
 .weekly-card:hover::before {
     color: rgba(30, 215, 96, 0.15);
+    -webkit-transform: scale(1.1);
     transform: scale(1.1);
 }
 
@@ -189,7 +206,6 @@
     aspect-ratio: 2/3;
 }
 
-/* Spotlight effect on hover */
 .weekly-card .card-image-container::after {
     content: '';
     position: absolute;
@@ -199,6 +215,7 @@
     height: 100%;
     background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
     opacity: 0;
+    -webkit-transition: opacity 0.3s ease;
     transition: opacity 0.3s ease;
     z-index: 2;
 }
@@ -210,19 +227,22 @@
 .weekly-card img {
     width: 100%;
     height: 100%;
+    -o-object-fit: cover;
     object-fit: cover;
+    -webkit-transition: transform 0.7s ease;
     transition: transform 0.7s ease;
 }
 
 .weekly-card:hover img {
+    -webkit-transform: scale(1.12);
     transform: scale(1.12);
 }
 
-/* Enhanced play button */
 .weekly-card .play-icon {
     position: absolute;
     top: 50%;
     left: 50%;
+    -webkit-transform: translate(-50%, -50%) scale(0);
     transform: translate(-50%, -50%) scale(0);
     width: 60px;
     height: 60px;
@@ -232,6 +252,7 @@
     align-items: center;
     justify-content: center;
     opacity: 0;
+    -webkit-transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     z-index: 3;
     box-shadow: 0 0 20px rgba(30, 215, 96, 0.5);
@@ -239,6 +260,7 @@
 
 .weekly-card:hover .play-icon {
     opacity: 1;
+    -webkit-transform: translate(-50%, -50%) scale(1);
     transform: translate(-50%, -50%) scale(1);
 }
 
@@ -246,10 +268,12 @@
     padding: 15px;
     position: relative;
     z-index: 3;
+    -webkit-transition: transform 0.3s ease;
     transition: transform 0.3s ease;
 }
 
 .weekly-card:hover .card-content {
+    -webkit-transform: translateY(-5px);
     transform: translateY(-5px);
 }
 
@@ -260,6 +284,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    -webkit-transition: color 0.3s ease;
     transition: color 0.3s ease;
 }
 
@@ -267,27 +292,14 @@
     color: #1ed760;
 }
 
-.weekly-best-grid {
-    transition: opacity 0.3s ease;
-}
-
-.weekly-best-grid.fade-out {
-    opacity: 0.3;
-}
-
-.weekly-best-grid.fade-in {
-    opacity: 1;
-}
-
-/* Mobile weekly cards */
+/* Mobile adjustments */
 @media (max-width: 768px) {
     .weekly-best-grid {
-        flex-wrap: wrap; /* Allow wrapping */
+        flex-wrap: wrap;
         justify-content: center;
     }
-
     .weekly-card {
-        flex: 0 0 45%; /* 2 per row */
+        flex: 0 0 45%;
         max-width: 45%;
         margin-bottom: 15px;
     }
@@ -295,7 +307,7 @@
 
 @media (max-width: 480px) {
     .weekly-card {
-        flex: 0 0 80%; /* 1 per row */
+        flex: 0 0 80%;
         max-width: 80%;
     }
 }

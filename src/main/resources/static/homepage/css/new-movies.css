@@ -2,15 +2,14 @@
  *    NEW MOVIES CSS          *
  * -------------------------- */
 
-/* New Movies Section */
 .new-movies {
     background-color: #121212;
 }
 
-/* New Movies All Section (Expanded View) */
 .new-movies-all-section {
     background-color: #121212;
     overflow: hidden;
+    -webkit-transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     max-height: 3000px;
     opacity: 1;
@@ -35,17 +34,21 @@
 
 .new-movies-item {
     opacity: 0;
+    -webkit-transform: translateY(30px);
     transform: translateY(30px);
+    -webkit-animation: fadeInUp 0.5s forwards;
     animation: fadeInUp 0.5s forwards;
     background-color: #181818;
     border-radius: 8px;
     overflow: hidden;
+    -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
     position: relative;
 }
 
 .new-movies-item:hover {
     background-color: #282828;
+    -webkit-transform: translateY(-10px) scale(1.03);
     transform: translateY(-10px) scale(1.03);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
     z-index: 2;

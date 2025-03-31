@@ -70,9 +70,9 @@
     font-weight: 600;
     margin: 0 0 5px 0;
     font-size: 16px;
-    white-space: nowrap;      /* Keep text on single line */
-    overflow: hidden;         /* Hide overflow text */
-    text-overflow: ellipsis;  /* Add ellipsis for overflow text */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .card-info {
@@ -84,31 +84,27 @@
 /* Mobile card improvements */
 @media (max-width: 576px) {
     .card {
-        flex: 0 0 160px; /* Smaller card width on mobile */
+        flex: 0 0 160px;
     }
-
     .card-content {
-        padding: 10px; /* Reduce padding on mobile */
+        padding: 10px;
     }
-
     .card-title {
-        font-size: 14px; /* Smaller font on mobile */
+        font-size: 14px;
     }
-
     .card-info {
-        font-size: 12px; /* Smaller info text */
+        font-size: 12px;
     }
 }
 
-/* Make play icons more touch-friendly */
+/* Touch-friendly play icon for mobile */
 @media (max-width: 576px) {
     .play-icon {
-        opacity: 0.8; /* Always slightly visible */
-        transform: translate(-50%, -50%) scale(0.8); /* Start slightly visible */
-        width: 44px; /* Minimum touch target size */
+        opacity: 0.8;
+        transform: translate(-50%, -50%) scale(0.8);
+        width: 44px;
         height: 44px;
     }
-
     .card:hover .play-icon {
         transform: translate(-50%, -50%) scale(1);
     }
@@ -117,6 +113,6 @@
 /* For very small screens */
 @media (max-width: 400px) {
     .card {
-        flex: 0 0 140px; /* Even smaller on very small screens */
+        flex: 0 0 140px;
     }
 }
