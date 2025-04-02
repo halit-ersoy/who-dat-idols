@@ -21,6 +21,7 @@
     background-image: url('https://i.ibb.co/M2BgHph/cdrama-1.jpg');
     background-size: cover;
     background-position: center;
+    animation: fadeIn 1s ease-out;
 }
 
 .terms-hero-overlay {
@@ -68,6 +69,8 @@
     line-height: 1.2;
     text-shadow: 0 2px 5px rgba(0,0,0,0.3);
     color: #ffffff;
+    opacity: 0;
+    animation: slideInUp 0.8s ease-out forwards;
 }
 
 .terms-hero-content p {
@@ -77,6 +80,8 @@
     text-shadow: 0 1px 3px rgba(0,0,0,0.3);
     color: #f0f0f0;
     font-weight: 300;
+    opacity: 0;
+    animation: slideInUp 0.8s ease-out 0.2s forwards;
 }
 
 /* Terms Section */
@@ -99,6 +104,12 @@
     font-weight: 700;
     position: relative;
     padding-bottom: 15px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.section-title:hover {
+    transform: translateX(5px);
 }
 
 .section-title:after {
@@ -109,10 +120,24 @@
     width: 60px;
     height: 3px;
     background-color: #1ed760;
+    transition: width 0.3s ease;
+}
+
+.section-title:hover:after {
+    width: 100px;
 }
 
 .terms-content {
     margin-bottom: 40px;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.6s ease-out forwards;
+    animation-delay: calc(0.1s * var(--item-index, 0));
+}
+
+.terms-content.in-view {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .terms-text {
@@ -122,16 +147,61 @@
 
 .terms-text p {
     margin-bottom: 20px;
+    opacity: 0;
+    transform: translateY(15px);
+    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.terms-text p.in-view {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.1s;
 }
 
 .terms-text ul {
     margin-bottom: 20px;
     padding-left: 20px;
+    opacity: 0;
+    transform: translateY(15px);
+    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.terms-text ul.in-view {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.2s;
 }
 
 .terms-text ul li {
     margin-bottom: 10px;
     list-style-type: disc;
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.terms-text ul.in-view li:nth-child(1) {
+    opacity: 1;
+    transform: translateX(0);
+    transition-delay: 0.25s;
+}
+
+.terms-text ul.in-view li:nth-child(2) {
+    opacity: 1;
+    transform: translateX(0);
+    transition-delay: 0.35s;
+}
+
+.terms-text ul.in-view li:nth-child(3) {
+    opacity: 1;
+    transform: translateX(0);
+    transition-delay: 0.45s;
+}
+
+.terms-text ul.in-view li:nth-child(n+4) {
+    opacity: 1;
+    transform: translateX(0);
+    transition-delay: 0.55s;
 }
 
 /* Contact Items */
@@ -139,16 +209,86 @@
     display: flex;
     align-items: center;
     margin-bottom: 15px;
+    opacity: 0;
+    transform: translateY(15px);
+    transition: opacity 0.5s ease, transform 0.3s ease;
+}
+
+.contact-item.in-view {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.3s;
+}
+
+.contact-item:hover {
+    transform: translateX(5px);
 }
 
 .contact-item i {
     font-size: 20px;
     width: 30px;
     color: #1ed760;
+    transition: transform 0.3s ease;
+}
+
+.contact-item:hover i {
+    transform: scale(1.2);
 }
 
 .contact-item p {
     margin: 0 0 0 15px;
+}
+
+/* Ripple Effect */
+.ripple-effect {
+    position: absolute;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: scale(0);
+    animation: ripple 0.6s linear;
+    z-index: 0;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes ripple {
+    to {
+        transform: scale(2);
+        opacity: 0;
+    }
 }
 
 /* Responsive Adjustments */

@@ -75,32 +75,4 @@ document.addEventListener('DOMContentLoaded', () => {
             rect.right <= (window.innerWidth || document.documentElement.clientWidth)
         );
     }
-
-    // Ripple effect ve ek animasyon stillerini ekle
-    const style = document.createElement('style');
-    style.textContent = `
-    .faq-question {
-      position: relative;
-      overflow: hidden;
-    }
-    .ripple-effect {
-      position: absolute;
-      border-radius: 50%;
-      background-color: rgba(255, 255, 255, 0.3);
-      transform: scale(0);
-      animation: ripple 0.6s linear;
-      z-index: 0;
-    }
-    @keyframes ripple {
-      to {
-        transform: scale(2);
-        opacity: 0;
-      }
-    }
-    .faq-item.in-view {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  `;
-    document.head.appendChild(style);
 });

@@ -6,16 +6,17 @@
 
 /* Privacy Policy Hero Section */
 .privacy-hero {
-    position: relative;
     height: 50vh;
+    position: relative;
+    overflow: hidden;
     display: flex;
     align-items: center;
-    justify-content: center;
+    margin-top: 0;
+    padding-top: 70px;
     background-image: url('https://i.ibb.co/y5QfMxk/kdrama-1.jpg');
     background-size: cover;
     background-position: center;
-    color: white;
-    text-align: center;
+    animation: fadeIn 1s ease-out;
 }
 
 .privacy-hero-overlay {
@@ -24,20 +25,21 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.8));
+    background: linear-gradient(to right, rgba(0,0,0,0.95) 20%, rgba(0,0,0,0.8) 40%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0.4) 80%);
     z-index: 0;
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
 }
 
 .privacy-hero-content {
+    padding: 0 7%;
+    max-width: 800px;
     position: relative;
     z-index: 2;
-    max-width: 800px;
-    padding: 0 20px;
+    text-align: center;
+    margin: 0 auto;
 }
 
-/* Back Button */
 .back-button {
     color: #fff;
     text-decoration: none;
@@ -53,11 +55,35 @@
     color: #1ed760;
 }
 
+.privacy-hero-content h1 {
+    font-size: 48px;
+    margin-bottom: 20px;
+    font-weight: 800;
+    font-family: 'Montserrat', sans-serif;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    color: #ffffff;
+    opacity: 0;
+    animation: slideInUp 0.8s ease-out forwards;
+}
+
+.privacy-hero-content p {
+    font-size: 18px;
+    margin-bottom: 32px;
+    line-height: 1.7;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    color: #f0f0f0;
+    font-weight: 300;
+    opacity: 0;
+    animation: slideInUp 0.8s ease-out 0.2s forwards;
+}
+
 /* Privacy Content Styles */
 .privacy-section {
     padding: 60px 0;
-    background-color: #0a0a0a;
-    min-height: 70vh;
+    background-color: #121212;
+    color: #ffffff;
 }
 
 .container {
@@ -75,10 +101,19 @@
 
 .privacy-item {
     margin-bottom: 40px;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.6s ease-out forwards;
+    animation-delay: calc(0.1s * var(--item-index, 0));
 }
 
 .privacy-item:last-child {
     margin-bottom: 0;
+}
+
+.privacy-item.in-view {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .privacy-item h2 {
@@ -87,6 +122,13 @@
     margin-bottom: 20px;
     border-bottom: 1px solid rgba(255,255,255,0.1);
     padding-bottom: 10px;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.3s ease;
+}
+
+.privacy-item h2:hover {
+    transform: translateX(5px);
 }
 
 .privacy-item p {
@@ -94,21 +136,153 @@
     line-height: 1.7;
     margin-bottom: 15px;
     font-size: 16px;
+    opacity: 0;
+    transform: translateY(15px);
+    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.privacy-item.in-view p {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.1s;
 }
 
 .privacy-item ul {
     margin: 15px 0;
     padding-left: 20px;
+    opacity: 0;
+    transform: translateY(15px);
+    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.privacy-item.in-view ul {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.2s;
 }
 
 .privacy-item li {
     color: #e0e0e0;
     margin-bottom: 10px;
     line-height: 1.6;
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.privacy-item.in-view li:nth-child(1) {
+    opacity: 1;
+    transform: translateX(0);
+    transition-delay: 0.25s;
+}
+
+.privacy-item.in-view li:nth-child(2) {
+    opacity: 1;
+    transform: translateX(0);
+    transition-delay: 0.35s;
+}
+
+.privacy-item.in-view li:nth-child(3) {
+    opacity: 1;
+    transform: translateX(0);
+    transition-delay: 0.45s;
+}
+
+.privacy-item.in-view li:nth-child(n+4) {
+    opacity: 1;
+    transform: translateX(0);
+    transition-delay: 0.55s;
 }
 
 .privacy-item strong {
     color: #fff;
+}
+
+/* Contact Items */
+.contact-item {
+    display: flex;
+    align-items: center;
+    margin-top: 15px;
+    opacity: 0;
+    transform: translateY(15px);
+    transition: opacity 0.5s ease, transform 0.3s ease;
+}
+
+.contact-item.in-view {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.3s;
+}
+
+.contact-item:hover {
+    transform: translateX(5px);
+}
+
+.contact-item i {
+    font-size: 18px;
+    width: 30px;
+    color: #1ed760;
+    transition: transform 0.3s ease;
+}
+
+.contact-item:hover i {
+    transform: scale(1.2);
+}
+
+.contact-item p {
+    margin: 0 0 0 10px;
+}
+
+/* Ripple Effect */
+.ripple-effect {
+    position: absolute;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: scale(0);
+    animation: ripple 0.6s linear;
+    z-index: 0;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes ripple {
+    to {
+        transform: scale(2);
+        opacity: 0;
+    }
 }
 
 /* Responsive Adjustments */
@@ -127,12 +301,12 @@
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 576px) {
     .privacy-hero h1 {
         font-size: 28px;
     }
-    .privacy-hero p {
-        font-size: 16px;
+    .privacy-hero {
+        height: 40vh;
     }
     .privacy-content {
         padding: 20px 15px;
