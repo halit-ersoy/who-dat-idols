@@ -4,40 +4,53 @@
 
 /* Hero Section */
 .hero {
-    height: 90vh;
     position: relative;
+    height: 90vh; /* İsteğe bağlı: header yüksekliğine göre calc() kullanılabilir */
+    width: 100%;
+    padding: 0;
     overflow: hidden;
     display: flex;
     align-items: center;
     margin-top: 0;
-    padding-top: 70px;
 }
 
-.hero-bg-video,
+/* Video Elementi: Ortalamak ve container'ı tam doldurmak için */
+.hero-bg-video {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: auto;
+    height: auto;
+    min-width: 100%;
+    min-height: 100%;
+    transform: translate(-50%, -50%) scale(1.02);
+    object-fit: cover;
+    z-index: -1;
+    filter: brightness(0.85);
+}
+
+/* Eğer arka plan resmi kullanılacaksa */
 .hero-bg {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    -o-object-fit: cover;
     object-fit: cover;
     z-index: -1;
     filter: brightness(0.85);
-    -webkit-transform: scale(1.02);
     transform: scale(1.02);
 }
 
+/* Overlay */
 .hero-overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: -webkit-linear-gradient(to right, rgba(0,0,0,0.95) 20%, rgba(0,0,0,0.8) 40%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0.4) 80%);
     background: linear-gradient(to right, rgba(0,0,0,0.95) 20%, rgba(0,0,0,0.8) 40%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0.4) 80%);
     z-index: -1;
-    -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
 }
 
@@ -58,7 +71,6 @@
     height: 100%;
     opacity: 0;
     visibility: hidden;
-    -webkit-transition: opacity 1s ease, visibility 1s ease;
     transition: opacity 1s ease, visibility 1s ease;
 }
 
@@ -71,7 +83,6 @@
 .hero-nav {
     position: absolute;
     top: 50%;
-    -webkit-transform: translateY(-50%);
     transform: translateY(-50%);
     background-color: rgba(0, 0, 0, 0.5);
     color: white;
@@ -86,7 +97,6 @@
     justify-content: center;
     z-index: 5;
     opacity: 0.7;
-    -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
 }
 
@@ -108,7 +118,6 @@
     position: absolute;
     bottom: 80px;
     left: 50%;
-    -webkit-transform: translateX(-50%);
     transform: translateX(-50%);
     display: flex;
     gap: 10px;
@@ -121,13 +130,11 @@
     background-color: rgba(255, 255, 255, 0.5);
     border-radius: 50%;
     cursor: pointer;
-    -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
 }
 
 .hero-indicator.active {
     background-color: #1ed760;
-    -webkit-transform: scale(1.2);
     transform: scale(1.2);
 }
 
@@ -138,7 +145,6 @@
     position: absolute;
     top: 50%;
     left: 0;
-    -webkit-transform: translateY(-50%);
     transform: translateY(-50%);
     z-index: 2;
 }
@@ -155,16 +161,16 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     text-transform: uppercase;
     letter-spacing: 1px;
-    -webkit-animation: badgePulse 2s infinite;
     animation: badgePulse 2s infinite;
 }
 
-@-webkit-keyframes badgePulse {
-    0% { -webkit-transform: scale(1); transform: scale(1); }
-    50% { -webkit-transform: scale(1.05); transform: scale(1.05); }
-    100% { -webkit-transform: scale(1); transform: scale(1); }
-}
 @keyframes badgePulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+@-webkit-keyframes badgePulse {
     0% { -webkit-transform: scale(1); transform: scale(1); }
     50% { -webkit-transform: scale(1.05); transform: scale(1.05); }
     100% { -webkit-transform: scale(1); transform: scale(1); }
