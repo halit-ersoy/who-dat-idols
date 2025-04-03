@@ -32,9 +32,11 @@ public class WeeklyBestController {
         List<VideoViewModel> viewModels = topMovies.stream()
                 .map(movie -> {
                     VideoViewModel vm = new VideoViewModel();
+                    String mainCategory = movie.getCategory().split(",")[0];
+
                     vm.setId(movie.getId().toString());
                     vm.setTitle(movie.getName());
-                    vm.setInfo(movie.getYear() + " • " + movie.getCategory() + " • " + movie.getTime() + " dk");
+                    vm.setInfo(movie.getYear() + " • " + mainCategory + " • " + movie.getTime() + " dk");
 
                     // Set the thumbnail URL to use the image API endpoint
                     vm.setThumbnailUrl("/api/images/movie?id=" + movie.getId());
@@ -54,9 +56,11 @@ public class WeeklyBestController {
         List<VideoViewModel> viewModels = topSoapOperas.stream()
                 .map(soapOpera -> {
                     VideoViewModel vm = new VideoViewModel();
+                    String mainCategory = soapOpera.getCategory().split(",")[0];
+
                     vm.setId(soapOpera.getId().toString());
                     vm.setTitle(soapOpera.getName());
-                    vm.setInfo(soapOpera.getYear() + " • " + soapOpera.getCategory() + " • " + soapOpera.getTime() + " dk");
+                    vm.setInfo(soapOpera.getYear() + " • " + mainCategory + " • " + soapOpera.getTime() + " dk");
 
                     // Set the thumbnail URL to use the image API endpoint
                     vm.setThumbnailUrl("/api/images/soap-opera?id=" + soapOpera.getId());

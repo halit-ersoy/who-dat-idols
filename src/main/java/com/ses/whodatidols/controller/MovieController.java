@@ -29,9 +29,11 @@ public class MovieController {
         List<VideoViewModel> viewModels = recentMovies.stream()
                 .map(movie -> {
                     VideoViewModel vm = new VideoViewModel();
+                    String mainCategory = movie.getCategory().split(",")[0];
+
                     vm.setId(movie.getId().toString());
                     vm.setTitle(movie.getName());
-                    vm.setInfo(movie.getYear() + " • " + movie.getCategory() + " • " + movie.getTime() + " dk");
+                    vm.setInfo(movie.getYear() + " • " + mainCategory + " • " + movie.getTime() + " dk");
 
                     String thumbnailUrl = "/api/images/movie?id=" + movie.getId();
                     vm.setThumbnailUrl(thumbnailUrl);

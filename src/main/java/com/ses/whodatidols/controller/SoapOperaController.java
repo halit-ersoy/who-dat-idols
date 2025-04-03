@@ -29,9 +29,11 @@ public class SoapOperaController {
         List<VideoViewModel> viewModels = recentSoapOperas.stream()
                 .map(soapOpera -> {
                     VideoViewModel vm = new VideoViewModel();
+                    String mainCategory = soapOpera.getCategory().split(",")[0];
+
                     vm.setId(soapOpera.getId().toString());
                     vm.setTitle(soapOpera.getName());
-                    vm.setInfo(soapOpera.getYear() + " • " + soapOpera.getCategory() + " • " + soapOpera.getTime() + " dk");
+                    vm.setInfo(soapOpera.getYear() + " • " + mainCategory + " • " + soapOpera.getTime() + " dk");
 
                     String thumbnailUrl = "/api/images/soap-opera?id=" + soapOpera.getId();
                     vm.setThumbnailUrl(thumbnailUrl);
