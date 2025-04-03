@@ -9,11 +9,16 @@ export function initWeeklyBestSection() {
         return;
     }
 
-    let currentMode = 'movies'; // Varsayılan mod
+// Hem filmler hem de diziler verisini cache'lemek için nesne oluşturuluyor.
+    let weeklyData = {movies: null, tv: null};
+    let currentMode = 'movies';
     let isLoading = false;
 
-    // İlk olarak filmlerle başlat
-    fetchWeeklyBest('movies');
+// Sayfa yüklendiğinde her iki veri setini de çekiyoruz.
+    fetchAndCache('movies').then(() => {
+        renderWeeklyBest('movies');
+    });
+    fetchAndCache('tv');
 
     movieToggle.addEventListener('click', () => {
         if (currentMode !== 'movies' && !isLoading) {
@@ -31,11 +36,10 @@ export function initWeeklyBestSection() {
         isLoading = true;
         currentMode = mode;
         updateToggleState();
-
-        // Animasyon ekle
+        // Geçiş animasyonu için fade-out ekliyoruz
         weeklyBestContainer.classList.add('fade-out');
         setTimeout(() => {
-            fetchWeeklyBest(mode);
+            renderWeeklyBest(mode);
         }, 300);
     }
 
@@ -50,37 +54,52 @@ export function initWeeklyBestSection() {
         }
     }
 
-    async function fetchWeeklyBest(type) {
-        weeklyBestContainer.innerHTML = '<div class="loading-spinner"></div>';
+    function fetchAndCache(type) {
         const endpoint = type === 'movies' ? '/api/weekly-best/movies' : '/api/weekly-best/tv';
+        return fetch(endpoint)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Network response was not ok (status: ${response.status})`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                weeklyData[type] = data;
+            })
+            .catch(error => {
+                console.error(`Weekly Best Section - ${type} verisi alınırken hata:`, error);
+            });
+    }
 
-        try {
-            const response = await fetch(endpoint);
-            if (!response.ok) {
-                throw new Error(`Network response was not ok (status: ${response.status})`);
-            }
-            const data = await response.json();
-            weeklyBestContainer.innerHTML = '';
+    function renderWeeklyBest(type) {
+        const data = weeklyData[type];
+        if (!data) {
+            // Veri cache'de yoksa loading spinner gösterip tekrar fetch yapıyoruz.
+            weeklyBestContainer.innerHTML = '<div class="loading-spinner"></div>';
+            fetchAndCache(type).then(() => {
+                renderCards(weeklyData[type]);
+            });
+        } else {
+            renderCards(data);
+        }
+        isLoading = false;
+    }
 
-            if (data && data.length > 0) {
-                data.forEach((item, index) => {
-                    weeklyBestContainer.appendChild(createWeeklyCard(item, index + 1));
-                });
+    function renderCards(data) {
+        weeklyBestContainer.innerHTML = '';
+        if (data && data.length > 0) {
+            data.forEach((item, index) => {
+                weeklyBestContainer.appendChild(createWeeklyCard(item, index + 1));
+            });
+            setTimeout(() => {
+                weeklyBestContainer.classList.remove('fade-out');
+                weeklyBestContainer.classList.add('fade-in');
                 setTimeout(() => {
-                    weeklyBestContainer.classList.remove('fade-out');
-                    weeklyBestContainer.classList.add('fade-in');
-                    setTimeout(() => {
-                        weeklyBestContainer.classList.remove('fade-in');
-                    }, 500);
-                }, 100);
-            } else {
-                weeklyBestContainer.innerHTML = '<div class="error-message">Veri bulunamadı.</div>';
-            }
-        } catch (error) {
-            console.error('Weekly Best Section - Hata:', error);
-            weeklyBestContainer.innerHTML = '<div class="error-message">Veriler yüklenirken bir hata oluştu.</div>';
-        } finally {
-            isLoading = false;
+                    weeklyBestContainer.classList.remove('fade-in');
+                }, 500);
+            }, 100);
+        } else {
+            weeklyBestContainer.innerHTML = '<div class="error-message">Veri bulunamadı.</div>';
         }
     }
 
@@ -89,17 +108,16 @@ export function initWeeklyBestSection() {
         card.href = item.videoUrl;
         card.className = 'weekly-card';
         card.dataset.number = number;
-
         card.innerHTML = `
-            <div class="card-image-container">
-                <img src="${item.thumbnailUrl}" alt="${item.title}">
-                <div class="play-icon"><i class="fas fa-play"></i></div>
-            </div>
-            <div class="card-content">
-                <p class="card-title">${item.title}</p>
-                <p class="card-info">${item.info}</p>
-            </div>
-        `;
+        <div class="card-image-container">
+            <img src="${item.thumbnailUrl}" alt="${item.title}">
+            <div class="play-icon"><i class="fas fa-play"></i></div>
+        </div>
+        <div class="card-content">
+            <p class="card-title">${item.title}</p>
+            <p class="card-info">${item.info}</p>
+        </div>
+    `;
         return card;
     }
 }
