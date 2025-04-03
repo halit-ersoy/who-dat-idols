@@ -138,7 +138,12 @@ export function initLogin() {
         const usernameOrEmail = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         if (!usernameOrEmail || !password) {
-            alert('Lütfen kullanıcı adı/e-posta ve şifre giriniz.');
+            this.innerHTML = '<i class="fas fa-times"></i> Tüm alanları doldurun';
+            this.style.backgroundColor = '#e74c3c';
+            setTimeout(() => {
+                this.innerHTML = 'Giriş Yap';
+                this.style.backgroundColor = '';
+            }, 3000);
             return;
         }
         this.classList.add('loading');
