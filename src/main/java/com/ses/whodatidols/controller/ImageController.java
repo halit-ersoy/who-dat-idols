@@ -2,6 +2,7 @@ package com.ses.whodatidols.controller;
 
 import com.ses.whodatidols.repository.MovieRepository;
 import com.ses.whodatidols.repository.SoapOperaRepository;
+import com.ses.whodatidols.repository.StaticImageRepository;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -20,10 +21,12 @@ import java.util.UUID;
 public class ImageController {
     private final MovieRepository movieRepository;
     private final SoapOperaRepository soapOperaRepository;
+    private final StaticImageRepository staticImageRepository;
 
-    public ImageController(MovieRepository movieRepository, SoapOperaRepository soapOperaRepository) {
+    public ImageController(MovieRepository movieRepository, SoapOperaRepository soapOperaRepository, StaticImageRepository staticImageRepository) {
         this.movieRepository = movieRepository;
         this.soapOperaRepository = soapOperaRepository;
+        this.staticImageRepository = staticImageRepository;
     }
 
     @GetMapping("/movie")
@@ -34,6 +37,11 @@ public class ImageController {
     @GetMapping("/soap-opera")
     public ResponseEntity<?> getImageSoapOpera(@RequestParam("id") UUID id) {
         return getImageResponse(id, soapOperaRepository::getImagePathById);
+    }
+
+    @GetMapping("/static")
+    public ResponseEntity<?> getImageStatic(@RequestParam("id") UUID id) {
+        return getImageResponse(id, staticImageRepository::getImagePathById);
     }
 
     private ResponseEntity<?> getImageResponse(UUID id, ImagePathProvider imagePathProvider) {
@@ -50,9 +58,7 @@ public class ImageController {
             }
 
             MediaType mediaType = determineMediaType(file);
-            return ResponseEntity.ok()
-                    .contentType(mediaType)
-                    .body(new FileSystemResource(file));
+            return ResponseEntity.ok().contentType(mediaType).body(new FileSystemResource(file));
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("Invalid image ID format");

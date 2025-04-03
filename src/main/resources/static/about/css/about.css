@@ -12,7 +12,7 @@
     align-items: center;
     justify-content: center;
     position: relative;
-    background-image: url('https://i.ibb.co/y5QfMxk/kdrama-1.jpg');
+    background-image: url('/api/images/static?id=DF9F5CBA-2251-4092-8FC3-ED70EA2D14CD');
     background-size: cover;
     background-position: center;
     color: white;

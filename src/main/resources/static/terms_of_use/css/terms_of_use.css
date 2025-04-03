@@ -18,7 +18,7 @@
     align-items: center;
     margin-top: 0;
     padding-top: 70px;
-    background-image: url('https://i.ibb.co/M2BgHph/cdrama-1.jpg');
+    background-image: url('/api/images/static?id=DF9F5CBA-2251-4092-8FC3-ED70EA2D14CD');
     background-size: cover;
     background-position: center;
     animation: fadeIn 1s ease-out;
