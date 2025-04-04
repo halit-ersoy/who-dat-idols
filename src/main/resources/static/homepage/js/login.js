@@ -1,4 +1,7 @@
 export function initLogin() {
+    // ============================
+    // DOM Element Referansları
+    // ============================
     const loginBtn = document.querySelector('.login-btn');
     const registerLink = document.querySelector('.register-link a');
     const loginLink = document.getElementById('login-link');
@@ -9,13 +12,130 @@ export function initLogin() {
     const loginSubmit = document.getElementById('login-submit');
     const registerSubmit = document.getElementById('register-submit');
     const formInputs = document.querySelectorAll('.form-control');
+    const forgotPasswordLink = document.querySelector('.forgot-password a');
+    const forgotPasswordModal = document.getElementById('forgot-password-modal');
+    const closeForgotPasswordModal = document.getElementById('close-forgot-modal');
+    const forgotPasswordSubmit = document.getElementById('forgot-password-submit');
+    const backToLoginLink = document.getElementById('back-to-login');
 
+    // ============================
+    // Gerekli Elementlerin Kontrolü
+    // ============================
     if (!loginBtn || !loginModal || !registerModal || !closeLoginModal || !closeRegisterModal || !loginSubmit || !registerSubmit) {
         console.error('Login: Gerekli elementler bulunamadı.');
         return;
     }
 
-    // Kullanıcı giriş durumunu kontrol et
+    // ============================
+    // Şifremi Unuttum Modal İşlemleri
+    // ============================
+    if (forgotPasswordLink && forgotPasswordModal && closeForgotPasswordModal && forgotPasswordSubmit) {
+        // Forgot password link tıklanıldığında
+        forgotPasswordLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginModal.classList.remove('active');
+            forgotPasswordModal.classList.add('active');
+            setTimeout(() => {
+                const forgotEmailInput = document.getElementById('forgot-email');
+                if (forgotEmailInput) forgotEmailInput.focus();
+            }, 400);
+        });
+
+        // Forgot password modal kapatma butonu
+        closeForgotPasswordModal.addEventListener('click', () => {
+            forgotPasswordModal.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+
+        // Modal dışına tıklanıldığında kapatma
+        forgotPasswordModal.addEventListener('click', (e) => {
+            if (e.target === forgotPasswordModal) {
+                forgotPasswordModal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+
+        // Şifremi sıfırla butonu tıklanıldığında
+        forgotPasswordSubmit.addEventListener('click', async function () {
+            const emailOrUsername = document.getElementById('forgot-email').value;
+            if (!emailOrUsername) {
+                this.innerHTML = '<i class="fas fa-times"></i> Kullanıcı adı veya e-posta gerekli';
+                this.style.backgroundColor = '#e74c3c';
+                setTimeout(() => {
+                    this.innerHTML = 'Şifremi Sıfırla';
+                    this.style.backgroundColor = '';
+                }, 3000);
+                return;
+            }
+
+            this.classList.add('loading');
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            try {
+                const response = await fetch('/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usernameOrEmail: emailOrUsername })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    this.classList.remove('loading');
+                    this.innerHTML = '<i class="fas fa-check"></i> E-posta gönderildi';
+                    this.style.backgroundColor = '#1ed760';
+                    setTimeout(() => {
+                        forgotPasswordModal.classList.remove('active');
+                        document.body.style.overflow = '';
+                        document.getElementById('forgot-email').value = '';
+                    }, 3000);
+                } else {
+                    this.classList.remove('loading');
+                    this.innerHTML = '<i class="fas fa-times"></i> Kullanıcı bulunamadı';
+                    this.style.backgroundColor = '#e74c3c';
+                    setTimeout(() => {
+                        this.innerHTML = 'Şifremi Sıfırla';
+                        this.style.backgroundColor = '';
+                    }, 3000);
+                }
+            } catch (error) {
+                this.classList.remove('loading');
+                this.innerHTML = '<i class="fas fa-times"></i> Bir hata oluştu';
+                this.style.backgroundColor = '#e74c3c';
+                setTimeout(() => {
+                    this.innerHTML = 'Şifremi Sıfırla';
+                    this.style.backgroundColor = '';
+                }, 3000);
+            }
+        });
+
+        // Enter tuşu ile gönderme desteği
+        const forgotEmailInput = document.getElementById('forgot-email');
+        if (forgotEmailInput) {
+            forgotEmailInput.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') {
+                    forgotPasswordSubmit.click();
+                }
+            });
+        }
+    }
+
+    // ============================
+    // Forgot Password'den Girişe Dönüş
+    // ============================
+    if (backToLoginLink) {
+        backToLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            forgotPasswordModal.classList.remove('active');
+            loginModal.classList.add('active');
+            setTimeout(() => {
+                const emailInput = document.getElementById('email');
+                if (emailInput) emailInput.focus();
+            }, 400);
+        });
+    }
+
+    // ============================
+    // Kullanıcı Giriş Durumunu Kontrol Et ve Profil Oluştur
+    // ============================
     function checkAuthStatus() {
         const authCookie = localStorage.getItem('wdiUserToken');
         const userNickname = localStorage.getItem('wdiUserNickname');
@@ -36,7 +156,6 @@ export function initLogin() {
                     <a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</a>
                 </div>
             `;
-
             loginBtn.parentNode.replaceChild(profileSection, loginBtn);
 
             const profileBtn = profileSection.querySelector('.profile-btn');
@@ -45,7 +164,6 @@ export function initLogin() {
                 profileBtn.addEventListener('click', () => {
                     dropdown.classList.toggle('active');
                 });
-
                 document.addEventListener('click', (e) => {
                     if (!profileBtn.contains(e.target) && !dropdown.contains(e.target)) {
                         dropdown.classList.remove('active');
@@ -67,6 +185,9 @@ export function initLogin() {
     }
     checkAuthStatus();
 
+    // ============================
+    // Modal Açma İşlemleri
+    // ============================
     loginBtn.addEventListener('click', (e) => {
         e.preventDefault();
         loginModal.classList.add('active');
@@ -99,6 +220,9 @@ export function initLogin() {
         });
     }
 
+    // ============================
+    // Modal Kapatma İşlemleri
+    // ============================
     closeLoginModal.addEventListener('click', () => {
         loginModal.classList.remove('active');
         document.body.style.overflow = '';
@@ -123,6 +247,9 @@ export function initLogin() {
         }
     });
 
+    // ============================
+    // Form Input Odaklanma ve Çıkma İşlemleri
+    // ============================
     formInputs.forEach(input => {
         input.addEventListener('focus', function () {
             this.parentElement.classList.add('active');
@@ -134,9 +261,13 @@ export function initLogin() {
         });
     });
 
+    // ============================
+    // Giriş Yapma İşlemleri
+    // ============================
     loginSubmit.addEventListener('click', async function () {
         const usernameOrEmail = document.getElementById('email').value;
         const password = document.getElementById('password').value;
+
         if (!usernameOrEmail || !password) {
             this.innerHTML = '<i class="fas fa-times"></i> Tüm alanları doldurun';
             this.style.backgroundColor = '#e74c3c';
@@ -146,6 +277,7 @@ export function initLogin() {
             }, 3000);
             return;
         }
+
         this.classList.add('loading');
         this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         const loginData = { usernameOrEmail, password };
@@ -194,6 +326,7 @@ export function initLogin() {
         }
     });
 
+    // Enter tuşuyla giriş gönderme desteği
     const passwordInput = document.getElementById('password');
     if (passwordInput) {
         passwordInput.addEventListener('keyup', (e) => {
@@ -203,11 +336,17 @@ export function initLogin() {
         });
     }
 
+    // ============================
+    // E-Posta Doğrulama Yardımcı Fonksiyonu
+    // ============================
     function isValidEmail(email) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
     }
 
+    // ============================
+    // Kayıt Olma İşlemleri
+    // ============================
     if (registerSubmit) {
         registerSubmit.addEventListener('click', async function () {
             const firstName = document.getElementById('first-name').value;
