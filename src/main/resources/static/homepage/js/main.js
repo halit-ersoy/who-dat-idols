@@ -5,6 +5,8 @@ import { initNewSoapOperasSection } from './newSoapOperasSection.js';
 import { initNewMoviesSection } from './newMoviesSection.js';
 import { initWeeklyBestSection } from './weeklyBestSection.js';
 import { initLogin } from './login.js';
+import { initRegister } from './register.js';
+import { initForgotPass } from './forgot-pass.js';
 
 window.addEventListener('load', () => {
     const loadingScreen = document.getElementById('loading-screen');
@@ -21,4 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initNewMoviesSection();
     initWeeklyBestSection();
     initLogin();
+    initRegister();
+    initForgotPass();
 });
