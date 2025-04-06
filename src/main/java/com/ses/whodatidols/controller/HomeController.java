@@ -132,6 +132,85 @@ public class HomeController {
         }
     }
 
+    @PostMapping("/forgot-password")
+    @ResponseBody
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
+        try {
+            String usernameOrEmail = request.get("usernameOrEmail");
+            if (usernameOrEmail == null || usernameOrEmail.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "message", "Kullanıcı adı veya e-posta adresi gerekli"
+                ));
+            }
+
+            Map<String, Object> result = personRepository.generateResetCode(usernameOrEmail);
+            boolean isSuccess = (boolean) result.get("Result");
+
+            if (isSuccess) {
+                return ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "message", "Doğrulama kodu e-posta adresinize gönderildi"
+                ));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "message", result.get("Message")
+                ));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", e.getMessage()
+            ));
+        }
+    }
+
+    @PostMapping("/verify-code")
+    @ResponseBody
+    public ResponseEntity<?> verifyCode(@RequestBody Map<String, String> request) {
+        try {
+            String usernameOrEmail = request.get("usernameOrEmail");
+            String code = request.get("code");
+
+            Map<String, Object> result = personRepository.verifyResetCode(usernameOrEmail, code);
+            boolean isSuccess = (boolean) result.get("Result");
+
+            return ResponseEntity.ok(Map.of(
+                    "success", isSuccess,
+                    "message", result.get("Message")
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", e.getMessage()
+            ));
+        }
+    }
+
+    @PostMapping("/reset-password")
+    @ResponseBody
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
+        try {
+            String usernameOrEmail = request.get("usernameOrEmail");
+            String code = request.get("code");
+            String newPassword = request.get("newPassword");
+
+            Map<String, Object> result = personRepository.resetPassword(usernameOrEmail, code, newPassword);
+            boolean isSuccess = (boolean) result.get("Result");
+
+            return ResponseEntity.ok(Map.of(
+                    "success", isSuccess,
+                    "message", result.get("Message")
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", e.getMessage()
+            ));
+        }
+    }
+
     @PostMapping("/login")
     @ResponseBody
     public ResponseEntity<?> loginUser(@RequestBody Map<String, String> loginRequest) {
