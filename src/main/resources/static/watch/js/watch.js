@@ -236,9 +236,21 @@ document.addEventListener('DOMContentLoaded', () => {
             charCounter.style.color = remaining < 0 ? '#ff3860' : '#888';
         });
 
-        commentText.addEventListener('focus', function () {
-            this.setAttribute('placeholder', 'Düşüncelerinizi paylaşın...');
+        commentText.addEventListener('focus', function() {
+            const authToken = localStorage.getItem('wdiUserToken');
+            if (!authToken) {
+                this.blur(); // Remove focus
+                this.style.borderColor = '#ff3860';
+                this.classList.add('error-shake');
+                this.setAttribute('placeholder', 'Oturum açmadan yorum yapılamaz!');
+                setTimeout(() => {
+                    this.setAttribute('placeholder', 'Düşüncelerinizi paylaşın...');
+                }, 2000);
+            } else {
+                this.setAttribute('placeholder', 'Düşüncelerinizi paylaşın...');
+            }
         });
+
         commentText.addEventListener('blur', function () {
             this.setAttribute('placeholder', 'Bu dizi hakkında düşünceleriniz neler?');
         });
