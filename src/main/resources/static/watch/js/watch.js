@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function incrementViewCount(videoId) {
         fetch(`/api/video/increment-view?id=${videoId}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: {'Content-Type': 'application/json'}
         })
             .then(response => {
                 if (!response.ok) {
@@ -247,8 +247,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function createCommentElement(comment) {
         const commentCard = document.createElement('div');
         commentCard.className = 'comment-card';
+        if (comment.spoiler) {
+            commentCard.classList.add('spoiler-comment');
+        }
+
         const delay = Math.random() * 0.5;
         commentCard.style.animationDelay = `${delay}s`;
+
         const formattedDate = new Date(comment.date).toLocaleDateString('tr-TR', {
             year: 'numeric',
             month: 'long',
@@ -256,15 +261,29 @@ document.addEventListener('DOMContentLoaded', () => {
             hour: '2-digit',
             minute: '2-digit'
         });
-        commentCard.innerHTML = `
+
+        // Build comment HTML with spoiler handling
+        let commentHTML = `
       <div class="comment-header">
         <div class="user-avatar">
           <i class="fas fa-user"></i>
         </div>
         <div class="comment-user">${comment.username || 'Misafir'}</div>
         <div class="comment-date">${formattedDate}</div>
-      </div>
-      <div class="comment-content">${comment.text}</div>
+      </div>`;
+
+        if (comment.spoiler) {
+            commentHTML += `
+          <div class="spoiler-warning">
+            <i class="fas fa-exclamation-triangle"></i> Spoiler içerir
+            <button class="show-spoiler-btn">Göster</button>
+          </div>
+          <div class="comment-content hidden">${comment.text}</div>`;
+        } else {
+            commentHTML += `<div class="comment-content">${comment.text}</div>`;
+        }
+
+        commentHTML += `
       <div class="comment-actions">
         <button class="action-button like-btn" data-id="${comment.id}">
           <i class="far fa-heart"></i> <span>0</span>
@@ -272,14 +291,16 @@ document.addEventListener('DOMContentLoaded', () => {
         <button class="action-button">
           <i class="far fa-comment"></i> Yanıtla
         </button>
-      </div>
-    `;
+      </div>`;
 
-        // Like buton işlevselliği
+        commentCard.innerHTML = commentHTML;
+
+        // Set up event handlers
         setTimeout(() => {
             const likeBtn = commentCard.querySelector('.like-btn');
             if (likeBtn) {
-                likeBtn.addEventListener('click', function () {
+                // Existing like button functionality
+                likeBtn.addEventListener('click', function() {
                     const icon = this.querySelector('i');
                     const count = this.querySelector('span');
                     if (icon.classList.contains('far')) {
@@ -298,6 +319,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     }, 500);
                 });
             }
+
+            // Add spoiler toggle functionality
+            const showSpoilerBtn = commentCard.querySelector('.show-spoiler-btn');
+            if (showSpoilerBtn) {
+                showSpoilerBtn.addEventListener('click', function() {
+                    const spoilerWarning = commentCard.querySelector('.spoiler-warning');
+                    const commentContent = commentCard.querySelector('.comment-content');
+                    spoilerWarning.style.display = 'none';
+                    commentContent.classList.remove('hidden');
+                });
+            }
         }, 500);
 
         return commentCard;
@@ -306,27 +338,47 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadComments() {
         const videoId = new URLSearchParams(window.location.search).get('id');
         if (!videoId || !commentsList) return;
-        const storageKey = `video_comments_${videoId}`;
-        let comments = JSON.parse(localStorage.getItem(storageKey) || '[]');
 
-        const commentsTitle = document.querySelector('.comments-section h3');
-        if (commentsTitle) {
-            const countSpan = document.createElement('span');
-            countSpan.className = 'comment-count';
-            countSpan.textContent = comments.length;
-            commentsTitle.appendChild(countSpan);
-        }
+        fetch(`/api/video/comments?id=${videoId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to load comments');
+                }
+                return response.json();
+            })
+            .then(comments => {
+                const commentsTitle = document.querySelector('.comments-section h3');
+                if (commentsTitle) {
+                    const countSpan = document.createElement('span');
+                    countSpan.className = 'comment-count';
+                    countSpan.textContent = comments.length;
+                    commentsTitle.appendChild(countSpan);
+                }
 
-        if (comments.length === 0) {
-            commentsList.innerHTML = '<div class="no-comments">Bu video için henüz yorum yapılmamış. İlk yorumu siz yapın!</div>';
-            return;
-        }
+                if (comments.length === 0) {
+                    commentsList.innerHTML = '<div class="no-comments">Bu video için henüz yorum yapılmamış. İlk yorumu siz yapın!</div>';
+                    return;
+                }
 
-        comments.sort((a, b) => new Date(b.date) - new Date(a.date));
-        commentsList.innerHTML = '';
-        comments.forEach(comment => {
-            commentsList.appendChild(createCommentElement(comment));
-        });
+                // Sort comments by date (newest first)
+                comments.sort((a, b) => new Date(b.datetime) - new Date(a.datetime));
+
+                commentsList.innerHTML = '';
+                comments.forEach(comment => {
+                    const commentElement = createCommentElement({
+                        id: Date.now(), // Generate temporary ID for frontend
+                        username: comment.nickname,
+                        date: comment.datetime,
+                        text: comment.text,
+                        spoiler: comment.spoiler === 1
+                    });
+                    commentsList.appendChild(commentElement);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading comments:', error);
+                commentsList.innerHTML = '<div class="error-message">Yorumlar yüklenirken bir hata oluştu.</div>';
+            });
     }
 
     if (commentForm) {
@@ -334,11 +386,13 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const text = commentText.value.trim();
             const MAX_CHARS = 500;
+
             if (!text) {
                 commentText.style.borderColor = '#ff3860';
                 setTimeout(() => commentText.style.borderColor = '#333', 1000);
                 return;
             }
+
             if (text.length > MAX_CHARS) {
                 commentText.style.borderColor = '#ff3860';
                 commentText.classList.add('error-shake');
@@ -355,38 +409,62 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert(`Yorumunuz çok uzun! Lütfen ${MAX_CHARS} karakterden az olacak şekilde düzenleyin.`);
                 return;
             }
+
             const videoId = new URLSearchParams(window.location.search).get('id');
             if (!videoId) return;
-            const newComment = {
-                id: Date.now(),
-                text,
-                username: 'Kullanıcı', // Gerçek uygulamada oturum açan kullanıcı bilgisi kullanılmalı
-                date: new Date().toISOString()
-            };
-            const storageKey = `video_comments_${videoId}`;
-            let comments = JSON.parse(localStorage.getItem(storageKey) || '[]');
-            comments.push(newComment);
-            localStorage.setItem(storageKey, JSON.stringify(comments));
-            commentText.value = '';
-            const commentElement = createCommentElement(newComment);
-            commentElement.style.opacity = '0';
-            if (commentsList.querySelector('.no-comments')) {
-                commentsList.innerHTML = '';
-            }
-            commentsList.insertBefore(commentElement, commentsList.firstChild);
-            setTimeout(() => (commentElement.style.opacity = '1'), 10);
-            const countSpan = document.querySelector('.comment-count');
-            if (countSpan) {
-                countSpan.textContent = parseInt(countSpan.textContent) + 1;
-            } else {
-                const commentsTitle = document.querySelector('.comments-section h3');
-                if (commentsTitle) {
-                    const newCountSpan = document.createElement('span');
-                    newCountSpan.className = 'comment-count';
-                    newCountSpan.textContent = '1';
-                    commentsTitle.appendChild(newCountSpan);
-                }
-            }
+
+            // Send comment to server
+            fetch(`/api/video/comment?id=${videoId}&spoiler=false`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain'
+                },
+                body: text,
+                credentials: 'include' // Include cookies
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to submit comment');
+                    }
+                    return response.text();
+                })
+                .then(() => {
+                    // Create temporary comment element until page refresh
+                    const tempComment = {
+                        id: Date.now(),
+                        text: text,
+                        username: 'Kullanıcı', // Placeholder until refresh
+                        date: new Date().toISOString()
+                    };
+
+                    commentText.value = '';
+                    const commentElement = createCommentElement(tempComment);
+                    commentElement.style.opacity = '0';
+
+                    if (commentsList.querySelector('.no-comments')) {
+                        commentsList.innerHTML = '';
+                    }
+
+                    commentsList.insertBefore(commentElement, commentsList.firstChild);
+                    setTimeout(() => (commentElement.style.opacity = '1'), 10);
+
+                    // Update comment count
+                    const countSpan = document.querySelector('.comment-count');
+                    if (countSpan) {
+                        countSpan.textContent = parseInt(countSpan.textContent) + 1;
+                    } else {
+                        const commentsTitle = document.querySelector('.comments-section h3');
+                        if (commentsTitle) {
+                            const newCountSpan = document.createElement('span');
+                            newCountSpan.className = 'comment-count';
+                            newCountSpan.textContent = '1';
+                            commentsTitle.appendChild(newCountSpan);
+                        }
+                    }
+                })
+                .catch(error => {
+                    alert('Yorum gönderirken bir hata oluştu: ' + error.message);
+                });
         });
     }
 
@@ -416,11 +494,11 @@ document.addEventListener('DOMContentLoaded', () => {
             episode: videoId || 1,
             totalEpisodes: 10,
             cast: [
-                { name: "Ji-soo Park", role: "Kendisi", avatar: "https://picsum.photos/200" },
-                { name: "Min-ho Lee", role: "Kendisi", avatar: "https://picsum.photos/201" },
-                { name: "Jae-hyun Kim", role: "Kendisi", avatar: "https://picsum.photos/202" },
-                { name: "Yuna Choi", role: "Anlatıcı", avatar: "https://picsum.photos/203" },
-                { name: "Seo-jun Jung", role: "Yapımcı", avatar: "https://picsum.photos/204" }
+                {name: "Ji-soo Park", role: "Kendisi", avatar: "https://picsum.photos/200"},
+                {name: "Min-ho Lee", role: "Kendisi", avatar: "https://picsum.photos/201"},
+                {name: "Jae-hyun Kim", role: "Kendisi", avatar: "https://picsum.photos/202"},
+                {name: "Yuna Choi", role: "Anlatıcı", avatar: "https://picsum.photos/203"},
+                {name: "Seo-jun Jung", role: "Yapımcı", avatar: "https://picsum.photos/204"}
             ]
         };
 
