@@ -10,6 +10,7 @@ export function initLogin() {
     const formInputs = document.querySelectorAll('.form-control');
 
     // Kullanıcı giriş durumunu kontrol edip profil oluşturma
+    // Kullanıcı giriş durumunu kontrol edip profil oluşturma
     function checkAuthStatus() {
         const authCookie = localStorage.getItem('wdiUserToken');
         const userNickname = localStorage.getItem('wdiUserNickname');
@@ -56,6 +57,7 @@ export function initLogin() {
             }
         }
     }
+
     checkAuthStatus();
 
     // Login modal açma
@@ -73,13 +75,21 @@ export function initLogin() {
     closeLoginModal.addEventListener('click', () => {
         loginModal.classList.remove('active');
         document.body.style.overflow = '';
-    });
 
-    loginModal.addEventListener('click', (e) => {
-        if (e.target === loginModal) {
-            loginModal.classList.remove('active');
-            document.body.style.overflow = '';
-        }
+        // Reset form fields
+        document.getElementById('email').value = '';
+        document.getElementById('password').value = '';
+
+        // Reset any error styling
+        loginSubmit.innerHTML = 'Giriş Yap';
+        loginSubmit.style.backgroundColor = '';
+        loginSubmit.classList.remove('loading');
+
+        // Reset form field highlighting
+        formInputs.forEach(input => {
+            input.value = '';
+            input.parentElement.classList.remove('active');
+        });
     });
 
     // Form input odaklanma/çıkma işlemleri
@@ -111,12 +121,12 @@ export function initLogin() {
 
         this.classList.add('loading');
         this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        const loginData = { usernameOrEmail, password };
+        const loginData = {usernameOrEmail, password};
 
         try {
             const response = await fetch('/login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(loginData)
             });
             const data = await response.json();

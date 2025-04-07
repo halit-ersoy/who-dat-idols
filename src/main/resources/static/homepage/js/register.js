@@ -33,13 +33,24 @@ export function initRegister() {
     closeRegisterModal.addEventListener('click', () => {
         registerModal.classList.remove('active');
         document.body.style.overflow = '';
-    });
 
-    registerModal.addEventListener('click', (e) => {
-        if (e.target === registerModal) {
-            registerModal.classList.remove('active');
-            document.body.style.overflow = '';
-        }
+        // Reset all form fields
+        document.getElementById('first-name').value = '';
+        document.getElementById('last-name').value = '';
+        document.getElementById('nickname').value = '';
+        document.getElementById('register-email').value = '';
+        document.getElementById('register-password').value = '';
+
+        // Reset any error styling
+        registerSubmit.innerHTML = 'Kayıt Ol';
+        registerSubmit.style.backgroundColor = '';
+        registerSubmit.classList.remove('loading');
+
+        // Reset form field highlighting
+        document.querySelectorAll('#register-modal .form-control').forEach(input => {
+            input.value = '';
+            input.parentElement.classList.remove('active');
+        });
     });
 
     // Form input focus/blur handling
@@ -85,7 +96,7 @@ export function initRegister() {
         try {
             const response = await fetch('/register', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(registerData)
             });
             const data = await response.json();

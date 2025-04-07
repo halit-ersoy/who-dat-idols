@@ -6,26 +6,81 @@ export function initForgotPass() {
     const forgotPasswordModal = document.getElementById('forgot-password-modal');
     const closeForgotPasswordModal = document.getElementById('close-forgot-modal');
     const forgotPasswordSubmit = document.getElementById('forgot-password-submit');
-    const backToLoginLink = document.getElementById('back-to-login');
     const forgotPasswordForm = document.querySelector('#forgot-password-modal .login-form');
+    const loginModal = document.getElementById('login-modal');
 
+    // Create sections for verification and password reset
+    const verificationSection = document.createElement('div');
+    const passwordResetSection = document.createElement('div');
+
+    let currentEmail = '';
+    let currentCode = '';
+
+    // Check if elements exist
     if (!forgotPasswordLink || !forgotPasswordModal || !closeForgotPasswordModal || !forgotPasswordSubmit || !forgotPasswordForm) {
         console.error('Forgot Password: Gerekli elementler bulunamadı.');
         return;
     }
 
+    // Complete form reset function
+    function resetForgotPasswordForm() {
+        // Reset input fields
+        const forgotEmailInput = document.getElementById('forgot-email');
+        if (forgotEmailInput) {
+            forgotEmailInput.value = '';
+            forgotEmailInput.readOnly = false;
+        }
+        const verificationInput = document.getElementById('verification-code');
+        if (verificationInput) verificationInput.value = '';
+        const newPasswordInput = document.getElementById('new-password');
+        if (newPasswordInput) newPasswordInput.value = '';
+        const confirmPasswordInput = document.getElementById('confirm-password');
+        if (confirmPasswordInput) confirmPasswordInput.value = '';
+
+        // Reset form state and buttons
+        forgotPasswordSubmit.style.display = 'inline-block';
+        forgotPasswordSubmit.innerHTML = 'Şifremi Sıfırla';
+        forgotPasswordSubmit.style.backgroundColor = '';
+        forgotPasswordSubmit.classList.remove('loading');
+
+        // Hide additional sections
+        verificationSection.style.display = 'none';
+        passwordResetSection.style.display = 'none';
+
+        // Remove any notification elements
+        const notifications = forgotPasswordForm.querySelectorAll('.email-notification, .password-success-message');
+        notifications.forEach(element => element.remove());
+
+        // Reset state variables
+        currentEmail = '';
+        currentCode = '';
+
+        // Reset form field highlighting
+        const inputs = forgotPasswordModal.querySelectorAll('.form-control');
+        inputs.forEach(input => {
+            input.parentElement.classList.remove('active');
+        });
+
+        // Ensure the login link is always at the bottom of the form
+        const loginLink = forgotPasswordForm.querySelector('.register-link.login-link');
+        if (loginLink) {
+            forgotPasswordForm.appendChild(loginLink);
+        }
+    }
+
     // Remove the login link from its current position (we'll add it back at the end)
-    const loginLinkContainer = document.querySelector('#forgot-password-modal .register-link.login-link');
-    if (loginLinkContainer) {
-        loginLinkContainer.remove();
+    const existingLoginLink = document.querySelector('#forgot-password-modal .register-link.login-link');
+    if (existingLoginLink) {
+        existingLoginLink.remove();
     }
 
     // Modal açma işlemleri
     forgotPasswordLink.addEventListener('click', (e) => {
         e.preventDefault();
-        // Login modal kapatılıyor
-        document.getElementById('login-modal').classList.remove('active');
+        resetForgotPasswordForm(); // Her açılışta form sıfırlansın
+        if (loginModal) loginModal.classList.remove('active');
         forgotPasswordModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
         setTimeout(() => {
             const forgotEmailInput = document.getElementById('forgot-email');
             if (forgotEmailInput) forgotEmailInput.focus();
@@ -36,17 +91,19 @@ export function initForgotPass() {
     closeForgotPasswordModal.addEventListener('click', () => {
         forgotPasswordModal.classList.remove('active');
         document.body.style.overflow = '';
+        resetForgotPasswordForm();
     });
-
     forgotPasswordModal.addEventListener('click', (e) => {
         if (e.target === forgotPasswordModal) {
             forgotPasswordModal.classList.remove('active');
             document.body.style.overflow = '';
+            resetForgotPasswordForm();
         }
     });
 
     // Dinamik bölümlerin oluşturulması
-    const verificationSection = document.createElement('div');
+
+    // Verification Section
     verificationSection.className = 'verification-section';
     verificationSection.style.display = 'none';
     verificationSection.innerHTML = `
@@ -59,7 +116,7 @@ export function initForgotPass() {
     `;
     forgotPasswordForm.appendChild(verificationSection);
 
-    const passwordResetSection = document.createElement('div');
+    // Password Reset Section
     passwordResetSection.className = 'password-reset-section';
     passwordResetSection.style.display = 'none';
     passwordResetSection.innerHTML = `
@@ -81,22 +138,18 @@ export function initForgotPass() {
     newLoginLinkContainer.innerHTML = 'Şifrenizi hatırladınız mı? <a href="#" id="back-to-login">Giriş Yap</a>';
     forgotPasswordForm.appendChild(newLoginLinkContainer);
 
-    // Re-attach event listener for the new back-to-login link
+    // Login link tıklama işlemi
     document.body.addEventListener('click', function(e) {
         if (e.target && e.target.id === 'back-to-login') {
             e.preventDefault();
             forgotPasswordModal.classList.remove('active');
-            document.getElementById('login-modal').classList.add('active');
+            if (loginModal) loginModal.classList.add('active');
         }
     });
 
-    let currentEmail = '';
-    let currentCode = '';
-
     // Şifremi Sıfırla (E-posta gönderme) butonu
     forgotPasswordSubmit.addEventListener('click', async function () {
-        const userInput = document.getElementById('forgot-email').value;
-
+        const userInput = document.getElementById('forgot-email').value.trim();
         if (!userInput) {
             this.innerHTML = '<i class="fas fa-times"></i> E-posta gerekli';
             this.style.backgroundColor = '#e74c3c';
@@ -106,10 +159,8 @@ export function initForgotPass() {
             }, 3000);
             return;
         }
-
         this.classList.add('loading');
         this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-
         try {
             const response = await fetch('/forgot-password', {
                 method: 'POST',
@@ -117,19 +168,16 @@ export function initForgotPass() {
                 body: JSON.stringify({ usernameOrEmail: userInput })
             });
             const data = await response.json();
-
             if (data.success) {
                 this.classList.remove('loading');
                 this.innerHTML = '<i class="fas fa-check"></i> E-posta Gönderildi';
                 this.style.backgroundColor = '#1ed760';
-
-                // currentEmail kaydediliyor ve doğrulama bölümü gösteriliyor
                 currentEmail = userInput;
                 document.getElementById('forgot-email').readOnly = true;
                 verificationSection.style.display = 'block';
                 forgotPasswordSubmit.style.display = 'none';
 
-                // E-posta gönderildi bildirimi formun sonuna ekleniyor
+                // E-posta gönderildi bildirimi
                 const emailNotification = document.createElement('div');
                 emailNotification.className = 'email-notification';
                 emailNotification.innerHTML =
@@ -166,12 +214,12 @@ export function initForgotPass() {
         }
     });
 
-    // Reset Password (şifre güncelleme) butonu
+    // Reset Password (şifre güncelleme) butonu event listener'ı
     const resetPasswordSubmitBtn = document.getElementById('reset-password-submit');
     if (resetPasswordSubmitBtn) {
         resetPasswordSubmitBtn.addEventListener('click', async function () {
-            const newPassword = document.getElementById('new-password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
+            const newPassword = document.getElementById('new-password').value.trim();
+            const confirmPassword = document.getElementById('confirm-password').value.trim();
 
             if (!newPassword || !confirmPassword) {
                 this.innerHTML = '<i class="fas fa-times"></i> Tüm alanlar gerekli';
@@ -182,7 +230,6 @@ export function initForgotPass() {
                 }, 3000);
                 return;
             }
-
             if (newPassword !== confirmPassword) {
                 this.innerHTML = '<i class="fas fa-times"></i> Şifreler eşleşmiyor';
                 this.style.backgroundColor = '#e74c3c';
@@ -262,23 +309,12 @@ export function initForgotPass() {
                     `;
                     document.head.appendChild(style);
 
+                    // Complete reset and close the modal after showing success message
                     setTimeout(() => {
                         forgotPasswordModal.classList.remove('active');
                         document.body.style.overflow = '';
-                        document.getElementById('forgot-email').value = '';
-                        document.getElementById('new-password').value = '';
-                        document.getElementById('confirm-password').value = '';
-                        document.getElementById('forgot-email').readOnly = false;
-                        forgotPasswordSubmit.style.display = 'block';
-                        verificationSection.style.display = 'none';
-                        passwordResetSection.style.display = 'none';
-                        if (successMessage && successMessage.parentNode) {
-                            successMessage.parentNode.removeChild(successMessage);
-                        }
-                        this.innerHTML = 'Şifremi Güncelle';
-                        this.style.backgroundColor = '';
-                        this.classList.remove('loading');
-                    }, 3000);
+                        window.location.reload(); // Reload the page instead of just resetting the form
+                    }, 2000);
                 } else {
                     this.classList.remove('loading');
                     this.innerHTML = '<i class="fas fa-times"></i> ' + data.message;
@@ -307,8 +343,7 @@ export function initForgotPass() {
             verifyButton.classList.add('loading');
             verifyButton.innerHTML = '';
 
-            const code = document.getElementById('verification-code').value;
-
+            const code = document.getElementById('verification-code').value.trim();
             if (!code) {
                 verifyButton.classList.remove('loading');
                 verifyButton.innerHTML = '<i class="fas fa-times"></i> Kod boş olamaz';
@@ -321,13 +356,11 @@ export function initForgotPass() {
             }
 
             const forgotEmailInput = document.getElementById('forgot-email');
-            const userInput = forgotEmailInput ? forgotEmailInput.value : '';
+            const userInput = forgotEmailInput ? forgotEmailInput.value.trim() : '';
 
             fetch('/verify-code', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     usernameOrEmail: userInput,
                     code: code
