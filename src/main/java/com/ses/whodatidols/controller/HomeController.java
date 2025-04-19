@@ -116,18 +116,19 @@ public class HomeController {
     @ResponseBody
     public ResponseEntity<?> registerUser(@RequestBody Person person) {
         try {
-            personRepository.registerPerson(person);
+            // Call the new method that uses the stored procedure
+            Map<String, Object> result = personRepository.registerUser(person);
 
-            // Create a cookie for the newly registered user
-            String cookieValue = personRepository.createCookie(person.getNickname());
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "User registered successfully");
-            response.put("success", true);
-            response.put("cookie", cookieValue);
-            return ResponseEntity.ok(response);
+            // Check if registration was successful
+            if ((Boolean) result.get("success")) {
+                return ResponseEntity.ok(result);
+            } else {
+                return ResponseEntity.badRequest().body(result);
+            }
         } catch (Exception e) {
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", e.getMessage());
+            errorResponse.put("success", "false");
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }
@@ -217,19 +218,13 @@ public class HomeController {
         try {
             String usernameOrEmail = loginRequest.get("usernameOrEmail");
             String password = loginRequest.get("password");
-            boolean isValid = personRepository.validateCredentials(usernameOrEmail, password);
-            if (isValid) {
-                String cookieValue = personRepository.createCookie(usernameOrEmail);
-                Map<String, Object> response = new HashMap<>();
-                response.put("success", true);
-                response.put("message", "Login successful");
-                response.put("cookie", cookieValue);
-                return ResponseEntity.ok(response);
+
+            Map<String, Object> result = personRepository.loginUser(usernameOrEmail, password);
+
+            if ((Boolean) result.get("success")) {
+                return ResponseEntity.ok(result);
             } else {
-                Map<String, Object> response = new HashMap<>();
-                response.put("success", false);
-                response.put("message", "Invalid credentials");
-                return ResponseEntity.status(401).body(response);
+                return ResponseEntity.status(401).body(result);
             }
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
@@ -238,4 +233,5 @@ public class HomeController {
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }
+
 }

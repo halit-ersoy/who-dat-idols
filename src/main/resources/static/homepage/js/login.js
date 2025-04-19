@@ -123,6 +123,7 @@ export function initLogin() {
         this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         const loginData = {usernameOrEmail, password};
 
+        // Update this part of the login.js file
         try {
             const response = await fetch('/login', {
                 method: 'POST',
@@ -135,7 +136,7 @@ export function initLogin() {
                 this.innerHTML = '<i class="fas fa-check"></i> Başarılı';
                 this.style.backgroundColor = '#1ed760';
                 localStorage.setItem('wdiUserToken', data.cookie);
-                localStorage.setItem('wdiUserNickname', usernameOrEmail);
+                localStorage.setItem('wdiUserNickname', data.nickname);
                 const expiryDate = new Date();
                 expiryDate.setDate(expiryDate.getDate() + 30);
                 document.cookie = `wdiAuth=${data.cookie}; expires=${expiryDate.toUTCString()}; path=/`;

@@ -178,30 +178,6 @@ public class PersonRepository {
         }
     }
 
-    public void registerPerson(Person person) {
-        // Check if nickname already exists
-        Integer nicknameCount = jdbcTemplate.queryForObject(
-                CHECK_NICKNAME_EXISTS, Integer.class, person.getNickname());
-
-        Integer emailCount = jdbcTemplate.queryForObject(
-                CHECK_EMAIL_EXISTS, Integer.class, person.getEmail());
-
-        if (nicknameCount != null && nicknameCount > 0) {
-            throw new RuntimeException("Bu kullanıcı adı zaten kullanılmaktadır.");
-        }
-
-        if (emailCount != null && emailCount > 0) {
-            throw new RuntimeException("Bu e-posta adresi zaten kullanılmaktadır.");
-        }
-
-        jdbcTemplate.update(INSERT_PERSON,
-                person.getNickname(),
-                person.getName(),
-                person.getSurname(),
-                person.getEmail(),
-                person.getPassword());
-    }
-
     public boolean validateCredentials(String usernameOrEmail, String password) {
         // Öncelikle nickname üzerinden kontrol et
         Integer nicknameMatch = jdbcTemplate.queryForObject(
@@ -217,30 +193,53 @@ public class PersonRepository {
         return emailMatch != null && emailMatch > 0;
     }
 
-    public String createCookie(String usernameOrEmail) {
-        String nickname = usernameOrEmail;
+    public Map<String, Object> loginUser(String usernameOrEmail, String password) {
+        Map<String, Object> result = jdbcTemplate.call(connection -> {
+            var callableStatement = connection.prepareCall("{call LoginAndSetCookie(?, ?)}");
+            callableStatement.setString(1, usernameOrEmail);
+            callableStatement.setString(2, password);
+            return callableStatement;
+        }, Collections.emptyList());
 
-        if (usernameOrEmail.contains("@")) {
-            nickname = jdbcTemplate.queryForObject(
-                    GET_NICKNAME_BY_EMAIL, String.class, usernameOrEmail);
+        Map<String, Object> response = new HashMap<>();
+        if (result.containsKey("#result-set-1")) {
+            List<Map<String, Object>> resultSet = (List<Map<String, Object>>) result.get("#result-set-1");
+            if (!resultSet.isEmpty()) {
+                Map<String, Object> row = resultSet.get(0);
+                response.put("success", row.get("Result"));
+                response.put("message", row.get("Message"));
+                response.put("nickname", row.get("Nickname"));
+                response.put("cookie", row.get("Cookie"));
+            }
         }
 
-        String cookieValue = UUID.randomUUID().toString();
+        return response;
+    }
 
-        // Check if cookie record already exists
-        Integer count = jdbcTemplate.queryForObject(
-                CHECK_COOKIE_EXISTS,
-                Integer.class, nickname);
+    public Map<String, Object> registerUser(Person person) {
+        Map<String, Object> result = jdbcTemplate.call(connection -> {
+            var callableStatement = connection.prepareCall("{call RegisterUser(?, ?, ?, ?, ?)}");
+            callableStatement.setString(1, person.getNickname());
+            callableStatement.setString(2, person.getName());
+            callableStatement.setString(3, person.getSurname());
+            callableStatement.setString(4, person.getEmail());
+            callableStatement.setString(5, person.getPassword());
+            return callableStatement;
+        }, Collections.emptyList());
 
-        if (count != null && count > 0) {
-            // Update existing record
-            jdbcTemplate.update(UPDATE_COOKIE, cookieValue, nickname);
-        } else {
-            // Insert new record
-            jdbcTemplate.update(INSERT_COOKIE, nickname, cookieValue);
+        Map<String, Object> response = new HashMap<>();
+        if (result.containsKey("#result-set-1")) {
+            List<Map<String, Object>> resultSet = (List<Map<String, Object>>) result.get("#result-set-1");
+            if (!resultSet.isEmpty()) {
+                Map<String, Object> row = resultSet.get(0);
+                response.put("success", row.get("Result"));
+                response.put("message", row.get("Message"));
+                response.put("nickname", row.get("Nickname"));
+                response.put("cookie", row.get("Cookie"));
+            }
         }
 
-        return cookieValue;
+        return response;
     }
 
 }
