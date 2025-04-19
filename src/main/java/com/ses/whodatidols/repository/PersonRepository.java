@@ -242,4 +242,14 @@ public class PersonRepository {
         return response;
     }
 
+    public Map<String, Object> getUserInfoByCookie(String cookie) {
+        String sql = "EXEC GetUserInfoByCookie @cookie = ?";
+        return jdbcTemplate.queryForMap(sql, UUID.fromString(cookie));
+    }
+
+    public Map<String, Object> updatePasswordByCookie(String cookie, String newPassword) {
+        String sql = "EXEC UpdatePasswordByCookie @cookie = ?, @password = ?";
+        return jdbcTemplate.queryForMap(sql, UUID.fromString(cookie), newPassword);
+    }
+
 }

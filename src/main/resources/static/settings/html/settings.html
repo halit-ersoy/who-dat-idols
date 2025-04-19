@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no">
+    <title>Kullanıcı Ayarları - Who Dat Idols?</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/homepage/css/main.css">
+    <link rel="stylesheet" href="/settings/css/settings.css">
+</head>
+<body>
+<div id="loading-screen">
+    <div class="loading-text">WDI</div>
+</div>
+<header id="header">
+    <div class="logo"><a href="/static">WDI</a></div>
+    <div class="search">
+        <input type="text" placeholder="Film veya dizi ara..." aria-label="Film veya dizi ara">
+    </div>
+    <!-- Profile section will be dynamically added by JS -->
+</header>
+
+<main class="settings-container">
+    <div class="settings-sidebar">
+        <div class="settings-avatar" id="user-avatar"></div>
+        <h2 id="user-fullname">Yükleniyor...</h2>
+        <p id="user-nickname">@yükleniyor</p>
+        <ul class="settings-nav">
+            <li class="active" data-section="profile"><i class="fas fa-user"></i> Profil Bilgileri</li>
+            <li data-section="password"><i class="fas fa-lock"></i> Şifre Değiştir</li>
+            <li data-section="preferences"><i class="fas fa-cog"></i> Tercihler</li>
+        </ul>
+        <a href="/static" class="back-home"><i class="fas fa-home"></i> Ana Sayfaya Dön</a>
+    </div>
+
+    <div class="settings-content">
+        <section id="profile-section" class="settings-section active">
+            <h2>Profil Bilgileri</h2>
+            <div class="settings-card">
+                <div class="settings-field">
+                    <label>Ad:</label>
+                    <div id="user-name" class="settings-value">Yükleniyor...</div>
+                </div>
+                <div class="settings-field">
+                    <label>Soyad:</label>
+                    <div id="user-surname" class="settings-value">Yükleniyor...</div>
+                </div>
+                <div class="settings-field">
+                    <label>Kullanıcı Adı:</label>
+                    <div id="settings-nickname" class="settings-value">Yükleniyor...</div>
+                </div>
+                <div class="settings-field">
+                    <label>E-posta:</label>
+                    <div id="user-email" class="settings-value">Yükleniyor...</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="password-section" class="settings-section">
+            <h2>Şifre Değiştir</h2>
+            <div class="settings-card">
+                <form id="password-form">
+                    <div class="form-group">
+                        <label for="new-password">Yeni Şifre:</label>
+                        <input type="password" id="new-password" class="form-control" placeholder="Yeni şifrenizi girin">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm-password">Şifre Onay:</label>
+                        <input type="password" id="confirm-password" class="form-control" placeholder="Yeni şifrenizi tekrar girin">
+                    </div>
+                    <div class="password-message" id="password-message"></div>
+                    <button type="submit" id="update-password-btn" class="settings-btn">Şifreyi Güncelle</button>
+                </form>
+            </div>
+        </section>
+
+        <section id="preferences-section" class="settings-section">
+            <h2>Tercihler</h2>
+            <div class="settings-card">
+                <div class="settings-field">
+                    <label>Tema:</label>
+                    <div class="settings-toggle">
+                        <span>Açık</span>
+                        <label class="switch">
+                            <input type="checkbox" id="theme-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                        <span>Koyu</span>
+                    </div>
+                </div>
+                <div class="settings-field">
+                    <label>Bildirimler:</label>
+                    <div class="settings-toggle">
+                        <span>Kapalı</span>
+                        <label class="switch">
+                            <input type="checkbox" id="notifications-toggle" checked>
+                            <span class="slider round"></span>
+                        </label>
+                        <span>Açık</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+<footer>
+    <div class="footer-links">
+        <a href="/static">Anasayfa</a>
+        <a href="/about">Hakkımızda</a>
+        <a href="/privacy_policy">Gizlilik Politikası</a>
+        <a href="/terms_of_use">Kullanım Şartları</a>
+        <a href="/sss">SSS</a>
+    </div>
+    &copy; 2025 Who Dat Idols? Tüm hakları saklıdır.
+</footer>
+
+<script type="module" src="/settings/js/settings.js"></script>
+</body>
+</html>

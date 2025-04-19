@@ -234,4 +234,56 @@ public class HomeController {
         }
     }
 
+    @GetMapping("/settings")
+    public ResponseEntity<Resource> getSettingsPage() {
+        try {
+            Resource htmlPage = new ClassPathResource("static/settings/html/settings.html");
+            if (!htmlPage.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
+                    .body(htmlPage);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @GetMapping("/api/user/profile")
+    @ResponseBody
+    public ResponseEntity<?> getUserProfile(@CookieValue(name = "wdiAuth", required = false) String cookie) {
+        if (cookie == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "Unauthorized"));
+        }
+
+        try {
+            Map<String, Object> result = personRepository.getUserInfoByCookie(cookie);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/api/user/update-password")
+    @ResponseBody
+    public ResponseEntity<?> updatePassword(
+            @CookieValue(name = "wdiAuth", required = false) String cookie,
+            @RequestBody Map<String, String> request) {
+        if (cookie == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "Unauthorized"));
+        }
+
+        String newPassword = request.get("newPassword");
+        if (newPassword == null || newPassword.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Password is required"));
+        }
+
+        try {
+            Map<String, Object> result = personRepository.updatePasswordByCookie(cookie, newPassword);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
 }
