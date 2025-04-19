@@ -31,7 +31,7 @@
             <li data-section="password"><i class="fas fa-lock"></i> Şifre Değiştir</li>
             <li data-section="preferences"><i class="fas fa-cog"></i> Tercihler</li>
         </ul>
-        <a href="/static" class="back-home"><i class="fas fa-home"></i> Ana Sayfaya Dön</a>
+        <a href="/" class="back-home"><i class="fas fa-home"></i> Ana Sayfaya Dön</a>
     </div>
 
     <div class="settings-content">
@@ -69,7 +69,6 @@
                         <label for="confirm-password">Şifre Onay:</label>
                         <input type="password" id="confirm-password" class="form-control" placeholder="Yeni şifrenizi tekrar girin">
                     </div>
-                    <div class="password-message" id="password-message"></div>
                     <button type="submit" id="update-password-btn" class="settings-btn">Şifreyi Güncelle</button>
                 </form>
             </div>
@@ -79,25 +78,12 @@
             <h2>Tercihler</h2>
             <div class="settings-card">
                 <div class="settings-field">
-                    <label>Tema:</label>
-                    <div class="settings-toggle">
-                        <span>Açık</span>
-                        <label class="switch">
-                            <input type="checkbox" id="theme-toggle">
-                            <span class="slider round"></span>
-                        </label>
-                        <span>Koyu</span>
-                    </div>
-                </div>
-                <div class="settings-field">
                     <label>Bildirimler:</label>
-                    <div class="settings-toggle">
-                        <span>Kapalı</span>
-                        <label class="switch">
-                            <input type="checkbox" id="notifications-toggle" checked>
-                            <span class="slider round"></span>
-                        </label>
-                        <span>Açık</span>
+                    <div class="section-actions">
+                        <div class="notification-toggle">
+                            <button id="notifications-off" class="notification-toggle-btn">Kapalı</button>
+                            <button id="notifications-on" class="notification-toggle-btn active">Açık</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -107,7 +93,7 @@
 
 <footer>
     <div class="footer-links">
-        <a href="/static">Anasayfa</a>
+        <a href="/">Anasayfa</a>
         <a href="/about">Hakkımızda</a>
         <a href="/privacy_policy">Gizlilik Politikası</a>
         <a href="/terms_of_use">Kullanım Şartları</a>

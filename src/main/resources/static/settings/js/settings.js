@@ -36,6 +36,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// Setup notification toggle buttons
+document.addEventListener('DOMContentLoaded', () => {
+    const notificationOnBtn = document.getElementById('notifications-on');
+    const notificationOffBtn = document.getElementById('notifications-off');
+
+    // Set initial state based on user preference
+    const isNotificationsEnabled = true; // You can fetch this from user settings
+
+    if (isNotificationsEnabled) {
+        notificationOnBtn.classList.add('active');
+        notificationOffBtn.classList.remove('active');
+    } else {
+        notificationOffBtn.classList.add('active');
+        notificationOnBtn.classList.remove('active');
+    }
+
+    notificationOnBtn.addEventListener('click', () => {
+        notificationOnBtn.classList.add('active');
+        notificationOffBtn.classList.remove('active');
+        // Add code to update user preferences
+    });
+
+    notificationOffBtn.addEventListener('click', () => {
+        notificationOffBtn.classList.add('active');
+        notificationOnBtn.classList.remove('active');
+        // Add code to update user preferences
+    });
+});
+
 function setupAuthStatus() {
     const authCookie = getCookie('wdiAuth') || localStorage.getItem('wdiUserToken');
     const userNickname = localStorage.getItem('wdiUserNickname');
@@ -128,15 +157,10 @@ async function handlePasswordUpdate(e) {
 
     const newPasswordInput = document.getElementById('new-password');
     const confirmPasswordInput = document.getElementById('confirm-password');
-    const messageElement = document.getElementById('password-message');
     const updateBtn = document.getElementById('update-password-btn');
 
     const newPassword = newPasswordInput.value.trim();
     const confirmPassword = confirmPasswordInput.value.trim();
-
-    // Clear previous messages
-    messageElement.className = 'password-message';
-    messageElement.innerText = '';
 
     // Validate inputs
     if (!newPassword || !confirmPassword) {
@@ -186,15 +210,13 @@ async function handlePasswordUpdate(e) {
         if (response.ok && data.Result) {
             updateBtn.innerHTML = '<i class="fas fa-check"></i> Başarılı';
             updateBtn.style.backgroundColor = '#1ed760';
-            messageElement.innerText = 'Şifreniz başarıyla güncellendi';
-            messageElement.classList.add('success');
             newPasswordInput.value = '';
             confirmPasswordInput.value = '';
         } else {
             updateBtn.innerHTML = '<i class="fas fa-times"></i> Başarısız';
             updateBtn.style.backgroundColor = '#e74c3c';
-            messageElement.innerText = data.Message || 'Şifre güncellenirken bir hata oluştu';
-            messageElement.classList.add('error');
+            newPasswordInput.value = '';
+            confirmPasswordInput.value = '';
         }
 
         setTimeout(() => {
