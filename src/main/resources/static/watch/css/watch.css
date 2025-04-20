@@ -26,3 +26,6 @@
 
 /* 8) Responsive styles (always last to override) */
 @import url('responsive.css');
+
+/* 9) Wishlist styles */
+@import url('wishlist.css');

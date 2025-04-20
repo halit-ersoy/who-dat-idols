@@ -286,4 +286,19 @@ public class HomeController {
         }
     }
 
+    @GetMapping("/favorites")
+    public ResponseEntity<Resource> getFavoritesPage() {
+        try {
+            Resource htmlPage = new ClassPathResource("static/favorites/html/favorites.html");
+            if (!htmlPage.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
+                    .body(htmlPage);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
 }

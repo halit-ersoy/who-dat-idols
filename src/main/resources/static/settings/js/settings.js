@@ -36,33 +36,82 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Setup notification toggle buttons
+// Setup notification toggle buttons with permission handling
 document.addEventListener('DOMContentLoaded', () => {
     const notificationOnBtn = document.getElementById('notifications-on');
     const notificationOffBtn = document.getElementById('notifications-off');
 
-    // Set initial state based on user preference
-    const isNotificationsEnabled = true; // You can fetch this from user settings
+    // Check current notification permission status and user preference
+    checkNotificationStatus();
 
-    if (isNotificationsEnabled) {
-        notificationOnBtn.classList.add('active');
-        notificationOffBtn.classList.remove('active');
-    } else {
-        notificationOffBtn.classList.add('active');
-        notificationOnBtn.classList.remove('active');
-    }
-
-    notificationOnBtn.addEventListener('click', () => {
-        notificationOnBtn.classList.add('active');
-        notificationOffBtn.classList.remove('active');
-        // Add code to update user preferences
+    notificationOnBtn.addEventListener('click', async () => {
+        // Request permission if not granted yet
+        if (Notification.permission !== 'granted') {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                setNotificationPreference(true);
+            } else {
+                // If permission denied or dismissed, keep toggle off
+                setNotificationPreference(false);
+                alert('Bildirim izni reddedildi. Bildirimleri açmak için tarayıcı izinlerini değiştirmeniz gerekmektedir.');
+            }
+        } else {
+            // Permission already granted, just enable user preference
+            setNotificationPreference(true);
+        }
     });
 
     notificationOffBtn.addEventListener('click', () => {
-        notificationOffBtn.classList.add('active');
-        notificationOnBtn.classList.remove('active');
-        // Add code to update user preferences
+        setNotificationPreference(false);
+
+        if (Notification.permission === 'granted') {
+            // Inform user that permission remains but notifications won't be shown
+            alert('Bildirimler kullanıcı tercihinize göre devre dışı bırakıldı, ancak tarayıcı izni hala aktif. Tarayıcı izinlerini tamamen iptal etmek için tarayıcı ayarlarını kullanmanız gerekir.');
+        }
     });
+
+    // Check notification permission and update toggle state
+    function checkNotificationStatus() {
+        // Get user preference (default to false if not set)
+        const userPreference = localStorage.getItem('wdiNotificationsEnabled') === 'true';
+
+        if (!('Notification' in window)) {
+            // Browser doesn't support notifications
+            setNotificationUIState(false);
+            notificationOnBtn.disabled = true;
+            return;
+        }
+
+        // Set state based on both permission AND user preference
+        if (Notification.permission === 'granted' && userPreference) {
+            setNotificationUIState(true);
+        } else {
+            setNotificationUIState(false);
+        }
+    }
+
+    // Helper function to update UI state and save preference
+    function setNotificationPreference(enabled) {
+        // Save user preference
+        localStorage.setItem('wdiNotificationsEnabled', enabled);
+
+        // Update UI
+        setNotificationUIState(enabled);
+
+        // Here you would also call API to update user preference in backend
+        // Example: saveNotificationPreferenceToServer(enabled);
+    }
+
+    // Update only the UI state
+    function setNotificationUIState(enabled) {
+        if (enabled) {
+            notificationOnBtn.classList.add('active');
+            notificationOffBtn.classList.remove('active');
+        } else {
+            notificationOffBtn.classList.add('active');
+            notificationOnBtn.classList.remove('active');
+        }
+    }
 });
 
 function setupAuthStatus() {

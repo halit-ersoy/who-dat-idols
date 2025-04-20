@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Favorilerim - Who Dat Idols?</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/favorites/css/favorites.css">
+</head>
+<body>
+<header>
+    <div class="logo">WDI</div>
+    <nav>
+        <a href="/" class="back-button"><i class="fas fa-arrow-left"></i> Anasayfaya Dön</a>
+    </nav>
+</header>
+
+<div class="content-wrapper">
+    <div class="page-title">
+        <div class="title-wrapper">
+            <h1><i class="fas fa-heart"></i> Favorilerim</h1>
+            <p>İstek listelerinizde sakladığınız içerikler</p>
+        </div>
+        <button id="createListBtn" class="create-list-btn">
+            <i class="fas fa-plus"></i> Yeni Liste Oluştur
+        </button>
+    </div>
+
+    <div class="lists-container">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Listeleriniz yükleniyor...</p>
+        </div>
+    </div>
+</div>
+
+<!-- List Management Modal -->
+<div id="listManageModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Listeyi Düzenle</h3>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="input-group">
+                <label for="editListName">Liste Adı</label>
+                <input type="text" id="editListName" placeholder="Liste adını giriniz" maxlength="100">
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel">İptal</button>
+                <button class="btn-save rename-list">Kaydet</button>
+                <button class="btn-delete">Listeyi Sil</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <div class="footer-links">
+        <a href="/">Anasayfa</a>
+        <a href="/about">Hakkımızda</a>
+        <a href="/privacy_policy">Gizlilik Politikası</a>
+        <a href="/terms_of_use">Kullanım Şartları</a>
+        <a href="/sss">SSS</a>
+    </div>
+    <p>&copy; 2025 Who Dat Idols? Tüm hakları saklıdır.</p>
+</footer>
+<script type="module" src="/favorites/js/favorites.js"></script>
+</body>
+</html>

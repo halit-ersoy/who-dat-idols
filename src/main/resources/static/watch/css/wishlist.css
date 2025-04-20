@@ -1,0 +1,287 @@
+/* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modal.show {
+    display: flex;
+    opacity: 1;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background-color: #222;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(-30px) scale(0.95);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(30, 215, 96, 0.3);
+}
+
+.modal.show .modal-content {
+    transform: translateY(0) scale(1);
+}
+
+.modal-header {
+    padding: 15px 20px;
+    background: linear-gradient(to right, #181818, #282828);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #1ed760;
+}
+
+.close-modal {
+    color: #aaa;
+    font-size: 28px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.close-modal:hover {
+    color: #1ed760;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.lists-container {
+    margin-bottom: 25px;
+}
+
+.lists-container h4, .new-list-form h4 {
+    color: #eee;
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 18px;
+    position: relative;
+}
+
+.lists-container h4::after, .new-list-form h4::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 50px;
+    height: 2px;
+    background-color: #1ed760;
+}
+
+.user-lists {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.list-item {
+    background-color: #333;
+    padding: 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.list-item:hover {
+    background-color: #3a3a3a;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.list-item.selected {
+    border-color: #1ed760;
+    background-color: rgba(30, 215, 96, 0.1);
+}
+
+.list-item h5 {
+    margin: 0 0 5px 0;
+    font-size: 16px;
+    color: #fff;
+}
+
+.list-item p {
+    margin: 0;
+    font-size: 12px;
+    color: #aaa;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+}
+
+#newListName {
+    flex-grow: 1;
+    padding: 10px 15px;
+    background-color: #333;
+    border: 2px solid #444;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+#newListName:focus {
+    border-color: #1ed760;
+    outline: none;
+    box-shadow: 0 0 10px rgba(30, 215, 96, 0.3);
+}
+
+.btn-create-list {
+    background: linear-gradient(45deg, #1ed760, #1db954);
+    color: #000;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-create-list:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(30, 215, 96, 0.4);
+}
+
+.loading-spinner {
+    text-align: center;
+    padding: 20px;
+    color: #aaa;
+}
+
+.empty-list-message {
+    text-align: center;
+    padding: 20px;
+    color: #aaa;
+    font-style: italic;
+}
+
+.list-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+    gap: 10px;
+}
+
+.btn-cancel, .btn-save {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-cancel {
+    background-color: #444;
+    color: #ddd;
+    border: none;
+}
+
+.btn-cancel:hover {
+    background-color: #555;
+}
+
+.btn-save {
+    background: linear-gradient(45deg, #1ed760, #1db954);
+    color: #000;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(30, 215, 96, 0.4);
+}
+
+/* Message styles */
+.success-message, .error-message {
+    padding: 10px;
+    border-radius: 8px;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.success-message {
+    background-color: rgba(30, 215, 96, 0.1);
+    color: #1ed760;
+}
+
+.error-message {
+    background-color: rgba(255, 70, 70, 0.1);
+    color: #ff4646;
+}
+
+/* Add to your watch.css file */
+.list-item.has-video {
+    background-color: rgba(30, 215, 96, 0.1);
+    border-left: 3px solid #1ed760;
+}
+
+.in-list-badge {
+    background-color: #1ed760;
+    color: #000;
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    display: inline-block;
+    margin-top: 5px;
+}
+
+.btn-save i.fa-minus {
+    color: #ff4646;
+}
+
+.glow-button.in-list {
+    background: linear-gradient(45deg, #ff4646, #d32f2f);
+}
+
+.temp-success-message {
+    position: absolute;
+    right: 20px;
+    top: -40px;
+    background-color: rgba(30, 215, 96, 0.9);
+    color: #000;
+    padding: 8px 15px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: slideDown 0.3s forwards;
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}

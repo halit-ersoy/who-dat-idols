@@ -41,6 +41,36 @@
             <button class="glow-button"><i class="fas fa-plus"></i> İstek Listesine Ekle</button>
         </div>
 
+        <!-- Add to List Modal -->
+        <div id="addToListModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>İstek Listenize Ekleyin</h3>
+                    <span class="close-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="lists-container">
+                        <h4>Mevcut Listeleriniz</h4>
+                        <div id="userLists" class="user-lists">
+                            <!-- Lists will be populated here -->
+                            <div class="loading-spinner">
+                                <i class="fas fa-spinner fa-spin"></i> Listeler yükleniyor...
+                            </div>
+                        </div>
+                    </div>
+                    <div class="new-list-form">
+                        <h4>Yeni Liste Oluştur</h4>
+                        <div class="input-group">
+                            <input type="text" id="newListName" placeholder="Liste adı girin..." maxlength="100">
+                            <button id="createListBtn" class="btn-create-list">
+                                <i class="fas fa-plus"></i> Oluştur
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="content-details-section">
             <div class="details-toggle">
                 <span>İçerik Detayları</span>
@@ -148,6 +178,6 @@
     </div>
     <p>&copy; 2025 Who Dat Idols? Tüm hakları saklıdır.</p>
 </footer>
-<script src="/watch/js/watch.js"></script>
+<script type="module" src="/watch/js/watch.js"></script>
 </body>
 </html>
