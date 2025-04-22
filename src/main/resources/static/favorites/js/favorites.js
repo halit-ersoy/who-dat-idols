@@ -1,6 +1,9 @@
 // favorites.js
 document.addEventListener('DOMContentLoaded', () => {
-    initFavorites();
+    initFavorites().then(() => {
+        // Setup collapsible functionality after lists are rendered
+        setupCollapsibleLists();
+    });
 
     // Add event listener for create list button
     const createListBtn = document.getElementById('createListBtn');
@@ -269,6 +272,73 @@ function setupListInteractions() {
             const listName = listElement.dataset.listName;
             openEditModal(listName, listElement);
         });
+    });
+}
+
+function setupCollapsibleLists() {
+    // Get all list headers
+    const listHeaders = document.querySelectorAll('.list-header');
+
+    // Add toggle indicators to list headers
+    listHeaders.forEach(header => {
+        // Add toggle indicator if it doesn't exist
+        if (!header.querySelector('.toggle-indicator')) {
+            const indicator = document.createElement('i');
+            indicator.className = 'fas fa-chevron-down toggle-indicator';
+
+            // Insert before the list-actions if it exists
+            const actions = header.querySelector('.list-actions');
+            if (actions) {
+                header.insertBefore(indicator, actions);
+            } else {
+                header.appendChild(indicator);
+            }
+        }
+
+        // Add click event to toggle expansion
+        header.addEventListener('click', (e) => {
+            // Don't toggle if clicking on action buttons
+            if (e.target.closest('.list-action-btn')) {
+                return;
+            }
+
+            const listWrapper = header.closest('.list-wrapper');
+            const content = listWrapper.querySelector('.list-content');
+            const contentInner = content.querySelector('.list-content-inner') || content;
+
+            // If this list is already expanded, collapse it
+            if (listWrapper.classList.contains('expanded')) {
+                listWrapper.classList.remove('expanded');
+                content.style.height = '0px';
+            } else {
+                // First close any open lists
+                document.querySelectorAll('.list-wrapper.expanded').forEach(openList => {
+                    if (openList !== listWrapper) {
+                        openList.classList.remove('expanded');
+                        openList.querySelector('.list-content').style.height = '0px';
+                    }
+                });
+
+                // Then expand this one
+                listWrapper.classList.add('expanded');
+                content.style.height = contentInner.offsetHeight + 'px';
+            }
+        });
+    });
+
+    // Wrap list content in a div for height calculation
+    document.querySelectorAll('.list-content').forEach(content => {
+        if (!content.querySelector('.list-content-inner')) {
+            const inner = document.createElement('div');
+            inner.className = 'list-content-inner';
+
+            // Move all children into the inner div
+            while (content.firstChild) {
+                inner.appendChild(content.firstChild);
+            }
+
+            content.appendChild(inner);
+        }
     });
 }
 
