@@ -1,6 +1,11 @@
 import { initHeaderScroll } from '/homepage/js/headerScroll.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+    const loadingScreen = document.getElementById('loading-screen');
+    if (loadingScreen) {
+        loadingScreen.style.display = 'none';
+    }
+
     initHeaderScroll();
     setupProfileSection();
     setupAuthStatus();
@@ -29,11 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const passwordForm = document.getElementById('password-form');
     passwordForm.addEventListener('submit', handlePasswordUpdate);
 
-    // Setup loading screen
-    const loadingScreen = document.getElementById('loading-screen');
-    if (loadingScreen) {
-        loadingScreen.style.display = 'none';
-    }
 });
 
 // Setup notification toggle buttons with permission handling
