@@ -195,7 +195,7 @@ function processListData(data) {
             map[name].videos.push({
                 id: item.VideoID,
                 title: item.VideoName || 'Başlıksız Video',
-                image: item.PosterURL || '/homepage/img/default-poster.jpg',
+                image: 'media/image/' + item.VideoID,
                 year: item.Year || 'N/A',
                 type: (item.Category || '').toString().split(',')[0] || 'Video'
             });
