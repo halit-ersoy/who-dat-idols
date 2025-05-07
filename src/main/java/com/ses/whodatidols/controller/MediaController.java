@@ -19,10 +19,32 @@ import java.util.UUID;
 public class MediaController {
 
     private static final String MEDIA_ROOT_PATH = "D:\\SourceFiles\\mssql\\media";
+    private static final String STATIC_IMAGES_PATH = "D:\\SourceFiles\\mssql\\static";
+
     private final JdbcTemplate jdbcTemplate;
 
     public MediaController(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @GetMapping("/static/image/{imageName}")
+    public ResponseEntity<?> getStaticImage(@PathVariable String imageName) {
+        try {
+            // Sanitize the filename to prevent directory traversal attacks
+            String sanitizedName = imageName.replaceAll("[^a-zA-Z0-9.-]", "_");
+            File imageFile = new File(STATIC_IMAGES_PATH + "\\" + sanitizedName);
+
+            if (!imageFile.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            MediaType mediaType = determineMediaType(imageFile);
+            return ResponseEntity.ok()
+                    .contentType(mediaType)
+                    .body(new FileSystemResource(imageFile));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error serving static image: " + e.getMessage());
+        }
     }
 
     @GetMapping("/video/{id}")
