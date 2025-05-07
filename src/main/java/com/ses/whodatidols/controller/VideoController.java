@@ -25,17 +25,6 @@ public class VideoController {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    @GetMapping("/stream")
-    public ResponseEntity<StreamingResponseBody> streamVideo(
-            @RequestParam("id") UUID id,
-            @RequestHeader(value = "Range", required = false) String rangeHeader) {
-        // Redirect to the new media endpoint
-        return ResponseEntity
-                .status(302)
-                .header("Location", "/media/video/" + id)
-                .build();
-    }
-
     @GetMapping("/transcode")
     public ResponseEntity<ResourceRegion> getTranscodedVideo(
             @RequestParam("id") UUID id,

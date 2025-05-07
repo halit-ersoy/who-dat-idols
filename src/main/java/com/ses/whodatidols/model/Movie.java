@@ -11,8 +11,6 @@ public class Movie {
     private int time;
     private String language;
     private int year;
-    private String sourcePath;
-    private String bannerPath;
     private LocalDateTime uploadDate;
 
     // Constructors
@@ -20,8 +18,7 @@ public class Movie {
     }
 
     public Movie(UUID id, String name, String category, String content, int time,
-                 String language, int year, String sourcePath, String bannerPath,
-                 LocalDateTime uploadDate) {
+                 String language, int year, LocalDateTime uploadDate) {
         this.id = id;
         this.name = name;
         this.category = category;
@@ -29,8 +26,6 @@ public class Movie {
         this.time = time;
         this.language = language;
         this.year = year;
-        this.sourcePath = sourcePath;
-        this.bannerPath = bannerPath;
         this.uploadDate = uploadDate;
     }
 
@@ -89,22 +84,6 @@ public class Movie {
 
     public void setYear(int year) {
         this.year = year;
-    }
-
-    public String getSourcePath() {
-        return sourcePath;
-    }
-
-    public void setSourcePath(String sourcePath) {
-        this.sourcePath = sourcePath;
-    }
-
-    public String getBannerPath() {
-        return bannerPath;
-    }
-
-    public void setBannerPath(String bannerPath) {
-        this.bannerPath = bannerPath;
     }
 
     public LocalDateTime getUploadDate() {

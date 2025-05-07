@@ -11,8 +11,6 @@ public class SoapOpera {
     private int time; // Store as minutes
     private String language;
     private int year;
-    private String sourcePath;
-    private String bannerPath;
     private LocalDateTime uploadDate;
 
     // Constructors
@@ -74,22 +72,6 @@ public class SoapOpera {
 
     public void setYear(int year) {
         this.year = year;
-    }
-
-    public String getSourcePath() {
-        return sourcePath;
-    }
-
-    public void setSourcePath(String sourcePath) {
-        this.sourcePath = sourcePath;
-    }
-
-    public String getBannerPath() {
-        return bannerPath;
-    }
-
-    public void setBannerPath(String bannerPath) {
-        this.bannerPath = bannerPath;
     }
 
     public LocalDateTime getUploadDate() {

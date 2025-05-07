@@ -49,8 +49,6 @@ public class SoapOperaRepository {
             soapOpera.setTime(rs.getInt("time"));
             soapOpera.setLanguage(rs.getString("language"));
             soapOpera.setYear(rs.getInt("year"));
-            soapOpera.setSourcePath(rs.getString("sourcePath"));
-            soapOpera.setBannerPath(rs.getString("bannerPath"));
             soapOpera.setUploadDate(rs.getTimestamp("uploadDate").toLocalDateTime());
             return soapOpera;
         }

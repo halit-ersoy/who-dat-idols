@@ -163,7 +163,7 @@ export function initVideoControls(videoId) {
             videoPlayer.style.display = 'none';
             return;
         }
-        videoSource.src = `/api/video/stream?id=${id}`;
+        videoSource.src = `/media/video/${id}`;
         videoPlayer.load();
         titleEl.innerText = `Video ${id}`;
         infoEl .innerText = `Video ID: ${id}`;

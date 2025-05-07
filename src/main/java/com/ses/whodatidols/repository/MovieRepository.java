@@ -51,8 +51,6 @@ public class MovieRepository {
             movie.setTime(rs.getInt("time"));
             movie.setLanguage(rs.getString("language"));
             movie.setYear(rs.getInt("year"));
-            movie.setSourcePath(rs.getString("sourcePath"));
-            movie.setBannerPath(rs.getString("bannerPath"));
             movie.setUploadDate(rs.getTimestamp("uploadDate").toLocalDateTime());
             return movie;
         }

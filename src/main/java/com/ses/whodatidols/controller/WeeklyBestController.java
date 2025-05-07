@@ -39,7 +39,7 @@ public class WeeklyBestController {
                     vm.setInfo(movie.getYear() + " • " + mainCategory + " • " + movie.getTime() + " dk");
 
                     // Set the thumbnail URL to use the image API endpoint
-                    vm.setThumbnailUrl("/api/images/movie?id=" + movie.getId());
+                    vm.setThumbnailUrl("/media/image/" + movie.getId());
                     vm.setVideoUrl("/watch?id=" + movie.getId());
 
                     return vm;
@@ -63,7 +63,7 @@ public class WeeklyBestController {
                     vm.setInfo(soapOpera.getYear() + " • " + mainCategory + " • " + soapOpera.getTime() + " dk");
 
                     // Set the thumbnail URL to use the image API endpoint
-                    vm.setThumbnailUrl("/api/images/soap-opera?id=" + soapOpera.getId());
+                    vm.setThumbnailUrl("/media/image/" + soapOpera.getId());
                     vm.setVideoUrl("/watch?id=" + soapOpera.getId());
 
                     return vm;
