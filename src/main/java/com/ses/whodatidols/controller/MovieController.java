@@ -21,6 +21,7 @@ public class MovieController {
         this.movieRepository = movieRepository;
     }
 
+    // In MovieController, modify the getRecentMovies method:
     @GetMapping("/recent")
     public ResponseEntity<List<VideoViewModel>> getRecentMovies(
             @RequestParam(value = "day", defaultValue = "10") int day) {
@@ -35,10 +36,8 @@ public class MovieController {
                     vm.setTitle(movie.getName());
                     vm.setInfo(movie.getYear() + " • " + mainCategory + " • " + movie.getTime() + " dk");
 
-                    String thumbnailUrl = "/api/images/movie?id=" + movie.getId();
-                    vm.setThumbnailUrl(thumbnailUrl);
-
-                    // Set video URL based on the ID
+                    // Updated to use the new media endpoint
+                    vm.setThumbnailUrl("/media/image/" + movie.getId());
                     vm.setVideoUrl("/watch?id=" + movie.getId());
 
                     return vm;

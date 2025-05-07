@@ -29,7 +29,11 @@ public class VideoController {
     public ResponseEntity<StreamingResponseBody> streamVideo(
             @RequestParam("id") UUID id,
             @RequestHeader(value = "Range", required = false) String rangeHeader) {
-        return videoService.streamVideo(id, rangeHeader);
+        // Redirect to the new media endpoint
+        return ResponseEntity
+                .status(302)
+                .header("Location", "/media/video/" + id)
+                .build();
     }
 
     @GetMapping("/transcode")

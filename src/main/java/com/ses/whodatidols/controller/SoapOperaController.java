@@ -21,6 +21,7 @@ public class SoapOperaController {
         this.soapOperaRepository = soapOperaRepository;
     }
 
+    // In SoapOperaController, modify the getRecentSoapOperas method:
     @GetMapping("/recent")
     public ResponseEntity<List<VideoViewModel>> getRecentSoapOperas(
             @RequestParam(value = "day", defaultValue = "20") int day) {
@@ -35,9 +36,8 @@ public class SoapOperaController {
                     vm.setTitle(soapOpera.getName());
                     vm.setInfo(soapOpera.getYear() + " • " + mainCategory + " • " + soapOpera.getTime() + " dk");
 
-                    String thumbnailUrl = "/api/images/soap-opera?id=" + soapOpera.getId();
-                    vm.setThumbnailUrl(thumbnailUrl);
-
+                    // Updated to use the new media endpoint
+                    vm.setThumbnailUrl("/media/image/" + soapOpera.getId());
                     vm.setVideoUrl("/watch?id=" + soapOpera.getId());
 
                     return vm;
