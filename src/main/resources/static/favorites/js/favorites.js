@@ -3,19 +3,19 @@
     'use strict';
 
     // --- Cache’lenmiş DOM Elemanları ---
-    const container       = document.querySelector('.lists-container');
-    const createListBtn   = document.getElementById('createListBtn');
-    const modal           = document.getElementById('listManageModal');
-    const modalTitle      = modal.querySelector('.modal-header h3');
-    const nameInput       = document.getElementById('editListName');
-    const saveBtn         = modal.querySelector('.rename-list');
-    const deleteBtn       = modal.querySelector('.btn-delete');
-    const cancelBtn       = modal.querySelector('.btn-cancel');
-    const closeBtn        = modal.querySelector('.close-modal');
+    const container = document.querySelector('.lists-container');
+    const createListBtn = document.getElementById('createListBtn');
+    const modal = document.getElementById('listManageModal');
+    const modalTitle = modal.querySelector('.modal-header h3');
+    const nameInput = document.getElementById('editListName');
+    const saveBtn = modal.querySelector('.rename-list');
+    const deleteBtn = modal.querySelector('.btn-delete');
+    const cancelBtn = modal.querySelector('.btn-cancel');
+    const closeBtn = modal.querySelector('.close-modal');
 
-    let currentMode       = null;   // 'create' | 'edit'
-    let currentListName   = null;
-    let currentListElem   = null;
+    let currentMode = null;   // 'create' | 'edit'
+    let currentListName = null;
+    let currentListElem = null;
 
     // --- Başlangıç ---
     document.addEventListener('DOMContentLoaded', () => {
@@ -86,7 +86,7 @@
 
     // --- Modal Açma/Kapama ---
     function openModal(mode, listName = '', listElem = null) {
-        currentMode     = mode;
+        currentMode = mode;
         currentListName = listName;
         currentListElem = listElem;
 
@@ -96,14 +96,14 @@
 
         if (mode === 'create') {
             modalTitle.textContent = 'Yeni Liste Oluştur';
-            nameInput.value        = '';
-            nameInput.placeholder  = 'Liste adını giriniz';
-            saveBtn.textContent    = 'Oluştur';
+            nameInput.value = '';
+            nameInput.placeholder = 'Liste adını giriniz';
+            saveBtn.textContent = 'Oluştur';
             deleteBtn.style.display = 'none';
         } else {
             modalTitle.textContent = 'Listeyi Düzenle';
-            nameInput.value        = listName;
-            saveBtn.textContent    = 'Kaydet';
+            nameInput.value = listName;
+            saveBtn.textContent = 'Kaydet';
             deleteBtn.style.display = 'block';
         }
 
@@ -225,7 +225,7 @@
                 header.insertBefore(document.createElement('i'), header.querySelector('.list-actions'));
             icon.className = 'fas fa-chevron-down toggle-indicator';
             const content = header.nextElementSibling;
-            content.style.height   = '0';
+            content.style.height = '0';
             content.style.overflow = 'hidden';
             content.style.transition = 'height 0.3s ease';
         });
@@ -241,7 +241,7 @@
             }
         });
         const content = wrapper.querySelector('.list-content');
-        const inner   = content.querySelector('.list-content-inner');
+        const inner = content.querySelector('.list-content-inner');
         content.style.height = expanded ? inner.scrollHeight + 'px' : '0';
     }
 
@@ -250,27 +250,29 @@
         if (!localStorage.getItem('wdiUserToken')) {
             throw new Error('Oturum açmalısınız');
         }
-        const res = await fetch('/api/saved/lists', { credentials: 'include' });
+        const res = await fetch('/api/saved/lists', {credentials: 'include'});
         if (!res.ok) throw new Error('Listeler alınamadı');
         return processListData(await res.json());
     }
+
     function processListData(data) {
         if (!Array.isArray(data) || !data.length) return [];
         const map = {};
         data.forEach(item => {
-            if (!map[item.ListName]) map[item.ListName] = { name: item.ListName, videos: [] };
+            if (!map[item.ListName]) map[item.ListName] = {name: item.ListName, videos: []};
             if (item.VideoID) {
                 map[item.ListName].videos.push({
-                    id:    item.VideoID,
+                    id: item.VideoID,
                     title: item.VideoName || 'Başlıksız Video',
                     image: 'media/image/' + item.VideoID,
-                    year:  item.Year || 'N/A',
-                    type:  (item.Category || '').split(',')[0] || 'Video'
+                    year: item.Year || 'N/A',
+                    type: (item.Category || '').split(',')[0] || 'Video'
                 });
             }
         });
         return Object.values(map);
     }
+
     async function createNewList(title) {
         const res = await fetch(`/api/saved/create?title=${encodeURIComponent(title)}`, {
             method: 'POST', credentials: 'include'
@@ -279,6 +281,7 @@
         if (data.Result !== 1) throw new Error(data.Message || 'Hata');
         return data;
     }
+
     async function renameList(oldName, newName) {
         const res = await fetch(
             `/api/saved/rename-list?title=${encodeURIComponent(oldName)}&newTitle=${encodeURIComponent(newName)}`, {
@@ -289,6 +292,7 @@
         if (data.Result !== 1) throw new Error(data.Message || 'Hata');
         return data;
     }
+
     async function deleteList(title) {
         const form = new FormData();
         form.append('title', title);
@@ -298,6 +302,7 @@
         if (!res.ok) throw new Error('Sunucu hatası');
         return res.json();
     }
+
     async function removeFromList(id) {
         const res = await fetch(`/api/saved/remove?videoId=${id}`, {
             method: 'POST', credentials: 'include'
@@ -331,6 +336,7 @@
             container.appendChild(wrap);
         });
     }
+
     function renderItems(videos) {
         if (!videos.length) {
             return `<div class="empty-list"><i class="fas fa-film"></i><p>Henüz video yok.</p></div>`;
@@ -361,6 +367,7 @@
       </div>
     `;
     }
+
     function showError(msg) {
         container.innerHTML = `
       <div class="empty-list">
@@ -373,16 +380,19 @@
         container.querySelector('.retry-btn')
             .addEventListener('click', initFavorites);
     }
+
     function flashButton(btn, html) {
         const orig = btn.innerHTML;
         btn.innerHTML = html;
         setTimeout(() => btn.innerHTML = orig, 3000);
     }
+
     function escapeHtml(str) {
         const d = document.createElement('div');
         d.textContent = str;
         return d.innerHTML;
     }
+
     function injectStyles() {
         if (document.getElementById('favorites-styles')) return;
         const css = document.createElement('style');

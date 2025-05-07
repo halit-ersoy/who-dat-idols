@@ -1,5 +1,6 @@
 import { initHeaderScroll } from '/homepage/js/headerScroll.js';
 
+// Main initialization on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
     const loadingScreen = document.getElementById('loading-screen');
     if (loadingScreen) {
@@ -7,125 +8,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     initHeaderScroll();
-    setupProfileSection();
-    setupAuthStatus();
 
-    // Setup navigation
-    const navItems = document.querySelectorAll('.settings-nav li');
-    navItems.forEach(item => {
-        item.addEventListener('click', () => {
-            // Remove active class from all items
-            navItems.forEach(nav => nav.classList.remove('active'));
-
-            // Add active class to clicked item
-            item.classList.add('active');
-
-            // Hide all sections
-            const sections = document.querySelectorAll('.settings-section');
-            sections.forEach(section => section.classList.remove('active'));
-
-            // Show selected section
-            const sectionId = `${item.dataset.section}-section`;
-            document.getElementById(sectionId).classList.add('active');
+    setupProfileSection()
+        .then(() => {
+            setupAuthStatus();
+            initSettingsNavigation();
+            initPasswordForm();
+            initNotificationToggles();
+        })
+        .catch(error => {
+            console.error('Initialization error:', error);
         });
-    });
-
-    // Setup password form
-    const passwordForm = document.getElementById('password-form');
-    passwordForm.addEventListener('submit', handlePasswordUpdate);
-
 });
 
-// Setup notification toggle buttons with permission handling
-document.addEventListener('DOMContentLoaded', () => {
-    const notificationOnBtn = document.getElementById('notifications-on');
-    const notificationOffBtn = document.getElementById('notifications-off');
-
-    // Check current notification permission status and user preference
-    checkNotificationStatus();
-
-    notificationOnBtn.addEventListener('click', async () => {
-        // Request permission if not granted yet
-        if (Notification.permission !== 'granted') {
-            const permission = await Notification.requestPermission();
-            if (permission === 'granted') {
-                setNotificationPreference(true);
-            } else {
-                // If permission denied or dismissed, keep toggle off
-                setNotificationPreference(false);
-                alert('Bildirim izni reddedildi. Bildirimleri açmak için tarayıcı izinlerini değiştirmeniz gerekmektedir.');
-            }
-        } else {
-            // Permission already granted, just enable user preference
-            setNotificationPreference(true);
-        }
-    });
-
-    notificationOffBtn.addEventListener('click', () => {
-        setNotificationPreference(false);
-
-        if (Notification.permission === 'granted') {
-            // Inform user that permission remains but notifications won't be shown
-            alert('Bildirimler kullanıcı tercihinize göre devre dışı bırakıldı, ancak tarayıcı izni hala aktif. Tarayıcı izinlerini tamamen iptal etmek için tarayıcı ayarlarını kullanmanız gerekir.');
-        }
-    });
-
-    // Check notification permission and update toggle state
-    function checkNotificationStatus() {
-        // Get user preference (default to false if not set)
-        const userPreference = localStorage.getItem('wdiNotificationsEnabled') === 'true';
-
-        if (!('Notification' in window)) {
-            // Browser doesn't support notifications
-            setNotificationUIState(false);
-            notificationOnBtn.disabled = true;
-            return;
-        }
-
-        // Set state based on both permission AND user preference
-        if (Notification.permission === 'granted' && userPreference) {
-            setNotificationUIState(true);
-        } else {
-            setNotificationUIState(false);
-        }
-    }
-
-    // Helper function to update UI state and save preference
-    function setNotificationPreference(enabled) {
-        // Save user preference
-        localStorage.setItem('wdiNotificationsEnabled', enabled);
-
-        // Update UI
-        setNotificationUIState(enabled);
-
-        // Here you would also call API to update user preference in backend
-        // Example: saveNotificationPreferenceToServer(enabled);
-    }
-
-    // Update only the UI state
-    function setNotificationUIState(enabled) {
-        if (enabled) {
-            notificationOnBtn.classList.add('active');
-            notificationOffBtn.classList.remove('active');
-        } else {
-            notificationOffBtn.classList.add('active');
-            notificationOnBtn.classList.remove('active');
-        }
-    }
-});
-
+/**
+ * Sets up authentication status: redirects if unauthenticated,
+ * and builds the profile dropdown in header.
+ */
 function setupAuthStatus() {
     const authCookie = getCookie('wdiAuth') || localStorage.getItem('wdiUserToken');
     const userNickname = localStorage.getItem('wdiUserNickname');
 
     if (!authCookie) {
-        // Redirect to home if not authenticated
         window.location.href = '/';
         return;
     }
 
-    // Create profile section in header
-    const header = document.getElementById('header');
+    // Find header element (fallback to <header> tag)
+    const header = document.getElementById('header') || document.querySelector('header');
+    if (!header) {
+        console.error('Header element not found for setupAuthStatus');
+        return;
+    }
+
     const profileSection = document.createElement('div');
     profileSection.className = 'profile-section';
     profileSection.innerHTML = `
@@ -143,7 +58,6 @@ function setupAuthStatus() {
     `;
     header.appendChild(profileSection);
 
-    // Setup dropdown functionality
     const profileBtn = profileSection.querySelector('.profile-btn');
     const dropdown = profileSection.querySelector('.profile-dropdown');
 
@@ -157,9 +71,7 @@ function setupAuthStatus() {
         }
     });
 
-    // Setup logout
-    const logoutBtn = document.getElementById('logout-btn');
-    logoutBtn.addEventListener('click', (e) => {
+    document.getElementById('logout-btn').addEventListener('click', (e) => {
         e.preventDefault();
         localStorage.removeItem('wdiUserToken');
         localStorage.removeItem('wdiUserNickname');
@@ -168,42 +80,67 @@ function setupAuthStatus() {
     });
 }
 
+/**
+ * Fetches user profile data and populates settings UI.
+ * Returns a Promise that resolves when data is loaded or rejects on error.
+ */
 async function setupProfileSection() {
-    try {
-        const response = await fetch('/api/user/profile');
-
-        if (!response.ok) {
-            if (response.status === 401) {
-                // Unauthorized, redirect to home
-                window.location.href = '/';
-                return;
-            }
-            throw new Error('Failed to fetch profile data');
+    const response = await fetch('/api/user/profile');
+    if (!response.ok) {
+        if (response.status === 401) {
+            window.location.href = '/';
+            return;
         }
-
-        const data = await response.json();
-
-        if (!data.Result) {
-            throw new Error(data.Message || 'Failed to fetch user data');
-        }
-
-        // Update profile information
-        document.getElementById('user-avatar').innerText = data.nickname.charAt(0).toUpperCase();
-        document.getElementById('user-fullname').innerText = `${data.name} ${data.surname}`;
-        document.getElementById('user-nickname').innerText = `@${data.nickname}`;
-        document.getElementById('user-name').innerText = data.name;
-        document.getElementById('user-surname').innerText = data.surname;
-        document.getElementById('settings-nickname').innerText = data.nickname;
-        document.getElementById('user-email').innerText = data.email;
-
-    } catch (error) {
-        console.error('Error fetching user data:', error);
+        throw new Error('Failed to fetch profile data');
     }
+    const data = await response.json();
+    if (!data.Result) {
+        throw new Error(data.Message || 'No user data');
+    }
+
+    document.getElementById('user-avatar').innerText = data.nickname.charAt(0).toUpperCase();
+    document.getElementById('user-fullname').innerText = `${data.name} ${data.surname}`;
+    document.getElementById('user-nickname').innerText = `@${data.nickname}`;
+    document.getElementById('user-name').innerText = data.name;
+    document.getElementById('user-surname').innerText = data.surname;
+    document.getElementById('settings-nickname').innerText = data.nickname;
+    document.getElementById('user-email').innerText = data.email;
 }
 
+/**
+ * Initializes the settings navigation tabs behavior.
+ */
+function initSettingsNavigation() {
+    const navItems = document.querySelectorAll('.settings-nav li');
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            navItems.forEach(nav => nav.classList.remove('active'));
+            item.classList.add('active');
+
+            document.querySelectorAll('.settings-section').forEach(section => section.classList.remove('active'));
+            const sectionId = `${item.dataset.section}-section`;
+            document.getElementById(sectionId).classList.add('active');
+        });
+    });
+}
+
+/**
+ * Sets up password update form handling.
+ */
+function initPasswordForm() {
+    const passwordForm = document.getElementById('password-form');
+    if (!passwordForm) {
+        console.error('Password form not found');
+        return;
+    }
+    passwordForm.addEventListener('submit', handlePasswordUpdate);
+}
+
+/**
+ * Handles password update logic with validation and feedback.
+ */
 async function handlePasswordUpdate(e) {
     e.preventDefault();
-
     const newPasswordInput = document.getElementById('new-password');
     const confirmPasswordInput = document.getElementById('confirm-password');
     const updateBtn = document.getElementById('update-password-btn');
@@ -211,87 +148,121 @@ async function handlePasswordUpdate(e) {
     const newPassword = newPasswordInput.value.trim();
     const confirmPassword = confirmPasswordInput.value.trim();
 
-    // Validate inputs
     if (!newPassword || !confirmPassword) {
-        updateBtn.innerHTML = '<i class="fas fa-times"></i> Tüm alanları doldurun';
-        updateBtn.style.backgroundColor = '#e74c3c';
-        setTimeout(() => {
-            updateBtn.innerHTML = 'Şifreyi Güncelle';
-            updateBtn.style.backgroundColor = '';
-        }, 3000);
+        showButtonError(updateBtn, 'Tüm alanları doldurun');
         return;
     }
-
     if (newPassword !== confirmPassword) {
-        updateBtn.innerHTML = '<i class="fas fa-times"></i> Şifreler eşleşmiyor';
-        updateBtn.style.backgroundColor = '#e74c3c';
-        setTimeout(() => {
-            updateBtn.innerHTML = 'Şifreyi Güncelle';
-            updateBtn.style.backgroundColor = '';
-        }, 3000);
+        showButtonError(updateBtn, 'Şifreler eşleşmiyor');
         return;
     }
-
     if (newPassword.length < 6) {
-        updateBtn.innerHTML = '<i class="fas fa-times"></i> Şifre çok kısa';
-        updateBtn.style.backgroundColor = '#e74c3c';
-        setTimeout(() => {
-            updateBtn.innerHTML = 'Şifreyi Güncelle';
-            updateBtn.style.backgroundColor = '';
-        }, 3000);
+        showButtonError(updateBtn, 'Şifre çok kısa');
         return;
     }
 
     try {
-        // Show loading state
+        updateBtn.disabled = true;
         updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Güncelleniyor...';
 
         const response = await fetch('/api/user/update-password', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ newPassword })
         });
-
         const data = await response.json();
 
         if (response.ok && data.Result) {
             updateBtn.innerHTML = '<i class="fas fa-check"></i> Başarılı';
-            updateBtn.style.backgroundColor = '#1ed760';
-            newPasswordInput.value = '';
-            confirmPasswordInput.value = '';
+            resetPasswordInputs(newPasswordInput, confirmPasswordInput);
         } else {
-            updateBtn.innerHTML = '<i class="fas fa-times"></i> Başarısız';
-            updateBtn.style.backgroundColor = '#e74c3c';
-            newPasswordInput.value = '';
-            confirmPasswordInput.value = '';
+            showButtonError(updateBtn, 'Başarısız');
         }
-
-        setTimeout(() => {
-            updateBtn.innerHTML = 'Şifreyi Güncelle';
-            updateBtn.style.backgroundColor = '';
-            updateBtn.disabled = false;
-        }, 3000);
     } catch (error) {
-        updateBtn.innerHTML = '<i class="fas fa-times"></i> Hata';
-        updateBtn.style.backgroundColor = '#e74c3c';
-        messageElement.innerText = 'Bir hata oluştu, lütfen tekrar deneyin';
-        messageElement.classList.add('error');
         console.error('Error updating password:', error);
-
-        setTimeout(() => {
-            updateBtn.innerHTML = 'Şifreyi Güncelle';
-            updateBtn.style.backgroundColor = '';
-            updateBtn.disabled = false;
-        }, 3000);
+        showButtonError(updateBtn, 'Hata');
     }
 }
 
-// Helper function to get cookie value
+function showButtonError(button, message) {
+    const original = button.innerHTML;
+    button.innerHTML = `<i class="fas fa-times"></i> ${message}`;
+    button.style.backgroundColor = '#e74c3c';
+    setTimeout(() => {
+        button.innerHTML = original || 'Şifreyi Güncelle';
+        button.style.backgroundColor = '';
+        button.disabled = false;
+    }, 3000);
+}
+
+function resetPasswordInputs(...inputs) {
+    inputs.forEach(i => i.value = '');
+    setTimeout(() => {
+        const btn = document.getElementById('update-password-btn');
+        btn.innerHTML = 'Şifreyi Güncelle';
+        btn.style.backgroundColor = '#1ed760';
+        btn.disabled = false;
+    }, 2000);
+}
+
+/**
+ * Initializes notification toggle buttons with permission handling.
+ */
+function initNotificationToggles() {
+    const onBtn = document.getElementById('notifications-on');
+    const offBtn = document.getElementById('notifications-off');
+    if (!onBtn || !offBtn) {
+        console.error('Notification toggle buttons not found');
+        return;
+    }
+
+    checkNotificationStatus();
+
+    onBtn.addEventListener('click', async () => {
+        if (Notification.permission !== 'granted') {
+            const perm = await Notification.requestPermission();
+            if (perm === 'granted') setNotificationPreference(true);
+            else {
+                setNotificationPreference(false);
+                alert('Bildirim izni reddedildi. Tarayıcı izinlerinden değiştirin.');
+            }
+        } else {
+            setNotificationPreference(true);
+        }
+    });
+    offBtn.addEventListener('click', () => {
+        setNotificationPreference(false);
+        if (Notification.permission === 'granted') {
+            alert('Bildirimler devre dışı; tarayıcı izinleri açık.');
+        }
+    });
+}
+
+function checkNotificationStatus() {
+    const pref = localStorage.getItem('wdiNotificationsEnabled') === 'true';
+    if (!('Notification' in window)) {
+        setNotificationUIState(false);
+        document.getElementById('notifications-on').disabled = true;
+        return;
+    }
+    setNotificationUIState(Notification.permission === 'granted' && pref);
+}
+
+function setNotificationPreference(enabled) {
+    localStorage.setItem('wdiNotificationsEnabled', enabled);
+    setNotificationUIState(enabled);
+    // TODO: saveNotificationPreferenceToServer(enabled);
+}
+
+function setNotificationUIState(enabled) {
+    document.getElementById('notifications-on').classList.toggle('active', enabled);
+    document.getElementById('notifications-off').classList.toggle('active', !enabled);
+}
+
+/**
+ * Helper to read a cookie by name.
+ */
 function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-    return null;
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    return match ? match[2] : null;
 }
