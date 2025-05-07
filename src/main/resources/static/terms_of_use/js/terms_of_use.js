@@ -1,15 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Header scroll effect
-    window.addEventListener('scroll', () => {
-        const header = document.getElementById('header');
-        if (header) {
-            if (window.scrollY > 50) {
-                header.classList.add('scrolled');
-            } else {
-                header.classList.remove('scrolled');
-            }
-        }
-    });
 
     // Terms sections: Add animation delays to each section
     const termsSections = document.querySelectorAll('.terms-content');

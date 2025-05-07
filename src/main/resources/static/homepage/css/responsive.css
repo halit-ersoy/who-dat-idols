@@ -3,11 +3,6 @@
  * ------------------------- */
 
 /* Firefox scrollbar styling */
-html {
-    scrollbar-width: thin;
-    scrollbar-color: #333 #0f0f0f;
-}
-
 @media (min-width: 1600px) {
     .weekly-best-grid {
         gap: 20px;

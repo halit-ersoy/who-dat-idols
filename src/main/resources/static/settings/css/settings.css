@@ -1,4 +1,21 @@
-@import url('/watch/css/header-footer.css');
+@import url('/homepage/css/base.css');
+@import url('/homepage/css/header.css');
+@import url('/elements/scrool.css');
+
+.back-button {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: color 0.3s ease;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.back-button:hover {
+    color: #1ed760;
+}
 
 .settings-container {
     display: flex;

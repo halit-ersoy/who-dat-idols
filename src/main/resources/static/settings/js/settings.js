@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupProfileSection()
         .then(() => {
-            setupAuthStatus();
             initSettingsNavigation();
             initPasswordForm();
             initNotificationToggles();
@@ -20,65 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Initialization error:', error);
         });
 });
-
-/**
- * Sets up authentication status: redirects if unauthenticated,
- * and builds the profile dropdown in header.
- */
-function setupAuthStatus() {
-    const authCookie = getCookie('wdiAuth') || localStorage.getItem('wdiUserToken');
-    const userNickname = localStorage.getItem('wdiUserNickname');
-
-    if (!authCookie) {
-        window.location.href = '/';
-        return;
-    }
-
-    // Find header element (fallback to <header> tag)
-    const header = document.getElementById('header') || document.querySelector('header');
-    if (!header) {
-        console.error('Header element not found for setupAuthStatus');
-        return;
-    }
-
-    const profileSection = document.createElement('div');
-    profileSection.className = 'profile-section';
-    profileSection.innerHTML = `
-        <button class="profile-btn" aria-label="Profil">
-            <span class="profile-avatar">${userNickname ? userNickname.charAt(0).toUpperCase() : 'U'}</span>
-            <span class="profile-name">${userNickname || 'User'}</span>
-            <i class="fas fa-chevron-down"></i>
-        </button>
-        <div class="profile-dropdown">
-            <a href="/profile"><i class="fas fa-user"></i> Profilim</a>
-            <a href="/favorites"><i class="fas fa-heart"></i> Favorilerim</a>
-            <a href="/settings"><i class="fas fa-cog"></i> Ayarlar</a>
-            <a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</a>
-        </div>
-    `;
-    header.appendChild(profileSection);
-
-    const profileBtn = profileSection.querySelector('.profile-btn');
-    const dropdown = profileSection.querySelector('.profile-dropdown');
-
-    profileBtn.addEventListener('click', () => {
-        dropdown.classList.toggle('active');
-    });
-
-    document.addEventListener('click', (e) => {
-        if (!profileBtn.contains(e.target) && !dropdown.contains(e.target)) {
-            dropdown.classList.remove('active');
-        }
-    });
-
-    document.getElementById('logout-btn').addEventListener('click', (e) => {
-        e.preventDefault();
-        localStorage.removeItem('wdiUserToken');
-        localStorage.removeItem('wdiUserNickname');
-        document.cookie = 'wdiAuth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        window.location.href = '/';
-    });
-}
 
 /**
  * Fetches user profile data and populates settings UI.
@@ -257,12 +197,4 @@ function setNotificationPreference(enabled) {
 function setNotificationUIState(enabled) {
     document.getElementById('notifications-on').classList.toggle('active', enabled);
     document.getElementById('notifications-off').classList.toggle('active', !enabled);
-}
-
-/**
- * Helper to read a cookie by name.
- */
-function getCookie(name) {
-    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-    return match ? match[2] : null;
 }

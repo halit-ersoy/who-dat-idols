@@ -1,15 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Header scroll effect (basit kontrol)
-    window.addEventListener('scroll', () => {
-        const header = document.getElementById('header');
-        if (header) {
-            if (window.scrollY > 50) {
-                header.classList.add('scrolled');
-            } else {
-                header.classList.remove('scrolled');
-            }
-        }
-    });
 
     // FAQ Items: Her FAQ item için animasyon gecikmesi ayarlanıyor
     const faqItems = document.querySelectorAll('.faq-item');
