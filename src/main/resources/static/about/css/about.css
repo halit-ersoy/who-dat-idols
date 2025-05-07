@@ -185,10 +185,30 @@
 }
 
 /* Team Section */
-.team-grid {
+.team-subgrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 30px;
+    margin: 0 auto;
+}
+
+/* Üstteki 3’lü ızgara */
+.team-subgrid.team-top {
+    grid-template-columns: repeat(3, minmax(240px, 1fr));
+    gap: 40px;
+    padding-bottom: 20px;
+}
+
+.team-divider {
+    width: 120px;
+    height: 1px;
+    background-color: #28c57f;
+    margin: 20px auto;
+}
+
+/* Alttaki 15’li ızgara */
+.team-subgrid.team-bottom {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 20px;
+    padding-top: 20px;
 }
 
 .team-member {
@@ -439,6 +459,12 @@
     .about-hero h1 {
         font-size: 36px;
     }
+    .team-top {
+        grid-template-columns: repeat(2, minmax(200px, 1fr));
+    }
+    .team-bottom {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 768px) {
@@ -448,7 +474,7 @@
     .section-title {
         font-size: 30px;
     }
-    .team-grid, .features-grid {
+    .features-grid {
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     }
     .about-hero-content h1 {
@@ -468,6 +494,10 @@
     }
     .section-title {
         font-size: 24px;
+    }
+    .team-top,
+    .team-bottom {
+        grid-template-columns: 1fr;
     }
 }
 
