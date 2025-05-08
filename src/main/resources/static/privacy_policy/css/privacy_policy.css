@@ -1,7 +1,7 @@
-@import url('/homepage/css/base.css');
-@import url('/homepage/css/header.css');
-@import url('/homepage/css/footer.css');
-@import url('/homepage/css/animations.css');
+@import url('/elements/base.css');
+@import url('/elements/header.css');
+@import url('/elements/footer.css');
+@import url('/elements/animations.css');
 @import url('/elements/scrool.css');
 
 /* Privacy Policy Hero Section */

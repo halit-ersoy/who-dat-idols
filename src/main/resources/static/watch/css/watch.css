@@ -1,13 +1,17 @@
 /* watch.css - Main stylesheet for video watching page */
 
 /* 1) Global styles and basic resets */
-@import url('base.css');
+@import url('/elements/base.css');
+
+@import url('/elements/animations.css');
 
 /* 2) Layout structures */
 @import url('layout.css');
 
 /* 3) Header and footer */
-@import url('header-footer.css');
+@import url('/elements/header.css');
+
+@import url('/elements/footer.css');
 
 /* 4) Video player components */
 @import url('video-player.css');
@@ -29,3 +33,18 @@
 
 /* 9) Wishlist styles */
 @import url('wishlist.css');
+
+.back-button {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: color 0.3s ease;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.back-button:hover {
+    color: #1ed760;
+}

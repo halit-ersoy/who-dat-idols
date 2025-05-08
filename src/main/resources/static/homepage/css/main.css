@@ -1,10 +1,10 @@
 /* main.css */
 
 /* 1) Temel reset ve global ayarlar */
-@import url('base.css');
+@import url('/elements/base.css');
 
 /* 2) Header */
-@import url('header.css');
+@import url('/elements/header.css');
 
 /* 3) Hero */
 @import url('hero.css');
@@ -19,13 +19,13 @@
 @import url('cards.css');
 
 /* 7) Footer */
-@import url('footer.css');
+@import url('/elements/footer.css');
 
 /* 8) Carousel */
 @import url('carousel.css');
 
 /* 9) Animations */
-@import url('animations.css');
+@import url('/elements/animations.css');
 
 /* 10) Sections */
 @import url('sections.css');
