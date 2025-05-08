@@ -190,10 +190,10 @@
     margin: 0 auto;
 }
 
-/* Üstteki 3’lü ızgara */
+/* Üstteki 4’lü ızgara */
 .team-subgrid.team-top {
-    grid-template-columns: repeat(3, minmax(240px, 1fr));
-    gap: 40px;
+    grid-template-columns: repeat(4, minmax(240px, 1fr));
+    gap: 20px;
     padding-bottom: 20px;
 }
 
@@ -452,42 +452,50 @@
 }
 
 /* Responsive */
-@media (max-width: 992px) {
+@media (max-width: 1080px) {
     .about-content {
         flex-direction: column;
     }
     .about-hero h1 {
         font-size: 36px;
     }
-    .team-top {
-        grid-template-columns: repeat(2, minmax(200px, 1fr));
+    .team-subgrid.team-top {
+        grid-template-columns: repeat(2, 1fr);
     }
-    .team-bottom {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+    .team-subgrid.team-bottom {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .member-avatar {
+        width: 120px;
+        height: 120px;
     }
 }
 
 @media (max-width: 768px) {
     .about-section {
-        padding: 60px 0;
+        padding: 40px 0;
     }
     .section-title {
-        font-size: 30px;
+        font-size: 28px;
     }
     .features-grid {
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
     }
     .about-hero-content h1 {
-        font-size: 36px;
+        font-size: 32px;
     }
     .about-hero-content p {
         font-size: 16px;
+    }
+    .team-subgrid.team-bottom {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
 @media (max-width: 576px) {
     .about-hero-content h1 {
-        font-size: 30px;
+        font-size: 28px;
     }
     .about-hero {
         height: 40vh;
@@ -495,9 +503,23 @@
     .section-title {
         font-size: 24px;
     }
-    .team-top,
-    .team-bottom {
+    .team-subgrid.team-top,
+    .team-subgrid.team-bottom {
         grid-template-columns: 1fr;
+    }
+    .features-grid {
+        grid-template-columns: 1fr;
+    }
+    .member-avatar {
+        width: 100px;
+        height: 100px;
+    }
+    .contact-item {
+        font-size: 16px;
+    }
+    .social-link {
+        width: 40px;
+        height: 40px;
     }
 }
 
