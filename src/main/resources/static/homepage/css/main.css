@@ -39,6 +39,8 @@
 /* 13) Login */
 @import url('login.css');
 
+@import url('featured-grid.css');
+
 /* 14) Loading Page */
 @import url('loading-page.css');
 
