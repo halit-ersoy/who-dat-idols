@@ -128,7 +128,6 @@
     top: -2px;
 }
 
-/* Responsive adjustments */
 @media (max-width: 1200px) {
     .featured-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -174,4 +173,70 @@
     .item-thumb img {
         width: 50px;
     }
+}
+
+.country-flag {
+    display: inline-block;
+    width: 20px;
+    height: 12px;
+    margin-left: 5px;
+    position: relative;
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    border-radius: 1px;
+    vertical-align: middle;
+    transform: translateY(-1px);
+}
+
+.country-flag:after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-left: 3px solid transparent;
+    border-right: 0;
+    border-top: 3px solid rgba(0,0,0,0.4);
+    z-index: 1;
+}
+
+.kr {
+    background-image: url('https://flagcdn.com/h240/kr.webp');
+}
+.jp {
+    background-image: url('https://flagcdn.com/h240/jp.webp');
+}
+.th {
+    background-image: url('https://flagcdn.com/h240/th.webp');
+}
+.cn {
+    background-image: url('https://flagcdn.com/h240/cn.webp');
+}
+.tw {
+    background-image: url('https://flagcdn.com/h240/tw.webp');
+}
+.ph {
+    background-image: url('https://flagcdn.com/h240/ph.webp');
+}
+.id {
+    background-image: url('https://flagcdn.com/h240/id.webp');
+}
+.my {
+    background-image: url('https://flagcdn.com/h240/my.webp');
+}
+.sg {
+    background-image: url('https://flagcdn.com/h240/sg.webp');
+}
+
+.title-container {
+    display: flex;
+    align-items: center;
+    max-width: 80%;
+    overflow: hidden;
+}
+
+.featured-item .title {
+    max-width: unset;
 }
