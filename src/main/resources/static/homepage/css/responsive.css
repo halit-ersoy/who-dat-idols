@@ -9,13 +9,6 @@
     }
 }
 
-/* 1400px altı */
-@media (max-width: 1400px) {
-    .new-soap-operas-all-grid {
-        grid-template-columns: repeat(4, 1fr);
-    }
-}
-
 /* 992px altı */
 @media (max-width: 992px) {
     .hero h1 {

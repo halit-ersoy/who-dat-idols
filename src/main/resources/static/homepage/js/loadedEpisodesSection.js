@@ -205,7 +205,25 @@ export function initLoadedEpisodesSection() {
         carousel.innerHTML = '';
 
         if (episodes && episodes.length > 0) {
-            episodes.forEach((episode, index) => {
+            // Sort episodes: future episodes from furthest to nearest, then past episodes
+            const sortedEpisodes = [...episodes].sort((a, b) => {
+                const aTime = calculateTimeRemaining(a.datetime);
+                const bTime = calculateTimeRemaining(b.datetime);
+
+                // If one is past and one is future, prioritize future
+                if (aTime.isPast && !bTime.isPast) return 1;
+                if (!aTime.isPast && bTime.isPast) return -1;
+
+                // For future dates, sort by furthest first
+                if (!aTime.isPast && !bTime.isPast) {
+                    return new Date(b.datetime).getTime() - new Date(a.datetime).getTime();
+                }
+
+                // Keep original order for past dates
+                return 0;
+            });
+
+            sortedEpisodes.forEach((episode, index) => {
                 const formattedDate = formatDate(episode.datetime);
                 const episodeId = `upcoming-countdown-${index}`;
                 const timeRemaining = calculateTimeRemaining(episode.datetime);
@@ -215,33 +233,33 @@ export function initLoadedEpisodesSection() {
                     countdownHtml = `<div class="upcoming-countdown">Çok Yakında</div>`;
                 } else {
                     countdownHtml = `
-                        <div class="upcoming-countdown" id="${episodeId}">
-                            <span class="upcoming-countdown-unit"><span class="upcoming-countdown-value">${timeRemaining.days}</span>g</span>
-                            <span class="upcoming-countdown-unit"><span class="upcoming-countdown-value">${timeRemaining.hours}</span>s</span>
-                            <span class="upcoming-countdown-unit"><span class="upcoming-countdown-value">${timeRemaining.minutes}</span>d</span>
-                            <span class="upcoming-countdown-unit"><span class="upcoming-countdown-value">${timeRemaining.seconds}</span>sn</span>
-                        </div>
-                    `;
+                <div class="upcoming-countdown" id="${episodeId}">
+                    <span class="upcoming-countdown-unit"><span class="upcoming-countdown-value">${timeRemaining.days}</span>gün</span>
+                    <span class="upcoming-countdown-unit"><span class="upcoming-countdown-value">${timeRemaining.hours}</span>saat</span>
+                    <span class="upcoming-countdown-unit"><span class="upcoming-countdown-value">${timeRemaining.minutes}</span>dk</span>
+                    <span class="upcoming-countdown-unit"><span class="upcoming-countdown-value">${timeRemaining.seconds}</span>sn</span>
+                </div>
+            `;
                 }
 
                 carousel.innerHTML += `
-                    <div class="upcoming-card">
-                        <div class="upcoming-card-image">
-                            <img src="/media/image/${episode.ID}" alt="${episode.name}">
-                            <div class="upcoming-play-icon">
-                                <i class="fas fa-play"></i>
-                            </div>
-                        </div>
-                        <div class="upcoming-card-content">
-                            <h3 class="upcoming-card-title">${episode.name}</h3>
-                            ${countdownHtml}
-                        </div>
+            <div class="upcoming-card" onclick="window.location.href='/watch?id=${episode.ID}'">
+                <div class="upcoming-card-image">
+                    <img src="/media/image/${episode.ID}" alt="${episode.name}">
+                    <div class="upcoming-play-icon">
+                        <i class="fas fa-play"></i>
                     </div>
-                `;
+                </div>
+                <div class="upcoming-card-content">
+                    <h3 class="upcoming-card-title">${episode.name}</h3>
+                    ${countdownHtml}
+                </div>
+            </div>
+        `;
             });
 
-            // After adding cards to the DOM, set up the countdown timers
-            episodes.forEach((episode, index) => {
+            // Setup countdown timers for future episodes
+            sortedEpisodes.forEach((episode, index) => {
                 const timeRemaining = calculateTimeRemaining(episode.datetime);
                 if (!timeRemaining.isPast) {
                     const countdownElement = document.getElementById(`upcoming-countdown-${index}`);
@@ -290,21 +308,21 @@ export function initLoadedEpisodesSection() {
                 const statusPercentage = getStatusPercentage(episode.status);
 
                 carousel.innerHTML += `
-                    <div class="upcoming-card">
-                        <div class="upcoming-card-image">
-                            <img src="/media/image/${episode.ID}" alt="${episode.name}">
-                            <div class="upcoming-play-icon">
-                                <i class="fas fa-play"></i>
-                            </div>
-                        </div>
-                        <div class="upcoming-card-content">
-                            <h3 class="upcoming-card-title">${episode.name}</h3>
-                            <div class="upcoming-progress-container">
-                                <div class="upcoming-progress-bar" style="width: ${statusPercentage}%"></div>
-                            </div>
+                <div class="upcoming-card" onclick="window.location.href='/watch?id=${episode.ID}'">
+                    <div class="upcoming-card-image">
+                        <img src="/media/image/${episode.ID}" alt="${episode.name}">
+                        <div class="upcoming-play-icon">
+                            <i class="fas fa-play"></i>
                         </div>
                     </div>
-                `;
+                    <div class="upcoming-card-content">
+                        <h3 class="upcoming-card-title">${episode.name}</h3>
+                        <div class="upcoming-progress-container">
+                            <div class="upcoming-progress-bar" style="width: ${statusPercentage}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
             });
 
             setTimeout(() => {
