@@ -18,6 +18,32 @@ public class SavedController {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    @GetMapping("/translated")
+    public ResponseEntity<?> getTranslatedEpisodes() {
+        try {
+            List<Map<String, Object>> result = jdbcTemplate.queryForList("EXEC GetTranslated");
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Error fetching translated episodes: " + e.getMessage());
+            return ResponseEntity.status(500).body(error);
+        }
+    }
+
+    @GetMapping("/loaded")
+    public ResponseEntity<?> getLoadedEpisodes() {
+        try {
+            List<Map<String, Object>> result = jdbcTemplate.queryForList("EXEC GetLoaded");
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Error fetching loaded episodes: " + e.getMessage());
+            return ResponseEntity.status(500).body(error);
+        }
+    }
+
     @GetMapping("/lists")
     public ResponseEntity<?> getLists(
             @CookieValue(value = "wdiAuth", required = false) String cookie) {

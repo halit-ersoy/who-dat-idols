@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no">
     <title>Who Dat Idols? - Streaming Platform</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Poppins:wght@300;400;600&display=swap"
+          rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/homepage/css/main.css">
 </head>
@@ -89,7 +90,8 @@
                 </div>
                 <div class="form-group">
                     <label for="register-email">E-posta</label>
-                    <input type="email" id="register-email" class="form-control" placeholder="E-posta adresinizi giriniz">
+                    <input type="email" id="register-email" class="form-control"
+                           placeholder="E-posta adresinizi giriniz">
                 </div>
                 <div class="form-group">
                     <label for="register-password">Şifre</label>
@@ -130,7 +132,8 @@
             <div class="login-form">
                 <div class="form-group">
                     <label for="forgot-email">E-posta veya kullanıcı adı</label>
-                    <input type="text" class="form-control" id="forgot-email" placeholder="E-posta veya kullanıcı adınızı giriniz">
+                    <input type="text" class="form-control" id="forgot-email"
+                           placeholder="E-posta veya kullanıcı adınızı giriniz">
                     <span class="highlight"></span>
                 </div>
                 <button class="login-btn-page" id="forgot-password-submit">Şifremi Sıfırla</button>
@@ -148,8 +151,9 @@
     <div class="hero-videos">
         <div class="hero-video-container active" data-index="0">
             <video class="hero-bg-video" autoplay muted playsinline>
-                <source src="https://customer-342mt1gy0ibqe0dl.cloudflarestream.com/cfb68fa53d7bbc3eaaa36f022b1ad291/downloads/default.mp4" type="video/mp4">
-<!--                <img class="hero-bg" src="https://i.ibb.co/kGhv2cT/mutya-hero.jpg" alt="Hero Background">-->
+                <source src="https://customer-342mt1gy0ibqe0dl.cloudflarestream.com/cfb68fa53d7bbc3eaaa36f022b1ad291/downloads/default.mp4"
+                        type="video/mp4">
+                <!--                <img class="hero-bg" src="https://i.ibb.co/kGhv2cT/mutya-hero.jpg" alt="Hero Background">-->
             </video>
             <div class="hero-overlay"></div>
             <div class="hero-content animate-fade-in">
@@ -183,7 +187,8 @@
         </div>
         <div class="hero-video-container" data-index="1">
             <video class="hero-bg-video" muted playsinline>
-                <source src="https://customer-342mt1gy0ibqe0dl.cloudflarestream.com/cfb68fa53d7bbc3eaaa36f022b1ad291/downloads/default.mp4" type="video/mp4">
+                <source src="https://customer-342mt1gy0ibqe0dl.cloudflarestream.com/cfb68fa53d7bbc3eaaa36f022b1ad291/downloads/default.mp4"
+                        type="video/mp4">
                 <img class="hero-bg" src="https://i.ibb.co/ZM7SxXh/bl-1.jpg" alt="Hero Background 2">
             </video>
             <div class="hero-overlay"></div>
@@ -217,7 +222,8 @@
         </div>
         <div class="hero-video-container" data-index="2">
             <video class="hero-bg-video" muted playsinline>
-                <source src="https://customer-342mt1gy0ibqe0dl.cloudflarestream.com/cfb68fa53d7bbc3eaaa36f022b1ad291/downloads/default.mp4" type="video/mp4">
+                <source src="https://customer-342mt1gy0ibqe0dl.cloudflarestream.com/cfb68fa53d7bbc3eaaa36f022b1ad291/downloads/default.mp4"
+                        type="video/mp4">
                 <img class="hero-bg" src="https://i.ibb.co/y5QfMxk/kdrama-1.jpg" alt="Hero Background 3">
             </video>
             <div class="hero-overlay"></div>
@@ -276,6 +282,28 @@
         </div>
     </div>
     <div class="weekly-best-grid"></div>
+</section>
+<section class="upcoming-episodes-section">
+    <div class="upcoming-episodes-header">
+        <h2 class="upcoming-episodes-title">YÜKLENECEK BÖLÜMLER</h2>
+        <div class="upcoming-episodes-actions">
+            <div class="upcoming-episodes-toggle">
+                <button id="upcoming-translated-toggle" class="upcoming-toggle-btn active">Çevrilenler</button>
+                <button id="upcoming-new-toggle" class="upcoming-toggle-btn">Yüklenecekler</button>
+            </div>
+        </div>
+    </div>
+    <div class="upcoming-carousel-container">
+        <button class="upcoming-carousel-nav upcoming-prev-btn" data-carousel="upcoming-episodes-carousel" aria-label="Önceki">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="upcoming-carousel" id="upcoming-episodes-carousel">
+            <!-- Items will be populated by JavaScript -->
+        </div>
+        <button class="upcoming-carousel-nav upcoming-next-btn" data-carousel="upcoming-episodes-carousel" aria-label="Sonraki">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
 </section>
 <section class="section featured-content">
     <div class="section-header">

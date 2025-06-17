@@ -8,6 +8,7 @@ import {initLogin} from './login.js';
 import {initRegister} from './register.js';
 import {initForgotPass} from './forgot-pass.js';
 import {initFeaturedContent} from "./featuredContent.js";
+import {initLoadedEpisodesSection} from "./loadedEpisodesSection.js";
 
 window.addEventListener('load', () => {
     const loadingScreen = document.getElementById('loading-screen');
@@ -16,6 +17,7 @@ window.addEventListener('load', () => {
     }
 });
 
+// Then add this to the DOMContentLoaded callback function
 document.addEventListener('DOMContentLoaded', () => {
     initHeaderScroll();
     initHeroCarousel();
@@ -24,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initNewSoapOperasSection();
     initNewMoviesSection();
     initWeeklyBestSection();
+    initLoadedEpisodesSection(); // Add this line
     initLogin();
     initRegister();
     initForgotPass();
