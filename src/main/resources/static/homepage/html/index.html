@@ -14,11 +14,54 @@
     <div class="loading-text">WDI</div>
 </div>
 <header id="header">
-    <div class="logo">WDI</div>
-    <div class="search">
-        <input type="text" placeholder="Film veya dizi ara..." aria-label="Film veya dizi ara">
+    <a href="/" class="logo-link" aria-label="Ana sayfa">
+        <div class="logo">WDI</div>
+    </a>
+
+    <button class="mobile-menu-toggle" aria-label="Menüyü aç/kapat" id="mobile-menu-toggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <nav class="nav-menu" role="navigation" aria-label="Ana navigasyon">
+        <div class="nav-item">
+            <a href="#" class="nav-link">Programlar <i class="fas fa-chevron-down"></i></a>
+            <div class="dropdown-menu">
+                <a href="#">Reality Show</a>
+                <a href="#">Müzik Programları</a>
+                <a href="#">Yarışmalar</a>
+                <a href="#">Talk Show</a>
+            </div>
+        </div>
+        <div class="nav-item">
+            <a href="#" class="nav-link">Diziler <i class="fas fa-chevron-down"></i></a>
+            <div class="dropdown-menu">
+                <a href="#">Kore Dizileri</a>
+                <a href="#">Tayland Dizileri</a>
+                <a href="#">Japon Dizileri</a>
+                <a href="#">Çin Dizileri</a>
+            </div>
+        </div>
+        <a href="#" class="nav-link">BL Dizileri</a>
+        <a href="#" class="nav-link">Takvim</a>
+    </nav>
+
+    <div class="header-right">
+        <div class="search" role="search">
+            <input type="text" placeholder="Film veya dizi ara..." aria-label="Film veya dizi ara" id="search-input">
+            <button class="search-button" aria-label="Ara">
+                <i class="fas fa-search"></i>
+            </button>
+            <div class="search-results" id="search-results"></div>
+        </div>
+
+        <div class="user-controls">
+            <button class="notifications-btn" aria-label="Bildirimler" id="notifications-btn">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge">2</span>
+            </button>
+            <button class="login-btn" aria-label="Oturum aç" id="login-btn">OTURUM AÇ</button>
+        </div>
     </div>
-    <button class="login-btn" aria-label="Oturum aç">OTURUM AÇ</button>
     <div class="login-modal-overlay" id="login-modal">
         <div class="login-modal">
             <button class="close-modal" id="close-modal">

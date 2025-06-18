@@ -2,7 +2,7 @@
  *     HEADER  CSS      *
  * -------------------- */
 
-/* Header Styles */
+/* Header Base Styles */
 header {
     background-color: rgba(0, 0, 0, 0.8);
     padding: 15px 30px;
@@ -14,11 +14,20 @@ header {
     align-items: center;
     justify-content: space-between;
     transition: background-color 0.3s ease;
+    flex-wrap: wrap;
 }
 
 header.scrolled {
     background-color: #000;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Logo Styles */
+.logo-link {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    order: 0;
 }
 
 .logo {
@@ -28,15 +37,92 @@ header.scrolled {
     font-family: 'Montserrat', sans-serif;
 }
 
-.search {
-    flex-grow: 1;
-    margin: 0 40px;
+/* Navigation Menu Styles */
+.nav-menu {
+    display: flex;
+    margin-left: 40px;
+    transition: all 0.3s ease;
+    align-items: center;
+}
+
+.nav-item {
     position: relative;
+    display: inline-block;
+}
+
+.nav-link {
+    color: #fff;
+    margin-right: 25px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.nav-link:hover {
+    color: #1ed760;
+}
+
+.nav-link.active {
+    color: #1ed760;
+    font-weight: 600;
+}
+
+/* Dropdown Menu Styles */
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: rgba(0, 0, 0, 0.9);
+    min-width: 200px;
+    border-radius: 4px;
+    padding: 10px 0;
+    display: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+}
+
+.dropdown-menu a {
+    color: #fff;
+    text-decoration: none;
+    padding: 10px 20px;
+    display: block;
+    transition: all 0.2s ease;
+}
+
+.dropdown-menu a:hover {
+    background-color: rgba(30, 215, 96, 0.2);
+    color: #1ed760;
+}
+
+.nav-item:hover .dropdown-menu {
+    display: block;
+    animation: fadeIn 0.2s ease;
+}
+
+/* Header Right Section */
+.header-right {
+    display: flex;
+    align-items: center;
+    position: relative;
+    order: 2;
+    margin-left: auto;
+}
+
+/* Search Styles - FIXED */
+.search {
+    position: relative;
+    margin-right: 20px;
+    width: 200px;
+    transition: all 0.3s ease;
 }
 
 .search input {
     width: 100%;
-    padding: 12px 45px 12px 15px;
+    padding: 12px 40px 12px 15px;
     border-radius: 25px;
     border: none;
     background-color: rgba(255, 255, 255, 0.1);
@@ -46,19 +132,81 @@ header.scrolled {
 }
 
 .search input:focus {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.15);
     outline: none;
+    box-shadow: 0 0 0 2px rgba(30, 215, 96, 0.4);
 }
 
-.search::after {
-    content: "\f002";
-    font-family: "Font Awesome 6 Free", serif;
-    font-weight: 900;
+.search-button {
     position: absolute;
     right: 15px;
     top: 50%;
     transform: translateY(-50%);
+    background: none;
+    border: none;
     color: #999;
+    cursor: pointer;
+    z-index: 2;
+}
+
+/* Fixed search expanded state */
+.search.expanded {
+    width: 300px;
+    z-index: 100;
+}
+
+/* Search Results Container */
+.search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.95);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    z-index: 150;
+    margin-top: 5px;
+}
+
+.search-results.active {
+    max-height: 300px;
+    padding: 10px 0;
+    overflow-y: auto;
+}
+
+/* User Controls */
+.user-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    z-index: 10;
+}
+
+.notifications-btn {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+    position: relative;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #e74c3c;
+    color: white;
+    font-size: 10px;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .login-btn {
@@ -72,6 +220,7 @@ header.scrolled {
     font-size: 16px;
     transition: all 0.2s ease;
     white-space: nowrap;
+    z-index: 1002;
 }
 
 .login-btn:hover {
@@ -79,17 +228,131 @@ header.scrolled {
     transform: scale(1.05);
 }
 
-/* Responsive adjustments for login button */
-@media (max-width: 576px) {
+/* Mobile Menu Button */
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+/* Responsive Styles */
+@media (max-width: 992px) {
+    .mobile-menu-toggle {
+        display: block;
+        order: 1;
+        margin-left: 20px;
+    }
+
+    .nav-menu {
+        order: 3;
+        flex-basis: 100%;
+        margin-left: 0;
+        padding-top: 15px;
+        display: none;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .nav-menu.active {
+        display: flex;
+    }
+
+    .nav-item, .nav-link {
+        width: 100%;
+        margin-right: 0;
+        padding: 10px 0;
+    }
+
+    .dropdown-menu {
+        position: static;
+        background-color: rgba(255, 255, 255, 0.05);
+        width: 100%;
+        box-shadow: none;
+        border-radius: 0;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+        display: block;
+    }
+
+    .nav-item.active .dropdown-menu {
+        max-height: 300px;
+        padding: 5px 0;
+    }
+
+    .dropdown-menu a {
+        padding-left: 30px;
+    }
+
+    /* Fixed search behavior for tablets */
+    .search.expanded {
+        width: 250px;
+        position: relative;
+        right: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .search.expanded {
+        width: 240px;
+    }
+
     .login-btn {
         padding: 8px 16px;
         font-size: 14px;
     }
 }
 
-@media (max-width: 400px) {
+@media (max-width: 576px) {
+    .search {
+        width: 40px;
+        overflow: hidden;
+    }
+
+    .search input {
+        width: 40px;
+        padding-left: 40px;
+        background-color: transparent;
+    }
+
+    .search-button {
+        left: 8px;
+        right: auto;
+    }
+
+    .search.expanded {
+        width: calc(100vw - 200px);
+        position: absolute;
+        right: 70px;
+    }
+
+    .search.expanded input {
+        width: 100%;
+        padding-left: 15px;
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .search.expanded .search-button {
+        left: auto;
+        right: 15px;
+    }
+
     .login-btn {
         padding: 7px 14px;
         font-size: 13px;
+    }
+}
+
+@media (max-width: 400px) {
+    .search.expanded {
+        width: calc(100vw - 180px);
+        right: 60px;
+    }
+
+    .notifications-btn {
+        font-size: 18px;
     }
 }

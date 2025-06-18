@@ -9,6 +9,7 @@ import {initRegister} from './register.js';
 import {initForgotPass} from './forgot-pass.js';
 import {initFeaturedContent} from "./featuredContent.js";
 import {initLoadedEpisodesSection} from "./loadedEpisodesSection.js";
+import {initHeaderInteractions, initSearchExpansion} from "./searchExpansion.js";
 
 window.addEventListener('load', () => {
     const loadingScreen = document.getElementById('loading-screen');
@@ -20,6 +21,8 @@ window.addEventListener('load', () => {
 // Then add this to the DOMContentLoaded callback function
 document.addEventListener('DOMContentLoaded', () => {
     initHeaderScroll();
+    initSearchExpansion();
+    initHeaderInteractions();
     initHeroCarousel();
     initContentCarousels();
     initFeaturedContent();
