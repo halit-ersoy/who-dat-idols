@@ -316,7 +316,10 @@ export function initLoadedEpisodesSection() {
                         </div>
                     </div>
                     <div class="upcoming-card-content">
-                        <h3 class="upcoming-card-title">${episode.name}</h3>
+                        <div class="upcoming-title-container" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <h3 class="upcoming-card-title" style="margin: 0; flex: 1;">${episode.name}</h3>
+                            <span class="upcoming-percentage-badge" style="background-color: rgba(30, 215, 96, 0.2); color: #1ed760; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: 700;">${statusPercentage}%</span>
+                        </div>
                         <div class="upcoming-progress-container">
                             <div class="upcoming-progress-bar" style="width: ${statusPercentage}%"></div>
                         </div>
