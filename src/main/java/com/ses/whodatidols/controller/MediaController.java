@@ -1,6 +1,7 @@
 package com.ses.whodatidols.controller;
 
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -48,47 +49,44 @@ public class MediaController {
     }
 
     @GetMapping("/video/{id}")
-    public ResponseEntity<?> getVideo(
+    public ResponseEntity<ResourceRegion> getVideo(
             @PathVariable UUID id,
             @RequestHeader(value = "Range", required = false) String rangeHeader) {
-
         try {
             File videoFile = new File(MEDIA_ROOT_PATH + "\\" + id + ".mp4");
             if (!videoFile.exists()) {
                 return ResponseEntity.notFound().build();
             }
 
-            // Video streaming logic
-            long fileLength = videoFile.length();
-            long start = 0;
-            long end = fileLength - 1;
+            FileSystemResource videoResource = new FileSystemResource(videoFile);
+            long contentLength = videoResource.contentLength();
 
-            if (rangeHeader != null && rangeHeader.startsWith("bytes=")) {
+            // Create resource region
+            ResourceRegion region;
+            long chunkSize = 1024 * 1024; // 1 MB chunk size
+
+            if (rangeHeader == null) {
+                long rangeLength = Math.min(chunkSize, contentLength);
+                region = new ResourceRegion(videoResource, 0, rangeLength);
+            } else {
                 String[] ranges = rangeHeader.replace("bytes=", "").split("-");
-                try {
-                    start = Long.parseLong(ranges[0]);
-                    if (ranges.length > 1 && !ranges[1].isEmpty()) {
-                        end = Long.parseLong(ranges[1]);
-                    }
-                } catch (NumberFormatException ignored) {}
+                long start = Long.parseLong(ranges[0]);
+                long end = (ranges.length > 1 && !ranges[1].isEmpty())
+                        ? Long.parseLong(ranges[1])
+                        : contentLength - 1;
+                long rangeLength = Math.min(chunkSize, end - start + 1);
+                region = new ResourceRegion(videoResource, start, rangeLength);
             }
 
-            long contentLength = end - start + 1;
-            InputStream inputStream = new FileInputStream(videoFile);
-            inputStream.skip(start);
+            MediaType mediaType = MediaType.parseMediaType("video/mp4");
 
-            final long finalStart = start;
-            final long finalEnd = end;
-
-            return ResponseEntity.status(rangeHeader != null ? HttpStatus.PARTIAL_CONTENT : HttpStatus.OK)
-                    .header("Content-Type", "video/mp4")
-                    .header("Accept-Ranges", "bytes")
-                    .header("Content-Length", String.valueOf(contentLength))
-                    .header("Content-Range", String.format("bytes %d-%d/%d", finalStart, finalEnd, fileLength))
-                    .body(new FileSystemResource(videoFile));
-
+            return ResponseEntity
+                    .status(HttpStatus.PARTIAL_CONTENT)
+                    .contentType(mediaType)
+                    .body(region);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error serving video: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(null);
         }
     }
 
