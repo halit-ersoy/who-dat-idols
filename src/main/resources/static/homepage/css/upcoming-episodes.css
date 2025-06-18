@@ -162,7 +162,7 @@
 .upcoming-card-image {
     position: relative;
     overflow: hidden;
-    aspect-ratio: 16/9;
+    aspect-ratio: 9/16;
 }
 
 .upcoming-card-image img {

@@ -20,7 +20,7 @@
 .card-image-container {
     position: relative;
     overflow: hidden;
-    aspect-ratio: 16/9; /* Modern tarayıcılarda işe yarar */
+    aspect-ratio: 9/16; /* Modern tarayıcılarda işe yarar */
 }
 
 .card img {
