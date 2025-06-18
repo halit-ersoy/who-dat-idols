@@ -5,7 +5,7 @@
 /* Hero Section */
 .hero {
     position: relative;
-    height: 90vh; /* İsteğe bağlı: header yüksekliğine göre calc() kullanılabilir */
+    height: 100vh; /* İsteğe bağlı: header yüksekliğine göre calc() kullanılabilir */
     width: 100%;
     padding: 0;
     overflow: hidden;
@@ -207,7 +207,7 @@
 }
 
 .hero h1 {
-    font-size: 52px;
+    font-size: 50px;
     margin-bottom: 20px;
     font-weight: 800;
     font-family: 'Montserrat', sans-serif;
@@ -218,7 +218,7 @@
 }
 
 .hero p {
-    font-size: 19px;
+    font-size: 18px;
     margin-bottom: 32px;
     line-height: 1.7;
     text-shadow: 0 1px 3px rgba(0,0,0,0.3);
