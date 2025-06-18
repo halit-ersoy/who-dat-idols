@@ -9,16 +9,19 @@ export function initWeeklyBestSection() {
         return;
     }
 
-// Hem filmler hem de diziler verisini cache'lemek için nesne oluşturuluyor.
+    // Hem filmler hem de diziler verisini cache'lemek için nesne oluşturuluyor.
     let weeklyData = {movies: null, tv: null};
-    let currentMode = 'movies';
+    let currentMode = 'tv'; // Diziler seçili başlangıç durumu
     let isLoading = false;
 
-// Sayfa yüklendiğinde her iki veri setini de çekiyoruz.
-    fetchAndCache('movies').then(() => {
-        renderWeeklyBest('movies');
+    // Set initial toggle state
+    updateToggleState();
+
+    // Sayfa yüklendiğinde her iki veri setini de çekiyoruz, ancak dizileri önce render ediyoruz
+    fetchAndCache('tv').then(() => {
+        renderWeeklyBest('tv');
     });
-    fetchAndCache('tv');
+    fetchAndCache('movies');
 
     movieToggle.addEventListener('click', () => {
         if (currentMode !== 'movies' && !isLoading) {
@@ -48,9 +51,9 @@ export function initWeeklyBestSection() {
         tvToggle.classList.toggle('active', currentMode === 'tv');
 
         if (currentMode === 'tv') {
-            toggleContainer.classList.add('tv-active');
-        } else {
             toggleContainer.classList.remove('tv-active');
+        } else {
+            toggleContainer.classList.add('tv-active');
         }
     }
 
