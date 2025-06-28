@@ -10,6 +10,7 @@ import {initForgotPass} from './forgot-pass.js';
 import {initFeaturedContent} from "./featuredContent.js";
 import {initLoadedEpisodesSection} from "./loadedEpisodesSection.js";
 import {initHeaderInteractions, initSearchExpansion} from "./searchExpansion.js";
+import {initCalendar} from "./calendar.js";
 
 window.addEventListener('load', () => {
     const loadingScreen = document.getElementById('loading-screen');
@@ -33,4 +34,5 @@ document.addEventListener('DOMContentLoaded', () => {
     initLogin();
     initRegister();
     initForgotPass();
+    initCalendar();
 });
