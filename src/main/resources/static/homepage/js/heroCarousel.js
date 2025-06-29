@@ -1,18 +1,128 @@
 export function initHeroCarousel() {
-    const heroContainers = document.querySelectorAll('.hero-video-container');
-    const heroIndicators = document.querySelectorAll('.hero-indicator');
+    // Elements and state for carousel
+    const heroSection = document.querySelector('.hero');
+    const heroVideosContainer = document.querySelector('.hero-videos');
     const prevHeroBtn = document.querySelector('.prev-hero');
     const nextHeroBtn = document.querySelector('.next-hero');
+    const heroIndicatorsContainer = document.querySelector('.hero-indicators');
+    const stopTrailerBtn = document.getElementById('stopTrailerBtn');
 
+    // Carousel state
     let currentHeroIndex = 0;
     let heroInterval = null;
-    const autoPlayDuration = 30000;
+    const autoPlayDuration = 30000; // 30 seconds
 
+    // Fetch hero data from API
+    async function fetchHeroData() {
+        try {
+            const response = await fetch('/api/hero/videos');
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Hero Section - Error:', error);
+            return [];
+        }
+    }
+
+    // Generate HTML for hero elements
+    function createHeroElements(heroVideos) {
+        const containers = [];
+        const indicators = [];
+
+        heroVideos.forEach((hero, index) => {
+            // Create container element
+            const container = document.createElement('div');
+            container.className = `hero-video-container ${index === 0 ? 'active' : ''}`;
+            container.dataset.index = index;
+
+            // Generate container HTML
+            container.innerHTML = `
+                <video class="hero-bg-video" ${index === 0 ? 'autoplay' : ''} muted playsinline>
+                    <source src="/media/video/${hero.ID}" type="video/mp4">
+                    <img class="hero-bg" src="/media/image/${hero.ID}" alt="${hero.name}">
+                </video>
+                <div class="hero-overlay"></div>
+                <div class="hero-content animate-fade-in">
+                    <div class="hero-badge animate-slide-up">${hero.type || 'YENİ'}</div>
+                    <h1 class="animate-slide-up">${hero.name}</h1>
+                    <p class="animate-slide-up">${hero._content || 'İçerik açıklaması bulunmuyor'}</p>
+                    <div class="hero-info animate-slide-up">
+                        <div class="hero-stat"><i class="fas fa-film"></i> ${hero.category || 'Kategori'}</div>
+                    </div>
+                    <div class="hero-buttons animate-slide-up">
+                        <button onclick="window.location.href='/watch?id=${hero.ID}'" class="pulse-button">
+                            <i class="fas fa-play"></i> ŞİMDİ İZLE
+                        </button>
+                        <button class="glow-button trailer-btn" data-index="${index}">
+                            <i class="fas fa-film"></i> FRAGMANI İZLE
+                        </button>
+                    </div>
+                </div>
+            `;
+            containers.push(container);
+
+            // Create indicator element
+            const indicator = document.createElement('span');
+            indicator.className = `hero-indicator ${index === 0 ? 'active' : ''}`;
+            indicator.dataset.index = index;
+            indicators.push(indicator);
+        });
+
+        return { containers, indicators };
+    }
+
+    // Initialize hero section with data from database
+    async function initHeroDataSection() {
+        try {
+            // Fetch hero videos from API
+            const heroVideos = await fetchHeroData();
+
+            if (!heroVideos || heroVideos.length === 0) {
+                console.error('No hero videos found');
+                return;
+            }
+
+            // Clear existing content
+            heroVideosContainer.innerHTML = '';
+            heroIndicatorsContainer.innerHTML = '';
+
+            // Create hero elements
+            const { containers, indicators } = createHeroElements(heroVideos);
+
+            // Add containers to DOM
+            containers.forEach(container => {
+                heroVideosContainer.appendChild(container);
+            });
+
+            // Add indicators to DOM
+            indicators.forEach(indicator => {
+                heroIndicatorsContainer.appendChild(indicator);
+            });
+
+            // Setup event listeners after elements are created
+            setupEventListeners();
+            startAutoPlay();
+
+        } catch (error) {
+            console.error('Failed to initialize hero section:', error);
+        }
+    }
+
+    // Carousel functions
     function showHeroSlide(index) {
-        const totalSlides = heroContainers.length;
-        index = (index + totalSlides) % totalSlides;
+        const heroContainers = document.querySelectorAll('.hero-video-container');
+        const heroIndicators = document.querySelectorAll('.hero-indicator');
 
-        // Tüm container'lardan active sınıfı kaldır, videoları resetle
+        // Handle index wrapping
+        if (index < 0) index = heroContainers.length - 1;
+        if (index >= heroContainers.length) index = 0;
+
+        // Update current index
+        currentHeroIndex = index;
+
+        // Remove active class from all containers and reset videos
         heroContainers.forEach(container => {
             container.classList.remove('active');
             const video = container.querySelector('video');
@@ -22,147 +132,104 @@ export function initHeroCarousel() {
             }
         });
 
-        // Yeni aktif slide'ı ata
-        const activeContainer = heroContainers[index];
-        activeContainer.classList.add('active');
+        // Remove active class from all indicators
+        heroIndicators.forEach(indicator => {
+            indicator.classList.remove('active');
+        });
 
-        // Videoyu oynat
-        const activeVideo = activeContainer.querySelector('video');
-        if (activeVideo) {
-            const playPromise = activeVideo.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                    console.error('HeroCarousel: Video oynatma hatası:', error);
-                });
-            }
+        // Add active class to current container and indicator
+        heroContainers[index].classList.add('active');
+        heroIndicators[index].classList.add('active');
+
+        // Play the video for current slide
+        const currentVideo = heroContainers[index].querySelector('video');
+        if (currentVideo) {
+            currentVideo.play().catch(e => console.log('Auto-play prevented:', e));
         }
 
-        // Indicator güncelle
-        if (heroIndicators.length === totalSlides) {
-            heroIndicators.forEach(indicator => indicator.classList.remove('active'));
-            if (heroIndicators[index]) {
-                heroIndicators[index].classList.add('active');
-            }
-        }
-
-        currentHeroIndex = index;
+        // Reset auto-play timer
+        resetAutoPlay();
     }
 
-    function startHeroAutoplay() {
-        clearInterval(heroInterval);
+    function startAutoPlay() {
         heroInterval = setInterval(() => {
             showHeroSlide(currentHeroIndex + 1);
         }, autoPlayDuration);
     }
 
-    if (prevHeroBtn) {
+    function resetAutoPlay() {
+        clearInterval(heroInterval);
+        startAutoPlay();
+    }
+
+    function setupEventListeners() {
+        const heroIndicators = document.querySelectorAll('.hero-indicator');
+
+        // Navigation buttons
         prevHeroBtn.addEventListener('click', () => {
             showHeroSlide(currentHeroIndex - 1);
-            startHeroAutoplay();
         });
-    }
-    if (nextHeroBtn) {
+
         nextHeroBtn.addEventListener('click', () => {
             showHeroSlide(currentHeroIndex + 1);
-            startHeroAutoplay();
         });
-    }
-    if (heroIndicators.length) {
-        heroIndicators.forEach((indicator, index) => {
-            indicator.addEventListener('click', () => {
-                showHeroSlide(index);
-                startHeroAutoplay();
-            });
-        });
-    }
 
-    // İlk slide'ı göster + autoplay başlat
-    showHeroSlide(0);
-    startHeroAutoplay();
-
-    /***************************************************
-     *  FRAGMANI İZLE - İZLEMEYİ DURDUR KONTROL KODLARI
-     ***************************************************/
-    const fragmanButtons = document.querySelectorAll(".glow-button");
-    const stopTrailerBtn = document.getElementById("stopTrailerBtn");
-    const heroNavButtons = document.querySelectorAll(".hero-nav");
-
-    // Aktif fragman container & video referansı
-    let activeHeroContainer = null;
-    let activeVideo = null;
-
-    // FRAGMANI İZLE
-    fragmanButtons.forEach((btn) => {
-        btn.addEventListener("click", function() {
-            const container = btn.closest(".hero-video-container");
-            if (!container) return;
-
-            // Yazıları gizle
-            const heroContent = container.querySelector(".hero-content");
-            if (heroContent) {
-                heroContent.style.display = "none";
-            }
-
-            // Sağ-sol okları gizle
-            heroNavButtons.forEach(nav => nav.style.display = "none");
-
-            // Videonun sesi aç ve LOOP aktif
-            const video = container.querySelector("video");
-            if (video) {
-                video.muted = false;
-                video.loop = true;  // DÖNGÜYE AL
-                video.play().catch(err => console.error("Video oynatılamadı:", err));
-            }
-
-            // Autoplay devre dışı bırak (30sn geçişi durdur)
-            clearInterval(heroInterval);
-
-            // Indicators gizle
-            heroIndicators.forEach(indicator => {
-                indicator.style.display = "none";
-            });
-
-            // "İZLEMEYİ DURDUR" butonunu göster
-            stopTrailerBtn.style.display = "inline-block";
-
-            // Aktif fragman kaydı
-            activeHeroContainer = container;
-            activeVideo = video;
-        });
-    });
-
-    // İZLEMEYİ DURDUR
-    stopTrailerBtn.addEventListener("click", function() {
-        if (!activeHeroContainer) return;
-
-        // Yazıları geri getir
-        const heroContent = activeHeroContainer.querySelector(".hero-content");
-        if (heroContent) {
-            heroContent.style.display = "";
-        }
-
-        // Sağ-sol okları geri getir
-        heroNavButtons.forEach(nav => nav.style.display = "");
-
-        // Videoyu sessize al (arka planda oynayabilir) & loop'u kapatmak isterseniz:
-        if (activeVideo) {
-            activeVideo.muted = true;
-            activeVideo.loop = false; // Döngüyü kapatmak isterseniz
-        }
-
-        // Autoplay tekrar başlasın
-        startHeroAutoplay();
-
-        // Indicators geri gelsin
+        // Indicator clicks
         heroIndicators.forEach(indicator => {
-            indicator.style.display = "";
+            indicator.addEventListener('click', () => {
+                const index = parseInt(indicator.dataset.index);
+                showHeroSlide(index);
+            });
         });
 
-        // "İZLEMEYİ DURDUR" butonunu gizle
-        stopTrailerBtn.style.display = "none";
+        // Trailer buttons
+        document.querySelectorAll('.trailer-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const index = parseInt(btn.dataset.index);
+                playTrailer(index);
+            });
+        });
 
-        // Artık aktif fragman yok
-        activeHeroContainer = null;
-        activeVideo = null;
-    });
+        // Stop trailer button
+        stopTrailerBtn.addEventListener('click', stopTrailer);
+    }
+
+    function playTrailer(index) {
+        const heroContainers = document.querySelectorAll('.hero-video-container');
+        const video = heroContainers[index].querySelector('video');
+
+        if (video) {
+            // Unmute and play video
+            video.muted = false;
+            video.currentTime = 0;
+            video.play();
+
+            // Show stop button
+            stopTrailerBtn.style.display = 'flex';
+
+            // Pause autoplay while trailer is playing
+            clearInterval(heroInterval);
+        }
+    }
+
+    function stopTrailer() {
+        const activeContainer = document.querySelector('.hero-video-container.active');
+        const video = activeContainer.querySelector('video');
+
+        if (video) {
+            // Mute and reset video
+            video.muted = true;
+            video.currentTime = 0;
+            video.play();
+
+            // Hide stop button
+            stopTrailerBtn.style.display = 'none';
+
+            // Resume autoplay
+            startAutoPlay();
+        }
+    }
+
+    // Initialize hero section with data
+    initHeroDataSection();
 }
