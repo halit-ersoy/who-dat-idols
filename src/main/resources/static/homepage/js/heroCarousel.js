@@ -10,6 +10,7 @@ export function initHeroCarousel() {
     // Carousel state
     let currentHeroIndex = 0;
     let heroInterval = null;
+    let currentTrailerButton = null; // Store reference to the current trailer button
     const autoPlayDuration = 30000; // 30 seconds
 
     // Fetch hero data from API
@@ -37,6 +38,8 @@ export function initHeroCarousel() {
             container.className = `hero-video-container ${index === 0 ? 'active' : ''}`;
             container.dataset.index = index;
 
+            const category = hero.category ? hero.category.replace(/,$/, '') : 'Kategori';
+
             // Generate container HTML
             container.innerHTML = `
                 <video class="hero-bg-video" ${index === 0 ? 'autoplay' : ''} muted playsinline>
@@ -49,7 +52,7 @@ export function initHeroCarousel() {
                     <h1 class="animate-slide-up">${hero.name}</h1>
                     <p class="animate-slide-up">${hero._content || 'İçerik açıklaması bulunmuyor'}</p>
                     <div class="hero-info animate-slide-up">
-                        <div class="hero-stat"><i class="fas fa-film"></i> ${hero.category || 'Kategori'}</div>
+                        <div class="hero-stat"><i class="fas fa-film"></i> ${category}</div>
                     </div>
                     <div class="hero-buttons animate-slide-up">
                         <button onclick="window.location.href='/watch?id=${hero.ID}'" class="pulse-button">
@@ -128,8 +131,12 @@ export function initHeroCarousel() {
             const video = container.querySelector('video');
             if (video) {
                 video.pause();
-                video.currentTime = 0;
+                video.currentTime = 0; // Reset time when changing slides
+                video.muted = true;
             }
+
+            // Reset any trailer buttons that might have been changed
+            resetTrailerButtons(container);
         });
 
         // Remove active class from all indicators
@@ -162,6 +169,16 @@ export function initHeroCarousel() {
         startAutoPlay();
     }
 
+    function resetTrailerButtons(container) {
+        // Find the trailer button in this container
+        const trailerBtn = container.querySelector('.trailer-btn');
+        if (trailerBtn) {
+            // Reset button text and icon to original state
+            trailerBtn.innerHTML = '<i class="fas fa-film"></i> FRAGMANI İZLE';
+            trailerBtn.classList.remove('watching-trailer');
+        }
+    }
+
     function setupEventListeners() {
         const heroIndicators = document.querySelectorAll('.hero-indicator');
 
@@ -185,27 +202,33 @@ export function initHeroCarousel() {
         // Trailer buttons
         document.querySelectorAll('.trailer-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                const index = parseInt(btn.dataset.index);
-                playTrailer(index);
+                // If button is currently in "stop" mode, call stopTrailer
+                if (btn.classList.contains('watching-trailer')) {
+                    stopTrailer();
+                } else {
+                    // Otherwise play the trailer
+                    const index = parseInt(btn.dataset.index);
+                    playTrailer(index, btn);
+                }
             });
         });
-
-        // Stop trailer button
-        stopTrailerBtn.addEventListener('click', stopTrailer);
     }
 
-    function playTrailer(index) {
+    function playTrailer(index, button) {
         const heroContainers = document.querySelectorAll('.hero-video-container');
         const video = heroContainers[index].querySelector('video');
 
         if (video) {
-            // Unmute and play video
-            video.muted = false;
-            video.currentTime = 0;
-            video.play();
+            // Store reference to the current button
+            currentTrailerButton = button;
 
-            // Show stop button
-            stopTrailerBtn.style.display = 'flex';
+            // Change button to "STOP" mode
+            button.innerHTML = '<i class="fas fa-pause"></i> İZLEMEYİ DURDUR';
+            button.classList.add('watching-trailer');
+
+            // Unmute and play video without resetting position
+            video.muted = false;
+            video.play();
 
             // Pause autoplay while trailer is playing
             clearInterval(heroInterval);
@@ -217,13 +240,16 @@ export function initHeroCarousel() {
         const video = activeContainer.querySelector('video');
 
         if (video) {
-            // Mute and reset video
+            // Mute video but don't reset position
             video.muted = true;
-            video.currentTime = 0;
             video.play();
 
-            // Hide stop button
-            stopTrailerBtn.style.display = 'none';
+            // Reset the trailer button
+            if (currentTrailerButton) {
+                currentTrailerButton.innerHTML = '<i class="fas fa-film"></i> FRAGMANI İZLE';
+                currentTrailerButton.classList.remove('watching-trailer');
+                currentTrailerButton = null;
+            }
 
             // Resume autoplay
             startAutoPlay();
