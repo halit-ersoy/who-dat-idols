@@ -37,7 +37,7 @@ public class SoapOperaController {
                     vm.setInfo(soapOpera.getYear() + " • " + mainCategory + " • " + soapOpera.getTime() + " dk");
 
                     // Updated to use the new media endpoint
-                    vm.setThumbnailUrl("/media/image/" + soapOpera.getId());
+                    vm.setThumbnailUrl("/media/image/soap_opera/" + soapOpera.getId());
                     vm.setVideoUrl("/watch?id=" + soapOpera.getId());
 
                     return vm;
