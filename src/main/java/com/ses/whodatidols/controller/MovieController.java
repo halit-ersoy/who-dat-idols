@@ -37,7 +37,7 @@ public class MovieController {
                     vm.setInfo(movie.getYear() + " • " + mainCategory + " • " + movie.getTime() + " dk");
 
                     // Updated to use the new media endpoint
-                    vm.setThumbnailUrl("/media/image/movie/" + movie.getId());
+                    vm.setThumbnailUrl("/media/image/" + movie.getId());
                     vm.setVideoUrl("/watch?id=" + movie.getId());
 
                     return vm;

@@ -78,21 +78,23 @@ public class MediaController {
         }
     }
 
-    @GetMapping("/video/{category}/{id}")
+    @GetMapping("/video/{id}")
     public ResponseEntity<ResourceRegion> getVideo(
-            @PathVariable String category,
             @PathVariable UUID id,
             @RequestHeader HttpHeaders headers) {
 
-        logger.debug("Requesting video: category={}, id={}", category, id);
-
-        // Validate category
-        if (!CATEGORY_PATHS.containsKey(category)) {
-            logger.warn("Invalid category requested: {}", category);
-            return ResponseEntity.badRequest().build();
-        }
+        logger.debug("Requesting video for id={}", id);
 
         try {
+            // Get the category from database using the function
+            String category = getContentTypeFromDatabase(id);
+
+            // Validate category
+            if ("unknown".equals(category) || !CATEGORY_PATHS.containsKey(category)) {
+                logger.warn("Invalid or unknown category for id {}: {}", id, category);
+                return ResponseEntity.notFound().build();
+            }
+
             // Build and validate path
             Path categoryPath = Paths.get(mediaRootPath, CATEGORY_PATHS.get(category)).normalize().toAbsolutePath();
             Path videoPath = categoryPath.resolve(id + ".mp4").normalize().toAbsolutePath();
@@ -117,25 +119,36 @@ public class MediaController {
                     .body(region);
 
         } catch (IOException e) {
-            logger.error("Error serving video {}/{}: {}", category, id, e.getMessage());
+            logger.error("Error serving video for id {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    @GetMapping("/image/{category}/{id}")
-    public ResponseEntity<Resource> getImage(
-            @PathVariable String category,
-            @PathVariable UUID id) {
-
-        logger.debug("Requesting image: category={}, id={}", category, id);
-
-        // Validate category
-        if (!CATEGORY_PATHS.containsKey(category)) {
-            logger.warn("Invalid category requested: {}", category);
-            return ResponseEntity.badRequest().build();
+    // Method to call the database function to get content type
+    private String getContentTypeFromDatabase(UUID id) {
+        try {
+            String sql = "SELECT [dbo].[GetContentTypeById](?);";
+            return jdbcTemplate.queryForObject(sql, String.class, id.toString());
+        } catch (Exception e) {
+            logger.error("Error retrieving content type for id {}: {}", id, e.getMessage());
+            return "unknown";
         }
+    }
+
+    @GetMapping("/image/{id}")
+    public ResponseEntity<Resource> getImage(@PathVariable UUID id) {
+        logger.debug("Requesting image for id={}", id);
 
         try {
+            // Get the category from database using the function
+            String category = getContentTypeFromDatabase(id);
+
+            // Validate category
+            if ("unknown".equals(category) || !CATEGORY_PATHS.containsKey(category)) {
+                logger.warn("Invalid or unknown category for id {}: {}", id, category);
+                return ResponseEntity.notFound().build();
+            }
+
             // Build and validate path
             Path basePath = Paths.get(mediaRootPath, CATEGORY_PATHS.get(category)).normalize().toAbsolutePath();
             Path rootPath = Paths.get(mediaRootPath).toAbsolutePath();
@@ -147,7 +160,7 @@ public class MediaController {
 
             Path imagePath = findExistingImage(basePath, id);
             if (imagePath == null) {
-                logger.warn("Image not found for category={}, id={}", category, id);
+                logger.warn("Image not found for id={}, category={}", id, category);
                 return ResponseEntity.notFound().build();
             }
 
@@ -161,7 +174,7 @@ public class MediaController {
                     .body(resource);
 
         } catch (IOException e) {
-            logger.error("Error serving image {}/{}: {}", category, id, e.getMessage());
+            logger.error("Error serving image for id {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

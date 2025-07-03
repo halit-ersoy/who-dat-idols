@@ -43,8 +43,8 @@ export function initHeroCarousel() {
             // Generate container HTML
             container.innerHTML = `
                 <video class="hero-bg-video" ${index === 0 ? 'autoplay' : ''} muted playsinline>
-                    <source src="/media/video/trailer/${hero.ID}" type="video/mp4">
-                    <img class="hero-bg" src="/media/image/trailer/${hero.ID}" alt="${hero.name}">
+                    <source src="/media/video/${hero.ID}" type="video/mp4">
+                    <img class="hero-bg" src="/media/image/${hero.ID}" alt="${hero.name}">
                 </video>
                 <div class="hero-overlay"></div>
                 <div class="hero-content animate-fade-in">
