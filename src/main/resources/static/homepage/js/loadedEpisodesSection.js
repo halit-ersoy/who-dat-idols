@@ -245,7 +245,7 @@ export function initLoadedEpisodesSection() {
                 carousel.innerHTML += `
             <div class="upcoming-card" onclick="window.location.href='/watch?id=${episode.ID}'">
                 <div class="upcoming-card-image">
-                    <img src="/media/image/${episode.ID}" alt="${episode.name}">
+                    <img src="/media/image/soap_opera/${episode.ID}" alt="${episode.name}">
                     <div class="upcoming-play-icon">
                         <i class="fas fa-play"></i>
                     </div>
@@ -310,7 +310,7 @@ export function initLoadedEpisodesSection() {
                 carousel.innerHTML += `
                 <div class="upcoming-card" onclick="window.location.href='/watch?id=${episode.ID}'">
                     <div class="upcoming-card-image">
-                        <img src="/media/image/${episode.ID}" alt="${episode.name}">
+                        <img src="/media/image/soap_opera/${episode.ID}" alt="${episode.name}">
                         <div class="upcoming-play-icon">
                             <i class="fas fa-play"></i>
                         </div>
