@@ -60,7 +60,7 @@ public class WeeklyBestController {
 
                     vm.setId(soapOpera.getId().toString());
                     vm.setTitle(soapOpera.getName());
-                    vm.setInfo(soapOpera.getYear() + " • " + mainCategory + " • " + soapOpera.getTime() + " dk");
+                    vm.setInfo(soapOpera.getYear() + " • " + mainCategory);
 
                     // Set the thumbnail URL to use the image API endpoint
                     vm.setThumbnailUrl("/media/image/" + soapOpera.getId());

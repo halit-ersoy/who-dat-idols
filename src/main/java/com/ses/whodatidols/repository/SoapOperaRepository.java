@@ -45,10 +45,6 @@ public class SoapOperaRepository {
             soapOpera.setId(UUID.fromString(rs.getString("ID")));
             soapOpera.setName(rs.getString("name"));
             soapOpera.setCategory(rs.getString("category"));
-            soapOpera.setTime(rs.getInt("time"));
-            soapOpera.setLanguage(rs.getString("language"));
-            soapOpera.setYear(rs.getInt("year"));
-            soapOpera.setUploadDate(rs.getTimestamp("uploadDate").toLocalDateTime());
             return soapOpera;
         }
     }
