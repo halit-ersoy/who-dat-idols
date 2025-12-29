@@ -8,11 +8,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # --- KRITIK NOKTA ---
-    # Bu satir, commit mesajinin icinde "-live-" kelimesini arar.
-    # Eger yoksa, bu islem (job) tamamen atlanir ve sunucuya dokunulmaz.
+    # Commit mesajinda "-live-" varsa calisir
     if: contains(github.event.head_commit.message, '-live-')
-    # --------------------
 
     steps:
       - name: Sunucuya Baglan ve Guncelle
@@ -23,12 +20,21 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
           script: |
+            # 1. Proje Klasorune Git
             cd /home/who-dat-idols
-            # --- DEGISIKLIK BASLANGICI ---
-            # Onceki degisiklikleri sil ve GitHub ile esitle
+
+            # 2. GitHub'dan En Guncel Kodlari Cek (Zorla)
             git fetch --all
             git reset --hard origin/main
-            # --- DEGISIKLIK BITISI ---
+            
+            # 3. Gradle'a Calisma Izni Ver (Kritik Adim!)
+            chmod +x gradlew
+
+            # 4. Temiz Derleme Yap (Release Modu Hazirligi)
             ./gradlew clean build -x test --no-daemon
+
+            # 5. Servisi Yeniden Baslat (Prod Modunda Kalkacak)
             systemctl restart whodatidols
+            
+            # 6. Durum Raporu Ver
             systemctl status whodatidols --no-pager
