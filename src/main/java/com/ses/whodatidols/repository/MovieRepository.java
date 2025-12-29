@@ -15,7 +15,7 @@ import java.util.UUID;
 public class MovieRepository {
     private final JdbcTemplate jdbcTemplate;
 
-    // SQL to fetch movies sorted by upload date
+    // Stored Procedure çağrısı (Okuma işlemleri için mevcut yapıyı koruyoruz)
     private static final String GET_RECENT_MOVIES =
             "EXEC GetMoviesByUploadDateOffset @dayOffset = ?";
 
@@ -23,6 +23,25 @@ public class MovieRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    // --- KAYIT (INSERT) İŞLEMİ ---
+    public void save(Movie movie) {
+        String sql = "INSERT INTO [WhoDatIdols].[dbo].[Movie] " +
+                "(ID, name, category, _content, time, language, year, uploadDate) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+        jdbcTemplate.update(sql,
+                movie.getId().toString(),
+                movie.getName(),
+                movie.getCategory(),
+                movie.getContent(), // Java'da content, DB'de _content
+                movie.getTime(),
+                movie.getLanguage(),
+                movie.getYear(),
+                java.sql.Timestamp.valueOf(movie.getUploadDate())
+        );
+    }
+
+    // --- OKUMA İŞLEMLERİ ---
     public List<Movie> findRecentMovies(int day) {
         return jdbcTemplate.query(GET_RECENT_MOVIES, new MovieRowMapper(), day);
     }
@@ -32,7 +51,8 @@ public class MovieRepository {
     }
 
     public String getImagePathById(UUID movieId) {
-        String sql = "SELECT [bannerPath] FROM [WhoDatIdols].[dbo].[Movie] WHERE [ID] = ?";
+        // SQL Injection riskine karşı parametreli sorgu
+        String sql = "SELECT [_content] FROM [WhoDatIdols].[dbo].[Movie] WHERE [ID] = ?";
         try {
             return jdbcTemplate.queryForObject(sql, String.class, movieId.toString());
         } catch (EmptyResultDataAccessException e) {
@@ -40,6 +60,7 @@ public class MovieRepository {
         }
     }
 
+    // --- ROW MAPPER (Sütun Eşleştirici) ---
     private static class MovieRowMapper implements RowMapper<Movie> {
         @Override
         public Movie mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -47,11 +68,15 @@ public class MovieRepository {
             movie.setId(UUID.fromString(rs.getString("ID")));
             movie.setName(rs.getString("name"));
             movie.setCategory(rs.getString("category"));
-            movie.setContent(rs.getString("_content"));
+            movie.setContent(rs.getString("_content")); // Dikkat: DB sütun adı _content
             movie.setTime(rs.getInt("time"));
             movie.setLanguage(rs.getString("language"));
             movie.setYear(rs.getInt("year"));
-            movie.setUploadDate(rs.getTimestamp("uploadDate").toLocalDateTime());
+
+            // uploadDate null gelebilir, kontrol ediyoruz
+            if (rs.getTimestamp("uploadDate") != null) {
+                movie.setUploadDate(rs.getTimestamp("uploadDate").toLocalDateTime());
+            }
             return movie;
         }
     }

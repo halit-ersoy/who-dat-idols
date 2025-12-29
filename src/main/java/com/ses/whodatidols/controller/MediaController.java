@@ -24,15 +24,20 @@ public class MediaController {
 
     private static final Logger logger = LoggerFactory.getLogger(MediaController.class);
     private static final long VIDEO_CHUNK_SIZE = 1024 * 1024; // 1MB
-    private static final Map<String, String> CATEGORY_PATHS = Map.of(
-            "movie", "movies",
-            "soap_opera", "soap_operas",
-            "trailer", "trailers"
-    );
+
+    // Desteklenen resim formatları
     private static final String[] SUPPORTED_IMAGE_EXTENSIONS = {".webp", ".jpg", ".jpeg", ".png"};
 
-    @Value("${media.root.path}")
-    private String mediaRootPath;
+    // --- PROPERTY DOSYASINDAN GELEN YOLLAR ---
+
+    @Value("${media.source.movies.path}")
+    private String moviesPath;
+
+    @Value("${media.source.soap_operas.path}")
+    private String soapOperasPath;
+
+    @Value("${media.source.trailers.path}")
+    private String trailersPath;
 
     @Value("${media.static.images.path}")
     private String staticImagesPath;
@@ -46,38 +51,34 @@ public class MediaController {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    // --- 1. STATİK RESİM SUNUCUSU ---
     @GetMapping("/static/image/{imageName:.+}")
     public ResponseEntity<Resource> getStaticImage(@PathVariable String imageName) {
         logger.debug("Requesting static image: {}", imageName);
 
         try {
-            // Sanitize and normalize path
+            // Güvenlik: Yol temizleme
             String sanitizedName = Paths.get(imageName).getFileName().toString();
-            Path imagePath = Paths.get(staticImagesPath)
-                    .resolve(sanitizedName)
-                    .normalize()
-                    .toAbsolutePath();
 
-            // Validate path is within allowed directory
-            Path staticImagesAbsPath = Paths.get(staticImagesPath).toAbsolutePath();
-            if (!Files.exists(imagePath) || !imagePath.startsWith(staticImagesAbsPath)) {
-                logger.warn("Static image not found or path traversal attempt: {}", imagePath);
+            // Yapılandırmadaki yola göre hedefi belirle
+            Path rootPath = Paths.get(staticImagesPath).toAbsolutePath().normalize();
+            Path imagePath = rootPath.resolve(sanitizedName).normalize();
+
+            // Güvenlik: Path Traversal (../) kontrolü
+            if (!Files.exists(imagePath) || !imagePath.startsWith(rootPath)) {
+                logger.warn("Static image not found or invalid path: {}", imagePath);
                 return ResponseEntity.notFound().build();
             }
 
-            // Create and return resource
-            UrlResource resource = new UrlResource(imagePath.toUri());
-            MediaType mediaType = determineMediaType(imagePath);
+            return serveResource(imagePath);
 
-            return ResponseEntity.ok()
-                    .contentType(mediaType)
-                    .body(resource);
         } catch (IOException e) {
             logger.error("Error serving static image {}: {}", imageName, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
+    // --- 2. VİDEO STREAMING (Movies, Soap Operas, Trailers) ---
     @GetMapping("/video/{id}")
     public ResponseEntity<ResourceRegion> getVideo(
             @PathVariable UUID id,
@@ -86,31 +87,31 @@ public class MediaController {
         logger.debug("Requesting video for id={}", id);
 
         try {
-            // Get the category from database using the function
+            // Veritabanından içerik türünü (category) öğren
             String category = getContentTypeFromDatabase(id);
 
-            // Validate category
-            if ("unknown".equals(category) || !CATEGORY_PATHS.containsKey(category)) {
-                logger.warn("Invalid or unknown category for id {}: {}", id, category);
+            // Kategoriye uygun ana klasörü seç
+            Path basePath = getBasePathForCategory(category);
+
+            if (basePath == null) {
+                logger.warn("Unknown category '{}' for video id: {}", category, id);
                 return ResponseEntity.notFound().build();
             }
 
-            // Build and validate path
-            Path categoryPath = Paths.get(mediaRootPath, CATEGORY_PATHS.get(category)).normalize().toAbsolutePath();
-            Path videoPath = categoryPath.resolve(id + ".mp4").normalize().toAbsolutePath();
-            Path rootPath = Paths.get(mediaRootPath).toAbsolutePath();
+            // Dosya yolunu oluştur
+            Path videoPath = basePath.resolve(id + ".mp4").normalize().toAbsolutePath();
 
-            if (!Files.exists(videoPath) || !videoPath.startsWith(rootPath)) {
-                logger.warn("Video file not found or invalid path: {}", videoPath);
+            // Dosya var mı ve güvenli klasörde mi kontrol et
+            if (!Files.exists(videoPath) || !videoPath.startsWith(basePath)) {
+                logger.warn("Video file not found or path traversal attempt: {}", videoPath);
                 return ResponseEntity.notFound().build();
             }
 
-            // Create video resource and region
+            // Video kaynağını hazırla
             UrlResource videoResource = new UrlResource(videoPath.toUri());
             long contentLength = videoResource.contentLength();
             ResourceRegion region = getResourceRegion(videoResource, headers, contentLength);
 
-            // Return appropriate response with media type
             return ResponseEntity
                     .status(HttpStatus.PARTIAL_CONTENT)
                     .contentType(MediaTypeFactory.getMediaType(videoResource)
@@ -124,54 +125,36 @@ public class MediaController {
         }
     }
 
-    // Method to call the database function to get content type
-    private String getContentTypeFromDatabase(UUID id) {
-        try {
-            String sql = "SELECT [dbo].[GetContentTypeById](?);";
-            return jdbcTemplate.queryForObject(sql, String.class, id.toString());
-        } catch (Exception e) {
-            logger.error("Error retrieving content type for id {}: {}", id, e.getMessage());
-            return "unknown";
-        }
-    }
-
+    // --- 3. DİNAMİK RESİM (Thumbnail/Poster) SUNUCUSU ---
     @GetMapping("/image/{id}")
     public ResponseEntity<Resource> getImage(@PathVariable UUID id) {
         logger.debug("Requesting image for id={}", id);
 
         try {
-            // Get the category from database using the function
+            // Veritabanından içerik türünü öğren
             String category = getContentTypeFromDatabase(id);
 
-            // Validate category
-            if ("unknown".equals(category) || !CATEGORY_PATHS.containsKey(category)) {
-                logger.warn("Invalid or unknown category for id {}: {}", id, category);
+            // Kategoriye uygun ana klasörü seç
+            Path basePath = getBasePathForCategory(category);
+
+            if (basePath == null) {
+                logger.warn("Unknown category '{}' for image id: {}", category, id);
                 return ResponseEntity.notFound().build();
             }
 
-            // Build and validate path
-            Path basePath = Paths.get(mediaRootPath, CATEGORY_PATHS.get(category)).normalize().toAbsolutePath();
-            Path rootPath = Paths.get(mediaRootPath).toAbsolutePath();
-
-            if (!basePath.startsWith(rootPath)) {
-                logger.warn("Path traversal attempt detected for category: {}", category);
-                return ResponseEntity.badRequest().build();
-            }
-
+            // İlgili klasörde resmi ara (.jpg, .png vs.)
             Path imagePath = findExistingImage(basePath, id);
+
             if (imagePath == null) {
-                logger.warn("Image not found for id={}, category={}", id, category);
+                logger.warn("Image file not found for id: {}", id);
                 return ResponseEntity.notFound().build();
             }
 
-            // Create and return resource
-            UrlResource resource = new UrlResource(imagePath.toUri());
-            MediaType mediaType = determineMediaType(imagePath);
-
+            // Resmi sun (1 günlük önbellek ile)
             return ResponseEntity.ok()
-                    .contentType(mediaType)
+                    .contentType(determineMediaType(imagePath))
                     .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(1)))
-                    .body(resource);
+                    .body(new UrlResource(imagePath.toUri()));
 
         } catch (IOException e) {
             logger.error("Error serving image for id {}: {}", id, e.getMessage());
@@ -179,60 +162,57 @@ public class MediaController {
         }
     }
 
+    // --- 4. İZLENME SAYISI ARTIRMA ---
     @PostMapping("/{id}/increment-view")
     public ResponseEntity<Void> incrementViewCount(@PathVariable UUID id) {
-        logger.debug("Incrementing view count for id: {}", id);
-
         try {
+            // Stored Procedure çağrısı
             int updatedRows = jdbcTemplate.update("EXEC IncrementViewCount @ID = ?", id.toString());
-
-            if (updatedRows > 0) {
-                return ResponseEntity.ok().build();
-            } else {
-                logger.warn("No rows updated when incrementing view count for id: {}", id);
-                return ResponseEntity.noContent().build();
-            }
-
+            return (updatedRows > 0) ? ResponseEntity.ok().build() : ResponseEntity.noContent().build();
         } catch (Exception e) {
             logger.error("Failed to increment view count for id {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    private ResourceRegion getResourceRegion(UrlResource resource, HttpHeaders headers, long contentLength) throws IOException {
-        String range = headers.getFirst(HttpHeaders.RANGE);
-        long chunkSize = VIDEO_CHUNK_SIZE;
+    // ================= YARDIMCI METODLAR =================
 
-        if (range == null || range.isEmpty()) {
-            long rangeLength = Math.min(chunkSize, contentLength);
-            return new ResourceRegion(resource, 0, rangeLength);
+    /**
+     * Veritabanından gelen kategori ismine göre (movie, soap_opera, trailer)
+     * application.properties dosyasındaki doğru yolu eşleştirir.
+     */
+    private Path getBasePathForCategory(String category) {
+        if (category == null) return null;
+
+        // Veritabanından dönen string değerlerine göre eşleştirme
+        // Not: DB'den dönen değerlerin 'movie', 'soap_opera', 'trailer' olduğu varsayılmıştır.
+        switch (category.toLowerCase()) {
+            case "movie":
+                return Paths.get(moviesPath).toAbsolutePath().normalize();
+            case "soap_opera": // DB'den 'soap-opera' veya 'soap_opera' dönebilir, kontrol edin
+            case "soap-opera":
+            case "series":
+                return Paths.get(soapOperasPath).toAbsolutePath().normalize();
+            case "trailer":
+                return Paths.get(trailersPath).toAbsolutePath().normalize();
+            default:
+                return null;
         }
+    }
 
+    private String getContentTypeFromDatabase(UUID id) {
         try {
-            String[] ranges = range.replace("bytes=", "").split("-");
-            long start = Long.parseLong(ranges[0]);
-
-            // Handle invalid range start
-            if (start >= contentLength) {
-                logger.warn("Invalid range request: start position {} exceeds content length {}", start, contentLength);
-                return new ResourceRegion(resource, 0, Math.min(chunkSize, contentLength));
-            }
-
-            // Parse end position or default to end of content
-            long end = ranges.length > 1 && !ranges[1].isEmpty()
-                    ? Math.min(Long.parseLong(ranges[1]), contentLength - 1)
-                    : contentLength - 1;
-
-            long rangeLength = Math.min(chunkSize, end - start + 1);
-            return new ResourceRegion(resource, start, rangeLength);
-
-        } catch (NumberFormatException e) {
-            logger.warn("Invalid range format: {}", range);
-            return new ResourceRegion(resource, 0, Math.min(chunkSize, contentLength));
+            // SQL Function: Geriye 'movie', 'soap_opera' vb. döndürmeli
+            String sql = "SELECT [dbo].[GetContentTypeById](?);";
+            return jdbcTemplate.queryForObject(sql, String.class, id.toString());
+        } catch (Exception e) {
+            logger.error("DB Error retrieving content type for id {}: {}", id, e.getMessage());
+            return "unknown";
         }
     }
 
     private Path findExistingImage(Path basePath, UUID id) {
+        // Temel klasörde ID + Uzantı kombinasyonlarını dener
         for (String ext : SUPPORTED_IMAGE_EXTENSIONS) {
             Path path = basePath.resolve(id + ext).normalize();
             if (Files.exists(path) && path.startsWith(basePath)) {
@@ -242,37 +222,50 @@ public class MediaController {
         return null;
     }
 
+    private ResponseEntity<Resource> serveResource(Path path) throws IOException {
+        UrlResource resource = new UrlResource(path.toUri());
+        return ResponseEntity.ok()
+                .contentType(determineMediaType(path))
+                .body(resource);
+    }
+
+    private ResourceRegion getResourceRegion(UrlResource resource, HttpHeaders headers, long contentLength) throws IOException {
+        String range = headers.getFirst(HttpHeaders.RANGE);
+        if (range == null || range.isEmpty()) {
+            return new ResourceRegion(resource, 0, Math.min(VIDEO_CHUNK_SIZE, contentLength));
+        }
+
+        try {
+            String[] ranges = range.replace("bytes=", "").split("-");
+            long start = Long.parseLong(ranges[0]);
+            if (start >= contentLength) return new ResourceRegion(resource, 0, Math.min(VIDEO_CHUNK_SIZE, contentLength));
+
+            long end = ranges.length > 1 && !ranges[1].isEmpty()
+                    ? Math.min(Long.parseLong(ranges[1]), contentLength - 1)
+                    : contentLength - 1;
+
+            return new ResourceRegion(resource, start, Math.min(VIDEO_CHUNK_SIZE, end - start + 1));
+        } catch (NumberFormatException e) {
+            return new ResourceRegion(resource, 0, Math.min(VIDEO_CHUNK_SIZE, contentLength));
+        }
+    }
+
     private MediaType determineMediaType(Path path) throws IOException {
         String pathStr = path.toString();
+        if (mediaTypeCache.containsKey(pathStr)) return mediaTypeCache.get(pathStr);
 
-        // Check cache first
-        if (mediaTypeCache.containsKey(pathStr)) {
-            return mediaTypeCache.get(pathStr);
-        }
-
-        // Determine content type
         String contentType = Files.probeContentType(path);
-        MediaType mediaType;
+        MediaType mediaType = (contentType != null) ? MediaType.parseMediaType(contentType) : MediaType.APPLICATION_OCTET_STREAM;
 
-        if (contentType != null) {
-            mediaType = MediaType.parseMediaType(contentType);
-        } else {
-            // Fallback based on file extension
+        // Fallback checks (Dosya uzantısına göre manuel belirleme)
+        if (contentType == null) {
             String filename = path.getFileName().toString().toLowerCase();
-            if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) {
-                mediaType = MediaType.IMAGE_JPEG;
-            } else if (filename.endsWith(".png")) {
-                mediaType = MediaType.IMAGE_PNG;
-            } else if (filename.endsWith(".webp")) {
-                mediaType = MediaType.valueOf("image/webp");
-            } else if (filename.endsWith(".mp4")) {
-                mediaType = MediaType.valueOf("video/mp4");
-            } else {
-                mediaType = MediaType.APPLICATION_OCTET_STREAM;
-            }
+            if (filename.endsWith(".mp4")) mediaType = MediaType.valueOf("video/mp4");
+            else if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) mediaType = MediaType.IMAGE_JPEG;
+            else if (filename.endsWith(".png")) mediaType = MediaType.IMAGE_PNG;
+            else if (filename.endsWith(".webp")) mediaType = MediaType.valueOf("image/webp");
         }
 
-        // Cache the result
         mediaTypeCache.put(pathStr, mediaType);
         return mediaType;
     }

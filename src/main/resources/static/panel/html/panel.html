@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS - Komuta Merkezi</title>
+    <link rel="stylesheet" href="/panel/css/panel.css">
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>WHO DAT IDOLS - VERİ GİRİŞ PANELİ</h1>
+        <p>Hoş geldiniz Efendim. Sistemler çevrimiçi.</p>
+    </header>
+
+    <div class="forms-wrapper">
+
+        <div class="card">
+            <h2>🎬 Film Ekle</h2>
+            <form id="movieForm">
+                <div class="input-group">
+                    <label>Film Adı</label>
+                    <input type="text" id="movieName" required placeholder="Film ismini giriniz">
+                </div>
+                <div class="input-group">
+                    <label>Kategori</label>
+                    <input type="text" id="movieCategory" placeholder="Örn: Aksiyon, Dram">
+                </div>
+
+                <div class="input-group">
+                    <label>Video Dosyası</label>
+                    <input type="file" id="movieFile" required accept="video/*">
+                </div>
+
+                <div class="row">
+                    <div class="input-group half">
+                        <label>Süre (Dk)</label>
+                        <input type="number" id="movieTime" required>
+                    </div>
+                    <div class="input-group half">
+                        <label>Yıl</label>
+                        <input type="number" id="movieYear" value="2025">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Dil</label>
+                    <input type="text" id="movieLanguage" placeholder="Örn: Korece">
+                </div>
+                <button type="submit" class="btn btn-movie">FİLMİ SİSTEME YÜKLE</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>📺 Dizi Ekle</h2>
+            <form id="seriesForm">
+                <div class="input-group">
+                    <label>Dizi Adı</label>
+                    <input type="text" id="seriesName" required placeholder="Dizi ismini giriniz">
+                </div>
+                <div class="input-group">
+                    <label>Kategori</label>
+                    <input type="text" id="seriesCategory">
+                </div>
+
+                <div class="input-group">
+                    <label>Video Dosyası</label>
+                    <input type="file" id="seriesFile" required accept="video/*">
+                </div>
+
+                <div class="row">
+                    <div class="input-group half">
+                        <label>Süre (Dk)</label>
+                        <input type="number" id="seriesTime">
+                    </div>
+                    <div class="input-group half">
+                        <label>Yıl</label>
+                        <input type="number" id="seriesYear" value="2025">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Dil</label>
+                    <input type="text" id="seriesLanguage">
+                </div>
+                <button type="submit" class="btn btn-series">DİZİYİ SİSTEME YÜKLE</button>
+            </form>
+        </div>
+
+    </div> </div> <script src="/panel/js/panel.js"></script>
+</body>
+</html>
