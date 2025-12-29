@@ -24,7 +24,11 @@ jobs:
           port: 22
           script: |
             cd /home/who-dat-idols
-            git pull origin main
+            # --- DEGISIKLIK BASLANGICI ---
+            # Onceki degisiklikleri sil ve GitHub ile esitle
+            git fetch --all
+            git reset --hard origin/main
+            # --- DEGISIKLIK BITISI ---
             ./gradlew clean build -x test --no-daemon
             systemctl restart whodatidols
             systemctl status whodatidols --no-pager
