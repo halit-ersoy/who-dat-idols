@@ -29,7 +29,6 @@ public class SoapOperaRepository {
     // ==========================================================
 
     public List<SoapOpera> findRecentSoapOperas(int day) {
-        // Eski RowMapper'ı kullanıyoruz (Stored Procedure uyumlu)
         return jdbcTemplate.query(GET_RECENT_SOAP_OPERAS, new SoapOperaRowMapper(), day);
     }
 
@@ -38,7 +37,6 @@ public class SoapOperaRepository {
     }
 
     public String getImagePathById(UUID soapOperaId) {
-        // Banner veya resim yolu
         String sql = "SELECT [_content] FROM [WhoDatIdols].[dbo].[SoapOperas] WHERE [ID] = ?";
         try {
             return jdbcTemplate.queryForObject(sql, String.class, soapOperaId.toString());
@@ -48,7 +46,7 @@ public class SoapOperaRepository {
     }
 
     // ==========================================================
-    //       BÖLÜM 2: ADMIN PANELİ METODLARI (YENİLER)
+    //       BÖLÜM 2: ADMIN PANELİ METODLARI (YENİLER & GÜNCELLENENLER)
     // ==========================================================
 
     // --- DİZİ (ANA KAYIT) VAR MI KONTROL ET ---
@@ -93,28 +91,52 @@ public class SoapOperaRepository {
         return jdbcTemplate.query(sql, new SeriesRowMapper());
     }
 
+    // ----------------------------------------------------------
+    //       BÖLÜM 3: SİLME OPERASYONLARI (DELETE) - EKLENDİ
+    // ----------------------------------------------------------
+
+    // 1. Diziyi İsme Göre Sil (Parent)
+    public void deleteSeriesByName(String name) {
+        String sql = "DELETE FROM [WhoDatIdols].[dbo].[SoapOperas] WHERE name = ?";
+        jdbcTemplate.update(sql, name);
+    }
+
+    // 2. Bölümü ID'ye Göre Sil (Child)
+    public void deleteEpisodeById(UUID id) {
+        String sql = "DELETE FROM [WhoDatIdols].[dbo].[SoapOpera] WHERE ID = ?";
+        jdbcTemplate.update(sql, id.toString());
+    }
+
+    // 3. Bölüm ID'sini içeren Diziyi Bul (XML İçinde Arama Yapar)
+    // Bu, XML'den o bölümü silmek için hangi diziyi güncelleyeceğimizi bulur.
+    public SoapOpera findSeriesByEpisodeIdInsideXML(String episodeUUID) {
+        // SQL Server XML sütununda string araması (Basit yöntem)
+        String sql = "SELECT * FROM [WhoDatIdols].[dbo].[SoapOperas] WHERE soapOperaSeries LIKE ?";
+        try {
+            // ID'yi çevreleyen tagleri aramayız çünkü format değişebilir, sadece UUID'yi ararız
+            String searchTerm = "%" + episodeUUID + "%";
+            return jdbcTemplate.queryForObject(sql, new SeriesRowMapper(), searchTerm);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
     // ==========================================================
-    //           ROW MAPPERS (Sütun Eşleştiriciler)
+    //           ROW MAPPERS
     // ==========================================================
 
-    // 1. ESKİ MAPPER (Stored Procedure'ler sadece temel alanları döndürebilir)
     private static class SoapOperaRowMapper implements RowMapper<SoapOpera> {
         @Override
         public SoapOpera mapRow(ResultSet rs, int rowNum) throws SQLException {
             SoapOpera soapOpera = new SoapOpera();
             soapOpera.setId(UUID.fromString(rs.getString("ID")));
             soapOpera.setName(rs.getString("name"));
-            // Bazı SP'lerde category olmayabilir, try-catch ile koruyabiliriz veya direkt alırız
             try { soapOpera.setCategory(rs.getString("category")); } catch (SQLException e) {}
-
-            // Eğer resim yolu vs lazımsa
             try { soapOpera.setContent(rs.getString("_content")); } catch (SQLException e) {}
-
             return soapOpera;
         }
     }
 
-    // 2. YENİ MAPPER (Admin Paneli 'SELECT *' yaptığı için tüm detayları alır)
     private static class SeriesRowMapper implements RowMapper<SoapOpera> {
         @Override
         public SoapOpera mapRow(ResultSet rs, int rowNum) throws SQLException {

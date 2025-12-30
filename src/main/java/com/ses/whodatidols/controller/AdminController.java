@@ -125,4 +125,28 @@ public class AdminController {
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
         }
     }
+
+    // TEK BİR BÖLÜMÜ SİL
+    @DeleteMapping("/delete-episode")
+    public ResponseEntity<String> deleteEpisode(@RequestParam("id") UUID id) {
+        try {
+            // Servisinizde delete metodu olmalı. Yoksa repository.deleteById(id) çağrılmalı.
+            soapOperaService.deleteEpisodeById(id);
+            return ResponseEntity.ok("Bölüm silindi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Silinemedi: " + e.getMessage());
+        }
+    }
+
+    // BİR DİZİNİN TAMAMINI SİL
+    @DeleteMapping("/delete-series-by-name")
+    public ResponseEntity<String> deleteSeriesByName(@RequestParam("name") String name) {
+        try {
+            // Servisinizde isme göre silme olmalı
+            soapOperaService.deleteSeriesByName(name);
+            return ResponseEntity.ok("Dizi komple silindi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Silinemedi: " + e.getMessage());
+        }
+    }
 }

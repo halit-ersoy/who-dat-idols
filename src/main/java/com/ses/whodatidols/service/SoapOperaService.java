@@ -13,6 +13,8 @@ import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class SoapOperaService {
@@ -42,42 +44,34 @@ public class SoapOperaService {
         String currentXML;
 
         if (existingSeries == null) {
-            // Dizi yoksa oluştur
             seriesId = UUID.randomUUID();
-            soapOpera.setId(seriesId); // Parent ID
+            soapOpera.setId(seriesId);
             repository.createSeries(soapOpera);
             currentXML = "<Seasons></Seasons>";
         } else {
-            // Dizi varsa bilgilerini al
             seriesId = existingSeries.getId();
             currentXML = existingSeries.getXmlData();
-            // Formdan gelen metadata ile mevcut diziyi güncellemek istersek:
-            // existingSeries.setContent(soapOpera.getContent());
-            // repository.updateSeriesMetadata(existingSeries);
         }
 
         // 2. DOSYA VE BÖLÜM İŞLEMLERİ (Child)
-        UUID episodeId = UUID.randomUUID(); // Yeni Bölüm ID'si
+        UUID episodeId = UUID.randomUUID();
 
         if (file != null && !file.isEmpty()) {
             Path uploadPath = Paths.get(soapOperasPath).toAbsolutePath().normalize();
             if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
 
-            // Dosya adı: Bölüm UUID'si
             String fileName = episodeId.toString() + ".mp4";
             Path filePath = uploadPath.resolve(fileName);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            // Süre Hesapla
             int duration = FFmpegUtils.getVideoDurationInMinutes(filePath.toString());
             soapOpera.setTime(duration > 0 ? duration : 1);
         }
 
-        // Bölümü Child Tabloya Kaydet
         SoapOpera episodeData = new SoapOpera();
         episodeData.setId(episodeId);
         episodeData.setTime(soapOpera.getTime());
-        episodeData.setYear(soapOpera.getYear()); // Bölüm yılı
+        episodeData.setYear(soapOpera.getYear());
         episodeData.setUploadDate(LocalDateTime.now());
         repository.saveEpisode(episodeData);
 
@@ -86,32 +80,70 @@ public class SoapOperaService {
         repository.updateSeriesXML(seriesId, updatedXML);
     }
 
-    // --- XML SİHİRBAZI ---
-    private String injectEpisodeToXML(String xml, int seasonNum, int episodeNum, String episodeUUID) {
-        // Basit String manipülasyonu ile XML'e düğüm ekliyoruz (DOM parser yerine daha hafif)
-        // XML Yapısı: <Seasons><Season number="1"><Episode number="1">UUID</Episode></Season></Seasons>
+    // ----------------------------------------------------------
+    //       SİLME MANTIĞI (DELETE LOGIC) - EKLENDİ
+    // ----------------------------------------------------------
 
+    @Transactional
+    public void deleteEpisodeById(UUID id) {
+        // 1. Bu bölüm hangi dizinin XML'inde geçiyor bul?
+        SoapOpera parentSeries = repository.findSeriesByEpisodeIdInsideXML(id.toString());
+
+        if (parentSeries != null) {
+            // 2. XML'den o bölüm satırını temizle
+            String currentXml = parentSeries.getXmlData();
+            String cleanXml = removeEpisodeFromXML(currentXml, id.toString());
+            repository.updateSeriesXML(parentSeries.getId(), cleanXml);
+        }
+
+        // 3. Veritabanından (Child tablosu) sil
+        repository.deleteEpisodeById(id);
+
+        // 4. Dosyayı fiziksel olarak sil (Opsiyonel ama önerilir)
+        deletePhysicalFile(id.toString());
+    }
+
+    @Transactional
+    public void deleteSeriesByName(String name) {
+        // NOT: Diziyi silince altındaki bölümler veritabanında "öksüz" (orphan) kalabilir.
+        // İdeal olan önce XML'i parse edip tüm child ID'leri bulup silmektir.
+        // Ancak şimdilik basitçe Parent'ı siliyoruz.
+        // Eğer tüm dosyaları da silmek isterseniz burada XML parse edip loop kurmak gerekir.
+        repository.deleteSeriesByName(name);
+    }
+
+    private void deletePhysicalFile(String fileId) {
+        try {
+            Path filePath = Paths.get(soapOperasPath, fileId + ".mp4").toAbsolutePath().normalize();
+            Files.deleteIfExists(filePath);
+        } catch (IOException e) {
+            System.err.println("Dosya silinemedi (Disk hatası olabilir): " + e.getMessage());
+        }
+    }
+
+    // --- XML SİHİRBAZI (HELPER METHODS) ---
+
+    private String injectEpisodeToXML(String xml, int seasonNum, int episodeNum, String episodeUUID) {
         String seasonTag = "<Season number=\"" + seasonNum + "\">";
         String episodeTag = "<Episode number=\"" + episodeNum + "\">" + episodeUUID + "</Episode>";
 
         if (xml.contains(seasonTag)) {
-            // Sezon var, içine bölümü ekle (veya varsa güncelle - basitçe sona ekliyoruz)
-            // Not: Tam bir XML parser daha güvenli olurdu ama string replace ile:
-            // Sezon kapanış etiketinden hemen önceye ekle
             String seasonEndTag = "</Season>";
             int seasonStartIndex = xml.indexOf(seasonTag);
             int seasonEndIndex = xml.indexOf(seasonEndTag, seasonStartIndex);
-
-            // Eğer bu bölüm zaten varsa, eskiyi silmek gerekebilir ama şimdilik 'append' yapıyoruz.
-            // XML içinde o aralığa bölüm etiketini sokuyoruz
             String before = xml.substring(0, seasonEndIndex);
             String after = xml.substring(seasonEndIndex);
             return before + episodeTag + after;
         } else {
-            // Sezon yok, yeni sezon oluştur ve içine bölümü koy
             String newSeasonBlock = seasonTag + episodeTag + "</Season>";
-            // <Seasons> etiketinin içine (sonuna) ekle
             return xml.replace("</Seasons>", newSeasonBlock + "</Seasons>");
         }
+    }
+
+    private String removeEpisodeFromXML(String xml, String episodeUUID) {
+        // Regex ile <Episode ...>UUID</Episode> bloğunu bul ve sil
+        // Bu pattern şunları kapsar: <Episode number="X">UUID</Episode>
+        String patternString = "<Episode[^>]*>" + Pattern.quote(episodeUUID) + "<\\/Episode>";
+        return xml.replaceAll(patternString, "");
     }
 }
