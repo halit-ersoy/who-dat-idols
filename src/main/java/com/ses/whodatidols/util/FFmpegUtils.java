@@ -37,6 +37,37 @@ public class FFmpegUtils {
         return null;
     }
 
+    // --- YENİ EKLENEN: SÜRE HESAPLAMA (JARVIS PRECISION) ---
+    public static int getVideoDurationInMinutes(String videoPath) {
+        try {
+            // Komut: ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 dosya.mp4
+            ProcessBuilder pb = new ProcessBuilder(
+                    "ffprobe",
+                    "-v", "error",
+                    "-show_entries", "format=duration",
+                    "-of", "default=noprint_wrappers=1:nokey=1",
+                    videoPath
+            );
+
+            Process process = pb.start();
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line = reader.readLine();
+                if (line != null) {
+                    // Saniye cinsinden gelir (örn: 125.456)
+                    double seconds = Double.parseDouble(line);
+                    // Dakikaya çevir ve yukarı yuvarla (örn: 2.1 dk -> 3 dk)
+                    return (int) Math.ceil(seconds / 60.0);
+                }
+            }
+            process.waitFor();
+
+        } catch (Exception e) {
+            System.err.println("Süre hesaplanamadı: " + e.getMessage());
+        }
+        return 0; // Hata durumunda 0 döner
+    }
+
     public static void transcodeVideo(String inputPath, String outputPath, int width, int height)
             throws IOException, InterruptedException {
         Files.deleteIfExists(Paths.get(outputPath));

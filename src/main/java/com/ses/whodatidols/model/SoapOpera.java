@@ -5,19 +5,23 @@ import java.util.UUID;
 
 public class SoapOpera {
     private UUID id;
-    private String name;
+    private String name;      // Dizi Adı
     private String category;
-    private String content;
-    private int time; // Store as minutes
-    private String language;
-    private int year;
+    private String content;   // Özet (Ana Tablo: _content)
+    private String language;  // Dil (Ana Tablo: country)
+    private int finalStatus;  // Final yaptı mı? (1: Evet, 0: Hayır)
+    private String xmlData;   // XML Yapısı (soapOperaSeries)
+
+    // Bölüm Detayları (Child Table)
+    private int time;         // Süre
+    private int year;         // Yıl
     private LocalDateTime uploadDate;
 
-    // Constructors
-    public SoapOpera() {
-    }
+    // Formdan Gelen Ekstra Veriler (Veritabanında sütunu yok, işlem için lazım)
+    private int seasonNumber;
+    private int episodeNumber;
 
-    // Getters and setters
+    // Getter ve Setter'lar
     public UUID getId() {
         return id;
     }
@@ -50,20 +54,36 @@ public class SoapOpera {
         this.content = content;
     }
 
-    public int getTime() {
-        return time;
-    }
-
-    public void setTime(int time) {
-        this.time = time;
-    }
-
     public String getLanguage() {
         return language;
     }
 
     public void setLanguage(String language) {
         this.language = language;
+    }
+
+    public int getFinalStatus() {
+        return finalStatus;
+    }
+
+    public void setFinalStatus(int finalStatus) {
+        this.finalStatus = finalStatus;
+    }
+
+    public String getXmlData() {
+        return xmlData;
+    }
+
+    public void setXmlData(String xmlData) {
+        this.xmlData = xmlData;
+    }
+
+    public int getTime() {
+        return time;
+    }
+
+    public void setTime(int time) {
+        this.time = time;
     }
 
     public int getYear() {
@@ -80,5 +100,21 @@ public class SoapOpera {
 
     public void setUploadDate(LocalDateTime uploadDate) {
         this.uploadDate = uploadDate;
+    }
+
+    public int getSeasonNumber() {
+        return seasonNumber;
+    }
+
+    public void setSeasonNumber(int seasonNumber) {
+        this.seasonNumber = seasonNumber;
+    }
+
+    public int getEpisodeNumber() {
+        return episodeNumber;
+    }
+
+    public void setEpisodeNumber(int episodeNumber) {
+        this.episodeNumber = episodeNumber;
     }
 }

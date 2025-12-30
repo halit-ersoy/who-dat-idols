@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -49,37 +50,79 @@ public class AdminController {
         }
     }
 
+    // 1. FİLM LİSTESİNİ ÇEKME (JSON)
+    @GetMapping("/movies")
+    public ResponseEntity<List<Movie>> getMovies() {
+        return ResponseEntity.ok(movieService.getAllMovies());
+    }
+
+    @GetMapping("/series")
+    public ResponseEntity<List<SoapOpera>> getSeriesList() {
+        return ResponseEntity.ok(soapOperaService.getAllSeries());
+    }
+
     // FİLM KAYDETME ENDPOINT'İ
     @PostMapping("/add-movie")
     public ResponseEntity<String> addMovie(
-            @ModelAttribute Movie movie, // Form alanlarını nesneye çevirir
-            @RequestParam("file") MultipartFile file) { // Dosyayı yakalar
+            @ModelAttribute Movie movie,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("summary") String summary) { // Özet parametresi eklendi
         try {
-            // Servis katmanına yönlendiriyoruz
-            movieService.saveMovieWithFile(movie, file);
+            // Summary artık _content alanına işleniyor, Time otomatik hesaplanıyor
+            movieService.saveMovieWithFile(movie, file, summary);
 
-            System.out.println("Operasyon Başarılı: " + movie.getName() + " - " + movie.getId());
-            return ResponseEntity.ok("Film ve dosya başarıyla sisteme işlendi Efendim.");
+            return ResponseEntity.ok("Film başarıyla işlendi. Süre otomatik hesaplandı Efendim.");
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body("Sistem Hatası: " + e.getMessage());
+            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/update-movie")
+    public ResponseEntity<String> updateMovie(@RequestBody Movie movie) {
+        try {
+            // ID boş olamaz
+            if (movie.getId() == null) {
+                return ResponseEntity.badRequest().body("Film ID bulunamadı Efendim.");
+            }
+
+            movieService.updateMovie(movie);
+            return ResponseEntity.ok("Film verileri başarıyla revize edildi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Güncelleme hatası: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/update-series")
+    public ResponseEntity<String> updateSeries(@RequestBody SoapOpera s) {
+        try {
+            if (s.getId() == null) return ResponseEntity.badRequest().body("Dizi ID yok.");
+            soapOperaService.updateSeriesMetadata(s);
+            return ResponseEntity.ok("Dizi bilgileri güncellendi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
         }
     }
 
     // DİZİ KAYDETME ENDPOINT'İ
-    @PostMapping("/add-series")
+    @PostMapping("/add-series") // Endpoint adı eski HTML ile uyumlu kalsın
     public ResponseEntity<String> addSoapOpera(
             @ModelAttribute SoapOpera soapOpera,
-            @RequestParam("file") MultipartFile file) {
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("summary") String summary,
+            @RequestParam("season") int season,
+            @RequestParam("episode") int episode) {
         try {
-            // Service katmanına dosyayı iletiyoruz
-            soapOperaService.saveSoapOperaWithFile(soapOpera, file);
+            soapOpera.setContent(summary);
+            soapOpera.setSeasonNumber(season);
+            soapOpera.setEpisodeNumber(episode);
 
-            System.out.println("Yeni Dizi Eklendi: " + soapOpera.getName());
-            return ResponseEntity.ok("Dizi ve dosya başarıyla sisteme işlendi Efendim.");
+            soapOperaService.saveEpisodeWithFile(soapOpera, file);
+
+            return ResponseEntity.ok("Bölüm başarıyla işlendi (S" + season + "E" + episode + "). XML güncellendi.");
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body("Dizi eklenirken hata oluştu: " + e.getMessage());
+            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
         }
     }
 }

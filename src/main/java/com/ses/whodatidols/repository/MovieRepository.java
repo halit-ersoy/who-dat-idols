@@ -41,6 +41,30 @@ public class MovieRepository {
         );
     }
 
+    // --- LİSTELEME (TÜM FİLMLER) ---
+    public List<Movie> findAll() {
+        String sql = "SELECT * FROM [WhoDatIdols].[dbo].[Movie] ORDER BY uploadDate DESC";
+        return jdbcTemplate.query(sql, new MovieRowMapper());
+    }
+
+    // --- GÜNCELLEME (UPDATE) ---
+    public void update(Movie movie) {
+        // Not: Dosya değişirse ID sabit kaldığı için dosya üzerine yazılır.
+        // Burada sadece metin verilerini güncelliyoruz.
+        String sql = "UPDATE [WhoDatIdols].[dbo].[Movie] SET " +
+                "name = ?, category = ?, _content = ?, year = ?, language = ? " +
+                "WHERE ID = ?";
+
+        jdbcTemplate.update(sql,
+                movie.getName(),
+                movie.getCategory(),
+                movie.getContent(), // Özet (Summary)
+                movie.getYear(),
+                movie.getLanguage(),
+                movie.getId().toString()
+        );
+    }
+
     // --- OKUMA İŞLEMLERİ ---
     public List<Movie> findRecentMovies(int day) {
         return jdbcTemplate.query(GET_RECENT_MOVIES, new MovieRowMapper(), day);
