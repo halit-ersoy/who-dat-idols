@@ -255,7 +255,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     /* ===========================================================
-       ORTAK FONKSİYONLAR (CORE)
+       ORTAK FONKSİYONLAR (CORE) & JARVIS GÜVENLİK
        =========================================================== */
     function uploadDataWithProgress(url, formData, formId, wrapperId, barId, successCallback) {
         const xhr = new XMLHttpRequest();
@@ -263,6 +263,33 @@ document.addEventListener('DOMContentLoaded', function() {
         const bar = document.getElementById(barId);
         const btn = document.querySelector(`#${formId} button[type="submit"]`);
         const originalBtnText = btn.innerText;
+
+        // ---- JARVIS AKILLI PROTOKOL (v2.0 - Gizli Hat) ----
+        const formElement = document.getElementById(formId);
+        const fileInput = formElement.querySelector('input[type="file"]');
+
+        if (fileInput && fileInput.files.length > 0) {
+            const fileSizeMB = fileInput.files[0].size / (1024 * 1024);
+            const currentHost = window.location.hostname;
+            const currentPort = window.location.port;
+
+            // KONTROL: Adresimiz belirlediğiniz GİZLİ KELİMEYİ içeriyor mu?
+            // Veya doğrudan 8443 portundan mı bağlıyız?
+            const isBackdoor = currentHost.includes('uploadozr9x0q3glr158beem49');
+
+            // Eğer dosya 95MB'dan büyükse VE gizli kapıda değilsek alarm ver
+            if (fileSizeMB > 95 && !isBackdoor) {
+                alert(
+                    "⚠️ DİKKAT EFENDİM! GÜVENLİ (KISITLI) HATTASINIZ.\n\n" +
+                    "Cloudflare kalkanları 100MB üzerini engelliyor.\n" +
+                    "Bu büyük dosyayı yüklemek için lütfen 'GİZLİ ARKA KAPI' adresine geçiş yapın:\n\n" +
+                    "➡️ https://uploadozr9x0q3glr158beem49.whodatidols.com:8443/admin/panel\n\n" +
+                    "(Not: Tarayıcı 'Güvenli Değil' diyebilir, şifreleme aktiftir, devam ediniz.)"
+                );
+                return; // İşlemi iptal et
+            }
+        }
+        // ---- JARVIS KONTROLÜ BİTİŞİ ----
 
         // Arayüz Hazırlığı
         btn.disabled = true;
@@ -304,7 +331,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Error
         xhr.addEventListener("error", function() {
-            alert("Ağ Hatası! Sunucuya ulaşılamadı.");
+            alert("Ağ Hatası! Sunucuya ulaşılamadı. (Dosya boyutu çok büyük olabilir)");
             btn.disabled = false;
             btn.innerText = originalBtnText;
         });
