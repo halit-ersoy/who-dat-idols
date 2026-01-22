@@ -3,6 +3,8 @@ package com.ses.whodatidols.repository;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Repository
@@ -34,5 +36,10 @@ public class ContentRepository {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    public List<Map<String, Object>> searchContent(String nameTerm, Integer yearTerm, String typeTerm, String categoryTerm) {
+        String sql = "{call SearchContentSmart(?, ?, ?, ?)}";
+        return jdbcTemplate.queryForList(sql, nameTerm, yearTerm, typeTerm, categoryTerm);
     }
 }

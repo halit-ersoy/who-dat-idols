@@ -21,7 +21,7 @@ public class HeroController {
 
     @GetMapping("/videos")
     public ResponseEntity<List<Map<String, Object>>> getHeroVideos() {
-        String sql = "SELECT [ID], [name], [category], [_content], [type] FROM [WhoDatIdols].[dbo].[HeroVideo]";
+        String sql = "SELECT [ID], [name], [category], [_content], [type] FROM [WhoDatIdols].[dbo].[HeroVideo] ORDER BY [ID] DESC";
 
         List<Map<String, Object>> heroVideos = jdbcTemplate.queryForList(sql);
         return ResponseEntity.ok(heroVideos);

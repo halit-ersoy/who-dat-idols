@@ -254,11 +254,68 @@ header.at-top .search-button {
 }
 
 .search-results.active {
-    max-height: 350px;
+    max-height: 450px;
     padding: 0.6rem 0;
     overflow-y: auto;
     opacity: 1;
     visibility: visible;
+}
+
+.search-result-item {
+    padding: 0.8rem 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-item:hover {
+    background-color: rgba(30, 215, 96, 0.1);
+}
+
+.result-info {
+    flex: 1;
+}
+
+.result-name {
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 0.2rem;
+}
+
+.result-meta {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.8rem;
+}
+
+.no-results {
+    padding: 1.5rem;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+}
+
+.search-results::-webkit-scrollbar {
+    width: 6px;
+}
+
+.search-results::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.search-results::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.search-results::-webkit-scrollbar-thumb:hover {
+    background: rgba(30, 215, 96, 0.5);
 }
 
 /* User Controls */

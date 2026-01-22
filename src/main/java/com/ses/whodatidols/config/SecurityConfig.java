@@ -16,34 +16,42 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                // CSRF'i kapatıyoruz ki POST isteklerinde "Token" hatası almayalım
+                .csrf(csrf -> csrf.disable())
+
                 .authorizeHttpRequests((requests) -> requests
-                        // 1. Sadece Admin paneli şifreli olsun
+                        // 1. Sadece Admin paneli "/admin/**" şifreli olsun (ROLE_ADMIN gerekir)
                         .requestMatchers("/admin/**").hasRole("ADMIN")
 
-                        // 2. Statik dosyalar ve diğer sayfalar herkese açık olsun
-                        .requestMatchers("/", "/home/**", "/watch/**", "/css/**", "/js/**", "/images/**", "/fonts/**").permitAll()
+                        // 2. Kendi yazdığınız login endpoint'i dahil her şeye izin ver
+                        // Özellikle "/login", "/register", "/api/**" gibi yolları açık bırakın
+                        .requestMatchers("/login", "/register", "/", "/home/**", "/watch/**", "/css/**", "/js/**", "/images/**").permitAll()
 
-                        // Geri kalan her şey açık olsun (veya ihtiyaca göre kısıtlanabilir)
+                        // Geri kalan her şey de açık olsun
                         .anyRequest().permitAll()
                 )
+
+                // Spring Security'nin kendi login formu SADECE Admin paneline girmeye çalışınca çıksın
+                // Sizin ana sayfanızdaki login butonu buraya düşmemeli.
                 .formLogin((form) -> form
-                        // Admin paneline girmeye çalışanı Spring'in hazır login sayfasına at
-                        .defaultSuccessUrl("/admin/panel", true)
+                        .loginPage("/login-admin") // Change default login page to avoid conflict
                         .permitAll()
+                        // Admin giriş yaparsa nereye gitsin?
+                        .defaultSuccessUrl("/admin/panel", true)
                 )
-                .logout((logout) -> logout.permitAll())
-                // CSRF korumasını admin testleri için şimdilik kapatabiliriz (isteğe bağlı)
-                .csrf(csrf -> csrf.disable());
+
+                .logout((logout) -> logout.permitAll());
 
         return http.build();
     }
 
+    // Bu kısım SADECE Admin paneli girişi için kullanılır.
+    // Sizin SQL tabanlı kullanıcılarınız buraya takılmaz.
     @Bean
     public InMemoryUserDetailsManager userDetailsService() {
-        // İŞTE BURASI: Veritabanından bağımsız, RAM'de yaşayan kullanıcı
-        UserDetails admin = User.withDefaultPasswordEncoder() // "{noop}" şifreleme kullanır (test için ideal)
-                .username("admin")       // Kullanıcı Adı
-                .password("Sh218106")   // Şifre (Bunu değiştirebilirsiniz)
+        UserDetails admin = User.withDefaultPasswordEncoder()
+                .username("admin")
+                .password("Sh218106")
                 .roles("ADMIN")
                 .build();
 

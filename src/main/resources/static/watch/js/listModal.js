@@ -55,7 +55,6 @@ async function checkVideoInLists() {
             String(item.VideoID).trim().toLowerCase() === normalizedVideoId
         );
 
-        console.log(`Video ${videoId} in list: ${isInList}`);
         return isInList;
     } catch (err) {
         console.error('Liste kontrolü yapılamadı:', err);

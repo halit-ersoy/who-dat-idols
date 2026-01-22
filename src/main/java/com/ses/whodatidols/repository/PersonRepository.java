@@ -206,10 +206,26 @@ public class PersonRepository {
             List<Map<String, Object>> resultSet = (List<Map<String, Object>>) result.get("#result-set-1");
             if (!resultSet.isEmpty()) {
                 Map<String, Object> row = resultSet.get(0);
+                // SQL procedures return 'Result', 'Message', 'Nickname', 'Cookie'
                 response.put("success", row.get("Result"));
+                if (row.get("Result") == null && row.get("result") != null) {
+                    response.put("success", row.get("result"));
+                }
+                
                 response.put("message", row.get("Message"));
+                if (row.get("Message") == null && row.get("message") != null) {
+                    response.put("message", row.get("message"));
+                }
+
                 response.put("nickname", row.get("Nickname"));
+                if (row.get("Nickname") == null && row.get("nickname") != null) {
+                    response.put("nickname", row.get("nickname"));
+                }
+
                 response.put("cookie", row.get("Cookie"));
+                if (row.get("Cookie") == null && row.get("cookie") != null) {
+                    response.put("cookie", row.get("cookie"));
+                }
             }
         }
 

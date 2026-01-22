@@ -200,7 +200,6 @@ export function initVideoControls(videoId) {
             if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
                 e.preventDefault();
                 skipVideo(e.key === 'ArrowLeft' ? -SKIP_SECONDS : SKIP_SECONDS);
-                console.log(`Atlama: ${videoPlayer.currentTime}s`);
             }
         });
     }

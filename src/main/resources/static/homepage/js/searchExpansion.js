@@ -59,21 +59,78 @@ export function initHeaderInteractions() {
     // Search results display
     const searchInput = document.getElementById('search-input');
     const searchResults = document.getElementById('search-results');
+    let searchTimeout;
 
     if (searchInput && searchResults) {
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.trim();
+            
+            clearTimeout(searchTimeout);
+            
+            if (query.length < 2) {
+                searchResults.innerHTML = '';
+                searchResults.classList.remove('active');
+                return;
+            }
+
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                    const data = await response.json();
+                    
+                    displaySearchResults(data, searchResults);
+                } catch (error) {
+                    console.error('Search error:', error);
+                }
+            }, 300);
+        });
+
         searchInput.addEventListener('focus', () => {
-            // This would typically fetch results from API
-            searchResults.classList.add('active');
+            if (searchInput.value.trim().length >= 2) {
+                searchResults.classList.add('active');
+            }
         });
 
         searchInput.addEventListener('blur', (e) => {
-            // Don't hide if clicking on results
             if (!searchResults.contains(e.relatedTarget)) {
                 setTimeout(() => {
                     searchResults.classList.remove('active');
                 }, 200);
             }
         });
+    }
+
+    function displaySearchResults(results, container) {
+        container.innerHTML = '';
+        
+        if (results.length === 0) {
+            container.innerHTML = '<div class="no-results">Sonuç bulunamadı</div>';
+            container.classList.add('active');
+            return;
+        }
+
+        results.slice(0, 8).forEach(item => {
+            const resultItem = document.createElement('div');
+            resultItem.className = 'search-result-item';
+            
+            const typeLabel = item.Type === 'Movie' ? 'Film' : 'Dizi';
+            const yearInfo = item.Year ? `(${item.Year})` : '';
+
+            resultItem.innerHTML = `
+                <div class="result-info">
+                    <div class="result-name">${item.Name} ${yearInfo}</div>
+                    <div class="result-meta">${typeLabel} • ${item.Category || ''}</div>
+                </div>
+            `;
+            
+            resultItem.addEventListener('click', () => {
+                window.location.href = `/watch?id=${item.ID}`;
+            });
+            
+            container.appendChild(resultItem);
+        });
+
+        container.classList.add('active');
     }
 
     // Highlight current page in navigation

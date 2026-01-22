@@ -106,10 +106,10 @@ export function initLogin() {
 
     // Giriş Yapma İşlemleri (login submit)
     loginSubmit.addEventListener('click', async function () {
-        const usernameOrEmail = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
+        const usernameOrEmailValue = document.getElementById('email').value;
+        const passwordValue = document.getElementById('password').value;
 
-        if (!usernameOrEmail || !password) {
+        if (!usernameOrEmailValue || !passwordValue) {
             this.innerHTML = '<i class="fas fa-times"></i> Tüm alanları doldurun';
             this.style.backgroundColor = '#e74c3c';
             setTimeout(() => {
@@ -121,7 +121,7 @@ export function initLogin() {
 
         this.classList.add('loading');
         this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        const loginData = {usernameOrEmail, password};
+        const loginData = {usernameOrEmail: usernameOrEmailValue, password: passwordValue};
 
         // Update this part of the login.js file
         try {
@@ -130,16 +130,18 @@ export function initLogin() {
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(loginData)
             });
+            
             const data = await response.json();
-            if (data.success) {
+
+            // Backend'den gelen 'success' değeri boolean veya 1/0 olabilir
+            const isSuccess = data.success === true || data.success === 1 || data.success === "true";
+            
+            if (isSuccess) {
                 this.classList.remove('loading');
                 this.innerHTML = '<i class="fas fa-check"></i> Başarılı';
                 this.style.backgroundColor = '#1ed760';
                 localStorage.setItem('wdiUserToken', data.cookie);
                 localStorage.setItem('wdiUserNickname', data.nickname);
-                const expiryDate = new Date();
-                expiryDate.setDate(expiryDate.getDate() + 30);
-                document.cookie = `wdiAuth=${data.cookie}; expires=${expiryDate.toUTCString()}; path=/`;
 
                 setTimeout(() => {
                     loginModal.classList.remove('active');

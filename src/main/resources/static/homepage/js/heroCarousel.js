@@ -151,7 +151,12 @@ export function initHeroCarousel() {
         // Play the video for current slide
         const currentVideo = heroContainers[index].querySelector('video');
         if (currentVideo) {
-            currentVideo.play().catch(e => console.log('Auto-play prevented:', e));
+            // Check if the video is already playing or about to play
+            currentVideo.play().catch(e => {
+                if (e.name !== 'AbortError') {
+                    console.log('Auto-play prevented:', e);
+                }
+            });
         }
 
         // Reset auto-play timer

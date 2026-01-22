@@ -2,6 +2,8 @@ package com.ses.whodatidols.controller;
 
 import com.ses.whodatidols.model.Person;
 import com.ses.whodatidols.repository.PersonRepository;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -214,14 +216,34 @@ public class HomeController {
 
     @PostMapping("/login")
     @ResponseBody
-    public ResponseEntity<?> loginUser(@RequestBody Map<String, String> loginRequest) {
+    public ResponseEntity<?> loginUser(@RequestBody Map<String, String> loginRequest, HttpServletResponse response) {
         try {
             String usernameOrEmail = loginRequest.get("usernameOrEmail");
+            if (usernameOrEmail == null) {
+                usernameOrEmail = loginRequest.get("email"); // Fallback for some frontend versions
+            }
             String password = loginRequest.get("password");
 
             Map<String, Object> result = personRepository.loginUser(usernameOrEmail, password);
 
-            if ((Boolean) result.get("success")) {
+            // SQL prosedürü Result sütununda bit (Boolean) döndürüyor, Repository bunu 'success' anahtarına atadı.
+            Object successObj = result.get("success");
+            boolean isSuccess = false;
+            if (successObj instanceof Boolean) {
+                isSuccess = (Boolean) successObj;
+            } else if (successObj instanceof Number) {
+                isSuccess = ((Number) successObj).intValue() == 1;
+            }
+
+            if (isSuccess) {
+                Object cookieObj = result.get("cookie");
+                if (cookieObj != null) {
+                    Cookie authCookie = new Cookie("wdiAuth", cookieObj.toString());
+                    authCookie.setHttpOnly(true);
+                    authCookie.setPath("/");
+                    authCookie.setMaxAge(7 * 24 * 60 * 60); // 7 gün
+                    response.addCookie(authCookie);
+                }
                 return ResponseEntity.ok(result);
             } else {
                 return ResponseEntity.status(401).body(result);
