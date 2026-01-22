@@ -56,6 +56,13 @@ public class SavedController {
         }
 
         try {
+            UUID cookieUuid;
+            try {
+                cookieUuid = UUID.fromString(cookie);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.status(401).body(Map.of("Result", 0, "Message", "Invalid session"));
+            }
+
             String sql = "{call ToggleVideoSave(?, ?, ?, ?, ?)}";
             List<Map<String, Object>> lists = jdbcTemplate.queryForList(
                     sql,
@@ -63,7 +70,7 @@ public class SavedController {
                     null,           // @title
                     null,           // @new_title
                     null,           // @video_id
-                    UUID.fromString(cookie)  // @cookie
+                    cookieUuid      // @cookie
             );
             return ResponseEntity.ok(lists);
         } catch (Exception e) {
@@ -87,6 +94,13 @@ public class SavedController {
         }
 
         try {
+            UUID cookieUuid;
+            try {
+                cookieUuid = UUID.fromString(cookie);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.status(401).body(Map.of("Result", 0, "Message", "Invalid session"));
+            }
+
             String sql = "{call ToggleVideoSave(?, ?, ?, ?, ?)}";
             Map<String, Object> result = jdbcTemplate.queryForMap(
                     sql,
@@ -94,7 +108,7 @@ public class SavedController {
                     title,          // @title
                     null,           // @new_title
                     null,           // @video_id
-                    UUID.fromString(cookie)  // @cookie
+                    cookieUuid      // @cookie
             );
             return ResponseEntity.ok(result);
         } catch (Exception e) {
@@ -119,6 +133,13 @@ public class SavedController {
         }
 
         try {
+            UUID cookieUuid;
+            try {
+                cookieUuid = UUID.fromString(cookie);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.status(401).body(Map.of("Result", 0, "Message", "Invalid session"));
+            }
+
             String sql = "{call ToggleVideoSave(?, ?, ?, ?, ?)}";
             Map<String, Object> result = jdbcTemplate.queryForMap(
                     sql,
@@ -126,7 +147,7 @@ public class SavedController {
                     title,          // @title
                     null,           // @new_title
                     videoId,        // @video_id
-                    UUID.fromString(cookie)  // @cookie
+                    cookieUuid      // @cookie
             );
             return ResponseEntity.ok(result);
         } catch (Exception e) {
@@ -150,6 +171,13 @@ public class SavedController {
         }
 
         try {
+            UUID cookieUuid;
+            try {
+                cookieUuid = UUID.fromString(cookie);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.status(401).body(Map.of("Result", 0, "Message", "Invalid session"));
+            }
+
             String sql = "{call ToggleVideoSave(?, ?, ?, ?, ?)}";
             Map<String, Object> result = jdbcTemplate.queryForMap(
                     sql,
@@ -157,7 +185,7 @@ public class SavedController {
                     null,           // @title
                     null,           // @new_title
                     videoId,        // @video_id
-                    UUID.fromString(cookie)  // @cookie
+                    cookieUuid      // @cookie
             );
             return ResponseEntity.ok(result);
         } catch (Exception e) {
@@ -181,6 +209,13 @@ public class SavedController {
         }
 
         try {
+            UUID cookieUuid;
+            try {
+                cookieUuid = UUID.fromString(cookie);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.status(401).body(Map.of("Result", 0, "Message", "Invalid session"));
+            }
+
             String sql = "{call ToggleVideoSave(?, ?, ?, ?, ?)}";
             Map<String, Object> result = jdbcTemplate.queryForMap(
                     sql,
@@ -188,7 +223,7 @@ public class SavedController {
                     title,          // @title
                     null,           // @new_title
                     null,           // @video_id
-                    UUID.fromString(cookie)  // @cookie
+                    cookieUuid      // @cookie
             );
             return ResponseEntity.ok(result);
         } catch (Exception e) {
@@ -213,6 +248,13 @@ public class SavedController {
         }
 
         try {
+            UUID cookieUuid;
+            try {
+                cookieUuid = UUID.fromString(cookie);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.status(401).body(Map.of("Result", 0, "Message", "Invalid session"));
+            }
+
             String sql = "{call ToggleVideoSave(?, ?, ?, ?, ?)}";
             Map<String, Object> result = jdbcTemplate.queryForMap(
                     sql,
@@ -220,7 +262,7 @@ public class SavedController {
                     title,          // @title
                     newTitle,       // @new_title
                     null,           // @video_id
-                    UUID.fromString(cookie)  // @cookie
+                    cookieUuid      // @cookie
             );
             return ResponseEntity.ok(result);
         } catch (Exception e) {

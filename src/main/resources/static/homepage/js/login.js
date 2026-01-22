@@ -51,8 +51,10 @@ export function initLogin() {
                     e.preventDefault();
                     localStorage.removeItem('wdiUserToken');
                     localStorage.removeItem('wdiUserNickname');
+                    // Sunucu tarafındaki cookie'yi de temizlemek için
                     document.cookie = 'wdiAuth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-                    window.location.reload();
+                    // Güvenlik için yönlendirme
+                    window.location.href = '/';
                 });
             }
         }

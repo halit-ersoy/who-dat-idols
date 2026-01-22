@@ -65,6 +65,12 @@ public class MovieRepository {
         );
     }
 
+    // --- SİLME (DELETE) ---
+    public void deleteById(UUID id) {
+        String sql = "DELETE FROM [WhoDatIdols].[dbo].[Movie] WHERE ID = ?";
+        jdbcTemplate.update(sql, id.toString());
+    }
+
     // --- OKUMA İŞLEMLERİ ---
     public List<Movie> findRecentMovies(int day) {
         return jdbcTemplate.query(GET_RECENT_MOVIES, new MovieRowMapper(), day);

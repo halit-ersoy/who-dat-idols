@@ -32,7 +32,8 @@ public class WeeklyBestController {
         List<VideoViewModel> viewModels = topMovies.stream()
                 .map(movie -> {
                     VideoViewModel vm = new VideoViewModel();
-                    String mainCategory = movie.getCategory().split(",")[0];
+                    String category = movie.getCategory() != null ? movie.getCategory() : "";
+                    String mainCategory = category.contains(",") ? category.split(",")[0] : category;
 
                     vm.setId(movie.getId().toString());
                     vm.setTitle(movie.getName());
@@ -56,7 +57,8 @@ public class WeeklyBestController {
         List<VideoViewModel> viewModels = topSoapOperas.stream()
                 .map(soapOpera -> {
                     VideoViewModel vm = new VideoViewModel();
-                    String mainCategory = soapOpera.getCategory().split(",")[0];
+                    String category = soapOpera.getCategory() != null ? soapOpera.getCategory() : "";
+                    String mainCategory = category.contains(",") ? category.split(",")[0] : category;
 
                     vm.setId(soapOpera.getId().toString());
                     vm.setTitle(soapOpera.getName());

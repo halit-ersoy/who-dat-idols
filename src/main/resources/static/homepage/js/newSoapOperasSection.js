@@ -1,3 +1,5 @@
+import { handleImageSkeleton } from '../../elements/userLogged.js';
+
 export function initNewSoapOperasSection() {
     const viewAllBtn = document.querySelector('.new-soap-operas .view-all');
     const newSoapOperasAllSection = document.getElementById('new-soap-operas-all');
@@ -31,7 +33,7 @@ export function initNewSoapOperasSection() {
     function createSoapOperaItemHTML(item, index) {
         return `
       <a href="${item.videoUrl}" class="card new-soap-operas-item" style="animation-delay: ${index * 0.05}s">
-        <div class="card-image-container">
+        <div class="card-image-container img-skeleton">
           <img src="${item.thumbnailUrl}" alt="${item.title}">
           <div class="play-icon"><i class="fas fa-play"></i></div>
         </div>
@@ -49,7 +51,9 @@ export function initNewSoapOperasSection() {
         for (let i = startIndex; i < endIndex; i++) {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = createSoapOperaItemHTML(allSoapOperas[i], i - startIndex);
-            fragment.appendChild(tempDiv.firstElementChild);
+            const card = tempDiv.firstElementChild;
+            handleImageSkeleton(card.querySelector('img'));
+            fragment.appendChild(card);
         }
         newSoapOperasAllGrid.appendChild(fragment);
         currentItemsLoaded = endIndex;
@@ -59,9 +63,10 @@ export function initNewSoapOperasSection() {
     function populateCarousel(soapOperas) {
         newSoapOperasCarousel.innerHTML = '';
         soapOperas.slice(0, 14).forEach(soapOpera => {
-            newSoapOperasCarousel.innerHTML += `
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = `
                 <a href="${soapOpera.videoUrl}" class="card">
-                    <div class="card-image-container">
+                    <div class="card-image-container img-skeleton">
                         <img src="${soapOpera.thumbnailUrl}" alt="${soapOpera.title}">
                         <div class="play-icon"><i class="fas fa-play"></i></div>
                     </div>
@@ -71,6 +76,9 @@ export function initNewSoapOperasSection() {
                     </div>
                 </a>
             `;
+            const card = tempDiv.firstElementChild;
+            handleImageSkeleton(card.querySelector('img'));
+            newSoapOperasCarousel.appendChild(card);
         });
     }
 

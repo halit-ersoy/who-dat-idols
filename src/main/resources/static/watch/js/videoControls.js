@@ -169,11 +169,14 @@ export function initVideoControls(videoId) {
 
                 // Close menu after selection
                 if (speedOptionsContainer) {
-                    speedOptionsContainer.style.display = 'none';
-                    // Reset display after a short delay so hover can work again
+                    speedOptionsContainer.style.opacity = '0';
+                    speedOptionsContainer.style.visibility = 'hidden';
+                    
+                    // Reset visibility after a short delay so hover can work again
                     setTimeout(() => {
-                        speedOptionsContainer.style.display = '';
-                    }, 100);
+                        speedOptionsContainer.style.opacity = '';
+                        speedOptionsContainer.style.visibility = '';
+                    }, 500);
                 }
             });
         });
@@ -235,12 +238,27 @@ export function initVideoControls(videoId) {
     }
 
     function setupPlaybackEvents() {
-        videoPlayer.addEventListener('playing', () => videoPlayer.classList.add('playing'));
-        videoPlayer.addEventListener('pause',   updatePlayIcon);
+        videoPlayer.addEventListener('playing', () => {
+            videoPlayer.classList.add('playing');
+            playPauseWrapper.classList.add('loaded');
+        });
+        videoPlayer.addEventListener('pause', updatePlayIcon);
+        
+        // Skeleton logic
+        videoPlayer.addEventListener('waiting', () => {
+            playPauseWrapper.classList.remove('loaded');
+        });
+        videoPlayer.addEventListener('canplay', () => {
+            playPauseWrapper.classList.add('loaded');
+        });
+        videoPlayer.addEventListener('loadstart', () => {
+            playPauseWrapper.classList.remove('loaded');
+        });
     }
 
     function setupErrorHandling() {
         videoPlayer.addEventListener('error', () => {
+            playPauseWrapper.classList.add('loaded'); // Hata durumunda skeleton'ı kaldır ki mesaj görünsün
             if (titleEl) titleEl.innerText = 'Video yüklenirken hata oluştu.';
             if (infoEl)  infoEl.innerText  = 'Video bulunamadı veya oynatılamıyor.';
         });
@@ -248,6 +266,7 @@ export function initVideoControls(videoId) {
 
     function loadVideo(id) {
         if (!id) {
+            playPauseWrapper.classList.add('loaded'); // ID yoksa skeleton'ı kaldır
             if (titleEl) titleEl.innerText = 'Video bulunamadı';
             if (infoEl)  infoEl.innerText  = 'Geçerli bir ID girilmedi.';
             videoPlayer.style.display = 'none';

@@ -32,12 +32,31 @@ public class SoapOperaService {
         return repository.findAllSeries();
     }
 
-    public void updateSeriesMetadata(SoapOpera s) {
+    public void updateSeriesMetadata(SoapOpera s, MultipartFile file, MultipartFile image) throws IOException {
+        if (file != null && !file.isEmpty()) {
+            Path uploadPath = Paths.get(soapOperasPath).toAbsolutePath().normalize();
+            if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
+
+            String fileName = s.getId().toString() + ".mp4";
+            Path filePath = uploadPath.resolve(fileName);
+
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            int duration = FFmpegUtils.getVideoDurationInMinutes(filePath.toString());
+            s.setTime(duration > 0 ? duration : (s.getTime() > 0 ? s.getTime() : 1));
+            
+            // Eğer bu bir bölüm ID'si ise (Child tablo), Child tablodaki süreyi de güncelle
+            repository.updateEpisode(s);
+        }
+
         repository.updateSeriesMetadata(s);
+        if (image != null && !image.isEmpty()) {
+            saveImage(s.getId(), image);
+        }
     }
 
     @Transactional
-    public void saveEpisodeWithFile(SoapOpera soapOpera, MultipartFile file) throws IOException {
+    public void saveEpisodeWithFile(SoapOpera soapOpera, MultipartFile file, MultipartFile image) throws IOException {
         // 1. DİZİ KONTROLÜ (Parent)
         SoapOpera existingSeries = repository.findSeriesByName(soapOpera.getName());
         UUID seriesId;
@@ -51,6 +70,10 @@ public class SoapOperaService {
         } else {
             seriesId = existingSeries.getId();
             currentXML = existingSeries.getXmlData();
+        }
+
+        if (image != null && !image.isEmpty()) {
+            saveImage(seriesId, image);
         }
 
         // 2. DOSYA VE BÖLÜM İŞLEMLERİ (Child)
@@ -78,6 +101,25 @@ public class SoapOperaService {
         // 3. XML GÜNCELLEME
         String updatedXML = injectEpisodeToXML(currentXML, soapOpera.getSeasonNumber(), soapOpera.getEpisodeNumber(), episodeId.toString());
         repository.updateSeriesXML(seriesId, updatedXML);
+    }
+
+    private void saveImage(UUID id, MultipartFile image) throws IOException {
+        Path uploadPath = Paths.get(soapOperasPath).toAbsolutePath().normalize();
+        if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
+
+        String extension = getExtension(image.getOriginalFilename());
+        String[] supportedExtensions = {".webp", ".jpg", ".jpeg", ".png"};
+        for (String ext : supportedExtensions) {
+            Files.deleteIfExists(uploadPath.resolve(id.toString() + ext));
+        }
+
+        Path imagePath = uploadPath.resolve(id.toString() + extension);
+        Files.copy(image.getInputStream(), imagePath, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    private String getExtension(String fileName) {
+        if (fileName == null || !fileName.contains(".")) return ".jpg";
+        return fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
     }
 
     // ----------------------------------------------------------

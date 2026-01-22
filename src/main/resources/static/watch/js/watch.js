@@ -2,6 +2,7 @@ import { initVideoControls } from './videoControls.js';
 import { initListModal } from './listModal.js';
 import { initCommentsSection } from './comments.js';
 import { initContentDetails } from './contentDetails.js';
+import { handleImageSkeleton } from '../../elements/userLogged.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -11,4 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initListModal();
     initCommentsSection(videoId);
     initContentDetails(videoId);
+    
+    // Recommendations items are static in HTML for now (placeholder)
+    document.querySelectorAll('.rec-card .rec-image img').forEach(img => {
+        handleImageSkeleton(img);
+    });
 });

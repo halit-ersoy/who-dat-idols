@@ -242,6 +242,7 @@ public class HomeController {
                     authCookie.setHttpOnly(true);
                     authCookie.setPath("/");
                     authCookie.setMaxAge(7 * 24 * 60 * 60); // 7 gün
+                    authCookie.setSecure(true); // HTTPS kullanıldığı için güvenli
                     response.addCookie(authCookie);
                 }
                 return ResponseEntity.ok(result);
@@ -253,6 +254,21 @@ public class HomeController {
             errorResponse.put("success", false);
             errorResponse.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    @GetMapping("/login-admin")
+    public ResponseEntity<Resource> getAdminLoginPage() {
+        try {
+            Resource htmlPage = new ClassPathResource("static/panel/html/login-admin.html");
+            if (!htmlPage.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
+                    .body(htmlPage);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
         }
     }
 

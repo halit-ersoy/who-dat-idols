@@ -27,7 +27,11 @@ public class SearchController {
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String category) {
         
-        List<Map<String, Object>> results = contentRepository.searchContent(q, year, type, category);
-        return ResponseEntity.ok(results);
+        try {
+            List<Map<String, Object>> results = contentRepository.searchContent(q, year, type, category);
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
     }
 }

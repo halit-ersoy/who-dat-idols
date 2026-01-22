@@ -32,10 +32,8 @@ async function checkVideoInLists() {
     if (!videoId) return false;
 
     try {
-        const token = localStorage.getItem('wdiUserToken');
-        if (!token) return false;
-
         const res = await fetch('/api/saved/lists', { credentials: 'include' });
+        if (res.status === 401) return false;
         if (!res.ok) return false;
 
         const data = await res.json();

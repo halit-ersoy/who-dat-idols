@@ -1,3 +1,5 @@
+import { handleImageSkeleton } from '../../elements/userLogged.js';
+
 export function initLoadedEpisodesSection() {
     const carousel = document.getElementById('upcoming-episodes-carousel');
     const translatedToggle = document.getElementById('upcoming-translated-toggle');
@@ -242,9 +244,11 @@ export function initLoadedEpisodesSection() {
             `;
                 }
 
-                carousel.innerHTML += `
-            <div class="upcoming-card" onclick="window.location.href='/watch?id=${episode.ID}'">
-                <div class="upcoming-card-image">
+                const card = document.createElement('div');
+                card.className = 'upcoming-card';
+                card.onclick = () => window.location.href = `/watch?id=${episode.ID}`;
+                card.innerHTML = `
+                <div class="upcoming-card-image img-skeleton">
                     <img src="/media/image/${episode.ID}" alt="${episode.name}">
                     <div class="upcoming-play-icon">
                         <i class="fas fa-play"></i>
@@ -254,8 +258,9 @@ export function initLoadedEpisodesSection() {
                     <h3 class="upcoming-card-title">${episode.name}</h3>
                     ${countdownHtml}
                 </div>
-            </div>
-        `;
+                `;
+                handleImageSkeleton(card.querySelector('img'));
+                carousel.appendChild(card);
             });
 
             // Setup countdown timers for future episodes
@@ -307,9 +312,11 @@ export function initLoadedEpisodesSection() {
             episodes.forEach(episode => {
                 const statusPercentage = getStatusPercentage(episode.status);
 
-                carousel.innerHTML += `
-                <div class="upcoming-card" onclick="window.location.href='/watch?id=${episode.ID}'">
-                    <div class="upcoming-card-image">
+                const card = document.createElement('div');
+                card.className = 'upcoming-card';
+                card.onclick = () => window.location.href = `/watch?id=${episode.ID}`;
+                card.innerHTML = `
+                    <div class="upcoming-card-image img-skeleton">
                         <img src="/media/image/${episode.ID}" alt="${episode.name}">
                         <div class="upcoming-play-icon">
                             <i class="fas fa-play"></i>
@@ -324,8 +331,9 @@ export function initLoadedEpisodesSection() {
                             <div class="upcoming-progress-bar" style="width: ${statusPercentage}%"></div>
                         </div>
                     </div>
-                </div>
-            `;
+                `;
+                handleImageSkeleton(card.querySelector('img'));
+                carousel.appendChild(card);
             });
 
             setTimeout(() => {

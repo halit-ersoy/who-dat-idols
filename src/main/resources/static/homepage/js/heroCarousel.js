@@ -1,3 +1,5 @@
+import { handleImageSkeleton } from '../../elements/userLogged.js';
+
 export function initHeroCarousel() {
     // Elements and state for carousel
     const heroSection = document.querySelector('.hero');
@@ -44,7 +46,9 @@ export function initHeroCarousel() {
             container.innerHTML = `
                 <video class="hero-bg-video" ${index === 0 ? 'autoplay' : ''} muted playsinline>
                     <source src="/media/video/${hero.ID}" type="video/mp4">
-                    <img class="hero-bg" src="/media/image/${hero.ID}" alt="${hero.name}">
+                    <div class="img-skeleton">
+                        <img class="hero-bg" src="/media/image/${hero.ID}" alt="${hero.name}">
+                    </div>
                 </video>
                 <div class="hero-overlay"></div>
                 <div class="hero-content animate-fade-in">
@@ -97,6 +101,9 @@ export function initHeroCarousel() {
             // Add containers to DOM
             containers.forEach(container => {
                 heroVideosContainer.appendChild(container);
+                // Handle skeleton for the background image
+                const img = container.querySelector('.hero-bg');
+                handleImageSkeleton(img);
             });
 
             // Add indicators to DOM
@@ -152,11 +159,14 @@ export function initHeroCarousel() {
         const currentVideo = heroContainers[index].querySelector('video');
         if (currentVideo) {
             // Check if the video is already playing or about to play
-            currentVideo.play().catch(e => {
-                if (e.name !== 'AbortError') {
-                    console.log('Auto-play prevented:', e);
-                }
-            });
+            const playPromise = currentVideo.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(e => {
+                    if (e.name !== 'AbortError') {
+                        // console.log('Auto-play prevented:', e);
+                    }
+                });
+            }
         }
 
         // Reset auto-play timer

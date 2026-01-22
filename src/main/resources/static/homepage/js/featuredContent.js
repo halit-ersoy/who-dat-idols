@@ -1,3 +1,5 @@
+import { handleImageSkeleton } from '../../elements/userLogged.js';
+
 export function initFeaturedContent() {
     const featuredGrid = document.querySelector('.featured-grid');
     const movieToggle = document.getElementById('featured-movies-toggle');
@@ -442,7 +444,7 @@ export function initFeaturedContent() {
                 const el = document.createElement('div');
                 el.className = 'featured-item';
                 el.innerHTML = `
-                    <div class="item-thumb">
+                    <div class="item-thumb img-skeleton">
                         <img src="${item.image}" alt="${item.title}">
                     </div>
                     <div class="item-details">
@@ -466,6 +468,7 @@ export function initFeaturedContent() {
                         </div>
                     </div>
                 `;
+                handleImageSkeleton(el.querySelector('img'));
                 el.addEventListener('click', () => {
                     window.location.href = `/watch?title=${encodeURIComponent(item.title)}`;
                 });

@@ -19,6 +19,8 @@
         <div class="video-title" id="title">Yükleniyor...</div>
 
         <div class="video-wrapper">
+            <div class="video-skeleton">
+            </div>
             <video id="videoPlayer" controlsList="nodownload" oncontextmenu="return false">
                 <source id="videoSource" src="" type="video/mp4">
                 Tarayıcınız video etiketini desteklemiyor.
@@ -95,7 +97,9 @@
             <div class="content-details-container">
                 <div class="details-grid">
                     <div class="details-poster">
-                        <img id="contentPoster" src="" alt="Content Poster">
+                        <div class="img-skeleton">
+                            <img id="contentPoster" src="" alt="Content Poster">
+                        </div>
                         <div class="rating-badge">
                             <span id="contentRating">9.2</span>
                             <i class="fas fa-star"></i>
@@ -147,15 +151,21 @@
         <h3>Benzer İçerikler</h3>
         <div class="recommendation-cards">
             <div class="rec-card">
-                <div class="rec-image"></div>
+                <div class="rec-image img-skeleton">
+                    <img src="https://picsum.photos/300/170?random=1" alt="Öneri 1">
+                </div>
                 <div class="rec-title">Öneri 1</div>
             </div>
             <div class="rec-card">
-                <div class="rec-image"></div>
+                <div class="rec-image img-skeleton">
+                    <img src="https://picsum.photos/300/170?random=2" alt="Öneri 2">
+                </div>
                 <div class="rec-title">Öneri 2</div>
             </div>
             <div class="rec-card">
-                <div class="rec-image"></div>
+                <div class="rec-image img-skeleton">
+                    <img src="https://picsum.photos/300/170?random=3" alt="Öneri 3">
+                </div>
                 <div class="rec-title">Öneri 3</div>
             </div>
         </div>

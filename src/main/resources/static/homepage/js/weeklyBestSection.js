@@ -1,3 +1,5 @@
+import { handleImageSkeleton } from '../../elements/userLogged.js';
+
 export function initWeeklyBestSection() {
     const weeklyBestContainer = document.querySelector('.weekly-best-grid');
     const movieToggle = document.getElementById('weekly-movies-toggle');
@@ -112,7 +114,7 @@ export function initWeeklyBestSection() {
         card.className = 'weekly-card';
         card.dataset.number = number;
         card.innerHTML = `
-        <div class="card-image-container">
+        <div class="card-image-container img-skeleton">
             <img src="${item.thumbnailUrl}" alt="${item.title}">
             <div class="play-icon"><i class="fas fa-play"></i></div>
         </div>
@@ -121,6 +123,8 @@ export function initWeeklyBestSection() {
             <p class="card-info">${item.info}</p>
         </div>
     `;
+        const img = card.querySelector('img');
+        handleImageSkeleton(img);
         return card;
     }
 }

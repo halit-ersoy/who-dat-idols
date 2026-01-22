@@ -1,4 +1,6 @@
 // contentDetails.js
+import { handleImageSkeleton } from '../../elements/userLogged.js';
+
 export function initContentDetails(videoId) {
     const detailsToggle    = document.querySelector('.details-toggle');
     const detailsContainer = document.querySelector('.content-details-container');
@@ -30,7 +32,9 @@ function loadContentDetails(id) {
     };
 
     document.getElementById('contentTitle').textContent     = data.title;
-    document.getElementById('contentPoster').src           = data.poster;
+    const posterImg = document.getElementById('contentPoster');
+    posterImg.src = data.poster;
+    handleImageSkeleton(posterImg);
     document.getElementById('contentRating').textContent   = data.rating;
     document.getElementById('releaseYear').textContent     = data.year;
     document.getElementById('contentDuration').textContent = data.duration;
@@ -55,12 +59,13 @@ function loadContentDetails(id) {
         const div = document.createElement('div');
         div.className = 'cast-member';
         div.innerHTML = `
-      <div class="cast-avatar">
+      <div class="cast-avatar img-skeleton">
         <img src="${m.avatar}" alt="${m.name}">
       </div>
       <div class="cast-name">${m.name}</div>
       <div class="cast-role">${m.role}</div>
     `;
+        handleImageSkeleton(div.querySelector('img'));
         castList.appendChild(div);
     });
 }

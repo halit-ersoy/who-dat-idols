@@ -85,6 +85,12 @@ public class SoapOperaRepository {
         jdbcTemplate.update(sql, s.getId().toString(), s.getTime(), s.getYear(), java.sql.Timestamp.valueOf(s.getUploadDate()));
     }
 
+    // --- BÖLÜM GÜNCELLE (CHILD) ---
+    public void updateEpisode(SoapOpera s) {
+        String sql = "UPDATE [WhoDatIdols].[dbo].[SoapOpera] SET time = ?, year = ? WHERE ID = ?";
+        jdbcTemplate.update(sql, s.getTime(), s.getYear(), s.getId().toString());
+    }
+
     // --- TÜM DİZİLERİ LİSTELE (PARENT TABLOSU - Admin Listesi) ---
     public List<SoapOpera> findAllSeries() {
         String sql = "SELECT * FROM [WhoDatIdols].[dbo].[SoapOperas] ORDER BY name ASC";

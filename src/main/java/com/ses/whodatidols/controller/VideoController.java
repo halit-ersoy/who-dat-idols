@@ -45,6 +45,13 @@ public class VideoController {
             return ResponseEntity.status(401).body("Unauthorized: Login required to comment");
         }
 
+        UUID cookieUuid;
+        try {
+            cookieUuid = UUID.fromString(cookie);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(401).body("Unauthorized: Invalid session");
+        }
+
         if (commentText == null || commentText.trim().isEmpty()) {
             return ResponseEntity.badRequest().body("Comment text cannot be empty");
         }
@@ -53,7 +60,7 @@ public class VideoController {
             String sql = "{call AddOrUpdateComment(?, ?, ?, ?, ?)}";
             jdbcTemplate.update(sql,
                     id,                          // @ID
-                    cookie,                      // @cookie
+                    cookieUuid,                  // @cookie
                     new java.sql.Timestamp(System.currentTimeMillis()), // @datetime
                     spoiler ? 1 : 0,            // @spoiler
                     commentText                 // @comment

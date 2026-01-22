@@ -1,3 +1,5 @@
+import { handleImageSkeleton } from '../../elements/userLogged.js';
+
 export function initNewMoviesSection() {
     const viewAllBtn = document.querySelector('.new-movies .view-all');
     const newMoviesAllSection = document.getElementById('new-movies-all');
@@ -31,7 +33,7 @@ export function initNewMoviesSection() {
     function createNewMoviesItemHTML(item, index) {
         return `
       <a href="${item.videoUrl}" class="card new-movies-item" style="animation-delay: ${index * 0.05}s">
-        <div class="card-image-container">
+        <div class="card-image-container img-skeleton">
           <img src="${item.thumbnailUrl}" alt="${item.title}">
           <div class="play-icon"><i class="fas fa-play"></i></div>
         </div>
@@ -49,7 +51,9 @@ export function initNewMoviesSection() {
         for (let i = startIndex; i < endIndex; i++) {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = createNewMoviesItemHTML(allMovies[i], i - startIndex);
-            fragment.appendChild(tempDiv.firstElementChild);
+            const card = tempDiv.firstElementChild;
+            handleImageSkeleton(card.querySelector('img'));
+            fragment.appendChild(card);
         }
         newMoviesAllGrid.appendChild(fragment);
         currentItemsLoaded = endIndex;
@@ -62,7 +66,7 @@ export function initNewMoviesSection() {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = `
                 <a href="${movie.videoUrl}" class="card">
-                    <div class="card-image-container">
+                    <div class="card-image-container img-skeleton">
                         <img src="${movie.thumbnailUrl}" alt="${movie.title}">
                         <div class="play-icon"><i class="fas fa-play"></i></div>
                     </div>
@@ -72,7 +76,9 @@ export function initNewMoviesSection() {
                     </div>
                 </a>
             `;
-            newMoviesCarousel.appendChild(tempDiv.firstElementChild);
+            const card = tempDiv.firstElementChild;
+            handleImageSkeleton(card.querySelector('img'));
+            newMoviesCarousel.appendChild(card);
         });
     }
 

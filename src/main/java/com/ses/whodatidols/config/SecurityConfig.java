@@ -35,6 +35,8 @@ public class SecurityConfig {
                 // Sizin ana sayfanızdaki login butonu buraya düşmemeli.
                 .formLogin((form) -> form
                         .loginPage("/login-admin") // Change default login page to avoid conflict
+                        .loginProcessingUrl("/login-admin")
+                        .failureUrl("/login-admin?error")
                         .permitAll()
                         // Admin giriş yaparsa nereye gitsin?
                         .defaultSuccessUrl("/admin/panel", true)

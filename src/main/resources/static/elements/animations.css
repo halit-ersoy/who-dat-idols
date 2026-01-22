@@ -124,3 +124,40 @@
     50%  { -webkit-transform: scale(1.05); transform: scale(1.05); }
     100% { -webkit-transform: scale(1); transform: scale(1); }
 }
+
+/* Global Skeleton Loading Animation */
+.img-skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: #1a1a1a;
+}
+
+.img-skeleton::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent 25%, rgba(255, 255, 255, 0.05) 50%, transparent 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite linear;
+}
+
+@keyframes skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.img-skeleton img {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.img-skeleton.loaded img {
+    opacity: 1;
+}
+
+.img-skeleton.loaded::after {
+    display: none;
+}
