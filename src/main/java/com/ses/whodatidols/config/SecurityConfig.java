@@ -47,8 +47,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Bu kısım SADECE Admin paneli girişi için kullanılır.
-    // Sizin SQL tabanlı kullanıcılarınız buraya takılmaz.
     @Bean
     public InMemoryUserDetailsManager userDetailsService() {
         UserDetails admin = User.withDefaultPasswordEncoder()
