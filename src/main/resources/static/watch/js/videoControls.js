@@ -6,6 +6,8 @@ export function initVideoControls(videoId) {
     const volumeControl    = document.getElementById('volumeControl');
     const backwardBtn      = document.getElementById('backwardButton');
     const forwardBtn       = document.getElementById('forwardButton');
+    const fullscreenBtn    = document.getElementById('fullscreenButton');
+    const playerContainer  = document.getElementById('playerContainer');
     const playPauseWrapper = document.querySelector('.video-wrapper');
     const titleEl          = document.getElementById('title');
     const infoEl           = document.getElementById('videoInfo');
@@ -21,6 +23,7 @@ export function initVideoControls(videoId) {
     const playButton = createPlayPauseButton();
     setupVolumeControl();
     setupSkipButtons();
+    setupFullscreenToggle();
     setupProgressBar();
     setupPlaybackSpeed();
     setupKeyboardShortcuts();
@@ -102,6 +105,65 @@ export function initVideoControls(videoId) {
     function setupSkipButtons() {
         backwardBtn?.addEventListener('click', () => skipVideo(-SKIP_SECONDS));
         forwardBtn?.addEventListener('click', () => skipVideo(SKIP_SECONDS));
+    }
+
+    function setupFullscreenToggle() {
+        if (!fullscreenBtn || !playerContainer) return;
+
+        fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+        // Listen for fullscreen change events (standard and vendor-prefixed)
+        document.addEventListener('fullscreenchange', updateFullscreenIcon);
+        document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
+        document.addEventListener('mozfullscreenchange', updateFullscreenIcon);
+        document.addEventListener('MSFullscreenChange', updateFullscreenIcon);
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement &&    // standard
+                !document.webkitFullscreenElement && // chrome, safari and opera
+                !document.mozFullScreenElement &&    // firefox
+                !document.msFullscreenElement) {     // ie/edge
+
+                // Enter fullscreen
+                if (playerContainer.requestFullscreen) {
+                    playerContainer.requestFullscreen();
+                } else if (playerContainer.webkitRequestFullscreen) {
+                    playerContainer.webkitRequestFullscreen();
+                } else if (playerContainer.mozRequestFullScreen) {
+                    playerContainer.mozRequestFullScreen();
+                } else if (playerContainer.msRequestFullscreen) {
+                    playerContainer.msRequestFullscreen();
+                }
+            } else {
+                // Exit fullscreen
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+            }
+        }
+
+        function updateFullscreenIcon() {
+            const isFullscreen = !!(document.fullscreenElement ||
+                                    document.webkitFullscreenElement ||
+                                    document.mozFullScreenElement ||
+                                    document.msFullscreenElement);
+
+            if (isFullscreen) {
+                fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+                fullscreenBtn.title = "Tam Ekran Çık";
+                playerContainer.classList.add('fullscreen-mode');
+            } else {
+                fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                fullscreenBtn.title = "Tam Ekran";
+                playerContainer.classList.remove('fullscreen-mode');
+            }
+        }
     }
 
     function setupProgressBar() {

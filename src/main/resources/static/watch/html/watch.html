@@ -18,7 +18,8 @@
     <div class="watch-container">
         <div class="video-title" id="title">Yükleniyor...</div>
 
-        <div class="video-wrapper">
+        <div class="player-container" id="playerContainer">
+            <div class="video-wrapper">
             <div class="video-skeleton">
             </div>
             <video id="videoPlayer" controlsList="nodownload" oncontextmenu="return false">
@@ -51,7 +52,9 @@
                 </div>
             </div>
             <button class="control-button" id="forwardButton">10s <i class="fas fa-forward"></i></button>
+            <button class="control-button" id="fullscreenButton" title="Tam Ekran"><i class="fas fa-expand"></i></button>
         </div>
+    </div>
 
         <div class="info-bar">
             <span id="videoInfo">İlgili bölüm bilgisi buraya gelecek</span>
