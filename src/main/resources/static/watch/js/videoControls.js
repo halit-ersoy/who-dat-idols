@@ -21,6 +21,8 @@ export function initVideoControls(videoId) {
     const playButton = createPlayPauseButton();
     setupVolumeControl();
     setupSkipButtons();
+    setupProgressBar();
+    setupPlaybackSpeed();
     setupKeyboardShortcuts();
     syncVolumeOnMetadata();
     setupViewCount();
@@ -49,7 +51,14 @@ export function initVideoControls(videoId) {
         btn.innerHTML = '<i class="fas fa-play"></i>';
         playPauseWrapper.appendChild(btn);
 
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause();
+            updatePlayIcon();
+        });
+
+        // Add click listener to the whole video wrapper
+        videoPlayer.addEventListener('click', () => {
             videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause();
             updatePlayIcon();
         });
@@ -93,6 +102,88 @@ export function initVideoControls(videoId) {
     function setupSkipButtons() {
         backwardBtn?.addEventListener('click', () => skipVideo(-SKIP_SECONDS));
         forwardBtn?.addEventListener('click', () => skipVideo(SKIP_SECONDS));
+    }
+
+    function setupProgressBar() {
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const timeDisplay = document.getElementById('timeDisplay');
+
+        if (!progressContainer || !progressBar) return;
+
+        const formatTime = (seconds) => {
+            if (isNaN(seconds)) return "00:00";
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        };
+
+        const updateProgress = () => {
+            const percentage = (videoPlayer.currentTime / videoPlayer.duration) * 100;
+            progressBar.style.width = (percentage || 0) + '%';
+            if (timeDisplay) {
+                timeDisplay.innerText = `${formatTime(videoPlayer.currentTime)} / ${formatTime(videoPlayer.duration)}`;
+            }
+        };
+
+        videoPlayer.addEventListener('timeupdate', updateProgress);
+        videoPlayer.addEventListener('loadedmetadata', updateProgress);
+
+        progressContainer.addEventListener('click', (e) => {
+            const rect = progressContainer.getBoundingClientRect();
+            const pos = (e.clientX - rect.left) / rect.width;
+            videoPlayer.currentTime = pos * videoPlayer.duration;
+        });
+
+        // Optional: Dragging functionality
+        let isDragging = false;
+        progressContainer.addEventListener('mousedown', () => isDragging = true);
+        window.addEventListener('mouseup', () => isDragging = false);
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const rect = progressContainer.getBoundingClientRect();
+                let pos = (e.clientX - rect.left) / rect.width;
+                pos = Math.max(0, Math.min(1, pos));
+                videoPlayer.currentTime = pos * videoPlayer.duration;
+            }
+        });
+    }
+
+    function setupPlaybackSpeed() {
+        const speedButton = document.getElementById('speedButton');
+        const speedOptions = document.querySelectorAll('.speed-option');
+        const speedOptionsContainer = document.querySelector('.speed-options');
+
+        if (!speedButton) return;
+
+        speedOptions.forEach(option => {
+            option.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const speed = parseFloat(option.getAttribute('data-speed'));
+                videoPlayer.playbackRate = speed;
+                speedButton.innerText = speed + 'x';
+
+                // Update active state
+                speedOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+
+                // Close menu after selection
+                if (speedOptionsContainer) {
+                    speedOptionsContainer.style.display = 'none';
+                    // Reset display after a short delay so hover can work again
+                    setTimeout(() => {
+                        speedOptionsContainer.style.display = '';
+                    }, 100);
+                }
+            });
+        });
+
+        // Set default active
+        speedOptions.forEach(opt => {
+            if (opt.getAttribute('data-speed') === "1") {
+                opt.classList.add('active');
+            }
+        });
     }
 
     function skipVideo(sec) {

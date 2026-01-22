@@ -19,17 +19,34 @@
         <div class="video-title" id="title">Yükleniyor...</div>
 
         <div class="video-wrapper">
-            <video id="videoPlayer" controls controlsList="nodownload" oncontextmenu="return false">
+            <video id="videoPlayer" controlsList="nodownload" oncontextmenu="return false">
                 <source id="videoSource" src="" type="video/mp4">
                 Tarayıcınız video etiketini desteklemiyor.
             </video>
         </div>
 
         <div class="video-controls">
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-knob"></div>
+                </div>
+            </div>
+            <div class="time-display" id="timeDisplay">00:00 / 00:00</div>
             <button class="control-button" id="backwardButton"><i class="fas fa-backward"></i> 10s</button>
             <div class="volume-control-wrapper">
                 <i class="fas fa-volume-up"></i>
                 <input type="range" id="volumeControl" min="0" max="1" step="0.1" value="1">
+            </div>
+            <div class="speed-control-wrapper">
+                <button class="control-button" id="speedButton">1x</button>
+                <div class="speed-options">
+                    <div class="speed-option" data-speed="0.5">0.5x</div>
+                    <div class="speed-option" data-speed="1">1x</div>
+                    <div class="speed-option" data-speed="1.5">1.5x</div>
+                    <div class="speed-option" data-speed="2">2x</div>
+                    <div class="speed-option" data-speed="3">3x</div>
+                    <div class="speed-option" data-speed="4">4x</div>
+                </div>
             </div>
             <button class="control-button" id="forwardButton">10s <i class="fas fa-forward"></i></button>
         </div>
