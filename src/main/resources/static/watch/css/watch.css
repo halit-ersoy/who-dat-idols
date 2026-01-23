@@ -48,3 +48,21 @@
 .back-button:hover {
     color: #1ed760;
 }
+
+header {
+    background-color: #121212;
+    color: #fff;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+}
+
+body {
+    padding-top: 70px; /* Header yüksekliğine göre ayarlanmalı */
+}

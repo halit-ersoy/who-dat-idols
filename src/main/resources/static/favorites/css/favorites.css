@@ -14,6 +14,24 @@
     --animation-timing: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
+header {
+    background-color: #121212;
+    color: #fff;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+}
+
+body {
+    padding-top: 70px; /* Header yüksekliğine göre ayarlanmalı */
+}
+
 .back-button {
     color: #fff;
     text-decoration: none;
@@ -29,7 +47,7 @@
     color: #1ed760;
 }
 
-.content-wrapper {
+    .content-wrapper {
     max-width: 1300px;
     margin: 0 auto;
     padding: 20px;
@@ -37,7 +55,7 @@
     transform: translateY(20px);
     animation: fadeInUp 0.8s var(--animation-timing) forwards;
     animation-delay: 0.2s;
-}
+    }
 
 .page-title {
     display: flex;
@@ -49,20 +67,20 @@
 
 .title-wrapper {
     flex: 1;
-}
+    }
 
-.title-wrapper h1 {
+    .title-wrapper h1 {
     font-size: 2.8rem;
     margin-bottom: 12px;
     color: var(--primary);
     display: flex;
     align-items: center;
     gap: 15px;
-}
+    }
 
 .title-wrapper h1 i {
     animation: pulse 3s infinite;
-}
+    }
 
 .title-wrapper p {
     font-size: 1.1rem;
@@ -71,7 +89,7 @@
     opacity: 0;
     animation: fadeIn 0.5s ease forwards;
     animation-delay: 0.6s;
-}
+    }
 
 .create-list-btn {
     background: linear-gradient(135deg, var(--primary), var(--primary-hover));
@@ -87,6 +105,8 @@
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 4px 12px rgba(30, 215, 96, 0.3);
+    /* Butona hafif bir hareket efekti eklendi */
+    /* animation: pulse 2s infinite alternate; */
 }
 
 .create-list-btn:hover {
@@ -115,6 +135,8 @@
     opacity: 0;
     animation: fadeIn 0.6s ease forwards;
     margin-bottom: 5px;
+    /* Liste öğeleri arasındaki boşluğu artırıldı */
+    margin-bottom: 15px;
 }
 
 .list-wrapper:nth-child(1) { animation-delay: 0.2s; }
@@ -138,6 +160,9 @@
     overflow: hidden;
     cursor: pointer;
     transition: all 0.3s ease;
+    /* Tüm başlığın tıklanabilir olması için eklendi */
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .list-header::after {
@@ -145,30 +170,30 @@
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
+        width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
     transform: translateX(-100%);
     transition: transform 0.6s;
-}
+    }
 
 .list-wrapper:hover .list-header::after {
     transform: translateX(100%);
-}
+    }
 
-.list-title {
+    .list-title {
     font-size: 1.4rem;
     font-weight: 600;
     color: #000;
     margin: 0;
     display: flex;
     align-items: center;
-}
+    }
 
 .list-title i {
     margin-right: 12px;
     font-size: 1.2em;
-}
+    }
 
 .toggle-indicator {
     margin-left: auto;
@@ -178,20 +203,20 @@
 
 .list-wrapper.expanded .toggle-indicator {
     transform: rotate(180deg);
-}
+    }
 
 .video-count {
     font-size: 0.8em;
     opacity: 0.7;
     margin-left: 8px;
     white-space: nowrap;
-}
+    }
 
 .list-actions {
     display: flex;
     gap: 12px;
     z-index: 5;
-}
+    }
 
 .list-action-btn {
     background: rgba(0, 0, 0, 0.3);
@@ -205,16 +230,16 @@
     justify-content: center;
     cursor: pointer;
     transition: all 0.3s ease;
-}
+    }
 
 .list-action-btn:hover {
     background: rgba(0, 0, 0, 0.6);
     transform: scale(1.15) rotate(5deg);
-}
+    }
 
 /* Collapsible content */
 .list-content {
-    height: 0;
+    height: auto;
     overflow: hidden;
     transition: height 0.4s var(--animation-timing);
     padding: 0 25px;
@@ -223,6 +248,8 @@
 .list-wrapper.expanded .list-content {
     height: auto;
     padding: 25px;
+    max-height: 500px; /* İçeriğe göre ayarlanabilir */
+    overflow-y: auto; /* Taşan içerik için scroll */
 }
 
 .list-content-inner {
@@ -251,6 +278,8 @@
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     opacity: 0;
     animation: fadeIn 0.5s ease forwards;
+    /* İçerik öğelerine daha belirgin bir gölge eklendi */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
 }
 
 .content-item:nth-child(1) { animation-delay: 0.1s; }
@@ -264,6 +293,8 @@
     transform: scale(1.05);
     z-index: 2;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    /* Hover efekti daha belirgin hale getirildi */
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.5);
 }
 
 .content-item img {
@@ -363,16 +394,18 @@
 }
 
 .empty-list i {
-    font-size: 3.5rem;
+    font-size: 5rem;
     margin-bottom: 20px;
     color: rgba(255,255,255,0.15);
     animation: pulseGlow 3s infinite;
 }
 
 .empty-list h3 {
-    font-size: 1.6rem;
+    font-size: 1.8rem;
     margin: 15px 0;
     color: var(--text);
+    /* Boş liste mesajı daha açıklayıcı hale getirildi */
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 
 /* Loading spinner */
@@ -386,12 +419,13 @@
 }
 
 .spinner {
-    width: 50px;
-    height: 50px;
-    border: 5px solid rgba(30, 215, 96, 0.2);
-    border-top: 5px solid var(--primary);
+    width: 60px;
+    height: 60px;
+    border: 6px solid rgba(30, 215, 96, 0.2);
+    border-top: 6px solid var(--primary);
     border-radius: 50%;
-    animation: spin 1s linear infinite;
+    /* Daha akıcı bir animasyon */
+    animation: rotate 1.2s linear infinite;
     margin-bottom: 20px;
 }
 
@@ -696,4 +730,10 @@
     .modal-actions {
         flex-direction: column;
     }
+}
+
+/* Yeni animasyon eklendi */
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
