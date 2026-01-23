@@ -206,10 +206,29 @@
             item.style.opacity = '0';
             item.style.transform = 'scale(0.8)';
             setTimeout(() => {
+                const wrapper = item.closest('.list-wrapper');
                 const grid = item.closest('.item-grid');
+                const content = item.closest('.list-content');
                 item.remove();
+                
+                // Video sayısını güncelle
+                if (wrapper) {
+                    const countSpan = wrapper.querySelector('.video-count');
+                    const newCount = grid.querySelectorAll('.content-item').length;
+                    if (countSpan) countSpan.textContent = `(${newCount} video)`;
+                }
+
                 if (!grid.children.length) {
                     grid.innerHTML = renderItems([]);
+                }
+                
+                // Yüksekliği yeniden hesapla (eğer açıksa)
+                if (wrapper && wrapper.classList.contains('expanded')) {
+                    if (content.style.height === 'auto') {
+                        // Eğer auto ise bir şey yapmaya gerek yok, otomatik genişler/daralır
+                    } else {
+                        content.style.height = content.scrollHeight + 'px';
+                    }
                 }
             }, 300);
         } catch (err) {
@@ -220,32 +239,74 @@
 
     // --- Collapsible Logic ---
     function setupCollapsibleLists() {
-        document.querySelectorAll('.list-header').forEach(header => {
+        document.querySelectorAll('.list-wrapper').forEach(wrapper => {
+            const header = wrapper.querySelector('.list-header');
             const icon = header.querySelector('.toggle-indicator') ||
                 header.insertBefore(document.createElement('i'), header.querySelector('.list-actions'));
             icon.className = 'fas fa-chevron-down toggle-indicator';
-            const content = header.nextElementSibling;
-            content.style.height = '0';
-            content.style.overflow = 'hidden';
-            content.style.transition = 'height 0.3s ease';
+            
+            const content = wrapper.querySelector('.list-content');
+            if (!wrapper.classList.contains('expanded')) {
+                content.style.height = '0';
+                content.style.paddingTop = '0';
+                content.style.paddingBottom = '0';
+            } else {
+                content.style.height = 'auto';
+                content.style.paddingTop = '';
+                content.style.paddingBottom = '';
+            }
         });
     }
 
     function toggleCollapse(wrapper) {
-        const expanded = wrapper.classList.toggle('expanded');
-        // Kapat diğerlerini
-        document.querySelectorAll('.list-wrapper.expanded').forEach(w => {
-            if (w !== wrapper) {
-                w.classList.remove('expanded');
-                w.querySelector('.list-content').style.height = '0';
-            }
-        });
         const content = wrapper.querySelector('.list-content');
-        const inner = content.querySelector('.list-content-inner');
-        if (expanded) {
-            content.style.height = '0';
+        const isExpanding = !wrapper.classList.contains('expanded');
+
+            // Diğerlerini kapat
+            document.querySelectorAll('.list-wrapper.expanded').forEach(w => {
+                if (w !== wrapper) {
+                    w.classList.remove('expanded');
+                    const otherContent = w.querySelector('.list-content');
+                    
+                    if (otherContent.style.height === 'auto') {
+                        otherContent.style.height = otherContent.scrollHeight + 'px';
+                        otherContent.offsetHeight;
+                    }
+                    
+                    otherContent.style.height = '0';
+                    otherContent.style.paddingTop = '0';
+                    otherContent.style.paddingBottom = '0';
+                }
+            });
+
+        if (isExpanding) {
+            wrapper.classList.add('expanded');
+            content.style.paddingTop = '';
+            content.style.paddingBottom = '';
+            // Bir sonraki frame'de scrollHeight'ı alarak render edilmesini bekleyelim
+            requestAnimationFrame(() => {
+                content.style.height = content.scrollHeight + 'px';
+                
+                // Animasyon bitince height: auto yapalım ki içerik değişirse sorun olmasın
+                const onTransitionEnd = (e) => {
+                    if (e.propertyName === 'height') {
+                        content.style.height = 'auto';
+                        content.removeEventListener('transitionend', onTransitionEnd);
+                    }
+                };
+                content.addEventListener('transitionend', onTransitionEnd);
+            });
         } else {
-            content.style.height = inner.scrollHeight + 'px';
+            wrapper.classList.remove('expanded');
+            // 'auto' ise önce rakamsal değere çevirip sonra 0 yapmalıyız
+            if (content.style.height === 'auto') {
+                content.style.height = content.scrollHeight + 'px';
+                // Force reflow
+                content.offsetHeight;
+            }
+            content.style.height = '0';
+            content.style.paddingTop = '0';
+            content.style.paddingBottom = '0';
         }
     }
 
@@ -319,14 +380,20 @@
     // --- Render ---
     function renderLists(lists) {
         container.innerHTML = '';
-        lists.forEach(list => {
+        lists.forEach((list, index) => {
             const wrap = document.createElement('div');
             wrap.className = 'list-wrapper';
             wrap.dataset.listName = list.name;
+            wrap.style.animationDelay = `${0.1 * (index + 1)}s`;
+            
             const count = list.videos.length;
             wrap.innerHTML = `
         <div class="list-header">
-          <h3 class="list-title"><i class="fas fa-list"></i> ${escapeHtml(list.name)} <span class="video-count">(${count} video)</span></h3>
+          <h3 class="list-title">
+            <i class="fas fa-list"></i> 
+            ${escapeHtml(list.name)} 
+            <span class="video-count">(${count} video)</span>
+          </h3>
           <div class="list-actions">
             <button class="list-action-btn edit-list-btn" title="Listeyi Düzenle"><i class="fas fa-edit"></i></button>
           </div>

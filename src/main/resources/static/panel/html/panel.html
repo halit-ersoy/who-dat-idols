@@ -12,12 +12,12 @@
 
 <div class="admin-wrapper">
     <aside class="sidebar">
-        <div class="logo">WDI</div>
+        <a href="/" class="logo" style="text-decoration: none; display: block;">WDI</a>
         <nav class="admin-nav">
-            <a href="#movie-section" class="active"><i class="fas fa-film"></i> Film Yönetimi</a>
-            <a href="#series-section"><i class="fas fa-tv"></i> Dizi Yönetimi</a>
-            <a href="#archive-section"><i class="fas fa-archive"></i> Arşiv</a>
-            <a href="/" class="back-home"><i class="fas fa-home"></i> Anasayfaya Dön</a>
+            <a href="#hero-section" class="nav-link active" data-section="hero-section"><i class="fas fa-star"></i> Hero Yönetimi</a>
+            <a href="#movie-section" class="nav-link" data-section="movie-section"><i class="fas fa-film"></i> Film Yönetimi</a>
+            <a href="#series-section" class="nav-link" data-section="series-section"><i class="fas fa-tv"></i> Dizi Yönetimi</a>
+            <a href="#archive-section" class="nav-link" data-section="archive-section"><i class="fas fa-archive"></i> Arşiv</a>
         </nav>
     </aside>
 
@@ -29,7 +29,50 @@
             </div>
         </header>
 
-        <section id="movie-section" class="admin-section">
+        <section id="hero-section" class="admin-section">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-star"></i> Hero Video Ekle</h2>
+                </div>
+                <form id="heroForm" class="admin-form">
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label for="heroContentSearch">Arşivden İçerik Seç</label>
+                            <div class="search-select-wrapper">
+                                <input type="text" id="heroContentSearch" placeholder="Film veya dizi ismi ara..." autocomplete="off">
+                                <div id="heroSearchResults" class="search-results-dropdown" style="display: none;"></div>
+                            </div>
+                            <input type="hidden" id="selectedContentId">
+                            <input type="hidden" id="selectedContentType">
+                            <div id="selectedContentDisplay" class="selected-item-badge" style="display: none;">
+                                <span class="text">Seçilen: <strong>-</strong></span>
+                                <button type="button" class="btn-clear"><i class="fas fa-times"></i></button>
+                            </div>
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="heroFile">Hero Videosu (Fragman)</label>
+                            <div class="file-input-wrapper">
+                                <input type="file" id="heroFile" accept="video/*" required>
+                                <div class="file-info">* Bu içerik için fragman videosunu seçin.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="progress-wrapper" id="progressWrapperHero" style="display: none;">
+                        <div class="progress-status">Yükleniyor... <span id="percentHero">0%</span></div>
+                        <div class="progress-container">
+                            <div class="progress-bar" id="progressBarHero"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="heroSubmitBtn">HERO OLARAK KAYDET</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section id="movie-section" class="admin-section" style="display: none;">
             <div class="card">
                 <div class="card-header">
                     <h2><i class="fas fa-plus-circle"></i> Yeni Film Ekle / Düzenle</h2>
@@ -95,7 +138,7 @@
             </div>
         </section>
 
-        <section id="series-section" class="admin-section">
+        <section id="series-section" class="admin-section" style="display: none;">
             <div class="card">
                 <div class="card-header">
                     <h2><i class="fas fa-plus-circle"></i> Yeni Dizi / Bölüm Ekle</h2>
@@ -168,8 +211,28 @@
             </div>
         </section>
 
-        <section id="archive-section" class="admin-section">
+        <section id="archive-section" class="admin-section" style="display: none;">
             <div class="archive-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-star"></i> Hero Arşivi</h2>
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table" id="heroTable">
+                            <thead>
+                                <tr>
+                                    <th>Sıra</th>
+                                    <th>İçerik</th>
+                                    <th>Kategori</th>
+                                    <th>Tip</th>
+                                    <th>İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div class="card">
                     <div class="card-header">
                         <h2><i class="fas fa-film"></i> Film Arşivi</h2>

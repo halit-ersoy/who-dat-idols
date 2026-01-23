@@ -1,24 +1,237 @@
 document.addEventListener('DOMContentLoaded', function() {
 
     // Sidebar navigation logic
-    const navLinks = document.querySelectorAll('.admin-nav a:not(.back-home)');
+    const navLinks = document.querySelectorAll('.admin-nav .nav-link');
+    const sections = document.querySelectorAll('.admin-section');
+
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
-            const targetId = link.getAttribute('href').substring(1);
+            const targetId = link.getAttribute('data-section');
             
-            // Update active state
+            // Update active state in nav
             navLinks.forEach(l => l.classList.remove('active'));
             link.classList.add('active');
 
-            // Scroll to section
-            document.getElementById(targetId).scrollIntoView({ behavior: 'smooth' });
+            // Show target section, hide others
+            sections.forEach(section => {
+                if (section.id === targetId) {
+                    section.style.display = 'block';
+                } else {
+                    section.style.display = 'none';
+                }
+            });
+
+            // Scroll to top of main content
+            document.querySelector('.main-content').scrollTop = 0;
         });
     });
 
     // Sayfa açılınca mevcut listeleri çek
+    fetchHeroVideos();
     fetchMovies();
     fetchSeries();
+
+    /* ===========================================================
+       HERO YÖNETİMİ
+       =========================================================== */
+    const heroForm = document.getElementById('heroForm');
+    const heroSubmitBtn = document.getElementById('heroSubmitBtn');
+    const heroSearchInput = document.getElementById('heroContentSearch');
+    const heroSearchResults = document.getElementById('heroSearchResults');
+    const selectedContentIdInput = document.getElementById('selectedContentId');
+    const selectedContentTypeInput = document.getElementById('selectedContentType');
+    const selectedContentDisplay = document.getElementById('selectedContentDisplay');
+
+    // Archive search logic for Hero (DYNAMIC SEARCH)
+    let searchTimeout;
+
+    heroSearchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        
+        clearTimeout(searchTimeout);
+        
+        if (query.length < 2) {
+            heroSearchResults.innerHTML = '';
+            heroSearchResults.style.display = 'none';
+            return;
+        }
+
+        searchTimeout = setTimeout(async () => {
+            try {
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                renderHeroSearchResults(data);
+            } catch (error) {
+                console.error('Search error:', error);
+            }
+        }, 300);
+    });
+
+    function renderHeroSearchResults(results) {
+        heroSearchResults.innerHTML = '';
+        if (results.length === 0) {
+            heroSearchResults.innerHTML = '<div class="search-result-item">Sonuç bulunamadı</div>';
+        } else {
+            results.slice(0, 10).forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'search-result-item';
+                
+                // API uses Name and Type (capitalized)
+                const name = item.Name || item.name;
+                const type = item.Type || item.type;
+                const id = item.ID || item.id;
+                
+                div.innerHTML = `
+                    <div class="result-info">
+                        <span style="font-weight: 600;">${name}</span>
+                        <span class="item-type">${type === 'Movie' ? 'Film' : 'Dizi'}</span>
+                    </div>
+                `;
+                div.onclick = () => selectHeroContent({ id, name, type });
+                heroSearchResults.appendChild(div);
+            });
+        }
+        heroSearchResults.style.display = 'block';
+    }
+
+    function selectHeroContent(item) {
+        selectedContentIdInput.value = item.id;
+        selectedContentTypeInput.value = item.type;
+        selectedContentDisplay.querySelector('strong').innerText = item.name + ' (' + (item.type === 'Movie' ? 'Film' : 'Dizi') + ')';
+        selectedContentDisplay.style.display = 'flex';
+        heroSearchResults.style.display = 'none';
+        heroSearchInput.value = '';
+    }
+
+    document.querySelector('.btn-clear').onclick = () => {
+        selectedContentIdInput.value = '';
+        selectedContentTypeInput.value = '';
+        selectedContentDisplay.style.display = 'none';
+    };
+
+    heroForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const contentId = selectedContentIdInput.value;
+        const type = selectedContentTypeInput.value;
+        const file = document.getElementById('heroFile').files[0];
+
+        if (!contentId) {
+            alert("Lütfen arşivden bir içerik seçin!");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('contentId', contentId);
+        formData.append('type', type);
+        formData.append('file', file);
+
+        uploadDataWithProgress('/admin/add-hero', formData, 'heroForm', 'progressWrapperHero', 'progressBarHero', 'percentHero', () => {
+            fetchHeroVideos();
+            selectedContentDisplay.style.display = 'none';
+            selectedContentIdInput.value = '';
+            selectedContentTypeInput.value = '';
+        });
+    });
+
+    function fetchHeroVideos() {
+        fetch('/admin/hero-videos')
+            .then(res => res.json())
+            .then(heroes => {
+                const tbody = document.querySelector('#heroTable tbody');
+                tbody.innerHTML = '';
+                heroes.forEach((hero, index) => {
+                    const tr = document.createElement('tr');
+                    tr.dataset.id = hero.ID || hero.id;
+                    const name = hero.name || hero.Name || 'Adsız';
+                    const type = hero.type || hero.Type || '-';
+                    const id = hero.ID || hero.id;
+                    const category = hero.category || hero.Category || '-';
+
+                    tr.innerHTML = `
+                        <td>
+                            <div class="order-controls">
+                                <button class="btn-order" onclick="moveHero(${index}, -1)"><i class="fas fa-chevron-up"></i></button>
+                                <button class="btn-order" onclick="moveHero(${index}, 1)"><i class="fas fa-chevron-down"></i></button>
+                            </div>
+                        </td>
+                        <td style="font-weight: 600;">${name}</td>
+                        <td>${category}</td>
+                        <td>${type}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick='deleteHero("${id}", "${name.replace(/'/g, "\\'")}")'><i class="fas fa-trash"></i> SİL</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                window.currentHeroes = heroes;
+            })
+            .catch(err => console.error("Hero listesi hatası:", err));
+    }
+
+    window.moveHero = function(index, direction) {
+        const heroes = window.currentHeroes;
+        if (!heroes) return;
+
+        const newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= heroes.length) return;
+
+        // Swap elements
+        const temp = heroes[index];
+        heroes[index] = heroes[newIndex];
+        heroes[newIndex] = temp;
+
+        // Update UI immediately for responsiveness
+        renderHeroesTable(heroes);
+
+        // Send new order to server
+        const idList = heroes.map(h => h.ID || h.id);
+        fetch('/admin/update-hero-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(idList)
+        }).then(res => {
+            if (!res.ok) alert("Sıralama güncellenirken hata oluştu.");
+        });
+    };
+
+    function renderHeroesTable(heroes) {
+        const tbody = document.querySelector('#heroTable tbody');
+        tbody.innerHTML = '';
+        heroes.forEach((hero, index) => {
+            const tr = document.createElement('tr');
+            tr.dataset.id = hero.ID || hero.id;
+            const name = hero.name || hero.Name || 'Adsız';
+            const type = hero.type || hero.Type || '-';
+            const id = hero.ID || hero.id;
+            const category = hero.category || hero.Category || '-';
+
+            tr.innerHTML = `
+                <td>
+                    <div class="order-controls">
+                        <button class="btn-order" onclick="moveHero(${index}, -1)"><i class="fas fa-chevron-up"></i></button>
+                        <button class="btn-order" onclick="moveHero(${index}, 1)"><i class="fas fa-chevron-down"></i></button>
+                    </div>
+                </td>
+                <td style="font-weight: 600;">${name}</td>
+                <td>${category}</td>
+                <td>${type}</td>
+                <td>
+                    <button class="btn btn-sm btn-danger" onclick='deleteHero("${id}", "${name.replace(/'/g, "\\'")}")'><i class="fas fa-trash"></i> SİL</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    window.deleteHero = function(id, name) {
+        if (!confirm(`'${name}' hero içeriğini silmek istediğinize emin misiniz?`)) return;
+        fetch(`/admin/delete-hero?id=${id}`, { method: 'DELETE' })
+            .then(res => {
+                if (res.ok) { alert("Başarıyla silindi."); fetchHeroVideos(); }
+                else alert("Hata oluştu.");
+            });
+    };
 
     /* ===========================================================
        FİLM YÖNETİMİ
@@ -114,7 +327,9 @@ document.addEventListener('DOMContentLoaded', function() {
         movieCancelBtn.style.display = "block";
         movieFileInput.removeAttribute('required');
         
-        document.getElementById('movie-section').scrollIntoView({ behavior: 'smooth' });
+        // Switch to movie section
+        const movieLink = document.querySelector('.nav-link[data-section="movie-section"]');
+        if (movieLink) movieLink.click();
     };
 
     function updateMovie(data) {
@@ -331,6 +546,10 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('seriesLanguage').value = series.language;
         
         setupSeriesEditMode("DİZİ BİLGİSİNİ GÜNCELLE");
+
+        // Switch to series section
+        const seriesLink = document.querySelector('.nav-link[data-section="series-section"]');
+        if (seriesLink) seriesLink.click();
     };
 
     window.preloadEpisodeForm = function(ep) {
@@ -342,7 +561,10 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('episodeNum').value = ep.episode;
 
         alert("Bölüm bilgileri forma kopyalandı.");
-        document.getElementById('series-section').scrollIntoView({ behavior: 'smooth' });
+        
+        // Switch to series section
+        const seriesLink = document.querySelector('.nav-link[data-section="series-section"]');
+        if (seriesLink) seriesLink.click();
     };
 
     function setupSeriesEditMode(btnText) {
@@ -352,7 +574,6 @@ document.addEventListener('DOMContentLoaded', function() {
         seriesSubmitBtn.style.color = "#000";
         seriesCancelBtn.style.display = "block";
         seriesFileInput.removeAttribute('required');
-        document.getElementById('series-section').scrollIntoView({ behavior: 'smooth' });
     }
 
     window.deleteEpisode = function(id) {
