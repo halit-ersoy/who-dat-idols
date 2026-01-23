@@ -239,17 +239,16 @@ body {
 
 /* Collapsible content */
 .list-content {
-    height: auto;
+    height: auto !important; /* Yükseklik otomatik ayarlanacak */
     overflow: hidden;
     transition: height 0.4s var(--animation-timing);
     padding: 0 25px;
 }
 
 .list-wrapper.expanded .list-content {
-    height: auto;
+    height: auto !important; /* Yükseklik otomatik ayarlanacak */
     padding: 25px;
-    max-height: 500px; /* İçeriğe göre ayarlanabilir */
-    overflow-y: auto; /* Taşan içerik için scroll */
+    overflow: visible; /* İçerik taşarsa görünsün */
 }
 
 .list-content-inner {

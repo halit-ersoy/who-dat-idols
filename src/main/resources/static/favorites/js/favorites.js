@@ -242,7 +242,11 @@
         });
         const content = wrapper.querySelector('.list-content');
         const inner = content.querySelector('.list-content-inner');
-        content.style.height = expanded ? inner.scrollHeight + 'px' : '0';
+        if (expanded) {
+            content.style.height = '0';
+        } else {
+            content.style.height = inner.scrollHeight + 'px';
+        }
     }
 
     // --- API Çağrıları ---
