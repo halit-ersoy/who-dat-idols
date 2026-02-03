@@ -20,12 +20,14 @@ import java.util.UUID;
 public class MovieService {
 
     private final MovieRepository movieRepository;
+    private final TvMazeService tvMazeService;
 
     @Value("${media.source.movies.path}")
     private String moviesPath;
 
-    public MovieService(MovieRepository movieRepository) {
+    public MovieService(MovieRepository movieRepository, TvMazeService tvMazeService) {
         this.movieRepository = movieRepository;
+        this.tvMazeService = tvMazeService;
     }
 
     // Listeyi Getir
@@ -37,7 +39,8 @@ public class MovieService {
     public void updateMovie(Movie movie, MultipartFile file, MultipartFile image) throws IOException {
         if (file != null && !file.isEmpty()) {
             Path uploadPath = Paths.get(moviesPath).toAbsolutePath().normalize();
-            if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
+            if (!Files.exists(uploadPath))
+                Files.createDirectories(uploadPath);
 
             String fileName = movie.getId().toString() + ".mp4";
             Path filePath = uploadPath.resolve(fileName);
@@ -61,7 +64,8 @@ public class MovieService {
         }
     }
 
-    public void saveMovieWithFile(Movie movie, MultipartFile file, MultipartFile image, String summary) throws IOException {
+    public void saveMovieWithFile(Movie movie, MultipartFile file, MultipartFile image, String summary)
+            throws IOException {
         UUID uuid = UUID.randomUUID();
         movie.setId(uuid);
         movie.setUploadDate(LocalDateTime.now());
@@ -69,7 +73,8 @@ public class MovieService {
 
         if (file != null && !file.isEmpty()) {
             Path uploadPath = Paths.get(moviesPath).toAbsolutePath().normalize();
-            if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
+            if (!Files.exists(uploadPath))
+                Files.createDirectories(uploadPath);
 
             String fileName = uuid.toString() + ".mp4";
             Path filePath = uploadPath.resolve(fileName);
@@ -106,12 +111,12 @@ public class MovieService {
     private void deletePhysicalFiles(UUID id) {
         try {
             Path uploadPath = Paths.get(moviesPath).toAbsolutePath().normalize();
-            
+
             // Video sil
             Files.deleteIfExists(uploadPath.resolve(id.toString() + ".mp4"));
 
             // Resimleri sil
-            String[] supportedExtensions = {".webp", ".jpg", ".jpeg", ".png"};
+            String[] supportedExtensions = { ".webp", ".jpg", ".jpeg", ".png" };
             for (String ext : supportedExtensions) {
                 Files.deleteIfExists(uploadPath.resolve(id.toString() + ext));
             }
@@ -122,21 +127,69 @@ public class MovieService {
 
     private void saveImage(UUID id, MultipartFile image) throws IOException {
         Path uploadPath = Paths.get(moviesPath).toAbsolutePath().normalize();
-        if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
+        if (!Files.exists(uploadPath))
+            Files.createDirectories(uploadPath);
 
-        String extension = getExtension(image.getOriginalFilename());
-        // Eski resimleri temizle (farklı uzantıda olabilirler)
-        String[] supportedExtensions = {".webp", ".jpg", ".jpeg", ".png"};
+        // Eski resimleri temizle
+        String[] supportedExtensions = { ".webp", ".jpg", ".jpeg", ".png" };
         for (String ext : supportedExtensions) {
             Files.deleteIfExists(uploadPath.resolve(id.toString() + ext));
         }
 
-        Path imagePath = uploadPath.resolve(id.toString() + extension);
-        Files.copy(image.getInputStream(), imagePath, StandardCopyOption.REPLACE_EXISTING);
+        // Geçici bir dosya oluşturup oraya kaydedelim, sonra WebP'ye çevirelim
+        String originalExt = getExtension(image.getOriginalFilename());
+        Path tempPath = uploadPath.resolve(id.toString() + "_temp" + originalExt);
+        Files.copy(image.getInputStream(), tempPath, StandardCopyOption.REPLACE_EXISTING);
+
+        Path finalPath = uploadPath.resolve(id.toString() + ".webp");
+        try {
+            FFmpegUtils.convertImageToWebP(tempPath.toString(), finalPath.toString());
+        } catch (Exception e) {
+            System.err.println("WebP dönüşüm hatası, ham dosya kullanılıyor: " + e.getMessage());
+            Files.move(tempPath, uploadPath.resolve(id.toString() + originalExt), StandardCopyOption.REPLACE_EXISTING);
+        } finally {
+            Files.deleteIfExists(tempPath);
+        }
     }
 
     private String getExtension(String fileName) {
-        if (fileName == null || !fileName.contains(".")) return ".jpg";
+        if (fileName == null || !fileName.contains("."))
+            return ".jpg";
         return fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
+    }
+
+    public void saveImageFromUrl(UUID id, String imageUrl) throws IOException {
+        byte[] imageBytes = tvMazeService.downloadImage(imageUrl);
+        if (imageBytes == null)
+            return;
+
+        Path uploadPath = Paths.get(moviesPath).toAbsolutePath().normalize();
+        if (!Files.exists(uploadPath))
+            Files.createDirectories(uploadPath);
+
+        // Eski resimleri temizle
+        String[] supportedExtensions = { ".webp", ".jpg", ".jpeg", ".png" };
+        for (String ext : supportedExtensions) {
+            Files.deleteIfExists(uploadPath.resolve(id.toString() + ext));
+        }
+
+        String extension = ".jpg";
+        if (imageUrl.toLowerCase().endsWith(".png"))
+            extension = ".png";
+        else if (imageUrl.toLowerCase().endsWith(".webp"))
+            return; // already webp? usually unlikely from url, but let's handle
+
+        Path tempPath = uploadPath.resolve(id.toString() + "_temp" + extension);
+        Files.write(tempPath, imageBytes);
+
+        Path finalPath = uploadPath.resolve(id.toString() + ".webp");
+        try {
+            FFmpegUtils.convertImageToWebP(tempPath.toString(), finalPath.toString());
+        } catch (Exception e) {
+            System.err.println("WebP dönüşüm hatası (URL): " + e.getMessage());
+            Files.move(tempPath, uploadPath.resolve(id.toString() + extension), StandardCopyOption.REPLACE_EXISTING);
+        } finally {
+            Files.deleteIfExists(tempPath);
+        }
     }
 }

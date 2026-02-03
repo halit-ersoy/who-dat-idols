@@ -17,15 +17,14 @@ public class SoapOperaRepository {
     private final JdbcTemplate jdbcTemplate;
 
     // --- ESKİ SABİTLER (Frontend İçin) ---
-    private static final String GET_RECENT_SOAP_OPERAS =
-            "EXEC GetSoapOperasByUploadDateOffset @dayOffset = ?";
+    private static final String GET_RECENT_SOAP_OPERAS = "EXEC GetSoapOperasByUploadDateOffset @dayOffset = ?";
 
     public SoapOperaRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
     // ==========================================================
-    //       BÖLÜM 1: FRONTEND / API METODLARI (ESKİLER)
+    // BÖLÜM 1: FRONTEND / API METODLARI (ESKİLER)
     // ==========================================================
 
     public List<SoapOpera> findRecentSoapOperas(int day) {
@@ -46,7 +45,7 @@ public class SoapOperaRepository {
     }
 
     // ==========================================================
-    //       BÖLÜM 2: ADMIN PANELİ METODLARI (YENİLER & GÜNCELLENENLER)
+    // BÖLÜM 2: ADMIN PANELİ METODLARI (YENİLER & GÜNCELLENENLER)
     // ==========================================================
 
     // --- DİZİ (ANA KAYIT) VAR MI KONTROL ET ---
@@ -63,7 +62,8 @@ public class SoapOperaRepository {
     public void createSeries(SoapOpera s) {
         String sql = "INSERT INTO [WhoDatIdols].[dbo].[SoapOperas] (ID, name, category, _content, country, final, soapOperaSeries) VALUES (?, ?, ?, ?, ?, ?, ?)";
         String initialXML = "<Seasons></Seasons>";
-        jdbcTemplate.update(sql, s.getId().toString(), s.getName(), s.getCategory(), s.getContent(), s.getLanguage(), 0, initialXML);
+        jdbcTemplate.update(sql, s.getId().toString(), s.getName(), s.getCategory(), s.getContent(), s.getLanguage(), 0,
+                initialXML);
     }
 
     // --- DİZİ XML GÜNCELLE (PARENT) ---
@@ -81,8 +81,9 @@ public class SoapOperaRepository {
     // --- BÖLÜM KAYDET (CHILD) ---
     @Transactional
     public void saveEpisode(SoapOpera s) {
-        String sql = "INSERT INTO [WhoDatIdols].[dbo].[SoapOpera] (ID, time, year, uploadDate) VALUES (?, ?, ?, ?)";
-        jdbcTemplate.update(sql, s.getId().toString(), s.getTime(), s.getYear(), java.sql.Timestamp.valueOf(s.getUploadDate()));
+        String sql = "INSERT INTO [WhoDatIdols].[dbo].[SoapOpera] (ID, name, time, year, uploadDate) VALUES (?, ?, ?, ?, ?)";
+        jdbcTemplate.update(sql, s.getId().toString(), s.getName(), s.getTime(), s.getYear(),
+                java.sql.Timestamp.valueOf(s.getUploadDate()));
     }
 
     // --- BÖLÜM GÜNCELLE (CHILD) ---
@@ -98,7 +99,7 @@ public class SoapOperaRepository {
     }
 
     // ----------------------------------------------------------
-    //       BÖLÜM 3: SİLME OPERASYONLARI (DELETE) - EKLENDİ
+    // BÖLÜM 3: SİLME OPERASYONLARI (DELETE) - EKLENDİ
     // ----------------------------------------------------------
 
     // 1. Diziyi İsme Göre Sil (Parent)
@@ -119,7 +120,8 @@ public class SoapOperaRepository {
         // SQL Server XML sütununda string araması (Basit yöntem)
         String sql = "SELECT * FROM [WhoDatIdols].[dbo].[SoapOperas] WHERE soapOperaSeries LIKE ?";
         try {
-            // ID'yi çevreleyen tagleri aramayız çünkü format değişebilir, sadece UUID'yi ararız
+            // ID'yi çevreleyen tagleri aramayız çünkü format değişebilir, sadece UUID'yi
+            // ararız
             String searchTerm = "%" + episodeUUID + "%";
             return jdbcTemplate.queryForObject(sql, new SeriesRowMapper(), searchTerm);
         } catch (EmptyResultDataAccessException e) {
@@ -128,7 +130,7 @@ public class SoapOperaRepository {
     }
 
     // ==========================================================
-    //           ROW MAPPERS
+    // ROW MAPPERS
     // ==========================================================
 
     private static class SoapOperaRowMapper implements RowMapper<SoapOpera> {
@@ -137,8 +139,14 @@ public class SoapOperaRepository {
             SoapOpera soapOpera = new SoapOpera();
             soapOpera.setId(UUID.fromString(rs.getString("ID")));
             soapOpera.setName(rs.getString("name"));
-            try { soapOpera.setCategory(rs.getString("category")); } catch (SQLException e) {}
-            try { soapOpera.setContent(rs.getString("_content")); } catch (SQLException e) {}
+            try {
+                soapOpera.setCategory(rs.getString("category"));
+            } catch (SQLException e) {
+            }
+            try {
+                soapOpera.setContent(rs.getString("_content"));
+            } catch (SQLException e) {
+            }
             return soapOpera;
         }
     }

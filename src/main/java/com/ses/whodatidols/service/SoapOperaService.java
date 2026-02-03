@@ -20,22 +20,29 @@ import java.util.regex.Pattern;
 public class SoapOperaService {
 
     private final SoapOperaRepository repository;
+    private final TvMazeService tvMazeService;
 
     @Value("${media.source.soap_operas.path}")
     private String soapOperasPath;
 
-    public SoapOperaService(SoapOperaRepository repository) {
+    public SoapOperaService(SoapOperaRepository repository, TvMazeService tvMazeService) {
         this.repository = repository;
+        this.tvMazeService = tvMazeService;
     }
 
     public List<SoapOpera> getAllSeries() {
         return repository.findAllSeries();
     }
 
+    public SoapOpera findSeriesByName(String name) {
+        return repository.findSeriesByName(name);
+    }
+
     public void updateSeriesMetadata(SoapOpera s, MultipartFile file, MultipartFile image) throws IOException {
         if (file != null && !file.isEmpty()) {
             Path uploadPath = Paths.get(soapOperasPath).toAbsolutePath().normalize();
-            if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
+            if (!Files.exists(uploadPath))
+                Files.createDirectories(uploadPath);
 
             String fileName = s.getId().toString() + ".mp4";
             Path filePath = uploadPath.resolve(fileName);
@@ -44,7 +51,7 @@ public class SoapOperaService {
 
             int duration = FFmpegUtils.getVideoDurationInMinutes(filePath.toString());
             s.setTime(duration > 0 ? duration : (s.getTime() > 0 ? s.getTime() : 1));
-            
+
             // Eğer bu bir bölüm ID'si ise (Child tablo), Child tablodaki süreyi de güncelle
             repository.updateEpisode(s);
         }
@@ -56,20 +63,37 @@ public class SoapOperaService {
     }
 
     @Transactional
-    public void saveEpisodeWithFile(SoapOpera soapOpera, MultipartFile file, MultipartFile image) throws IOException {
+    public void saveEpisodeWithFile(SoapOpera soapOpera, MultipartFile file, MultipartFile image, UUID existingSeriesId)
+            throws IOException {
         // 1. DİZİ KONTROLÜ (Parent)
-        SoapOpera existingSeries = repository.findSeriesByName(soapOpera.getName());
         UUID seriesId;
         String currentXML;
 
-        if (existingSeries == null) {
-            seriesId = UUID.randomUUID();
-            soapOpera.setId(seriesId);
-            repository.createSeries(soapOpera);
-            currentXML = "<Seasons></Seasons>";
+        if (existingSeriesId != null) {
+            // Mevcut diziye ekleme modu
+            // Servisteki getAllSeries metodunu kullanarak (cache vs varsa yararlanır)
+            // diziyi bulalım
+            SoapOpera found = this.getAllSeries().stream()
+                    .filter(s -> s.getId().equals(existingSeriesId))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Seçilen dizi bulunamadı! ID: " + existingSeriesId));
+
+            seriesId = existingSeriesId;
+            currentXML = found.getXmlData();
+
         } else {
-            seriesId = existingSeries.getId();
-            currentXML = existingSeries.getXmlData();
+            // İsimden bul veya yeni oluştur modu
+            SoapOpera existingSeries = repository.findSeriesByName(soapOpera.getName());
+
+            if (existingSeries == null) {
+                seriesId = UUID.randomUUID();
+                soapOpera.setId(seriesId);
+                repository.createSeries(soapOpera);
+                currentXML = "<Seasons></Seasons>";
+            } else {
+                seriesId = existingSeries.getId();
+                currentXML = existingSeries.getXmlData();
+            }
         }
 
         if (image != null && !image.isEmpty()) {
@@ -81,7 +105,8 @@ public class SoapOperaService {
 
         if (file != null && !file.isEmpty()) {
             Path uploadPath = Paths.get(soapOperasPath).toAbsolutePath().normalize();
-            if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
+            if (!Files.exists(uploadPath))
+                Files.createDirectories(uploadPath);
 
             String fileName = episodeId.toString() + ".mp4";
             Path filePath = uploadPath.resolve(fileName);
@@ -93,37 +118,88 @@ public class SoapOperaService {
 
         SoapOpera episodeData = new SoapOpera();
         episodeData.setId(episodeId);
+        episodeData.setName(soapOpera.getName()); // Set the name!
         episodeData.setTime(soapOpera.getTime());
         episodeData.setYear(soapOpera.getYear());
         episodeData.setUploadDate(LocalDateTime.now());
         repository.saveEpisode(episodeData);
 
         // 3. XML GÜNCELLEME
-        String updatedXML = injectEpisodeToXML(currentXML, soapOpera.getSeasonNumber(), soapOpera.getEpisodeNumber(), episodeId.toString());
+        String updatedXML = injectEpisodeToXML(currentXML, soapOpera.getSeasonNumber(), soapOpera.getEpisodeNumber(),
+                episodeId.toString());
         repository.updateSeriesXML(seriesId, updatedXML);
     }
 
     private void saveImage(UUID id, MultipartFile image) throws IOException {
         Path uploadPath = Paths.get(soapOperasPath).toAbsolutePath().normalize();
-        if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
+        if (!Files.exists(uploadPath))
+            Files.createDirectories(uploadPath);
 
-        String extension = getExtension(image.getOriginalFilename());
-        String[] supportedExtensions = {".webp", ".jpg", ".jpeg", ".png"};
+        // Eski resimleri temizle
+        String[] supportedExtensions = { ".webp", ".jpg", ".jpeg", ".png" };
         for (String ext : supportedExtensions) {
             Files.deleteIfExists(uploadPath.resolve(id.toString() + ext));
         }
 
-        Path imagePath = uploadPath.resolve(id.toString() + extension);
-        Files.copy(image.getInputStream(), imagePath, StandardCopyOption.REPLACE_EXISTING);
+        // Geçici bir dosya oluşturup oraya kaydedelim, sonra WebP'ye çevirelim
+        String originalExt = getExtension(image.getOriginalFilename());
+        Path tempPath = uploadPath.resolve(id.toString() + "_temp" + originalExt);
+        Files.copy(image.getInputStream(), tempPath, StandardCopyOption.REPLACE_EXISTING);
+
+        Path finalPath = uploadPath.resolve(id.toString() + ".webp");
+        try {
+            FFmpegUtils.convertImageToWebP(tempPath.toString(), finalPath.toString());
+        } catch (Exception e) {
+            System.err.println("WebP dönüşüm hatası, ham dosya kullanılıyor: " + e.getMessage());
+            Files.move(tempPath, uploadPath.resolve(id.toString() + originalExt), StandardCopyOption.REPLACE_EXISTING);
+        } finally {
+            Files.deleteIfExists(tempPath);
+        }
     }
 
     private String getExtension(String fileName) {
-        if (fileName == null || !fileName.contains(".")) return ".jpg";
+        if (fileName == null || !fileName.contains("."))
+            return ".jpg";
         return fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
     }
 
+    public void saveImageFromUrl(UUID id, String imageUrl) throws IOException {
+        byte[] imageBytes = tvMazeService.downloadImage(imageUrl);
+        if (imageBytes == null)
+            return;
+
+        Path uploadPath = Paths.get(soapOperasPath).toAbsolutePath().normalize();
+        if (!Files.exists(uploadPath))
+            Files.createDirectories(uploadPath);
+
+        // Eski resimleri temizle
+        String[] supportedExtensions = { ".webp", ".jpg", ".jpeg", ".png" };
+        for (String ext : supportedExtensions) {
+            Files.deleteIfExists(uploadPath.resolve(id.toString() + ext));
+        }
+
+        String extension = ".jpg";
+        if (imageUrl.toLowerCase().endsWith(".png"))
+            extension = ".png";
+        else if (imageUrl.toLowerCase().endsWith(".webp"))
+            return;
+
+        Path tempPath = uploadPath.resolve(id.toString() + "_temp" + extension);
+        Files.write(tempPath, imageBytes);
+
+        Path finalPath = uploadPath.resolve(id.toString() + ".webp");
+        try {
+            FFmpegUtils.convertImageToWebP(tempPath.toString(), finalPath.toString());
+        } catch (Exception e) {
+            System.err.println("WebP dönüşüm hatası (URL): " + e.getMessage());
+            Files.move(tempPath, uploadPath.resolve(id.toString() + extension), StandardCopyOption.REPLACE_EXISTING);
+        } finally {
+            Files.deleteIfExists(tempPath);
+        }
+    }
+
     // ----------------------------------------------------------
-    //       SİLME MANTIĞI (DELETE LOGIC) - EKLENDİ
+    // SİLME MANTIĞI (DELETE LOGIC) - EKLENDİ
     // ----------------------------------------------------------
 
     @Transactional
@@ -147,10 +223,12 @@ public class SoapOperaService {
 
     @Transactional
     public void deleteSeriesByName(String name) {
-        // NOT: Diziyi silince altındaki bölümler veritabanında "öksüz" (orphan) kalabilir.
+        // NOT: Diziyi silince altındaki bölümler veritabanında "öksüz" (orphan)
+        // kalabilir.
         // İdeal olan önce XML'i parse edip tüm child ID'leri bulup silmektir.
         // Ancak şimdilik basitçe Parent'ı siliyoruz.
-        // Eğer tüm dosyaları da silmek isterseniz burada XML parse edip loop kurmak gerekir.
+        // Eğer tüm dosyaları da silmek isterseniz burada XML parse edip loop kurmak
+        // gerekir.
         repository.deleteSeriesByName(name);
     }
 

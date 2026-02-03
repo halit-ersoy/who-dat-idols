@@ -13,48 +13,51 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                // CSRF'i kapatıyoruz ki POST isteklerinde "Token" hatası almayalım
-                .csrf(csrf -> csrf.disable())
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+                http
+                                // CSRF'i kapatıyoruz ki POST isteklerinde "Token" hatası almayalım
+                                .csrf(csrf -> csrf.disable())
 
-                .authorizeHttpRequests((requests) -> requests
-                        // 1. Sadece Admin paneli "/admin/**" şifreli olsun (ROLE_ADMIN gerekir)
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                                .authorizeHttpRequests((requests) -> requests
+                                                // 1. Sadece Admin paneli "/admin/**" şifreli olsun (ROLE_ADMIN gerekir)
+                                                .requestMatchers("/admin/**").hasRole("ADMIN")
 
-                        // 2. Kendi yazdığınız login endpoint'i dahil her şeye izin ver
-                        // Özellikle "/login", "/register", "/api/**" gibi yolları açık bırakın
-                        .requestMatchers("/login", "/register", "/", "/home/**", "/watch/**", "/css/**", "/js/**", "/images/**").permitAll()
+                                                // 2. Kendi yazdığınız login endpoint'i dahil her şeye izin ver
+                                                // Özellikle "/login", "/register", "/api/**" gibi yolları açık bırakın
+                                                .requestMatchers("/login", "/register", "/", "/home/**", "/watch/**",
+                                                                "/css/**", "/js/**", "/images/**",
+                                                                "/public/api/tvmaze/**")
+                                                .permitAll()
 
-                        // Geri kalan her şey de açık olsun
-                        .anyRequest().permitAll()
-                )
+                                                // Geri kalan her şey de açık olsun
+                                                .anyRequest().permitAll())
 
-                // Spring Security'nin kendi login formu SADECE Admin paneline girmeye çalışınca çıksın
-                // Sizin ana sayfanızdaki login butonu buraya düşmemeli.
-                .formLogin((form) -> form
-                        .loginPage("/login-admin") // Change default login page to avoid conflict
-                        .loginProcessingUrl("/login-admin")
-                        .failureUrl("/login-admin?error")
-                        .permitAll()
-                        // Admin giriş yaparsa nereye gitsin?
-                        .defaultSuccessUrl("/admin/panel", true)
-                )
+                                // Spring Security'nin kendi login formu SADECE Admin paneline girmeye çalışınca
+                                // çıksın
+                                // Sizin ana sayfanızdaki login butonu buraya düşmemeli.
+                                .formLogin((form) -> form
+                                                .loginPage("/login-admin") // Change default login page to avoid
+                                                                           // conflict
+                                                .loginProcessingUrl("/login-admin")
+                                                .failureUrl("/login-admin?error")
+                                                .permitAll()
+                                                // Admin giriş yaparsa nereye gitsin?
+                                                .defaultSuccessUrl("/admin/panel", true))
 
-                .logout((logout) -> logout.permitAll());
+                                .logout((logout) -> logout.permitAll());
 
-        return http.build();
-    }
+                return http.build();
+        }
 
-    @Bean
-    public InMemoryUserDetailsManager userDetailsService() {
-        UserDetails admin = User.withDefaultPasswordEncoder()
-                .username("admin")
-                .password("Sh218106")
-                .roles("ADMIN")
-                .build();
+        @Bean
+        public InMemoryUserDetailsManager userDetailsService() {
+                UserDetails admin = User.withDefaultPasswordEncoder()
+                                .username("admin")
+                                .password("Sh218106")
+                                .roles("ADMIN")
+                                .build();
 
-        return new InMemoryUserDetailsManager(admin);
-    }
+                return new InMemoryUserDetailsManager(admin);
+        }
 }

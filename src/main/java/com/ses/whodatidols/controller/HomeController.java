@@ -143,8 +143,7 @@ public class HomeController {
             if (usernameOrEmail == null || usernameOrEmail.trim().isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
                         "success", false,
-                        "message", "Kullanıcı adı veya e-posta adresi gerekli"
-                ));
+                        "message", "Kullanıcı adı veya e-posta adresi gerekli"));
             }
 
             Map<String, Object> result = personRepository.generateResetCode(usernameOrEmail);
@@ -153,19 +152,16 @@ public class HomeController {
             if (isSuccess) {
                 return ResponseEntity.ok(Map.of(
                         "success", true,
-                        "message", "Doğrulama kodu e-posta adresinize gönderildi"
-                ));
+                        "message", "Doğrulama kodu e-posta adresinize gönderildi"));
             } else {
                 return ResponseEntity.badRequest().body(Map.of(
                         "success", false,
-                        "message", result.get("Message")
-                ));
+                        "message", result.get("Message")));
             }
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
-                    "message", e.getMessage()
-            ));
+                    "message", e.getMessage()));
         }
     }
 
@@ -181,13 +177,11 @@ public class HomeController {
 
             return ResponseEntity.ok(Map.of(
                     "success", isSuccess,
-                    "message", result.get("Message")
-            ));
+                    "message", result.get("Message")));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
-                    "message", e.getMessage()
-            ));
+                    "message", e.getMessage()));
         }
     }
 
@@ -204,13 +198,11 @@ public class HomeController {
 
             return ResponseEntity.ok(Map.of(
                     "success", isSuccess,
-                    "message", result.get("Message")
-            ));
+                    "message", result.get("Message")));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
-                    "message", e.getMessage()
-            ));
+                    "message", e.getMessage()));
         }
     }
 
@@ -226,7 +218,8 @@ public class HomeController {
 
             Map<String, Object> result = personRepository.loginUser(usernameOrEmail, password);
 
-            // SQL prosedürü Result sütununda bit (Boolean) döndürüyor, Repository bunu 'success' anahtarına atadı.
+            // SQL prosedürü Result sütununda bit (Boolean) döndürüyor, Repository bunu
+            // 'success' anahtarına atadı.
             Object successObj = result.get("success");
             boolean isSuccess = false;
             if (successObj instanceof Boolean) {
@@ -328,6 +321,21 @@ public class HomeController {
     public ResponseEntity<Resource> getFavoritesPage() {
         try {
             Resource htmlPage = new ClassPathResource("static/favorites/html/favorites.html");
+            if (!htmlPage.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
+                    .body(htmlPage);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<Resource> getProfilePage() {
+        try {
+            Resource htmlPage = new ClassPathResource("static/profile/html/profile.html");
             if (!htmlPage.exists()) {
                 return ResponseEntity.notFound().build();
             }

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,263 +9,365 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/panel/css/panel.css">
 </head>
+
 <body>
 
-<div class="admin-wrapper">
-    <aside class="sidebar">
-        <a href="/" class="logo" style="text-decoration: none; display: block;">WDI</a>
-        <nav class="admin-nav">
-            <a href="#hero-section" class="nav-link active" data-section="hero-section"><i class="fas fa-star"></i> Hero Yönetimi</a>
-            <a href="#movie-section" class="nav-link" data-section="movie-section"><i class="fas fa-film"></i> Film Yönetimi</a>
-            <a href="#series-section" class="nav-link" data-section="series-section"><i class="fas fa-tv"></i> Dizi Yönetimi</a>
-            <a href="#archive-section" class="nav-link" data-section="archive-section"><i class="fas fa-archive"></i> Arşiv</a>
-        </nav>
-    </aside>
+    <div class="admin-wrapper">
+        <aside class="sidebar">
+            <a href="/" class="logo" style="text-decoration: none; display: block;">WDI</a>
+            <nav class="admin-nav">
+                <a href="#hero-section" class="nav-link active" data-section="hero-section"><i class="fas fa-star"></i>
+                    Hero Yönetimi</a>
+                <a href="#movie-section" class="nav-link" data-section="movie-section"><i class="fas fa-film"></i> Film
+                    Yönetimi</a>
+                <a href="#series-section" class="nav-link" data-section="series-section"><i class="fas fa-tv"></i> Dizi
+                    Yönetimi</a>
+                <a href="#archive-section" class="nav-link" data-section="archive-section"><i
+                        class="fas fa-archive"></i> Arşiv</a>
+            </nav>
+        </aside>
 
-    <main class="main-content">
-        <header class="main-header">
-            <div class="welcome">
-                <h1>Admin Kontrol Paneli</h1>
-                <p>İçerik ekleme ve düzenleme işlemlerini buradan yönetebilirsiniz.</p>
-            </div>
-        </header>
-
-        <section id="hero-section" class="admin-section">
-            <div class="card">
-                <div class="card-header">
-                    <h2><i class="fas fa-star"></i> Hero Video Ekle</h2>
+        <main class="main-content">
+            <header class="main-header">
+                <div class="welcome">
+                    <h1>Admin Kontrol Paneli</h1>
+                    <p>İçerik ekleme ve düzenleme işlemlerini buradan yönetebilirsiniz.</p>
                 </div>
-                <form id="heroForm" class="admin-form">
-                    <div class="form-grid">
-                        <div class="form-group full-width">
-                            <label for="heroContentSearch">Arşivden İçerik Seç</label>
-                            <div class="search-select-wrapper">
-                                <input type="text" id="heroContentSearch" placeholder="Film veya dizi ismi ara..." autocomplete="off">
-                                <div id="heroSearchResults" class="search-results-dropdown" style="display: none;"></div>
-                            </div>
-                            <input type="hidden" id="selectedContentId">
-                            <input type="hidden" id="selectedContentType">
-                            <div id="selectedContentDisplay" class="selected-item-badge" style="display: none;">
-                                <span class="text">Seçilen: <strong>-</strong></span>
-                                <button type="button" class="btn-clear"><i class="fas fa-times"></i></button>
-                            </div>
-                        </div>
-                        <div class="form-group full-width">
-                            <label for="heroFile">Hero Videosu (Fragman)</label>
-                            <div class="file-input-wrapper">
-                                <input type="file" id="heroFile" accept="video/*" required>
-                                <div class="file-info">* Bu içerik için fragman videosunu seçin.</div>
-                            </div>
-                        </div>
-                    </div>
+            </header>
 
-                    <div class="progress-wrapper" id="progressWrapperHero" style="display: none;">
-                        <div class="progress-status">Yükleniyor... <span id="percentHero">0%</span></div>
-                        <div class="progress-container">
-                            <div class="progress-bar" id="progressBarHero"></div>
-                        </div>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary" id="heroSubmitBtn">HERO OLARAK KAYDET</button>
-                    </div>
-                </form>
-            </div>
-        </section>
-
-        <section id="movie-section" class="admin-section" style="display: none;">
-            <div class="card">
-                <div class="card-header">
-                    <h2><i class="fas fa-plus-circle"></i> Yeni Film Ekle / Düzenle</h2>
-                </div>
-                <form id="movieForm" class="admin-form">
-                    <input type="hidden" id="movieId">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="movieName">Film Adı</label>
-                            <input type="text" id="movieName" required placeholder="Film ismini giriniz">
-                        </div>
-                        <div class="form-group">
-                            <label for="movieCategory">Kategori</label>
-                            <input type="text" id="movieCategory" placeholder="Aksiyon, Dram, Romantik...">
-                        </div>
-                        <div class="form-group full-width">
-                            <label for="movieSummary">Film Özeti</label>
-                            <textarea id="movieSummary" rows="3" required placeholder="Filmin konusu nedir?"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label for="movieYear">Yayın Yılı</label>
-                            <input type="number" id="movieYear" value="2025">
-                        </div>
-                        <div class="form-group">
-                            <label for="movieLanguage">Dil</label>
-                            <select id="movieLanguage">
-                                <option value="Korece">Korece</option>
-                                <option value="İngilizce">İngilizce</option>
-                                <option value="Japonca">Japonca</option>
-                                <option value="Tayca">Tayca</option>
-                                <option value="Çince">Çince</option>
-                                <option value="Türkçe">Türkçe</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="movieImage">Kapak Resmi</label>
-                            <div class="file-input-wrapper">
-                                <input type="file" id="movieImage" accept="image/*">
-                                <div class="file-info">* Poster/Thumbnail (Opsiyonel)</div>
-                            </div>
-                        </div>
-                        <div class="form-group full-width">
-                            <label for="movieFile">Video Dosyası</label>
-                            <div class="file-input-wrapper">
-                                <input type="file" id="movieFile" accept="video/*" required>
-                                <div class="file-info">* Düzenleme modunda boş bırakılabilir.</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="progress-wrapper" id="progressWrapperMovie" style="display: none;">
-                        <div class="progress-status">Yükleniyor... <span id="percentMovie">0%</span></div>
-                        <div class="progress-container">
-                            <div class="progress-bar" id="progressBarMovie"></div>
-                        </div>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary" id="movieSubmitBtn">FİLMİ KAYDET</button>
-                        <button type="button" id="cancelMovieEditBtn" class="btn btn-secondary" style="display: none;">İPTAL</button>
-                    </div>
-                </form>
-            </div>
-        </section>
-
-        <section id="series-section" class="admin-section" style="display: none;">
-            <div class="card">
-                <div class="card-header">
-                    <h2><i class="fas fa-plus-circle"></i> Yeni Dizi / Bölüm Ekle</h2>
-                </div>
-                <form id="seriesForm" class="admin-form">
-                    <input type="hidden" id="seriesId">
-                    <div class="form-grid">
-                        <div class="form-group full-width">
-                            <label for="seriesName">Dizi Adı</label>
-                            <input type="text" id="seriesName" required placeholder="Dizi ismini giriniz">
-                        </div>
-                        <div class="form-group">
-                            <label for="seasonNum">Sezon No</label>
-                            <input type="number" id="seasonNum" value="1" min="1" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="episodeNum">Bölüm No</label>
-                            <input type="number" id="episodeNum" value="1" min="1" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="seriesCategory">Kategori</label>
-                            <input type="text" id="seriesCategory" placeholder="Dizi kategorileri...">
-                        </div>
-                        <div class="form-group">
-                            <label for="seriesLanguage">Dil</label>
-                            <select id="seriesLanguage">
-                                <option value="Korece">Korece</option>
-                                <option value="Türkçe">Türkçe</option>
-                                <option value="İngilizce">İngilizce</option>
-                                <option value="Japonca">Japonca</option>
-                                <option value="Çince">Çince</option>
-                            </select>
-                        </div>
-                        <div class="form-group full-width">
-                            <label for="seriesSummary">Dizi / Bölüm Özeti</label>
-                            <textarea id="seriesSummary" rows="3" required placeholder="Dizinin genel konusu..."></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label for="seriesYear">Yayın Yılı</label>
-                            <input type="number" id="seriesYear" value="2025">
-                        </div>
-                        <div class="form-group">
-                            <label for="seriesImage">Kapak Resmi</label>
-                            <div class="file-input-wrapper">
-                                <input type="file" id="seriesImage" accept="image/*">
-                                <div class="file-info">* Poster/Thumbnail (Opsiyonel)</div>
-                            </div>
-                        </div>
-                        <div class="form-group full-width">
-                            <label for="seriesFile">Bölüm Videosu</label>
-                            <div class="file-input-wrapper">
-                                <input type="file" id="seriesFile" accept="video/*" required>
-                                <div class="file-info">* Düzenleme modunda boş bırakılabilir.</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="progress-wrapper" id="progressWrapperSeries" style="display: none;">
-                        <div class="progress-status">Yükleniyor... <span id="percentSeries">0%</span></div>
-                        <div class="progress-container">
-                            <div class="progress-bar" id="progressBarSeries"></div>
-                        </div>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary" id="seriesSubmitBtn">BÖLÜMÜ / DİZİYİ KAYDET</button>
-                        <button type="button" id="cancelSeriesEditBtn" class="btn btn-secondary" style="display: none;">İPTAL</button>
-                    </div>
-                </form>
-            </div>
-        </section>
-
-        <section id="archive-section" class="admin-section" style="display: none;">
-            <div class="archive-grid">
+            <section id="hero-section" class="admin-section">
                 <div class="card">
                     <div class="card-header">
-                        <h2><i class="fas fa-star"></i> Hero Arşivi</h2>
+                        <h2><i class="fas fa-star"></i> Hero Video Ekle</h2>
                     </div>
-                    <div class="table-container">
-                        <table class="admin-table" id="heroTable">
-                            <thead>
-                                <tr>
-                                    <th>Sıra</th>
-                                    <th>İçerik</th>
-                                    <th>Kategori</th>
-                                    <th>Tip</th>
-                                    <th>İşlem</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
+                    <form id="heroForm" class="admin-form">
+                        <div class="form-grid">
+                            <div class="form-group full-width">
+                                <label for="heroContentSearch">Arşivden İçerik Seç</label>
+                                <div class="search-select-wrapper">
+                                    <input type="text" id="heroContentSearch" placeholder="Film veya dizi ismi ara..."
+                                        autocomplete="off">
+                                    <div id="heroSearchResults" class="search-results-dropdown" style="display: none;">
+                                    </div>
+                                </div>
+                                <input type="hidden" id="selectedContentId">
+                                <input type="hidden" id="selectedContentType">
+                                <div id="selectedContentDisplay" class="selected-item-badge" style="display: none;">
+                                    <span class="text">Seçilen: <strong>-</strong></span>
+                                    <button type="button" class="btn-clear"><i class="fas fa-times"></i></button>
+                                </div>
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="heroFile">Hero Videosu (Fragman)</label>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="heroFile" accept="video/*" required>
+                                    <div class="file-info">* Bu içerik için fragman videosunu seçin.</div>
+                                </div>
+                            </div>
+                        </div>
 
+                        <div class="progress-wrapper" id="progressWrapperHero" style="display: none;">
+                            <div class="progress-status">Yükleniyor... <span id="percentHero">0%</span></div>
+                            <div class="progress-container">
+                                <div class="progress-bar" id="progressBarHero"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="heroSubmitBtn">HERO OLARAK KAYDET</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section id="movie-section" class="admin-section" style="display: none;">
                 <div class="card">
                     <div class="card-header">
-                        <h2><i class="fas fa-film"></i> Film Arşivi</h2>
+                        <h2><i class="fas fa-plus-circle"></i> Yeni Film Ekle / Düzenle</h2>
                     </div>
-                    <div class="table-container">
-                        <table class="admin-table" id="movieTable">
-                            <thead>
-                                <tr>
-                                    <th>Film</th>
-                                    <th>Yıl</th>
-                                    <th>Kategori</th>
-                                    <th>İşlem</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
+                    <form id="movieForm" class="admin-form">
+                        <input type="hidden" id="movieId">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="movieName">Film Adı</label>
+                                <div class="input-with-action">
+                                    <input type="text" id="movieName" required placeholder="Film ismini giriniz">
+                                    <button type="button" class="btn-fetch" id="fetchMovieBtn" title="TVMaze'den Getir">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="movieCategory">Kategori</label>
+                                <input type="text" id="movieCategory" placeholder="Aksiyon, Dram, Romantik...">
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="movieSummary">Film Özeti</label>
+                                <textarea id="movieSummary" rows="3" required
+                                    placeholder="Filmin konusu nedir?"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="movieYear">Yayın Yılı</label>
+                                <input type="number" id="movieYear" value="2025">
+                            </div>
+                            <div class="form-group">
+                                <label for="movieLanguage">Dil</label>
+                                <select id="movieLanguage">
+                                    <option value="Korece">Korece</option>
+                                    <option value="İngilizce">İngilizce</option>
+                                    <option value="Japonca">Japonca</option>
+                                    <option value="Tayca">Tayca</option>
+                                    <option value="Çince">Çince</option>
+                                    <option value="Türkçe">Türkçe</option>
+                                </select>
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="movieImage">Kapak Resmi</label>
+                                <div class="poster-control-container">
+                                    <div class="poster-preview" id="moviePosterPreview">
+                                        <i class="fas fa-image"></i>
+                                    </div>
+                                    <div class="poster-inputs">
+                                        <div class="file-input-wrapper">
+                                            <input type="file" id="movieImage" accept="image/*">
+                                            <div class="file-info">* Cihazdan dosya seçin</div>
+                                        </div>
+                                        <div class="url-input-wrapper">
+                                            <div class="input-with-icon">
+                                                <i class="fas fa-link"></i>
+                                                <input type="text" id="movieImageUrl"
+                                                    placeholder="Resim URL'si yapıştırın...">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="movieFile">Video Dosyası</label>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="movieFile" accept="video/*" required>
+                                    <div class="file-info">* Düzenleme modunda boş bırakılabilir.</div>
+                                </div>
+                            </div>
+                        </div>
 
+                        <div class="progress-wrapper" id="progressWrapperMovie" style="display: none;">
+                            <div class="progress-status">Yükleniyor... <span id="percentMovie">0%</span></div>
+                            <div class="progress-container">
+                                <div class="progress-bar" id="progressBarMovie"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="movieSubmitBtn">FİLMİ KAYDET</button>
+                            <button type="button" id="cancelMovieEditBtn" class="btn btn-secondary"
+                                style="display: none;">İPTAL</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section id="series-section" class="admin-section" style="display: none;">
                 <div class="card">
                     <div class="card-header">
-                        <h2><i class="fas fa-tv"></i> Dizi Arşivi</h2>
+                        <h2><i class="fas fa-plus-circle"></i> Yeni Dizi / Bölüm Ekle</h2>
                     </div>
-                    <div id="seriesAccordion" class="accordion-container">
-                        <div class="loading-state">Veriler yükleniyor...</div>
+                    <form id="seriesForm" class="admin-form">
+                        <input type="hidden" id="seriesId">
+                        <div class="form-grid">
+                            <div class="form-group full-width">
+                                <label>İşlem Tipi</label>
+                                <div class="radio-group">
+                                    <label class="radio-label">
+                                        <input type="radio" name="seriesMode" value="new" checked
+                                            onchange="toggleSeriesMode()">
+                                        Yeni Dizi Oluştur
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="seriesMode" value="existing"
+                                            onchange="toggleSeriesMode()">
+                                        Mevcut Seriye Ekle
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Mevcut Dizi Seçimi -->
+                            <div id="existingSeriesSelectWrapper" class="form-group full-width" style="display: none;">
+                                <label>Mevcut Dizi Seçin</label>
+                                <div class="series-selection-container">
+                                    <div class="input-with-icon search-filter-box">
+                                        <i class="fas fa-search"></i>
+                                        <input type="text" id="seriesSearchFilter" placeholder="Mevcut dizilerde ara...">
+                                    </div>
+                                    <div id="seriesCardGrid" class="series-card-grid">
+                                        <!-- JS ile kartlar buraya eklenecek -->
+                                        <div class="loading-state">Diziler yükleniyor...</div>
+                                    </div>
+                                    <input type="hidden" id="selectedSeriesId">
+                                </div>
+                            </div>
+
+                            <!-- Yeni Dizi Alanları (Gruplandırıldı) -->
+                            <div id="newSeriesFields">
+                                <div class="form-group full-width">
+                                    <label for="seriesName">Dizi Adı</label>
+                                    <div class="input-with-action">
+                                        <input type="text" id="seriesName" placeholder="Dizi ismini giriniz">
+                                        <button type="button" class="btn-fetch" id="fetchSeriesBtn"
+                                            title="TVMaze'den Getir">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="seriesCategory">Kategori</label>
+                                    <input type="text" id="seriesCategory" placeholder="Dizi kategorileri...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="seriesLanguage">Dil</label>
+                                    <select id="seriesLanguage">
+                                        <option value="Korece">Korece</option>
+                                        <option value="Türkçe">Türkçe</option>
+                                        <option value="İngilizce">İngilizce</option>
+                                        <option value="Japonca">Japonca</option>
+                                        <option value="Çince">Çince</option>
+                                    </select>
+                                </div>
+                                <div class="form-group full-width">
+                                    <label for="seriesSummary">Dizi / Bölüm Özeti</label>
+                                    <textarea id="seriesSummary" rows="3"
+                                        placeholder="Dizinin genel konusu..."></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="seriesYear">Yayın Yılı</label>
+                                    <input type="number" id="seriesYear" value="2025">
+                                </div>
+                                <div class="form-group full-width">
+                                    <label for="seriesImage">Kapak Resmi</label>
+                                    <div class="poster-control-container">
+                                        <div class="poster-preview" id="seriesPosterPreview">
+                                            <i class="fas fa-image"></i>
+                                        </div>
+                                        <div class="poster-inputs">
+                                            <div class="file-input-wrapper">
+                                                <input type="file" id="seriesImage" accept="image/*">
+                                                <div class="file-info">* Cihazdan dosya seçin</div>
+                                            </div>
+                                            <div class="url-input-wrapper">
+                                                <div class="input-with-icon">
+                                                    <i class="fas fa-link"></i>
+                                                    <input type="text" id="seriesImageUrl"
+                                                        placeholder="Resim URL'si yapıştırın...">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="seasonNum">Sezon No</label>
+                                <input type="number" id="seasonNum" value="1" min="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="episodeNum">Bölüm No</label>
+                                <input type="number" id="episodeNum" value="1" min="1" required>
+                            </div>
+
+                            <!-- Bölüm Dosyası (Her iki durumda da gerekli) -->
+                            <div class="form-group full-width">
+                                <label for="seriesFile">Bölüm Videosu</label>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="seriesFile" accept="video/*" required>
+                                    <div class="file-info">* Düzenleme modunda boş bırakılabilir.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="progress-wrapper" id="progressWrapperSeries" style="display: none;">
+                            <div class="progress-status">Yükleniyor... <span id="percentSeries">0%</span></div>
+                            <div class="progress-container">
+                                <div class="progress-bar" id="progressBarSeries"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="seriesSubmitBtn">BÖLÜMÜ / DİZİYİ
+                                KAYDET</button>
+                            <button type="button" id="cancelSeriesEditBtn" class="btn btn-secondary"
+                                style="display: none;">İPTAL</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section id="archive-section" class="admin-section" style="display: none;">
+                <div class="archive-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-star"></i> Hero Arşivi</h2>
+                        </div>
+                        <div class="table-container">
+                            <table class="admin-table" id="heroTable">
+                                <thead>
+                                    <tr>
+                                        <th>Sıra</th>
+                                        <th>İçerik</th>
+                                        <th>Kategori</th>
+                                        <th>Tip</th>
+                                        <th>İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-film"></i> Film Arşivi</h2>
+                        </div>
+                        <div class="table-container">
+                            <table class="admin-table" id="movieTable">
+                                <thead>
+                                    <tr>
+                                        <th>Film</th>
+                                        <th>Yıl</th>
+                                        <th>Kategori</th>
+                                        <th>İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-tv"></i> Dizi Arşivi</h2>
+                        </div>
+                        <div id="seriesAccordion" class="accordion-container">
+                            <div class="loading-state">Veriler yükleniyor...</div>
+                        </div>
                     </div>
                 </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- TVMaze Results Modal -->
+    <div id="tmdbModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>TVMaze Arama Sonuçları</h2>
+                <button type="button" class="close-modal">&times;</button>
             </div>
-        </section>
-    </main>
-</div>
+            <div id="tmdbResults" class="tmdb-results-grid">
+                <!-- Sonuçlar buraya gelecek -->
+            </div>
+        </div>
+    </div>
 
-<script src="/panel/js/panel.js"></script>
+    <script src="/panel/js/panel.js"></script>
 </body>
+
 </html>

@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
 
     // Sidebar navigation logic
     const navLinks = document.querySelectorAll('.admin-nav .nav-link');
@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
         link.addEventListener('click', (e) => {
             e.preventDefault();
             const targetId = link.getAttribute('data-section');
-            
+
             // Update active state in nav
             navLinks.forEach(l => l.classList.remove('active'));
             link.classList.add('active');
@@ -26,6 +26,19 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelector('.main-content').scrollTop = 0;
         });
     });
+
+    // Helper: Update Poster Preview
+    function updatePosterPreview(section, urlOrSource) {
+        const preview = document.getElementById(`${section}PosterPreview`);
+        if (!preview) return;
+
+        if (!urlOrSource) {
+            preview.innerHTML = '<i class="fas fa-image"></i>';
+            return;
+        }
+
+        preview.innerHTML = `<img src="${urlOrSource}" alt="Poster Önizleme">`;
+    }
 
     // Sayfa açılınca mevcut listeleri çek
     fetchHeroVideos();
@@ -46,11 +59,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Archive search logic for Hero (DYNAMIC SEARCH)
     let searchTimeout;
 
-    heroSearchInput.addEventListener('input', function() {
+    heroSearchInput.addEventListener('input', function () {
         const query = this.value.trim();
-        
+
         clearTimeout(searchTimeout);
-        
+
         if (query.length < 2) {
             heroSearchResults.innerHTML = '';
             heroSearchResults.style.display = 'none';
@@ -76,12 +89,12 @@ document.addEventListener('DOMContentLoaded', function() {
             results.slice(0, 10).forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'search-result-item';
-                
+
                 // API uses Name and Type (capitalized)
                 const name = item.Name || item.name;
                 const type = item.Type || item.type;
                 const id = item.ID || item.id;
-                
+
                 div.innerHTML = `
                     <div class="result-info">
                         <span style="font-weight: 600;">${name}</span>
@@ -110,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedContentDisplay.style.display = 'none';
     };
 
-    heroForm.addEventListener('submit', function(e) {
+    heroForm.addEventListener('submit', function (e) {
         e.preventDefault();
         const contentId = selectedContentIdInput.value;
         const type = selectedContentTypeInput.value;
@@ -169,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(err => console.error("Hero listesi hatası:", err));
     }
 
-    window.moveHero = function(index, direction) {
+    window.moveHero = function (index, direction) {
         const heroes = window.currentHeroes;
         if (!heroes) return;
 
@@ -224,7 +237,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    window.deleteHero = function(id, name) {
+    window.deleteHero = function (id, name) {
         if (!confirm(`'${name}' hero içeriğini silmek istediğinize emin misiniz?`)) return;
         fetch(`/admin/delete-hero?id=${id}`, { method: 'DELETE' })
             .then(res => {
@@ -242,8 +255,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const movieFileInput = document.getElementById('movieFile');
     const movieImageInput = document.getElementById('movieImage');
     const movieIdInput = document.getElementById('movieId');
+    const moviePosterUrlInput = document.getElementById('movieImageUrl');
 
-    movieForm.addEventListener('submit', function(e) {
+    // Live preview for file selection
+    movieImageInput.addEventListener('change', function () {
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => updatePosterPreview('movie', e.target.result);
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+
+    // Live preview for URL input
+    moviePosterUrlInput.addEventListener('input', function () {
+        const url = this.value.trim();
+        lastFetchedPosterUrl = url; // Manually entering a URL counts as the source
+        updatePosterPreview('movie', url);
+    });
+
+    movieForm.addEventListener('submit', function (e) {
         e.preventDefault();
         const movieId = movieIdInput.value;
         const isEditMode = movieId !== "";
@@ -256,7 +286,7 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('content', document.getElementById('movieSummary').value);
             formData.append('year', document.getElementById('movieYear').value);
             formData.append('language', document.getElementById('movieLanguage').value);
-            
+
             if (movieImageInput.files.length > 0) {
                 formData.append('image', movieImageInput.files[0]);
             }
@@ -282,6 +312,7 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('language', document.getElementById('movieLanguage').value);
             if (movieFileInput.files.length > 0) formData.append('file', movieFileInput.files[0]);
             if (movieImageInput.files.length > 0) formData.append('image', movieImageInput.files[0]);
+            if (lastFetchedPosterUrl) formData.append('imageUrl', lastFetchedPosterUrl);
 
             uploadDataWithProgress('/admin/add-movie', formData, 'movieForm', 'progressWrapperMovie', 'progressBarMovie', 'percentMovie', () => {
                 fetchMovies();
@@ -312,21 +343,21 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(err => console.error("Film listesi hatası:", err));
     }
 
-    window.editMovie = function(movie) {
+    window.editMovie = function (movie) {
         movieIdInput.value = movie.id;
         document.getElementById('movieName').value = movie.name;
         document.getElementById('movieCategory').value = movie.category;
         document.getElementById('movieSummary').value = movie.content;
         document.getElementById('movieYear').value = movie.year;
         document.getElementById('movieLanguage').value = movie.language;
-        
+
         movieSubmitBtn.innerText = "DEĞİŞİKLİKLERİ KAYDET";
         movieSubmitBtn.classList.remove('btn-primary');
         movieSubmitBtn.style.backgroundColor = "#ffc107";
         movieSubmitBtn.style.color = "#000";
         movieCancelBtn.style.display = "block";
         movieFileInput.removeAttribute('required');
-        
+
         // Switch to movie section
         const movieLink = document.querySelector('.nav-link[data-section="movie-section"]');
         if (movieLink) movieLink.click();
@@ -354,12 +385,15 @@ document.addEventListener('DOMContentLoaded', function() {
         movieSubmitBtn.style.color = "";
         movieCancelBtn.style.display = "none";
         movieFileInput.setAttribute('required', 'required');
-        
+
         // Resim önizlemesi veya dosya adını temizlemek gerekirse buraya eklenebilir
         if (movieImageInput) movieImageInput.value = "";
+        if (moviePosterUrlInput) moviePosterUrlInput.value = "";
+        lastFetchedPosterUrl = "";
+        updatePosterPreview('movie', null);
     }
 
-    window.deleteMovie = function(id, name) {
+    window.deleteMovie = function (id, name) {
         if (!confirm(`'${name}' filmini silmek istediğinize emin misiniz?`)) return;
 
         fetch(`/admin/delete-movie?id=${id}`, {
@@ -384,8 +418,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const seriesSubmitBtn = document.getElementById('seriesSubmitBtn');
     const seriesFileInput = document.getElementById('seriesFile');
     const seriesImageInput = document.getElementById('seriesImage');
+    const seriesPosterUrlInput = document.getElementById('seriesImageUrl');
 
-    seriesForm.addEventListener('submit', function(e) {
+    // Live preview for file selection
+    seriesImageInput.addEventListener('change', function () {
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => updatePosterPreview('series', e.target.result);
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+
+    // Live preview for URL input
+    seriesPosterUrlInput.addEventListener('input', function () {
+        const url = this.value.trim();
+        lastFetchedPosterUrl = url;
+        updatePosterPreview('series', url);
+    });
+
+    seriesForm.addEventListener('submit', function (e) {
         e.preventDefault();
         const sId = seriesIdInput.value;
 
@@ -396,7 +447,7 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('category', document.getElementById('seriesCategory').value);
             formData.append('content', document.getElementById('seriesSummary').value);
             formData.append('language', document.getElementById('seriesLanguage').value);
-            
+
             if (seriesImageInput.files.length > 0) {
                 formData.append('image', seriesImageInput.files[0]);
             }
@@ -416,15 +467,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 .finally(() => { seriesSubmitBtn.disabled = false; });
         } else {
             const formData = new FormData();
-            formData.append('name', document.getElementById('seriesName').value);
+            const mode = document.querySelector('input[name="seriesMode"]:checked').value;
+            const existingId = document.getElementById('selectedSeriesId').value;
+
+            // Common fields for both modes
             formData.append('season', document.getElementById('seasonNum').value);
             formData.append('episode', document.getElementById('episodeNum').value);
-            formData.append('category', document.getElementById('seriesCategory').value);
-            formData.append('summary', document.getElementById('seriesSummary').value);
-            formData.append('year', document.getElementById('seriesYear').value);
-            formData.append('language', document.getElementById('seriesLanguage').value);
             if (seriesFileInput.files.length > 0) formData.append('file', seriesFileInput.files[0]);
-            if (seriesImageInput.files.length > 0) formData.append('image', seriesImageInput.files[0]);
+
+            if (mode === 'existing') {
+                if (!existingId) return alert("Lütfen bir dizi seçin!");
+                formData.append('existingSeriesId', existingId);
+                // No need for name, category etc.
+            } else {
+                // New Series Mode
+                formData.append('name', document.getElementById('seriesName').value);
+                formData.append('category', document.getElementById('seriesCategory').value);
+                formData.append('summary', document.getElementById('seriesSummary').value);
+                formData.append('year', document.getElementById('seriesYear').value);
+                formData.append('language', document.getElementById('seriesLanguage').value);
+                if (seriesImageInput.files.length > 0) formData.append('image', seriesImageInput.files[0]);
+                if (lastFetchedPosterUrl) formData.append('imageUrl', lastFetchedPosterUrl);
+            }
 
             uploadDataWithProgress('/admin/add-series', formData, 'seriesForm', 'progressWrapperSeries', 'progressBarSeries', 'percentSeries', () => {
                 fetchSeries();
@@ -437,7 +501,12 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(res => res.json())
             .then(seriesList => {
                 const container = document.getElementById('seriesAccordion');
+                const cardGrid = document.getElementById('seriesCardGrid');
+                const searchFilter = document.getElementById('seriesSearchFilter');
+                const selectedSeriesIdInput = document.getElementById('selectedSeriesId');
+
                 container.innerHTML = '';
+                cardGrid.innerHTML = '';
 
                 if (seriesList.length === 0) {
                     container.innerHTML = '<div class="loading-state">Henüz hiç dizi yüklenmemiş.</div>';
@@ -445,6 +514,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 seriesList.forEach(series => {
+                    // Populate Card Grid
+                    const card = document.createElement('div');
+                    card.className = 'series-card';
+                    card.dataset.id = series.id;
+                    card.dataset.name = series.name.toLowerCase();
+
+                    // Find poster in episodes
+                    let posterPath = '/images/placeholder.webp';
+                    try {
+                        const episodes = parseEpisodesFromXML(series.xmlData);
+                        if (episodes.length > 0) {
+                            // First episode poster
+                            posterPath = `/api/poster/stream?path=${encodeURIComponent(series.name)}&filename=poster.webp`;
+                        }
+                    } catch (e) { }
+
+                    card.innerHTML = `
+                        <img src="${posterPath}" class="series-card-poster" onerror="this.src='/images/placeholder-poster.png'">
+                        <div class="series-card-info">
+                            <div class="series-card-title">${series.name}</div>
+                            <div class="series-card-meta">${series.year || '-'} • ${series.language || '-'}</div>
+                        </div>
+                    `;
+
+                    card.onclick = () => {
+                        document.querySelectorAll('.series-card').forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
+                        selectedSeriesIdInput.value = series.id;
+                    };
+
+                    cardGrid.appendChild(card);
+
+                    // Populate Accordion
                     const episodes = parseEpisodesFromXML(series.xmlData, series.name, series.category, series.content, series.language, series.year);
                     const episodeCount = episodes.length;
 
@@ -485,6 +587,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error("Dizi listesi hatası:", err);
                 document.getElementById('seriesAccordion').innerHTML = '<div class="loading-state" style="color:var(--danger);">Veriler alınırken bir hata oluştu.</div>';
             });
+
+        // Add search filter logic
+        const searchInput = document.getElementById('seriesSearchFilter');
+        if (searchInput) {
+            searchInput.oninput = function () {
+                const query = this.value.toLowerCase().trim();
+                const cards = document.querySelectorAll('.series-card');
+                cards.forEach(card => {
+                    const name = card.dataset.name;
+                    if (name.includes(query)) {
+                        card.classList.remove('hidden');
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                });
+            };
+        }
     }
 
     function parseEpisodesFromXML(xmlString, seriesName, cat, summ, lang, year) {
@@ -522,10 +641,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    window.toggleAccordion = function(element) {
+    window.toggleAccordion = function (element) {
         const panel = element.nextElementSibling;
         const isActive = panel.classList.contains('active');
-        
+
         // Close others
         document.querySelectorAll('.episodes-list').forEach(p => {
             p.classList.remove('active');
@@ -538,13 +657,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    window.editSeriesMetadata = function(series) {
+    window.editSeriesMetadata = function (series) {
         seriesIdInput.value = series.id;
         document.getElementById('seriesName').value = series.name;
         document.getElementById('seriesCategory').value = series.category;
         document.getElementById('seriesSummary').value = series.content || series._content;
         document.getElementById('seriesLanguage').value = series.language;
-        
+
         setupSeriesEditMode("DİZİ BİLGİSİNİ GÜNCELLE");
 
         // Switch to series section
@@ -552,7 +671,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (seriesLink) seriesLink.click();
     };
 
-    window.preloadEpisodeForm = function(ep) {
+    window.preloadEpisodeForm = function (ep) {
         document.getElementById('seriesName').value = ep.name;
         document.getElementById('seriesCategory').value = ep.category;
         document.getElementById('seriesSummary').value = ep.content;
@@ -561,7 +680,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('episodeNum').value = ep.episode;
 
         alert("Bölüm bilgileri forma kopyalandı.");
-        
+
         // Switch to series section
         const seriesLink = document.querySelector('.nav-link[data-section="series-section"]');
         if (seriesLink) seriesLink.click();
@@ -576,20 +695,20 @@ document.addEventListener('DOMContentLoaded', function() {
         seriesFileInput.removeAttribute('required');
     }
 
-    window.deleteEpisode = function(id) {
-        if(!confirm("Bu bölümü silmek istediğinize emin misiniz?")) return;
+    window.deleteEpisode = function (id) {
+        if (!confirm("Bu bölümü silmek istediğinize emin misiniz?")) return;
         fetch('/admin/delete-episode?id=' + id, { method: 'DELETE' })
             .then(res => {
-                if(res.ok) { fetchSeries(); }
+                if (res.ok) { fetchSeries(); }
                 else alert("Hata oluştu.");
             });
     };
 
-    window.deleteSeriesByName = function(name) {
-        if(!confirm("'" + name + "' dizisine ait TÜM BÖLÜMLER silinecek. Emin misiniz?")) return;
+    window.deleteSeriesByName = function (name) {
+        if (!confirm("'" + name + "' dizisine ait TÜM BÖLÜMLER silinecek. Emin misiniz?")) return;
         fetch('/admin/delete-series-by-name?name=' + encodeURIComponent(name), { method: 'DELETE' })
             .then(res => {
-                if(res.ok) { fetchSeries(); }
+                if (res.ok) { fetchSeries(); }
                 else alert("Silme işlemi başarısız oldu.");
             });
     };
@@ -599,7 +718,7 @@ document.addEventListener('DOMContentLoaded', function() {
         seriesSubmitBtn.disabled = true;
         fetch('/admin/update-series', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         }).then(res => res.text()).then(msg => {
             alert(msg); resetSeriesForm(); fetchSeries();
@@ -617,8 +736,18 @@ document.addEventListener('DOMContentLoaded', function() {
         seriesSubmitBtn.style.color = "";
         seriesCancelBtn.style.display = "none";
         seriesFileInput.setAttribute('required', 'required');
-        
+
         if (seriesImageInput) seriesImageInput.value = "";
+        if (seriesPosterUrlInput) seriesPosterUrlInput.value = "";
+        lastFetchedPosterUrl = "";
+        updatePosterPreview('series', null);
+
+        // Clear card selection
+        document.querySelectorAll('.series-card').forEach(c => c.classList.remove('selected'));
+        const selectedSeriesIdInput = document.getElementById('selectedSeriesId');
+        if (selectedSeriesIdInput) selectedSeriesIdInput.value = "";
+        const searchInput = document.getElementById('seriesSearchFilter');
+        if (searchInput) searchInput.value = "";
     }
 
     /* ===========================================================
@@ -657,18 +786,18 @@ document.addEventListener('DOMContentLoaded', function() {
         bar.style.width = "0%";
         percentText.innerText = "0%";
 
-        xhr.upload.addEventListener("progress", function(e) {
+        xhr.upload.addEventListener("progress", function (e) {
             if (e.lengthComputable) {
                 const percentComplete = Math.round((e.loaded / e.total) * 100);
                 bar.style.width = percentComplete + "%";
                 percentText.innerText = percentComplete + "%";
-                if(percentComplete > 99) {
+                if (percentComplete > 99) {
                     percentText.innerText = "İşleniyor...";
                 }
             }
         });
 
-        xhr.addEventListener("load", function() {
+        xhr.addEventListener("load", function () {
             if (xhr.status === 200) {
                 alert("İşlem Başarılı!\n" + xhr.responseText);
                 document.getElementById(formId).reset();
@@ -681,7 +810,7 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.innerText = originalBtnText;
         });
 
-        xhr.addEventListener("error", function() {
+        xhr.addEventListener("error", function () {
             alert("Ağ Hatası!");
             btn.disabled = false;
             btn.innerText = originalBtnText;
@@ -690,4 +819,126 @@ document.addEventListener('DOMContentLoaded', function() {
         xhr.open("POST", url);
         xhr.send(formData);
     }
+
+    /* ===========================================================
+       TVMaze AUTO-FETCH MANTIĞI
+       =========================================================== */
+    const tmdbModal = document.getElementById('tmdbModal');
+    const tmdbResultsGrid = document.getElementById('tmdbResults');
+    const closeModalBtn = document.querySelector('.close-modal');
+    let currentFetchType = 'Movie';
+    let lastFetchedPosterUrl = "";
+
+    document.getElementById('fetchMovieBtn').addEventListener('click', () => {
+        const query = document.getElementById('movieName').value.trim();
+        if (!query) return alert("Lütfen aramak için bir film adı girin!");
+        currentFetchType = 'Movie';
+        searchTvMaze(query, 'Movie');
+    });
+
+    document.getElementById('fetchSeriesBtn').addEventListener('click', () => {
+        const query = document.getElementById('seriesName').value.trim();
+        if (!query) return alert("Lütfen aramak için bir dizi adı girin!");
+        currentFetchType = 'Series';
+        searchTvMaze(query, 'Series');
+    });
+
+    async function searchTvMaze(query, type) {
+        console.log("Fetching TVMaze for:", query, "at URL:", `/public/api/tvmaze/search?query=${encodeURIComponent(query)}`);
+        tmdbResultsGrid.innerHTML = '<div class="loading-state">TVMaze taranıyor...</div>';
+        tmdbModal.style.display = 'block';
+
+        try {
+            const fetchUrl = `/public/api/tvmaze/search?query=${encodeURIComponent(query)}`;
+            const response = await fetch(fetchUrl);
+            console.log("TVMaze Response Status:", response.status);
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error("TVMaze Response Error Body:", errorText);
+                throw new Error(errorText || "Sunucu hatası: " + response.status);
+            }
+            const data = await response.json();
+            console.log("TVMaze Data Received:", data);
+
+            renderTvMazeResults(data, type);
+        } catch (error) {
+            console.error("TVMaze Search Fetch Exception:", error);
+            tmdbResultsGrid.innerHTML = `<div class="loading-state" style="color:var(--danger);">Hata: Veri alınamadı (${error.message})</div>`;
+        }
+    }
+
+    function renderTvMazeResults(results, type) {
+        tmdbResultsGrid.innerHTML = '';
+        if (!results || results.length === 0) {
+            tmdbResultsGrid.innerHTML = '<div class="loading-state">Sonuç bulunamadı.</div>';
+            return;
+        }
+
+        results.slice(0, 12).forEach(result => {
+            const item = result.show;
+            const div = document.createElement('div');
+            div.className = 'tmdb-item';
+            const title = item.name;
+            const year = item.premiered ? item.premiered.substring(0, 4) : "-";
+            const poster = item.image ? item.image.medium : 'https://via.placeholder.com/210x295?text=No+Poster';
+
+            div.innerHTML = `
+                <img src="${poster}" class="tmdb-poster" alt="${title}">
+                <div class="tmdb-info">
+                    <div class="tmdb-title">${title}</div>
+                    <div class="tmdb-meta">${year}</div>
+                </div>
+            `;
+            div.onclick = () => fetchTvMazeDetails(item.id, type);
+            tmdbResultsGrid.appendChild(div);
+        });
+    }
+
+    async function fetchTvMazeDetails(id, type) {
+        tmdbResultsGrid.innerHTML = '<div class="loading-state">Detaylar getiriliyor...</div>';
+        try {
+            const response = await fetch(`/public/api/tvmaze/details?id=${id}`);
+            const data = await response.json();
+            populateFormWithTvMazeData(data, type);
+            tmdbModal.style.display = 'none';
+        } catch (error) {
+            alert("Detaylar alınırken hata oluştu.");
+        }
+    }
+
+    function populateFormWithTvMazeData(data, type) {
+        // Store poster URL for submission
+        lastFetchedPosterUrl = data.image ? data.image.original : "";
+
+        // TVMaze summary comes with HTML tags, let's strip them
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = data.summary || "";
+        const cleanSummary = tempDiv.textContent || tempDiv.innerText || "";
+
+        if (type === 'Movie') {
+            document.getElementById('movieName').value = data.name;
+            document.getElementById('movieYear').value = data.premiered ? data.premiered.substring(0, 4) : "2025";
+            document.getElementById('movieSummary').value = cleanSummary;
+            document.getElementById('movieCategory').value = data.genres ? data.genres.join(', ') : "";
+            document.getElementById('movieImageUrl').value = lastFetchedPosterUrl;
+            updatePosterPreview('movie', lastFetchedPosterUrl);
+
+            // Language matching
+            const langMap = { 'Korean': 'Korece', 'English': 'İngilizce', 'Japanese': 'Japonca', 'Turkish': 'Türkçe' };
+            document.getElementById('movieLanguage').value = langMap[data.language] || 'İngilizce';
+        } else {
+            document.getElementById('seriesName').value = data.name;
+            document.getElementById('seriesYear').value = data.premiered ? data.premiered.substring(0, 4) : "2025";
+            document.getElementById('seriesSummary').value = cleanSummary;
+            document.getElementById('seriesCategory').value = data.genres ? data.genres.join(', ') : "";
+            document.getElementById('seriesImageUrl').value = lastFetchedPosterUrl;
+            updatePosterPreview('series', lastFetchedPosterUrl);
+
+            const langMap = { 'Korean': 'Korece', 'Turkish': 'Türkçe', 'English': 'İngilizce', 'Japanese': 'Japonca' };
+            document.getElementById('seriesLanguage').value = langMap[data.language] || 'Korece';
+        }
+    }
+
+    closeModalBtn.onclick = () => { tmdbModal.style.display = 'none'; };
+    window.onclick = (e) => { if (e.target == tmdbModal) tmdbModal.style.display = 'none'; };
 });

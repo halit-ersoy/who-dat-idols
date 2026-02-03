@@ -18,9 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.beans.factory.annotation.Value;
 
-import java.io.IOException;
 import java.nio.file.*;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -52,6 +50,7 @@ public class AdminController {
     // İSTEDİĞİNİZ GET METODUNUN DÜZENLENMİŞ HALİ
     @GetMapping("/panel")
     public ResponseEntity<Resource> getAdminPanel() {
+        System.out.println("Admin Panel requested!");
         try {
             // Dosya yolu: src/main/resources/static/admin/html/panel.html
             Resource htmlPage = new ClassPathResource("static/panel/html/panel.html");
@@ -93,6 +92,7 @@ public class AdminController {
             @ModelAttribute Movie movie,
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam(value = "image", required = false) MultipartFile image,
+            @RequestParam(value = "imageUrl", required = false) String imageUrl,
             @RequestParam("summary") String summary) { // Özet parametresi eklendi
         try {
             if (file == null || file.isEmpty()) {
@@ -100,6 +100,11 @@ public class AdminController {
             }
             // Summary artık _content alanına işleniyor, Time otomatik hesaplanıyor
             movieService.saveMovieWithFile(movie, file, image, summary);
+
+            // Eğer manuel resim yoksa ama URL varsa indir
+            if ((image == null || image.isEmpty()) && imageUrl != null && !imageUrl.isEmpty()) {
+                movieService.saveImageFromUrl(movie.getId(), imageUrl);
+            }
 
             return ResponseEntity.ok("Film başarıyla işlendi. Süre otomatik hesaplandı Efendim.");
         } catch (Exception e) {
@@ -132,7 +137,8 @@ public class AdminController {
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam(value = "image", required = false) MultipartFile image) {
         try {
-            if (s.getId() == null) return ResponseEntity.badRequest().body("Dizi ID yok.");
+            if (s.getId() == null)
+                return ResponseEntity.badRequest().body("Dizi ID yok.");
             soapOperaService.updateSeriesMetadata(s, file, image);
             return ResponseEntity.ok("Dizi bilgileri ve video güncellendi.");
         } catch (Exception e) {
@@ -146,18 +152,43 @@ public class AdminController {
             @ModelAttribute SoapOpera soapOpera,
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam(value = "image", required = false) MultipartFile image,
-            @RequestParam("summary") String summary,
+            @RequestParam(value = "imageUrl", required = false) String imageUrl,
+            @RequestParam(value = "existingSeriesId", required = false) UUID existingSeriesId, // YENİ PARAMETRE
+            @RequestParam(value = "summary", required = false) String summary, // Mevcut seride zorunlu değil
             @RequestParam("season") int season,
             @RequestParam("episode") int episode) {
         try {
             if (file == null || file.isEmpty()) {
                 return ResponseEntity.badRequest().body("Bölüm dosyası seçilmelidir.");
             }
+
+            // Eğer mevcut bir dizi seçildiyse ID'yi set et
+            if (existingSeriesId != null) {
+                soapOpera.setId(existingSeriesId);
+                // Mevcut diziye eklerken isim, kategori vb. serviste halledilecek veya boş
+                // gelebilir
+            }
+
             soapOpera.setContent(summary);
             soapOpera.setSeasonNumber(season);
             soapOpera.setEpisodeNumber(episode);
 
-            soapOperaService.saveEpisodeWithFile(soapOpera, file, image);
+            // Servis metodunu güncelleyeceğiz: existingSeriesId var mı yok mu kontrolü
+            // orada yapılacak
+            soapOperaService.saveEpisodeWithFile(soapOpera, file, image, existingSeriesId);
+
+            // Eğer manuel resim yoksa ama URL varsa indir (Parent dizi için)
+            // Sadece YENİ bir dizi oluşturuluyorsa veya mevcut dizinin resmi yoksa
+            // (opsiyonel)
+            // Şimdilik sadece yeni dizi oluştururken URL varsa indirelim, mevcut dizinin
+            // resmi zaten vardır.
+            if (existingSeriesId == null && (image == null || image.isEmpty()) && imageUrl != null
+                    && !imageUrl.isEmpty()) {
+                SoapOpera parent = soapOperaService.findSeriesByName(soapOpera.getName());
+                if (parent != null) {
+                    soapOperaService.saveImageFromUrl(parent.getId(), imageUrl);
+                }
+            }
 
             return ResponseEntity.ok("Bölüm başarıyla işlendi (S" + season + "E" + episode + "). XML güncellendi.");
         } catch (Exception e) {
@@ -170,7 +201,8 @@ public class AdminController {
     @DeleteMapping("/delete-episode")
     public ResponseEntity<String> deleteEpisode(@RequestParam("id") UUID id) {
         try {
-            // Servisinizde delete metodu olmalı. Yoksa repository.deleteById(id) çağrılmalı.
+            // Servisinizde delete metodu olmalı. Yoksa repository.deleteById(id)
+            // çağrılmalı.
             soapOperaService.deleteEpisodeById(id);
             return ResponseEntity.ok("Bölüm silindi.");
         } catch (Exception e) {
@@ -210,22 +242,24 @@ public class AdminController {
     private ResponseEntity<List<Map<String, Object>>> getHeroVideos() {
         // Ensure column exists for existing installations
         try {
-            jdbcTemplate.execute("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('HeroVideo') AND name = 'sortOrder') ALTER TABLE HeroVideo ADD sortOrder INT DEFAULT 0");
-        } catch (Exception e) {}
-        
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('HeroVideo') AND name = 'sortOrder') ALTER TABLE HeroVideo ADD sortOrder INT DEFAULT 0");
+        } catch (Exception e) {
+        }
+
         String robustSql = "SELECT * FROM (" +
-                           "  SELECT H.[ID], M.[name], M.[category], M.[_content], 'Movie' AS [type], H.sortOrder " +
-                           "  FROM HeroVideo H INNER JOIN Movie M ON H.referanceID = M.ID " +
-                           "  UNION ALL " +
-                           "  SELECT H.[ID], S.[name], S.[category], S.[_content], 'SoapOpera' AS [type], H.sortOrder " +
-                           "  FROM HeroVideo H INNER JOIN SoapOperas S ON H.referanceID = S.ID " +
-                           ") AS Result ORDER BY sortOrder ASC";
+                "  SELECT H.[ID], M.[name], M.[category], M.[_content], 'Movie' AS [type], H.sortOrder " +
+                "  FROM HeroVideo H INNER JOIN Movie M ON H.referanceID = M.ID " +
+                "  UNION ALL " +
+                "  SELECT H.[ID], S.[name], S.[category], S.[_content], 'SoapOpera' AS [type], H.sortOrder " +
+                "  FROM HeroVideo H INNER JOIN SoapOperas S ON H.referanceID = S.ID " +
+                ") AS Result ORDER BY sortOrder ASC";
 
         return ResponseEntity.ok(jdbcTemplate.queryForList(robustSql));
     }
 
     @Caching(evict = {
-        @CacheEvict(value = "heroVideos", allEntries = true)
+            @CacheEvict(value = "heroVideos", allEntries = true)
     })
     @PostMapping("/add-hero")
     public ResponseEntity<String> addHero(
@@ -242,10 +276,12 @@ public class AdminController {
 
             Map<String, Object> content;
             if ("Film".equalsIgnoreCase(type) || "Movie".equalsIgnoreCase(type)) {
-                content = jdbcTemplate.queryForMap("SELECT name, category, _content FROM Movie WHERE ID = ?", contentId.toString());
+                content = jdbcTemplate.queryForMap("SELECT name, category, _content FROM Movie WHERE ID = ?",
+                        contentId.toString());
                 type = "Movie";
             } else {
-                content = jdbcTemplate.queryForMap("SELECT name, category, _content FROM SoapOperas WHERE ID = ?", contentId.toString());
+                content = jdbcTemplate.queryForMap("SELECT name, category, _content FROM SoapOperas WHERE ID = ?",
+                        contentId.toString());
                 type = "SoapOpera";
             }
 
@@ -253,10 +289,15 @@ public class AdminController {
             jdbcTemplate.update("EXEC [dbo].[AddHeroVideo] @referanceID = ?", contentId);
 
             // Set the sortOrder to max + 1
-            jdbcTemplate.update("UPDATE HeroVideo SET sortOrder = (SELECT ISNULL(MAX(sortOrder), 0) + 1 FROM HeroVideo) WHERE ID = (SELECT TOP 1 ID FROM HeroVideo WHERE referanceID = ? ORDER BY sortOrder DESC)", contentId.toString());
+            jdbcTemplate.update(
+                    "UPDATE HeroVideo SET sortOrder = (SELECT ISNULL(MAX(sortOrder), 0) + 1 FROM HeroVideo) WHERE ID = (SELECT TOP 1 ID FROM HeroVideo WHERE referanceID = ? ORDER BY sortOrder DESC)",
+                    contentId.toString());
 
-            // Since we need the ID of the newly created HeroVideo for the file naming (if it's not the same as contentId)
-            String heroIdStr = jdbcTemplate.queryForObject("SELECT TOP 1 CAST(ID AS NVARCHAR(36)) FROM HeroVideo WHERE referanceID = ? ORDER BY sortOrder DESC", String.class, contentId.toString());
+            // Since we need the ID of the newly created HeroVideo for the file naming (if
+            // it's not the same as contentId)
+            String heroIdStr = jdbcTemplate.queryForObject(
+                    "SELECT TOP 1 CAST(ID AS NVARCHAR(36)) FROM HeroVideo WHERE referanceID = ? ORDER BY sortOrder DESC",
+                    String.class, contentId.toString());
             UUID heroId = UUID.fromString(heroIdStr);
 
             // Resim kopyalama (Hero videosu için içerik resmini kullanıyoruz)
@@ -264,7 +305,8 @@ public class AdminController {
 
             if (file != null && !file.isEmpty()) {
                 Path uploadPath = Paths.get(heroVideosPath).toAbsolutePath().normalize();
-                if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
+                if (!Files.exists(uploadPath))
+                    Files.createDirectories(uploadPath);
                 Path filePath = uploadPath.resolve(heroId.toString() + ".mp4");
                 Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
             }
@@ -291,22 +333,23 @@ public class AdminController {
     @DeleteMapping("/delete-hero")
     public ResponseEntity<String> deleteHero(@RequestParam("id") UUID id) {
         try {
-            // HeroVideo tablosundan silmeden önce referans ID'yi veya direkt ID'yi kullanarak dosyaları temizlemeliyiz.
+            // HeroVideo tablosundan silmeden önce referans ID'yi veya direkt ID'yi
+            // kullanarak dosyaları temizlemeliyiz.
             // Bu metodda gelen id HeroVideo'nun kendi ID'sidir.
-            
+
             Path uploadPath = Paths.get(heroVideosPath).toAbsolutePath().normalize();
-            
+
             // Video sil
             Files.deleteIfExists(uploadPath.resolve(id.toString() + ".mp4"));
-            
+
             // Resimleri sil
-            String[] extensions = {".webp", ".jpg", ".jpeg", ".png"};
+            String[] extensions = { ".webp", ".jpg", ".jpeg", ".png" };
             for (String ext : extensions) {
                 Files.deleteIfExists(uploadPath.resolve(id.toString() + ext));
             }
 
             jdbcTemplate.update("DELETE FROM HeroVideo WHERE ID = ?", id.toString());
-            
+
             return ResponseEntity.ok("Hero video ve ilgili dosyalar silindi.");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Silme hatası: " + e.getMessage());
@@ -315,14 +358,16 @@ public class AdminController {
 
     private void copyHeroImage(UUID contentId, UUID heroId, String type) {
         try {
-            Path sourceBase = Paths.get("Movie".equalsIgnoreCase(type) ? moviesPath : soapOperasPath).toAbsolutePath().normalize();
+            Path sourceBase = Paths.get("Movie".equalsIgnoreCase(type) ? moviesPath : soapOperasPath).toAbsolutePath()
+                    .normalize();
             Path targetBase = Paths.get(heroVideosPath).toAbsolutePath().normalize();
-            
-            String[] extensions = {".webp", ".jpg", ".jpeg", ".png"};
+
+            String[] extensions = { ".webp", ".jpg", ".jpeg", ".png" };
             for (String ext : extensions) {
                 Path sourceFile = sourceBase.resolve(contentId.toString() + ext);
                 if (Files.exists(sourceFile)) {
-                    Files.copy(sourceFile, targetBase.resolve(heroId.toString() + ext), StandardCopyOption.REPLACE_EXISTING);
+                    Files.copy(sourceFile, targetBase.resolve(heroId.toString() + ext),
+                            StandardCopyOption.REPLACE_EXISTING);
                     break; // Sadece bir resmi kopyalamak yeterli
                 }
             }

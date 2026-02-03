@@ -16,8 +16,7 @@ public class FFmpegUtils {
                     "-select_streams", "v:0",
                     "-show_entries", "stream=width,height",
                     "-of", "csv=s=x:p=0",
-                    videoPath
-            );
+                    videoPath);
             pb.redirectErrorStream(true);
             Process process = pb.start();
 
@@ -27,7 +26,7 @@ public class FFmpegUtils {
                     String[] parts = line.split("x");
                     int width = Integer.parseInt(parts[0]);
                     int height = Integer.parseInt(parts[1]);
-                    return new int[]{width, height};
+                    return new int[] { width, height };
                 }
             }
             process.waitFor();
@@ -40,14 +39,14 @@ public class FFmpegUtils {
     // --- YENİ EKLENEN: SÜRE HESAPLAMA (JARVIS PRECISION) ---
     public static int getVideoDurationInMinutes(String videoPath) {
         try {
-            // Komut: ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 dosya.mp4
+            // Komut: ffprobe -v error -show_entries format=duration -of
+            // default=noprint_wrappers=1:nokey=1 dosya.mp4
             ProcessBuilder pb = new ProcessBuilder(
                     "ffprobe",
                     "-v", "error",
                     "-show_entries", "format=duration",
                     "-of", "default=noprint_wrappers=1:nokey=1",
-                    videoPath
-            );
+                    videoPath);
 
             Process process = pb.start();
 
@@ -80,8 +79,7 @@ public class FFmpegUtils {
                 "-preset", "veryfast",
                 "-c:a", "copy",
                 "-y",
-                outputPath
-        );
+                outputPath);
         pb.redirectErrorStream(true);
 
         Process process = pb.start();
@@ -94,6 +92,28 @@ public class FFmpegUtils {
         int exitCode = process.waitFor();
         if (exitCode != 0) {
             throw new RuntimeException("FFmpeg transcode failed with exit code: " + exitCode);
+        }
+    }
+
+    public static void convertImageToWebP(String inputPath, String outputPath)
+            throws IOException, InterruptedException {
+        ProcessBuilder pb = new ProcessBuilder(
+                "ffmpeg",
+                "-i", inputPath,
+                "-q:v", "75", // Quality 75% for good balance
+                "-y",
+                outputPath);
+        pb.redirectErrorStream(true);
+
+        Process process = pb.start();
+        // Consume output to avoid hanging
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            while (reader.readLine() != null) {
+            }
+        }
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            throw new RuntimeException("Image conversion to WebP failed with exit code: " + exitCode);
         }
     }
 }
