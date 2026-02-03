@@ -86,6 +86,12 @@ public class AdminController {
         return ResponseEntity.ok(soapOperaService.getAllSeries());
     }
 
+    @GetMapping("/series/check")
+    public ResponseEntity<Map<String, Boolean>> checkSeriesExists(@RequestParam String name) {
+        boolean exists = soapOperaService.findSeriesByName(name) != null;
+        return ResponseEntity.ok(Map.of("exists", exists));
+    }
+
     // FİLM KAYDETME ENDPOINT'İ
     @PostMapping("/add-movie")
     public ResponseEntity<String> addMovie(

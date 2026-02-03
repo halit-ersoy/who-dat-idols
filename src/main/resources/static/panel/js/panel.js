@@ -436,9 +436,60 @@ document.addEventListener('DOMContentLoaded', function () {
         updatePosterPreview('series', url);
     });
 
-    seriesForm.addEventListener('submit', function (e) {
+    // Series existence check
+    const seriesNameInput = document.getElementById('seriesName');
+    const seriesExistsWarning = document.createElement('div');
+    seriesExistsWarning.style.color = 'var(--danger)';
+    seriesExistsWarning.style.fontSize = '0.85rem';
+    seriesExistsWarning.style.marginTop = '5px';
+    seriesExistsWarning.style.display = 'none';
+    seriesExistsWarning.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Bu isimde bir dizi zaten mevcut!';
+    seriesNameInput.parentNode.appendChild(seriesExistsWarning);
+
+    let checkTimeout;
+    seriesNameInput.addEventListener('input', function () {
+        const name = this.value.trim();
+        const mode = document.querySelector('input[name="seriesMode"]:checked').value;
+        const sId = seriesIdInput.value;
+
+        // Only check in "new" mode and when not editing
+        if (mode !== 'new' || sId !== "" || name.length < 2) {
+            seriesExistsWarning.style.display = 'none';
+            return;
+        }
+
+        clearTimeout(checkTimeout);
+        checkTimeout = setTimeout(async () => {
+            try {
+                const res = await fetch(`/admin/series/check?name=${encodeURIComponent(name)}`);
+                const data = await res.json();
+                if (data.exists) {
+                    seriesExistsWarning.style.display = 'block';
+                } else {
+                    seriesExistsWarning.style.display = 'none';
+                }
+            } catch (e) { console.error("Check failed", e); }
+        }, 500);
+    });
+
+    seriesForm.addEventListener('submit', async function (e) {
         e.preventDefault();
         const sId = seriesIdInput.value;
+        const mode = document.querySelector('input[name="seriesMode"]:checked').value;
+
+        // Block if series exists and we are in New mode
+        if (sId === "" && mode === 'new') {
+            const name = seriesNameInput.value.trim();
+            try {
+                const res = await fetch(`/admin/series/check?name=${encodeURIComponent(name)}`);
+                const data = await res.json();
+                if (data.exists) {
+                    alert("Bu isimde bir dizi zaten mevcut! Lütfen 'Mevcut Seriye Ekle' modunu kullanın.");
+                    seriesExistsWarning.style.display = 'block';
+                    return;
+                }
+            } catch (e) { }
+        }
 
         if (sId !== "") {
             const formData = new FormData();
@@ -513,6 +564,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     return;
                 }
 
+                // Sort series by name
+                seriesList.sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+
                 seriesList.forEach(series => {
                     // Populate Card Grid
                     const card = document.createElement('div');
@@ -520,18 +574,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     card.dataset.id = series.id;
                     card.dataset.name = series.name.toLowerCase();
 
-                    // Find poster in episodes
-                    let posterPath = '/images/placeholder.webp';
-                    try {
-                        const episodes = parseEpisodesFromXML(series.xmlData);
-                        if (episodes.length > 0) {
-                            // First episode poster
-                            posterPath = `/api/poster/stream?path=${encodeURIComponent(series.name)}&filename=poster.webp`;
-                        }
-                    } catch (e) { }
+                    // Correct poster path using MediaController endpoint
+                    const posterPath = `/media/image/${series.id}`;
 
                     card.innerHTML = `
-                        <img src="${posterPath}" class="series-card-poster" onerror="this.src='/images/placeholder-poster.png'">
+                        <img src="${posterPath}" class="series-card-poster" onerror="this.src='/images/placeholder.webp'">
                         <div class="series-card-info">
                             <div class="series-card-title">${series.name}</div>
                             <div class="series-card-meta">${series.year || '-'} • ${series.language || '-'}</div>
@@ -605,6 +652,22 @@ document.addEventListener('DOMContentLoaded', function () {
             };
         }
     }
+
+    window.toggleSeriesMode = function () {
+        const mode = document.querySelector('input[name="seriesMode"]:checked').value;
+        const existingWrapper = document.getElementById('existingSeriesSelectWrapper');
+        const newFields = document.getElementById('newSeriesFields');
+
+        if (mode === 'existing') {
+            existingWrapper.style.display = 'block';
+            newFields.style.display = 'none';
+            // Refresh cards
+            fetchSeries();
+        } else {
+            existingWrapper.style.display = 'none';
+            newFields.style.display = 'block';
+        }
+    };
 
     function parseEpisodesFromXML(xmlString, seriesName, cat, summ, lang, year) {
         if (!xmlString) return [];
