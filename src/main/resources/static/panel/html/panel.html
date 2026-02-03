@@ -5,7 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Paneli - Who Dat Idols?</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/panel/css/panel.css">
 </head>
@@ -14,31 +16,65 @@
 
     <div class="admin-wrapper">
         <aside class="sidebar">
-            <a href="/" class="logo" style="text-decoration: none; display: block;">WDI</a>
+            <a href="/admin" class="logo">WDI ADMIN</a>
             <nav class="admin-nav">
-                <a href="#hero-section" class="nav-link active" data-section="hero-section"><i class="fas fa-star"></i>
-                    Hero Yönetimi</a>
-                <a href="#movie-section" class="nav-link" data-section="movie-section"><i class="fas fa-film"></i> Film
-                    Yönetimi</a>
-                <a href="#series-section" class="nav-link" data-section="series-section"><i class="fas fa-tv"></i> Dizi
-                    Yönetimi</a>
-                <a href="#archive-section" class="nav-link" data-section="archive-section"><i
-                        class="fas fa-archive"></i> Arşiv</a>
+                <a href="#dashboard-section" class="nav-link active" data-section="dashboard-section">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+                <a href="#hero-section" class="nav-link" data-section="hero-section">
+                    <i class="fas fa-star"></i> Hero Yönetimi
+                </a>
+                <a href="#movie-section" class="nav-link" data-section="movie-section">
+                    <i class="fas fa-film"></i> Film Yönetimi
+                </a>
+                <a href="#series-section" class="nav-link" data-section="series-section">
+                    <i class="fas fa-tv"></i> Dizi Yönetimi
+                </a>
+                <a href="#archive-section" class="nav-link" data-section="archive-section">
+                    <i class="fas fa-database"></i> Arşiv & Liste
+                </a>
             </nav>
         </aside>
 
         <main class="main-content">
             <header class="main-header">
                 <div class="welcome">
-                    <h1>Admin Kontrol Paneli</h1>
-                    <p>İçerik ekleme ve düzenleme işlemlerini buradan yönetebilirsiniz.</p>
+                    <h1>Hoş Geldin, Admin 👋</h1>
+                    <p>İçerik havuzunu yönetmeye hazır mısın?</p>
+                </div>
+                <div class="user-profile">
+                    <!-- Gelecekte eklenebilir: Profil/Çıkış -->
                 </div>
             </header>
 
-            <section id="hero-section" class="admin-section">
+            <!-- DASHBOARD SECTION -->
+            <section id="dashboard-section" class="admin-section">
+                <div class="form-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 30px;">
+                    <div class="card" style="text-align: center; padding: 25px;">
+                        <i class="fas fa-film"
+                            style="font-size: 2.5rem; color: var(--primary); margin-bottom: 10px;"></i>
+                        <h3 style="font-size: 2.5rem; font-weight: 700;" id="statTotalMovies">-</h3>
+                        <p style="color: var(--text-dim);">Toplam Film</p>
+                    </div>
+                    <div class="card" style="text-align: center; padding: 25px;">
+                        <i class="fas fa-tv" style="font-size: 2.5rem; color: var(--danger); margin-bottom: 10px;"></i>
+                        <h3 style="font-size: 2.5rem; font-weight: 700;" id="statTotalSeries">-</h3>
+                        <p style="color: var(--text-dim);">Toplam Dizi</p>
+                    </div>
+                    <div class="card" style="text-align: center; padding: 25px;">
+                        <i class="fas fa-video" style="font-size: 2.5rem; color: #2196f3; margin-bottom: 10px;"></i>
+                        <h3 style="font-size: 2.5rem; font-weight: 700;" id="statTotalEpisodes">-</h3>
+                        <p style="color: var(--text-dim);">Toplam Bölüm</p>
+                    </div>
+                </div>
+                <!-- Quick Actions or Recent Activity could go here -->
+            </section>
+
+            <!-- HERO SECTION -->
+            <section id="hero-section" class="admin-section" style="display: none;">
                 <div class="card">
                     <div class="card-header">
-                        <h2><i class="fas fa-star"></i> Hero Video Ekle</h2>
+                        <h2><i class="fas fa-star"></i> Hero Video Yönetimi</h2>
                     </div>
                     <form id="heroForm" class="admin-form">
                         <div class="form-grid">
@@ -74,16 +110,19 @@
                         </div>
 
                         <div class="form-actions">
-                            <button type="submit" class="btn btn-primary" id="heroSubmitBtn">HERO OLARAK KAYDET</button>
+                            <button type="submit" class="btn btn-primary" id="heroSubmitBtn">
+                                <i class="fas fa-save"></i> HERO KAYDET
+                            </button>
                         </div>
                     </form>
                 </div>
             </section>
 
+            <!-- MOVIE SECTION -->
             <section id="movie-section" class="admin-section" style="display: none;">
                 <div class="card">
                     <div class="card-header">
-                        <h2><i class="fas fa-plus-circle"></i> Yeni Film Ekle / Düzenle</h2>
+                        <h2><i class="fas fa-plus-circle"></i> Film İşlemleri</h2>
                     </div>
                     <form id="movieForm" class="admin-form">
                         <input type="hidden" id="movieId">
@@ -159,48 +198,52 @@
                         </div>
 
                         <div class="form-actions">
-                            <button type="submit" class="btn btn-primary" id="movieSubmitBtn">FİLMİ KAYDET</button>
+                            <button type="submit" class="btn btn-primary" id="movieSubmitBtn">
+                                <i class="fas fa-save"></i> FİLMİ KAYDET
+                            </button>
                             <button type="button" id="cancelMovieEditBtn" class="btn btn-secondary"
-                                style="display: none;">İPTAL</button>
+                                style="display: none;">Vazgeç</button>
                         </div>
                     </form>
                 </div>
             </section>
 
+            <!-- SERIES SECTION -->
             <section id="series-section" class="admin-section" style="display: none;">
                 <div class="card">
                     <div class="card-header">
-                        <h2><i class="fas fa-plus-circle"></i> Yeni Dizi / Bölüm Ekle</h2>
+                        <h2><i class="fas fa-tv"></i> Dizi / Bölüm İşlemleri</h2>
                     </div>
                     <form id="seriesForm" class="admin-form">
                         <input type="hidden" id="seriesId">
                         <div class="form-grid">
                             <div class="form-group full-width">
-                                <label>İşlem Tipi</label>
-                                <div class="radio-group">
-                                    <label class="radio-label">
+                                <label>İşlem Tipi Seçin</label>
+                                <div class="radio-group" style="display: flex; gap: 20px; margin-top: 5px;">
+                                    <label class="radio-label"
+                                        style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                         <input type="radio" name="seriesMode" value="new" checked
-                                            onchange="toggleSeriesMode()">
-                                        Yeni Dizi Oluştur
+                                            onchange="toggleSeriesMode()" style="width: auto;">
+                                        <span style="font-weight: 500;">Yeni Dizi Oluştur</span>
                                     </label>
-                                    <label class="radio-label">
+                                    <label class="radio-label"
+                                        style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                         <input type="radio" name="seriesMode" value="existing"
-                                            onchange="toggleSeriesMode()">
-                                        Mevcut Seriye Ekle
+                                            onchange="toggleSeriesMode()" style="width: auto;">
+                                        <span style="font-weight: 500;">Mevcut Seriye Ekle</span>
                                     </label>
                                 </div>
                             </div>
 
                             <!-- Mevcut Dizi Seçimi -->
                             <div id="existingSeriesSelectWrapper" class="form-group full-width" style="display: none;">
-                                <label>Mevcut Dizi Seçin</label>
+                                <label>Mevcut Diziyi Seçin</label>
                                 <div class="series-selection-container">
                                     <div class="input-with-icon search-filter-box">
                                         <i class="fas fa-search"></i>
-                                        <input type="text" id="seriesSearchFilter" placeholder="Mevcut dizilerde ara...">
+                                        <input type="text" id="seriesSearchFilter" placeholder="Listede ara...">
                                     </div>
                                     <div id="seriesCardGrid" class="series-card-grid">
-                                        <!-- JS ile kartlar buraya eklenecek -->
                                         <div class="loading-state">Diziler yükleniyor...</div>
                                     </div>
                                     <input type="hidden" id="selectedSeriesId">
@@ -291,15 +334,17 @@
                         </div>
 
                         <div class="form-actions">
-                            <button type="submit" class="btn btn-primary" id="seriesSubmitBtn">BÖLÜMÜ / DİZİYİ
-                                KAYDET</button>
+                            <button type="submit" class="btn btn-primary" id="seriesSubmitBtn">
+                                <i class="fas fa-save"></i> KAYDET
+                            </button>
                             <button type="button" id="cancelSeriesEditBtn" class="btn btn-secondary"
-                                style="display: none;">İPTAL</button>
+                                style="display: none;">Vazgeç</button>
                         </div>
                     </form>
                 </div>
             </section>
 
+            <!-- ARCHIVE SECTION -->
             <section id="archive-section" class="admin-section" style="display: none;">
                 <div class="archive-grid">
                     <div class="card">

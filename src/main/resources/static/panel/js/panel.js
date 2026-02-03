@@ -324,6 +324,8 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch('/admin/movies')
             .then(res => res.json())
             .then(movies => {
+                window.currentMovies = movies;
+                updateDashboardStats();
                 const tbody = document.querySelector('#movieTable tbody');
                 tbody.innerHTML = '';
                 movies.forEach(movie => {
@@ -551,6 +553,9 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch('/admin/series')
             .then(res => res.json())
             .then(seriesList => {
+                window.currentSeries = seriesList;
+                updateDashboardStats(); // Update stats immediately after fetch
+
                 const container = document.getElementById('seriesAccordion');
                 const cardGrid = document.getElementById('seriesCardGrid');
                 const searchFilter = document.getElementById('seriesSearchFilter');
@@ -1004,4 +1009,32 @@ document.addEventListener('DOMContentLoaded', function () {
 
     closeModalBtn.onclick = () => { tmdbModal.style.display = 'none'; };
     window.onclick = (e) => { if (e.target == tmdbModal) tmdbModal.style.display = 'none'; };
+
+    /**
+     * DASHBOARD STATS CALCULATOR
+     * Calculates totals from window.currentMovies and window.currentSeries
+     */
+    function updateDashboardStats() {
+        // Movies
+        const movieCount = window.currentMovies ? window.currentMovies.length : 0;
+        const movieEl = document.getElementById('statTotalMovies');
+        if (movieEl) movieEl.innerText = movieCount;
+
+        // Series
+        const seriesCount = window.currentSeries ? window.currentSeries.length : 0;
+        const seriesEl = document.getElementById('statTotalSeries');
+        if (seriesEl) seriesEl.innerText = seriesCount;
+
+        // Episodes
+        let episodeCount = 0;
+        if (window.currentSeries) {
+            window.currentSeries.forEach(s => {
+                // Parse XML to count episodes
+                const episodes = parseEpisodesFromXML(s.xmlData, "", "", "", "", "");
+                episodeCount += episodes.length;
+            });
+        }
+        const epEl = document.getElementById('statTotalEpisodes');
+        if (epEl) epEl.innerText = episodeCount;
+    }
 });
