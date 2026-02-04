@@ -26,7 +26,7 @@ public class MediaController {
     private static final long VIDEO_CHUNK_SIZE = 1024 * 1024; // 1MB
 
     // Desteklenen resim formatları
-    private static final String[] SUPPORTED_IMAGE_EXTENSIONS = {".webp", ".jpg", ".jpeg", ".png"};
+    private static final String[] SUPPORTED_IMAGE_EXTENSIONS = { ".jpg", ".jpeg", ".png", ".webp" };
 
     // --- PROPERTY DOSYASINDAN GELEN YOLLAR ---
 
@@ -53,7 +53,7 @@ public class MediaController {
 
     // --- 1. STATİK RESİM SUNUCUSU ---
     @GetMapping("/static/image/{imageName:.+}")
-    public ResponseEntity<Resource> getStaticImage(@PathVariable String imageName) {
+    public ResponseEntity<Resource> getStaticImage(@PathVariable("imageName") String imageName) {
         logger.debug("Requesting static image: {}", imageName);
 
         try {
@@ -81,7 +81,7 @@ public class MediaController {
     // --- 2. VİDEO STREAMING (Movies, Soap Operas, Trailers) ---
     @GetMapping("/video/{id}")
     public ResponseEntity<ResourceRegion> getVideo(
-            @PathVariable UUID id,
+            @PathVariable("id") UUID id,
             @RequestHeader HttpHeaders headers) {
 
         logger.debug("Requesting video for id={}", id);
@@ -119,15 +119,15 @@ public class MediaController {
                     .header(HttpHeaders.ACCEPT_RANGES, "bytes")
                     .body(region);
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.error("Error serving video for id {}: {}", id, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException("VIDEO_ERROR: " + e.getMessage());
         }
     }
 
     // --- 3. DİNAMİK RESİM (Thumbnail/Poster) SUNUCUSU ---
     @GetMapping("/image/{id}")
-    public ResponseEntity<Resource> getImage(@PathVariable UUID id) {
+    public ResponseEntity<Resource> getImage(@PathVariable("id") UUID id) {
         logger.debug("Requesting image for id={}", id);
 
         try {
@@ -164,7 +164,7 @@ public class MediaController {
 
     // --- 4. İZLENME SAYISI ARTIRMA ---
     @PostMapping("/{id}/increment-view")
-    public ResponseEntity<Void> incrementViewCount(@PathVariable UUID id) {
+    public ResponseEntity<Void> incrementViewCount(@PathVariable("id") UUID id) {
         try {
             // Stored Procedure çağrısı
             int updatedRows = jdbcTemplate.update("EXEC IncrementViewCount @ID = ?", id.toString());
@@ -182,15 +182,18 @@ public class MediaController {
      * application.properties dosyasındaki doğru yolu eşleştirir.
      */
     private Path getBasePathForCategory(String category) {
-        if (category == null) return null;
+        if (category == null)
+            return null;
 
         // Veritabanından dönen string değerlerine göre eşleştirme
-        // Not: DB'den dönen değerlerin 'movie', 'soap_opera', 'trailer' olduğu varsayılmıştır.
+        // Not: DB'den dönen değerlerin 'movie', 'soap_opera', 'trailer' olduğu
+        // varsayılmıştır.
         switch (category.toLowerCase()) {
             case "movie":
                 return Paths.get(moviesPath).toAbsolutePath().normalize();
             case "soap_opera": // DB'den 'soap-opera' veya 'soap_opera' dönebilir, kontrol edin
             case "soap-opera":
+            case "soapopera":
             case "series":
                 return Paths.get(soapOperasPath).toAbsolutePath().normalize();
             case "trailer":
@@ -229,7 +232,8 @@ public class MediaController {
                 .body(resource);
     }
 
-    private ResourceRegion getResourceRegion(UrlResource resource, HttpHeaders headers, long contentLength) throws IOException {
+    private ResourceRegion getResourceRegion(UrlResource resource, HttpHeaders headers, long contentLength)
+            throws IOException {
         String range = headers.getFirst(HttpHeaders.RANGE);
         if (range == null || range.isEmpty()) {
             return new ResourceRegion(resource, 0, Math.min(VIDEO_CHUNK_SIZE, contentLength));
@@ -238,7 +242,8 @@ public class MediaController {
         try {
             String[] ranges = range.replace("bytes=", "").split("-");
             long start = Long.parseLong(ranges[0]);
-            if (start >= contentLength) return new ResourceRegion(resource, 0, Math.min(VIDEO_CHUNK_SIZE, contentLength));
+            if (start >= contentLength)
+                return new ResourceRegion(resource, 0, Math.min(VIDEO_CHUNK_SIZE, contentLength));
 
             long end = ranges.length > 1 && !ranges[1].isEmpty()
                     ? Math.min(Long.parseLong(ranges[1]), contentLength - 1)
@@ -252,18 +257,24 @@ public class MediaController {
 
     private MediaType determineMediaType(Path path) throws IOException {
         String pathStr = path.toString();
-        if (mediaTypeCache.containsKey(pathStr)) return mediaTypeCache.get(pathStr);
+        if (mediaTypeCache.containsKey(pathStr))
+            return mediaTypeCache.get(pathStr);
 
         String contentType = Files.probeContentType(path);
-        MediaType mediaType = (contentType != null) ? MediaType.parseMediaType(contentType) : MediaType.APPLICATION_OCTET_STREAM;
+        MediaType mediaType = (contentType != null) ? MediaType.parseMediaType(contentType)
+                : MediaType.APPLICATION_OCTET_STREAM;
 
         // Fallback checks (Dosya uzantısına göre manuel belirleme)
         if (contentType == null) {
             String filename = path.getFileName().toString().toLowerCase();
-            if (filename.endsWith(".mp4")) mediaType = MediaType.valueOf("video/mp4");
-            else if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) mediaType = MediaType.IMAGE_JPEG;
-            else if (filename.endsWith(".png")) mediaType = MediaType.IMAGE_PNG;
-            else if (filename.endsWith(".webp")) mediaType = MediaType.valueOf("image/webp");
+            if (filename.endsWith(".mp4"))
+                mediaType = MediaType.valueOf("video/mp4");
+            else if (filename.endsWith(".jpg") || filename.endsWith(".jpeg"))
+                mediaType = MediaType.IMAGE_JPEG;
+            else if (filename.endsWith(".png"))
+                mediaType = MediaType.IMAGE_PNG;
+            else if (filename.endsWith(".webp"))
+                mediaType = MediaType.valueOf("image/webp");
         }
 
         mediaTypeCache.put(pathStr, mediaType);

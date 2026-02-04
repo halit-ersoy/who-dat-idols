@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,159 +9,409 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --bg-main: #121212;
-            --bg-card: #181818;
             --primary: #1ed760;
             --primary-hover: #1fdf64;
             --text-main: #ffffff;
             --text-dim: #b3b3b3;
-            --border: #282828;
-            --danger: #e91e63;
+            --danger: #ff4b4b;
         }
 
         body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
+            margin: 0;
+            padding: 0;
             font-family: 'Montserrat', sans-serif;
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
+            overflow: hidden;
+            background: #000;
+            color: var(--text-main);
+            position: relative;
         }
 
-        .login-container {
-            background-color: var(--bg-card);
-            padding: 40px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
+        /* Dynamic Background */
+        .background {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            max-width: 400px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at 15% 50%, rgba(30, 215, 96, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(138, 43, 226, 0.08), transparent 25%);
+            animation: bgShift 15s ease-in-out infinite alternate;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.6;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .orb-1 {
+            width: 300px;
+            height: 300px;
+            background: #1ed760;
+            top: -50px;
+            left: -50px;
+            animation-delay: 0s;
+        }
+
+        .orb-2 {
+            width: 400px;
+            height: 400px;
+            background: #8e44ad;
+            bottom: -100px;
+            right: -100px;
+            animation-delay: -5s;
+        }
+
+        .orb-3 {
+            width: 200px;
+            height: 200px;
+            background: #3498db;
+            top: 40%;
+            left: 60%;
+            animation-delay: -10s;
+            opacity: 0.4;
+        }
+
+        @keyframes bgShift {
+            0% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(1.1);
+            }
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translate(0, 0);
+            }
+
+            33% {
+                transform: translate(30px, -50px);
+            }
+
+            66% {
+                transform: translate(-20px, 20px);
+            }
+        }
+
+        /* Glassmorphism Card */
+        .login-container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 50px 40px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             text-align: center;
+            transform: translateY(30px);
+            opacity: 0;
+            animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes slideUp {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         .logo {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 20px;
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 0%, var(--primary) 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 30px;
+            letter-spacing: -1px;
+            display: inline-block;
         }
 
         h2 {
-            margin-bottom: 30px;
-            font-size: 1.5rem;
-            color: var(--text-main);
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 0.85rem;
+            margin-bottom: 40px;
+            font-size: 1.1rem;
             color: var(--text-dim);
-            font-weight: 600;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Form Styling */
+        .form-group {
+            position: relative;
+            margin-bottom: 25px;
+            text-align: left;
         }
 
         .form-group input {
             width: 100%;
-            padding: 12px 16px;
-            background-color: #2a2a2a;
-            border: 1px solid transparent;
-            border-radius: 4px;
+            padding: 15px 0;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
             color: #fff;
+            font-size: 1rem;
             font-family: inherit;
-            transition: all 0.2s ease;
+            outline: none;
+            transition: all 0.3s ease;
             box-sizing: border-box;
         }
 
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--primary);
-            background-color: #333;
+        .form-group label {
+            position: absolute;
+            top: 15px;
+            left: 0;
+            color: var(--text-dim);
+            font-size: 1rem;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group input:valid {
+            border-bottom-color: var(--primary);
+        }
+
+        .form-group input:focus+label,
+        .form-group input:valid+label {
+            top: -10px;
+            font-size: 0.8rem;
+            color: var(--primary);
         }
 
         .btn-login {
             width: 100%;
-            padding: 14px;
-            background-color: var(--primary);
+            padding: 16px;
+            background: var(--primary);
             color: #000;
             border: none;
             border-radius: 50px;
             font-weight: 700;
             font-size: 1rem;
             cursor: pointer;
-            transition: all 0.2s ease;
-            margin-top: 10px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin-top: 20px;
             text-transform: uppercase;
             letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .btn-login::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.3s ease;
+            z-index: -1;
         }
 
         .btn-login:hover {
-            background-color: var(--primary-hover);
-            transform: scale(1.02);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(30, 215, 96, 0.3);
+        }
+
+        .btn-login:hover::after {
+            transform: scaleX(1);
+            transform-origin: left;
         }
 
         .error-message {
-            background-color: rgba(233, 30, 99, 0.1);
+            background: rgba(255, 75, 75, 0.1);
+            border: 1px solid rgba(255, 75, 75, 0.2);
             color: var(--danger);
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
             font-size: 0.9rem;
             display: none;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
         }
 
         .back-link {
-            display: block;
-            margin-top: 25px;
+            display: inline-flex;
+            align-items: center;
+            margin-top: 30px;
             color: var(--text-dim);
             text-decoration: none;
             font-size: 0.85rem;
-            transition: color 0.2s ease;
+            transition: all 0.3s ease;
+            padding: 8px 16px;
+            border-radius: 20px;
+        }
+
+        .back-link i {
+            margin-right: 8px;
+            transition: transform 0.3s ease;
         }
 
         .back-link:hover {
-            color: var(--primary);
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .back-link:hover i {
+            transform: translateX(-3px);
+        }
+
+        /* Particle canvas behind everything */
+        #particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
         }
     </style>
 </head>
+
 <body>
 
-<div class="login-container">
-    <div class="logo">WDI</div>
-    <h2>Admin Girişi</h2>
+    <div class="background"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
 
-    <div id="error-box" class="error-message">
-        <i class="fas fa-exclamation-circle"></i> Geçersiz kullanıcı adı veya şifre.
+    <!-- Canvas for subtle particle effect -->
+    <canvas id="particles"></canvas>
+
+    <div class="login-container">
+        <div class="logo">WDI</div>
+        <h2>Admin Access Portal</h2>
+
+        <div id="error-box" class="error-message">
+            <i class="fas fa-exclamation-circle"></i> Erişim reddedildi. Bilgilerini kontrol et.
+        </div>
+
+        <form action="/login-admin" method="POST">
+            <div class="form-group">
+                <input type="text" id="username" name="username" required autocomplete="off">
+                <label for="username">Kullanıcı Adı</label>
+            </div>
+            <div class="form-group">
+                <input type="password" id="password" name="password" required>
+                <label for="password">Şifre</label>
+            </div>
+            <button type="submit" class="btn-login">Sisteme Gir</button>
+        </form>
+
+        <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Anasayfa</a>
     </div>
 
-    <form action="/login-admin" method="POST">
-        <div class="form-group">
-            <label for="username">Kullanıcı Adı</label>
-            <input type="text" id="username" name="username" required>
-        </div>
-        <div class="form-group">
-            <label for="password">Şifre</label>
-            <input type="password" id="password" name="password" required>
-        </div>
-        <button type="submit" class="btn-login">GİRİŞ YAP</button>
-    </form>
+    <script>
+        // URL Error Check
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('error')) {
+            const errorBox = document.getElementById('error-box');
+            errorBox.style.display = 'block';
+        }
 
-    <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Anasayfaya Dön</a>
-</div>
+        // Simple Particle Effect
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
 
-<script>
-    // URL'den hata parametresini kontrol et
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('error')) {
-        document.getElementById('error-box').style.display = 'block';
-    }
-</script>
+        let width, height;
+        let particles = [];
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.size = Math.random() * 2;
+                this.alpha = Math.random() * 0.5;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.x < 0) this.x = width;
+                if (this.x > width) this.x = 0;
+                if (this.y < 0) this.y = height;
+                if (this.y > height) this.y = 0;
+            }
+
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function init() {
+            resize();
+            for (let i = 0; i < 50; i++) {
+                particles.push(new Particle());
+            }
+            animate();
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', () => {
+            resize();
+            particles = [];
+            init();
+        });
+
+        init();
+    </script>
 
 </body>
+
 </html>

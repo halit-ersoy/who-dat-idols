@@ -18,7 +18,7 @@ public class TvMazeController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<Map<String, Object>>> search(@RequestParam String query) {
+    public ResponseEntity<List<Map<String, Object>>> search(@RequestParam("query") String query) {
         try {
             List<Map<String, Object>> result = tvMazeService.searchSeries(query);
             return ResponseEntity.ok(result);
@@ -29,7 +29,7 @@ public class TvMazeController {
     }
 
     @GetMapping("/details")
-    public ResponseEntity<Map<String, Object>> getDetails(@RequestParam Integer id) {
+    public ResponseEntity<Map<String, Object>> getDetails(@RequestParam("id") Integer id) {
         try {
             return ResponseEntity.ok(tvMazeService.getSeriesDetails(id));
         } catch (Exception e) {

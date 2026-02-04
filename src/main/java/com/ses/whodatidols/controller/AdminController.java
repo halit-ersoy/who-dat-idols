@@ -87,7 +87,7 @@ public class AdminController {
     }
 
     @GetMapping("/series/check")
-    public ResponseEntity<Map<String, Boolean>> checkSeriesExists(@RequestParam String name) {
+    public ResponseEntity<Map<String, Boolean>> checkSeriesExists(@RequestParam("name") String name) {
         boolean exists = soapOperaService.findSeriesByName(name) != null;
         return ResponseEntity.ok(Map.of("exists", exists));
     }
@@ -375,7 +375,7 @@ public class AdminController {
             Files.deleteIfExists(uploadPath.resolve(id.toString() + ".mp4"));
 
             // Resimleri sil
-            String[] extensions = { ".webp", ".jpg", ".jpeg", ".png" };
+            String[] extensions = { ".jpg", ".jpeg", ".png", ".webp" };
             for (String ext : extensions) {
                 Files.deleteIfExists(uploadPath.resolve(id.toString() + ext));
             }
@@ -394,7 +394,7 @@ public class AdminController {
                     .normalize();
             Path targetBase = Paths.get(heroVideosPath).toAbsolutePath().normalize();
 
-            String[] extensions = { ".webp", ".jpg", ".jpeg", ".png" };
+            String[] extensions = { ".jpg", ".jpeg", ".png", ".webp" };
             for (String ext : extensions) {
                 Path sourceFile = sourceBase.resolve(contentId.toString() + ext);
                 if (Files.exists(sourceFile)) {

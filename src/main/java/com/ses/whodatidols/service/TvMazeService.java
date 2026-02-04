@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -14,10 +15,10 @@ public class TvMazeService {
     private final RestTemplate restTemplate = new RestTemplate();
 
     public List<Map<String, Object>> searchSeries(String query) {
-        String url = UriComponentsBuilder.fromHttpUrl(BASE_URL + "/search/shows")
+        URI url = UriComponentsBuilder.fromHttpUrl(BASE_URL + "/search/shows")
                 .queryParam("q", query)
                 .build()
-                .toUriString();
+                .toUri();
 
         try {
             return restTemplate.getForObject(url, List.class);
@@ -35,7 +36,7 @@ public class TvMazeService {
         if (imageUrl == null || imageUrl.isEmpty())
             return null;
         try {
-            return restTemplate.getForObject(imageUrl, byte[].class);
+            return restTemplate.getForObject(new URI(imageUrl), byte[].class);
         } catch (Exception e) {
             System.err.println("Resim indirilemedi: " + e.getMessage());
             return null;

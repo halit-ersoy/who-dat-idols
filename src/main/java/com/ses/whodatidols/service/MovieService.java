@@ -2,7 +2,8 @@ package com.ses.whodatidols.service;
 
 import com.ses.whodatidols.model.Movie;
 import com.ses.whodatidols.repository.MovieRepository;
-import com.ses.whodatidols.util.FFmpegUtils; // Yeni import
+import com.ses.whodatidols.util.FFmpegUtils;
+import com.ses.whodatidols.util.ImageUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -116,7 +117,7 @@ public class MovieService {
             Files.deleteIfExists(uploadPath.resolve(id.toString() + ".mp4"));
 
             // Resimleri sil
-            String[] supportedExtensions = { ".webp", ".jpg", ".jpeg", ".png" };
+            String[] supportedExtensions = { ".jpg", ".jpeg", ".png", ".webp" };
             for (String ext : supportedExtensions) {
                 Files.deleteIfExists(uploadPath.resolve(id.toString() + ext));
             }
@@ -136,26 +137,21 @@ public class MovieService {
             Files.deleteIfExists(uploadPath.resolve(id.toString() + ext));
         }
 
-        // Geçici bir dosya oluşturup oraya kaydedelim, sonra WebP'ye çevirelim
-        String originalExt = getExtension(image.getOriginalFilename());
-        Path tempPath = uploadPath.resolve(id.toString() + "_temp" + originalExt);
-        Files.copy(image.getInputStream(), tempPath, StandardCopyOption.REPLACE_EXISTING);
-
-        Path finalPath = uploadPath.resolve(id.toString() + ".webp");
+        Path finalPath = uploadPath.resolve(id.toString() + ".jpg");
         try {
-            FFmpegUtils.convertImageToWebP(tempPath.toString(), finalPath.toString());
+            ImageUtils.saveAsJpg(image.getInputStream(), finalPath);
         } catch (Exception e) {
-            System.err.println("WebP dönüşüm hatası, ham dosya kullanılıyor: " + e.getMessage());
-            Files.move(tempPath, uploadPath.resolve(id.toString() + originalExt), StandardCopyOption.REPLACE_EXISTING);
-        } finally {
-            Files.deleteIfExists(tempPath);
+            System.err.println("JPG dönüşüm hatası: " + e.getMessage());
+            // DEBUG: Throw exception to see why it fails
+            throw new RuntimeException("JPG_CONVERSION_ERROR_UPLOAD: " + e.getMessage(), e);
+            // Fallback removed temporarily
+            /*
+             * String originalExt = getExtension(image.getOriginalFilename());
+             * Files.copy(image.getInputStream(), uploadPath.resolve(id.toString() +
+             * originalExt),
+             * StandardCopyOption.REPLACE_EXISTING);
+             */
         }
-    }
-
-    private String getExtension(String fileName) {
-        if (fileName == null || !fileName.contains("."))
-            return ".jpg";
-        return fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
     }
 
     public void saveImageFromUrl(UUID id, String imageUrl) throws IOException {
@@ -173,23 +169,17 @@ public class MovieService {
             Files.deleteIfExists(uploadPath.resolve(id.toString() + ext));
         }
 
-        String extension = ".jpg";
-        if (imageUrl.toLowerCase().endsWith(".png"))
-            extension = ".png";
-        else if (imageUrl.toLowerCase().endsWith(".webp"))
-            return; // already webp? usually unlikely from url, but let's handle
-
-        Path tempPath = uploadPath.resolve(id.toString() + "_temp" + extension);
-        Files.write(tempPath, imageBytes);
-
-        Path finalPath = uploadPath.resolve(id.toString() + ".webp");
+        Path finalPath = uploadPath.resolve(id.toString() + ".jpg");
         try {
-            FFmpegUtils.convertImageToWebP(tempPath.toString(), finalPath.toString());
+            ImageUtils.saveImageFromUrlAsJpg(imageUrl, finalPath);
         } catch (Exception e) {
-            System.err.println("WebP dönüşüm hatası (URL): " + e.getMessage());
-            Files.move(tempPath, uploadPath.resolve(id.toString() + extension), StandardCopyOption.REPLACE_EXISTING);
-        } finally {
-            Files.deleteIfExists(tempPath);
+            System.err.println("JPG dönüşüm hatası (URL): " + e.getMessage());
+            // DEBUG: Throw exception
+            throw new RuntimeException("JPG_CONVERSION_ERROR_URL: " + e.getMessage(), e);
+            /*
+             * // Fallback: Save bytes as jpg if conversion fails
+             * Files.write(uploadPath.resolve(id.toString() + ".jpg"), imageBytes);
+             */
         }
     }
 }
