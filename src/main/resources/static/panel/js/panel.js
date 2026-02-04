@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function () {
+﻿document.addEventListener('DOMContentLoaded', function () {
 
     // Sidebar navigation logic
     const navLinks = document.querySelectorAll('.admin-nav .nav-link');
@@ -37,16 +37,121 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        preview.innerHTML = `<img src="${urlOrSource}" alt="Poster Önizleme">`;
+        preview.innerHTML = `<img src="${urlOrSource}" alt="Poster Ã–nizleme">`;
     }
 
-    // Sayfa açılınca mevcut listeleri çek
+    // Sayfa aÃ§Ä±lÄ±nca mevcut listeleri Ã§ek
     fetchHeroVideos();
     fetchMovies();
     fetchSeries();
 
     /* ===========================================================
-       HERO YÖNETİMİ
+       TOPLU SÄ°LME (BULK DELETE) YÃ–NETÄ°MÄ°
+       =========================================================== */
+    let selectedMovieIds = new Set();
+    let selectedSeriesIds = new Set();
+    const btnDeleteMovies = document.getElementById('btnDeleteSelectedMovies');
+    const btnDeleteSeries = document.getElementById('btnDeleteSelectedSeries');
+    const spanCountMovies = document.getElementById('countSelectedMovies');
+    const spanCountSeries = document.getElementById('countSelectedSeries');
+    const checkSelectAllMovies = document.getElementById('selectAllMovies');
+    const checkSelectAllSeries = document.getElementById('selectAllSeries');
+
+    // -- MOVIE LOGIC --
+    if (checkSelectAllMovies) {
+        checkSelectAllMovies.addEventListener('change', function () {
+            const shouldSelectAll = this.checked;
+            const checkboxes = document.querySelectorAll('.movie-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = shouldSelectAll;
+                toggleMovieSelection(cb.value, shouldSelectAll);
+            });
+        });
+    }
+
+    window.toggleMovieSelection = function (id, isChecked) {
+        if (isChecked) selectedMovieIds.add(id);
+        else selectedMovieIds.delete(id);
+        updateBulkUI();
+    };
+
+    // -- SERIES LOGIC --
+    if (checkSelectAllSeries) {
+        checkSelectAllSeries.addEventListener('change', function () {
+            const shouldSelectAll = this.checked;
+            const checkboxes = document.querySelectorAll('.series-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = shouldSelectAll;
+                toggleSeriesSelection(cb.value, shouldSelectAll);
+            });
+        });
+    }
+    window.toggleSeriesSelection = function (id, isChecked) {
+        if (isChecked) selectedSeriesIds.add(id);
+        else selectedSeriesIds.delete(id);
+        updateBulkUI();
+    };
+
+    function updateBulkUI() {
+        // Movies
+        spanCountMovies.innerText = selectedMovieIds.size;
+        btnDeleteMovies.style.display = selectedMovieIds.size > 0 ? 'inline-block' : 'none';
+
+        // Series
+        spanCountSeries.innerText = selectedSeriesIds.size;
+        btnDeleteSeries.style.display = selectedSeriesIds.size > 0 ? 'inline-block' : 'none';
+
+        // Select All Checkbox state (Movies)
+        if (checkSelectAllMovies) {
+            const allMovies = document.querySelectorAll('.movie-checkbox');
+            if (allMovies.length > 0 && selectedMovieIds.size === allMovies.length) checkSelectAllMovies.checked = true;
+            else checkSelectAllMovies.checked = false;
+        }
+
+        // Select All Checkbox state (Series)
+        if (checkSelectAllSeries) {
+            const allSeries = document.querySelectorAll('.series-checkbox');
+            if (allSeries.length > 0 && selectedSeriesIds.size === allSeries.length) checkSelectAllSeries.checked = true;
+            else checkSelectAllSeries.checked = false;
+        }
+    }
+
+    if (btnDeleteMovies) {
+        btnDeleteMovies.addEventListener('click', function () {
+            if (!confirm(`${selectedMovieIds.size} adet filmi silmek istediÄŸinize emin misiniz?`)) return;
+
+            fetch('/admin/delete-movies-bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(Array.from(selectedMovieIds))
+            }).then(res => res.text()).then(msg => {
+                alert(msg);
+                selectedMovieIds.clear();
+                updateBulkUI();
+                fetchMovies(); // Tabloyu yenile
+            }).catch(err => alert("Hata: " + err));
+        });
+    }
+
+    if (btnDeleteSeries) {
+        btnDeleteSeries.addEventListener('click', function () {
+            if (!confirm(`${selectedSeriesIds.size} adet diziyi (ve tÃ¼m bÃ¶lÃ¼mlerini) silmek istediÄŸinize emin misiniz?`)) return;
+
+            fetch('/admin/delete-series-bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(Array.from(selectedSeriesIds))
+            }).then(res => res.text()).then(msg => {
+                alert(msg);
+                selectedSeriesIds.clear();
+                updateBulkUI();
+                fetchSeries(); // Listeyi yenile
+            }).catch(err => alert("Hata: " + err));
+        });
+    }
+
+    /* ===========================================================
+       HERO YÃ–NETÄ°MÄ°
        =========================================================== */
     const heroForm = document.getElementById('heroForm');
     const heroSubmitBtn = document.getElementById('heroSubmitBtn');
@@ -84,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function renderHeroSearchResults(results) {
         heroSearchResults.innerHTML = '';
         if (results.length === 0) {
-            heroSearchResults.innerHTML = '<div class="search-result-item">Sonuç bulunamadı</div>';
+            heroSearchResults.innerHTML = '<div class="search-result-item">SonuÃ§ bulunamadÄ±</div>';
         } else {
             results.slice(0, 10).forEach(item => {
                 const div = document.createElement('div');
@@ -130,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const file = document.getElementById('heroFile').files[0];
 
         if (!contentId) {
-            alert("Lütfen arşivden bir içerik seçin!");
+            alert("LÃ¼tfen arÅŸivden bir iÃ§erik seÃ§in!");
             return;
         }
 
@@ -156,7 +261,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 heroes.forEach((hero, index) => {
                     const tr = document.createElement('tr');
                     tr.dataset.id = hero.ID || hero.id;
-                    const name = hero.name || hero.Name || 'Adsız';
+                    const name = hero.name || hero.Name || 'AdsÄ±z';
                     const type = hero.type || hero.Type || '-';
                     const id = hero.ID || hero.id;
                     const category = hero.category || hero.Category || '-';
@@ -172,14 +277,14 @@ document.addEventListener('DOMContentLoaded', function () {
                         <td>${category}</td>
                         <td>${type}</td>
                         <td>
-                            <button class="btn btn-sm btn-danger" onclick='deleteHero("${id}", "${name.replace(/'/g, "\\'")}")'><i class="fas fa-trash"></i> SİL</button>
+                            <button class="btn btn-sm btn-danger" onclick='deleteHero("${id}", "${name.replace(/'/g, "\\'")}")'><i class="fas fa-trash"></i> SÄ°L</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
                 });
                 window.currentHeroes = heroes;
             })
-            .catch(err => console.error("Hero listesi hatası:", err));
+            .catch(err => console.error("Hero listesi hatasÄ±:", err));
     }
 
     window.moveHero = function (index, direction) {
@@ -204,7 +309,7 @@ document.addEventListener('DOMContentLoaded', function () {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(idList)
         }).then(res => {
-            if (!res.ok) alert("Sıralama güncellenirken hata oluştu.");
+            if (!res.ok) alert("SÄ±ralama gÃ¼ncellenirken hata oluÅŸtu.");
         });
     };
 
@@ -214,7 +319,7 @@ document.addEventListener('DOMContentLoaded', function () {
         heroes.forEach((hero, index) => {
             const tr = document.createElement('tr');
             tr.dataset.id = hero.ID || hero.id;
-            const name = hero.name || hero.Name || 'Adsız';
+            const name = hero.name || hero.Name || 'AdsÄ±z';
             const type = hero.type || hero.Type || '-';
             const id = hero.ID || hero.id;
             const category = hero.category || hero.Category || '-';
@@ -230,7 +335,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td>${category}</td>
                 <td>${type}</td>
                 <td>
-                    <button class="btn btn-sm btn-danger" onclick='deleteHero("${id}", "${name.replace(/'/g, "\\'")}")'><i class="fas fa-trash"></i> SİL</button>
+                    <button class="btn btn-sm btn-danger" onclick='deleteHero("${id}", "${name.replace(/'/g, "\\'")}")'><i class="fas fa-trash"></i> SÄ°L</button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -238,16 +343,16 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     window.deleteHero = function (id, name) {
-        if (!confirm(`'${name}' hero içeriğini silmek istediğinize emin misiniz?`)) return;
+        if (!confirm(`'${name}' hero iÃ§eriÄŸini silmek istediÄŸinize emin misiniz?`)) return;
         fetch(`/admin/delete-hero?id=${id}`, { method: 'DELETE' })
             .then(res => {
-                if (res.ok) { alert("Başarıyla silindi."); fetchHeroVideos(); }
-                else alert("Hata oluştu.");
+                if (res.ok) { alert("BaÅŸarÄ±yla silindi."); fetchHeroVideos(); }
+                else alert("Hata oluÅŸtu.");
             });
     };
 
     /* ===========================================================
-       FİLM YÖNETİMİ
+       FÄ°LM YÃ–NETÄ°MÄ°
        =========================================================== */
     const movieForm = document.getElementById('movieForm');
     const movieCancelBtn = document.getElementById('cancelMovieEditBtn');
@@ -294,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 formData.append('file', movieFileInput.files[0]);
             }
 
-            movieSubmitBtn.innerText = "GÜNCELLENİYOR...";
+            movieSubmitBtn.innerText = "GÃœNCELLENÄ°YOR...";
             movieSubmitBtn.disabled = true;
 
             fetch('/admin/update-movie', {
@@ -331,18 +436,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 movies.forEach(movie => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
+                        <td><input type="checkbox" class="movie-checkbox" value="${movie.id}" onchange="toggleMovieSelection('${movie.id}', this.checked)"></td>
                         <td style="font-weight: 600;">${movie.name}</td>
                         <td>${movie.year}</td>
                         <td style="color: var(--text-dim);">${movie.category}</td>
                         <td>
-                            <button class="btn btn-sm btn-edit" onclick='editMovie(${JSON.stringify(movie).replace(/'/g, "&#39;")})'><i class="fas fa-edit"></i> DÜZENLE</button>
-                            <button class="btn btn-sm btn-danger" onclick='deleteMovie("${movie.id}", "${movie.name.replace(/'/g, "\\'")}")'><i class="fas fa-trash"></i> SİL</button>
+                            <button class="btn btn-sm btn-edit" onclick='editMovie(${JSON.stringify(movie).replace(/'/g, "&#39;")})'><i class="fas fa-edit"></i> DÃœZENLE</button>
+                            <button class="btn btn-sm btn-danger" onclick='deleteMovie("${movie.id}", "${movie.name.replace(/'/g, "\\'")}")'><i class="fas fa-trash"></i> SÄ°L</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
                 });
             })
-            .catch(err => console.error("Film listesi hatası:", err));
+            .catch(err => console.error("Film listesi hatasÄ±:", err));
     }
 
     window.editMovie = function (movie) {
@@ -353,7 +459,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('movieYear').value = movie.year;
         document.getElementById('movieLanguage').value = movie.language;
 
-        movieSubmitBtn.innerText = "DEĞİŞİKLİKLERİ KAYDET";
+        movieSubmitBtn.innerText = "DEÄžÄ°ÅžÄ°KLÄ°KLERÄ° KAYDET";
         movieSubmitBtn.classList.remove('btn-primary');
         movieSubmitBtn.style.backgroundColor = "#ffc107";
         movieSubmitBtn.style.color = "#000";
@@ -366,7 +472,7 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     function updateMovie(data) {
-        movieSubmitBtn.innerText = "GÜNCELLENİYOR...";
+        movieSubmitBtn.innerText = "GÃœNCELLENÄ°YOR...";
         movieSubmitBtn.disabled = true;
         fetch('/admin/update-movie', {
             method: 'POST',
@@ -381,14 +487,14 @@ document.addEventListener('DOMContentLoaded', function () {
     function resetMovieForm() {
         movieForm.reset();
         movieIdInput.value = "";
-        movieSubmitBtn.innerText = "FİLMİ KAYDET";
+        movieSubmitBtn.innerText = "FÄ°LMÄ° KAYDET";
         movieSubmitBtn.classList.add('btn-primary');
         movieSubmitBtn.style.backgroundColor = "";
         movieSubmitBtn.style.color = "";
         movieCancelBtn.style.display = "none";
         movieFileInput.setAttribute('required', 'required');
 
-        // Resim önizlemesi veya dosya adını temizlemek gerekirse buraya eklenebilir
+        // Resim Ã¶nizlemesi veya dosya adÄ±nÄ± temizlemek gerekirse buraya eklenebilir
         if (movieImageInput) movieImageInput.value = "";
         if (moviePosterUrlInput) moviePosterUrlInput.value = "";
         lastFetchedPosterUrl = "";
@@ -396,23 +502,23 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     window.deleteMovie = function (id, name) {
-        if (!confirm(`'${name}' filmini silmek istediğinize emin misiniz?`)) return;
+        if (!confirm(`'${name}' filmini silmek istediÄŸinize emin misiniz?`)) return;
 
         fetch(`/admin/delete-movie?id=${id}`, {
             method: 'DELETE'
         }).then(res => {
             if (res.ok) {
-                alert("Film başarıyla silindi.");
+                alert("Film baÅŸarÄ±yla silindi.");
                 fetchMovies();
             } else {
                 res.text().then(msg => alert("Hata: " + msg));
             }
-        }).catch(err => alert("Silme işlemi sırasında hata oluştu: " + err));
+        }).catch(err => alert("Silme iÅŸlemi sÄ±rasÄ±nda hata oluÅŸtu: " + err));
     };
 
 
     /* ===========================================================
-       DİZİ YÖNETİMİ
+       DÄ°ZÄ° YÃ–NETÄ°MÄ°
        =========================================================== */
     const seriesForm = document.getElementById('seriesForm');
     const seriesIdInput = document.getElementById('seriesId');
@@ -486,7 +592,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const res = await fetch(`/admin/series/check?name=${encodeURIComponent(name)}`);
                 const data = await res.json();
                 if (data.exists) {
-                    alert("Bu isimde bir dizi zaten mevcut! Lütfen 'Mevcut Seriye Ekle' modunu kullanın.");
+                    alert("Bu isimde bir dizi zaten mevcut! LÃ¼tfen 'Mevcut Seriye Ekle' modunu kullanÄ±n.");
                     seriesExistsWarning.style.display = 'block';
                     return;
                 }
@@ -508,7 +614,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 formData.append('file', seriesFileInput.files[0]);
             }
 
-            seriesSubmitBtn.innerText = "GÜNCELLENİYOR...";
+            seriesSubmitBtn.innerText = "GÃœNCELLENÄ°YOR...";
             seriesSubmitBtn.disabled = true;
 
             fetch('/admin/update-series', {
@@ -529,7 +635,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (seriesFileInput.files.length > 0) formData.append('file', seriesFileInput.files[0]);
 
             if (mode === 'existing') {
-                if (!existingId) return alert("Lütfen bir dizi seçin!");
+                if (!existingId) return alert("LÃ¼tfen bir dizi seÃ§in!");
                 formData.append('existingSeriesId', existingId);
                 // No need for name, category etc.
             } else {
@@ -586,7 +692,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <img src="${posterPath}" class="series-card-poster" onerror="this.src='/images/placeholder.webp'">
                         <div class="series-card-info">
                             <div class="series-card-title">${series.name}</div>
-                            <div class="series-card-meta">${series.year || '-'} • ${series.language || '-'}</div>
+                            <div class="series-card-meta">${series.year || '-'} â€¢ ${series.language || '-'}</div>
                         </div>
                     `;
 
@@ -607,9 +713,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     groupDiv.innerHTML = `
                         <div class="series-header" onclick="toggleAccordion(this)">
-                            <div class="series-info">
+                            <div class="series-info" style="display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" class="series-checkbox" value="${series.id}" onclick="event.stopPropagation(); toggleSeriesSelection('${series.id}', this.checked)">
                                 <h3>${series.name}</h3>
-                                <div class="series-meta">
                                     ${series.category || 'Genel'} • ${series.language || '-'} • ${episodeCount} Bölüm
                                 </div>
                             </div>
@@ -704,7 +810,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return parseInt(a.season) - parseInt(b.season);
             });
         } catch (e) {
-            console.error("XML Parse Hatası:", e);
+            console.error("XML Parse HatasÄ±:", e);
             return [];
         }
     }
@@ -732,7 +838,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('seriesSummary').value = series.content || series._content;
         document.getElementById('seriesLanguage').value = series.language;
 
-        setupSeriesEditMode("DİZİ BİLGİSİNİ GÜNCELLE");
+        setupSeriesEditMode("DÄ°ZÄ° BÄ°LGÄ°SÄ°NÄ° GÃœNCELLE");
 
         // Switch to series section
         const seriesLink = document.querySelector('.nav-link[data-section="series-section"]');
@@ -747,7 +853,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('seasonNum').value = ep.season;
         document.getElementById('episodeNum').value = ep.episode;
 
-        alert("Bölüm bilgileri forma kopyalandı.");
+        alert("BÃ¶lÃ¼m bilgileri forma kopyalandÄ±.");
 
         // Switch to series section
         const seriesLink = document.querySelector('.nav-link[data-section="series-section"]');
@@ -764,25 +870,25 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     window.deleteEpisode = function (id) {
-        if (!confirm("Bu bölümü silmek istediğinize emin misiniz?")) return;
+        if (!confirm("Bu bÃ¶lÃ¼mÃ¼ silmek istediÄŸinize emin misiniz?")) return;
         fetch('/admin/delete-episode?id=' + id, { method: 'DELETE' })
             .then(res => {
                 if (res.ok) { fetchSeries(); }
-                else alert("Hata oluştu.");
+                else alert("Hata oluÅŸtu.");
             });
     };
 
     window.deleteSeriesByName = function (name) {
-        if (!confirm("'" + name + "' dizisine ait TÜM BÖLÜMLER silinecek. Emin misiniz?")) return;
+        if (!confirm("'" + name + "' dizisine ait TÃœM BÃ–LÃœMLER silinecek. Emin misiniz?")) return;
         fetch('/admin/delete-series-by-name?name=' + encodeURIComponent(name), { method: 'DELETE' })
             .then(res => {
                 if (res.ok) { fetchSeries(); }
-                else alert("Silme işlemi başarısız oldu.");
+                else alert("Silme iÅŸlemi baÅŸarÄ±sÄ±z oldu.");
             });
     };
 
     function updateSeries(data) {
-        seriesSubmitBtn.innerText = "GÜNCELLENİYOR...";
+        seriesSubmitBtn.innerText = "GÃœNCELLENÄ°YOR...";
         seriesSubmitBtn.disabled = true;
         fetch('/admin/update-series', {
             method: 'POST',
@@ -798,7 +904,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function resetSeriesForm() {
         seriesForm.reset();
         seriesIdInput.value = "";
-        seriesSubmitBtn.innerText = "BÖLÜMÜ / DİZİYİ KAYDET";
+        seriesSubmitBtn.innerText = "BÃ–LÃœMÃœ / DÄ°ZÄ°YÄ° KAYDET";
         seriesSubmitBtn.classList.add('btn-primary');
         seriesSubmitBtn.style.backgroundColor = "";
         seriesSubmitBtn.style.color = "";
@@ -819,7 +925,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     /* ===========================================================
-       ORTAK FONKSİYONLAR
+       ORTAK FONKSÄ°YONLAR
        =========================================================== */
     function uploadDataWithProgress(url, formData, formId, wrapperId, barId, percentId, successCallback) {
         const xhr = new XMLHttpRequest();
@@ -840,16 +946,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (fileSizeMB > 95 && !isBackdoor) {
                 alert(
-                    "⚠️ Cloudflare kalkanları 100MB üzerini engelliyor.\n" +
-                    "Lütfen 'GİZLİ ARKA KAPI' adresine geçiş yapın:\n" +
-                    "➡️ https://uploadozr9x0q3glr158beem49.whodatidols.com:8443/admin/panel"
+                    "âš ï¸ Cloudflare kalkanlarÄ± 100MB Ã¼zerini engelliyor.\n" +
+                    "LÃ¼tfen 'GÄ°ZLÄ° ARKA KAPI' adresine geÃ§iÅŸ yapÄ±n:\n" +
+                    "âž¡ï¸ https://uploadozr9x0q3glr158beem49.whodatidols.com:8443/admin/panel"
                 );
                 return;
             }
         }
 
         btn.disabled = true;
-        btn.innerText = "YÜKLENİYOR...";
+        btn.innerText = "YÃœKLENÄ°YOR...";
         wrapper.style.display = "block";
         bar.style.width = "0%";
         percentText.innerText = "0%";
@@ -860,26 +966,26 @@ document.addEventListener('DOMContentLoaded', function () {
                 bar.style.width = percentComplete + "%";
                 percentText.innerText = percentComplete + "%";
                 if (percentComplete > 99) {
-                    percentText.innerText = "İşleniyor...";
+                    percentText.innerText = "Ä°ÅŸleniyor...";
                 }
             }
         });
 
         xhr.addEventListener("load", function () {
             if (xhr.status === 200) {
-                alert("İşlem Başarılı!\n" + xhr.responseText);
+                alert("Ä°ÅŸlem BaÅŸarÄ±lÄ±!\n" + xhr.responseText);
                 document.getElementById(formId).reset();
                 wrapper.style.display = "none";
                 if (successCallback) successCallback();
             } else {
-                alert("Hata Oluştu: " + xhr.statusText + "\n" + xhr.responseText);
+                alert("Hata OluÅŸtu: " + xhr.statusText + "\n" + xhr.responseText);
             }
             btn.disabled = false;
             btn.innerText = originalBtnText;
         });
 
         xhr.addEventListener("error", function () {
-            alert("Ağ Hatası!");
+            alert("AÄŸ HatasÄ±!");
             btn.disabled = false;
             btn.innerText = originalBtnText;
         });
@@ -889,7 +995,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     /* ===========================================================
-       TVMaze AUTO-FETCH MANTIĞI
+       TVMaze AUTO-FETCH MANTIÄžI
        =========================================================== */
     const tmdbModal = document.getElementById('tmdbModal');
     const tmdbResultsGrid = document.getElementById('tmdbResults');
@@ -899,21 +1005,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.getElementById('fetchMovieBtn').addEventListener('click', () => {
         const query = document.getElementById('movieName').value.trim();
-        if (!query) return alert("Lütfen aramak için bir film adı girin!");
+        if (!query) return alert("LÃ¼tfen aramak iÃ§in bir film adÄ± girin!");
         currentFetchType = 'Movie';
         searchTvMaze(query, 'Movie');
     });
 
     document.getElementById('fetchSeriesBtn').addEventListener('click', () => {
         const query = document.getElementById('seriesName').value.trim();
-        if (!query) return alert("Lütfen aramak için bir dizi adı girin!");
+        if (!query) return alert("LÃ¼tfen aramak iÃ§in bir dizi adÄ± girin!");
         currentFetchType = 'Series';
         searchTvMaze(query, 'Series');
     });
 
     async function searchTvMaze(query, type) {
         console.log("Fetching TVMaze for:", query, "at URL:", `/public/api/tvmaze/search?query=${encodeURIComponent(query)}`);
-        tmdbResultsGrid.innerHTML = '<div class="loading-state">TVMaze taranıyor...</div>';
+        tmdbResultsGrid.innerHTML = '<div class="loading-state">TVMaze taranÄ±yor...</div>';
         tmdbModal.style.display = 'block';
 
         try {
@@ -923,7 +1029,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error("TVMaze Response Error Body:", errorText);
-                throw new Error(errorText || "Sunucu hatası: " + response.status);
+                throw new Error(errorText || "Sunucu hatasÄ±: " + response.status);
             }
             const data = await response.json();
             console.log("TVMaze Data Received:", data);
@@ -931,14 +1037,14 @@ document.addEventListener('DOMContentLoaded', function () {
             renderTvMazeResults(data, type);
         } catch (error) {
             console.error("TVMaze Search Fetch Exception:", error);
-            tmdbResultsGrid.innerHTML = `<div class="loading-state" style="color:var(--danger);">Hata: Veri alınamadı (${error.message})</div>`;
+            tmdbResultsGrid.innerHTML = `<div class="loading-state" style="color:var(--danger);">Hata: Veri alÄ±namadÄ± (${error.message})</div>`;
         }
     }
 
     function renderTvMazeResults(results, type) {
         tmdbResultsGrid.innerHTML = '';
         if (!results || results.length === 0) {
-            tmdbResultsGrid.innerHTML = '<div class="loading-state">Sonuç bulunamadı.</div>';
+            tmdbResultsGrid.innerHTML = '<div class="loading-state">SonuÃ§ bulunamadÄ±.</div>';
             return;
         }
 
@@ -970,7 +1076,7 @@ document.addEventListener('DOMContentLoaded', function () {
             populateFormWithTvMazeData(data, type);
             tmdbModal.style.display = 'none';
         } catch (error) {
-            alert("Detaylar alınırken hata oluştu.");
+            alert("Detaylar alÄ±nÄ±rken hata oluÅŸtu.");
         }
     }
 
@@ -992,8 +1098,8 @@ document.addEventListener('DOMContentLoaded', function () {
             updatePosterPreview('movie', lastFetchedPosterUrl);
 
             // Language matching
-            const langMap = { 'Korean': 'Korece', 'English': 'İngilizce', 'Japanese': 'Japonca', 'Turkish': 'Türkçe' };
-            document.getElementById('movieLanguage').value = langMap[data.language] || 'İngilizce';
+            const langMap = { 'Korean': 'Korece', 'English': 'Ä°ngilizce', 'Japanese': 'Japonca', 'Turkish': 'TÃ¼rkÃ§e' };
+            document.getElementById('movieLanguage').value = langMap[data.language] || 'Ä°ngilizce';
         } else {
             document.getElementById('seriesName').value = data.name;
             document.getElementById('seriesYear').value = data.premiered ? data.premiered.substring(0, 4) : "2025";
@@ -1002,7 +1108,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('seriesImageUrl').value = lastFetchedPosterUrl;
             updatePosterPreview('series', lastFetchedPosterUrl);
 
-            const langMap = { 'Korean': 'Korece', 'Turkish': 'Türkçe', 'English': 'İngilizce', 'Japanese': 'Japonca' };
+            const langMap = { 'Korean': 'Korece', 'Turkish': 'TÃ¼rkÃ§e', 'English': 'Ä°ngilizce', 'Japanese': 'Japonca' };
             document.getElementById('seriesLanguage').value = langMap[data.language] || 'Korece';
         }
     }

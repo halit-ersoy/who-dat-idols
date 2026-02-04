@@ -51,11 +51,20 @@ public class SoapOperaRepository {
     // --- DİZİ (ANA KAYIT) VAR MI KONTROL ET ---
     public SoapOpera findSeriesByName(String name) {
         String sql = "SELECT * FROM [WhoDatIdols].[dbo].[SoapOperas] WHERE name = ?";
-        try {
-            return jdbcTemplate.queryForObject(sql, new SeriesRowMapper(), name);
-        } catch (EmptyResultDataAccessException e) {
+        List<SoapOpera> results = jdbcTemplate.query(sql, new SeriesRowMapper(), name);
+        if (results.isEmpty()) {
             return null;
         }
+        return results.get(0);
+    }
+
+    public SoapOpera findSeriesById(UUID id) {
+        String sql = "SELECT * FROM [WhoDatIdols].[dbo].[SoapOperas] WHERE ID = ?";
+        List<SoapOpera> results = jdbcTemplate.query(sql, new SeriesRowMapper(), id.toString());
+        if (results.isEmpty()) {
+            return null;
+        }
+        return results.get(0);
     }
 
     // --- YENİ DİZİ OLUŞTUR (PARENT) ---
@@ -108,6 +117,11 @@ public class SoapOperaRepository {
         jdbcTemplate.update(sql, name);
     }
 
+    public void deleteSeriesById(UUID id) {
+        String sql = "DELETE FROM [WhoDatIdols].[dbo].[SoapOperas] WHERE ID = ?";
+        jdbcTemplate.update(sql, id.toString());
+    }
+
     // 2. Bölümü ID'ye Göre Sil (Child)
     public void deleteEpisodeById(UUID id) {
         String sql = "DELETE FROM [WhoDatIdols].[dbo].[SoapOpera] WHERE ID = ?";
@@ -129,6 +143,13 @@ public class SoapOperaRepository {
         }
     }
 
+    // --- SON EKLENEN BÖLÜMLERİ GETİR (CHILD TABLE) ---
+    public List<SoapOpera> findRecentEpisodes(int limit) {
+        String sql = "SELECT TOP (?) * FROM [WhoDatIdols].[dbo].[SoapOpera] ORDER BY uploadDate DESC";
+        // 'SoapOperaRowMapper' kullanıyoruz çünkü bu tablo Child (SoapOpera) tablosu
+        return jdbcTemplate.query(sql, new SoapOperaRowMapper(), limit);
+    }
+
     // ==========================================================
     // ROW MAPPERS
     // ==========================================================
@@ -140,13 +161,16 @@ public class SoapOperaRepository {
             soapOpera.setId(UUID.fromString(rs.getString("ID")));
             soapOpera.setName(rs.getString("name"));
             try {
-                soapOpera.setCategory(rs.getString("category"));
+                soapOpera.setTime(rs.getInt("time"));
+                soapOpera.setYear(rs.getInt("year"));
+                if (rs.getTimestamp("uploadDate") != null) {
+                    soapOpera.setUploadDate(rs.getTimestamp("uploadDate").toLocalDateTime());
+                }
             } catch (SQLException e) {
+                // Sütunlar yoksa (Parent tablosuyla karışırsa) yoksay
             }
-            try {
-                soapOpera.setContent(rs.getString("_content"));
-            } catch (SQLException e) {
-            }
+            // Child tablosunda category, _content, country, ... yok.
+            // Ancak SoapOperaRowMapper yukarıda tanımlıydı, ona dikkat edelim.
             return soapOpera;
         }
     }

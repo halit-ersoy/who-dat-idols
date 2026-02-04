@@ -370,11 +370,16 @@
                     <div class="card">
                         <div class="card-header">
                             <h2><i class="fas fa-film"></i> Film Arşivi</h2>
+                            <button id="btnDeleteSelectedMovies" class="btn btn-sm btn-danger"
+                                style="display: none; margin-left: auto;">
+                                <i class="fas fa-trash"></i> Seçilenleri Sil (<span id="countSelectedMovies">0</span>)
+                            </button>
                         </div>
                         <div class="table-container">
                             <table class="admin-table" id="movieTable">
                                 <thead>
                                     <tr>
+                                        <th style="width: 40px;"><input type="checkbox" id="selectAllMovies"></th>
                                         <th>Film</th>
                                         <th>Yıl</th>
                                         <th>Kategori</th>
@@ -388,7 +393,14 @@
 
                     <div class="card">
                         <div class="card-header">
-                            <h2><i class="fas fa-tv"></i> Dizi Arşivi</h2>
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <input type="checkbox" id="selectAllSeries" title="Tüm Dizileri Seç">
+                                <h2><i class="fas fa-tv"></i> Dizi Arşivi</h2>
+                            </div>
+                            <button id="btnDeleteSelectedSeries" class="btn btn-sm btn-danger"
+                                style="display: none; margin-left: auto;">
+                                <i class="fas fa-trash"></i> Seçilenleri Sil (<span id="countSelectedSeries">0</span>)
+                            </button>
                         </div>
                         <div id="seriesAccordion" class="accordion-container">
                             <div class="loading-state">Veriler yükleniyor...</div>

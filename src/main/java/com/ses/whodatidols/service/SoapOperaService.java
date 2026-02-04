@@ -232,6 +232,40 @@ public class SoapOperaService {
         repository.deleteSeriesByName(name);
     }
 
+    @Transactional
+    public void deleteSeriesById(UUID id) {
+        // 1. Diziyi bul
+        SoapOpera series = repository.findSeriesById(id);
+        if (series == null)
+            return;
+
+        // 2. XML'i parse et ve tüm bölüm ID'lerini topla
+        String xml = series.getXmlData();
+        if (xml != null && !xml.isEmpty()) {
+            java.util.regex.Pattern epPattern = java.util.regex.Pattern
+                    .compile("<Episode number=\"\\d+\">([a-fA-F0-9\\-]+)</Episode>");
+            java.util.regex.Matcher matcher = epPattern.matcher(xml);
+
+            while (matcher.find()) {
+                String epUuidStr = matcher.group(1);
+                try {
+                    UUID epId = UUID.fromString(epUuidStr);
+                    // 3. Bölümü ve dosyasını sil
+                    // (deleteEpisodeById metodu XML update etmeye çalışır ama
+                    // biz zaten Parent'ı sileceğimiz için gerek yok, direkt DB ve File silelim)
+
+                    repository.deleteEpisodeById(epId);
+                    deletePhysicalFile(epUuidStr);
+                } catch (IllegalArgumentException e) {
+                    // UUID formatı bozuksa geç
+                }
+            }
+        }
+
+        // 4. Diziyi (Parent) sil
+        repository.deleteSeriesById(id);
+    }
+
     private void deletePhysicalFile(String fileId) {
         try {
             Path filePath = Paths.get(soapOperasPath, fileId + ".mp4").toAbsolutePath().normalize();
@@ -248,16 +282,88 @@ public class SoapOperaService {
         String episodeTag = "<Episode number=\"" + episodeNum + "\">" + episodeUUID + "</Episode>";
 
         if (xml.contains(seasonTag)) {
-            String seasonEndTag = "</Season>";
-            int seasonStartIndex = xml.indexOf(seasonTag);
-            int seasonEndIndex = xml.indexOf(seasonEndTag, seasonStartIndex);
-            String before = xml.substring(0, seasonEndIndex);
-            String after = xml.substring(seasonEndIndex);
+            // Sezon var, içine ekle
+            int seasonIndex = xml.indexOf(seasonTag);
+            int closingSeasonIndex = xml.indexOf("</Season>", seasonIndex);
+
+            // Eğer sezon kapanış etiketi yoksa (hatalı XML), düzeltmeye çalışamayız, sona
+            // eklenir.
+            if (closingSeasonIndex == -1)
+                return xml;
+
+            String before = xml.substring(0, closingSeasonIndex);
+            String after = xml.substring(closingSeasonIndex);
             return before + episodeTag + after;
         } else {
-            String newSeasonBlock = seasonTag + episodeTag + "</Season>";
-            return xml.replace("</Seasons>", newSeasonBlock + "</Seasons>");
+            // Sezon yok, yeni sezon oluştur
+            String newSeason = seasonTag + episodeTag + "</Season>";
+            // <Seasons> taginin içine ekle (veya en sona)
+            if (xml.contains("<Seasons>")) {
+                return xml.replace("</Seasons>", newSeason + "</Seasons>");
+            } else {
+                return "<Seasons>" + newSeason + "</Seasons>";
+            }
         }
+    }
+
+    // --- SON EKLENEN BÖLÜMLERİ DETAYLANDIR ---
+    public List<SoapOpera> getRecentEpisodesWithMetadata(int limit) {
+        List<SoapOpera> episodes = repository.findRecentEpisodes(limit);
+
+        for (SoapOpera ep : episodes) {
+            // Parent Diziyi Bul
+            SoapOpera parent = repository.findSeriesByName(ep.getName());
+            if (parent != null) {
+                ep.setCategory(parent.getCategory());
+                ep.setLanguage(parent.getLanguage()); // Country code
+                ep.setFinalStatus(parent.getFinalStatus());
+
+                // Poster resmi Parent ID'sinden gelir
+                // Ancak SoapOpera nesnesinde 'image' alanı yok, ID'yi parent ID yaparsak resim
+                // çözülür mü?
+                // Frontend 'image' URL'si bekliyor. Controller'da halledeceğiz.
+                // Burada Parent ID'yi bir yere kaydetmek lazım.
+                // Geçici olarak 'content' alanına Parent ID yazalım veya yeni alan ekleyelim.
+                // Model değişikliği yapmadan: content alanını kullanalım (nasılsa child'da boş)
+                ep.setContent(parent.getId().toString());
+
+                // XML'den Sezon/Bölüm Bul
+                int[] se = findSeasonEpisodeInXML(parent.getXmlData(), ep.getId().toString());
+                ep.setSeasonNumber(se[0]);
+                ep.setEpisodeNumber(se[1]);
+            }
+        }
+        return episodes;
+    }
+
+    private int[] findSeasonEpisodeInXML(String xml, String episodeUUID) {
+        if (xml == null || episodeUUID == null)
+            return new int[] { 0, 0 };
+
+        // Basit regex ile arama: <Season number="X">...<Episode
+        // number="Y">UUID</Episode>
+        // Ancak XML yapısı iç içe.
+        // Sezonları ayırıp içinde aramak daha güvenli.
+
+        java.util.regex.Pattern seasonPattern = java.util.regex.Pattern
+                .compile("<Season number=\"(\\d+)\">(.*?)</Season>", java.util.regex.Pattern.DOTALL);
+        java.util.regex.Matcher seasonMatcher = seasonPattern.matcher(xml);
+
+        while (seasonMatcher.find()) {
+            int seasonNum = Integer.parseInt(seasonMatcher.group(1));
+            String seasonContent = seasonMatcher.group(2);
+
+            if (seasonContent.contains(episodeUUID)) {
+                // Bu sezonda, bölümü bul
+                java.util.regex.Pattern epPattern = java.util.regex.Pattern.compile("<Episode number=\"(\\d+)\">\\s*"
+                        + java.util.regex.Pattern.quote(episodeUUID) + "\\s*</Episode>");
+                java.util.regex.Matcher epMatcher = epPattern.matcher(seasonContent);
+                if (epMatcher.find()) {
+                    return new int[] { seasonNum, Integer.parseInt(epMatcher.group(1)) };
+                }
+            }
+        }
+        return new int[] { 1, 1 }; // Bulunamazsa varsayılan
     }
 
     private String removeEpisodeFromXML(String xml, String episodeUUID) {

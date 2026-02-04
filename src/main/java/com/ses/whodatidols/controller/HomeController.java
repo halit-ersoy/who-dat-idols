@@ -1,7 +1,11 @@
 package com.ses.whodatidols.controller;
 
+import com.ses.whodatidols.model.Movie;
 import com.ses.whodatidols.model.Person;
+import com.ses.whodatidols.model.SoapOpera;
 import com.ses.whodatidols.repository.PersonRepository;
+import com.ses.whodatidols.service.MovieService;
+import com.ses.whodatidols.service.SoapOperaService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.io.ClassPathResource;
@@ -12,16 +16,23 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 @Controller
 public class HomeController {
     private final PersonRepository personRepository;
+    private final MovieService movieService;
+    private final SoapOperaService soapOperaService;
 
-    public HomeController(PersonRepository personRepository) {
+    public HomeController(PersonRepository personRepository, MovieService movieService,
+            SoapOperaService soapOperaService) {
         this.personRepository = personRepository;
+        this.movieService = movieService;
+        this.soapOperaService = soapOperaService;
     }
 
     @GetMapping("/")
@@ -37,6 +48,113 @@ public class HomeController {
         } catch (Exception e) {
             return ResponseEntity.status(500).build();
         }
+    }
+
+    // ... (Existing mappings can stay, skipping showing them all for efficiency if
+    // not modified) ...
+
+    @GetMapping("/api/featured-content")
+    @ResponseBody
+    public ResponseEntity<FeaturedContentResponse> getFeaturedContent() {
+        FeaturedContentResponse response = new FeaturedContentResponse();
+
+        // 1. Movies (20 adet)
+        List<Movie> movies = movieService.getAllMovies(); // Veritabanından zaten sıralı geliyor
+        List<FeaturedItem> movieItems = new java.util.ArrayList<>();
+        int count = 0;
+        for (Movie m : movies) {
+            if (count >= 20)
+                break;
+
+            FeaturedItem item = new FeaturedItem();
+            item.id = m.getId().toString();
+            item.title = m.getName();
+            item.image = "/media/image/" + m.getId(); // Resim endpointi
+            item.country = mapLanguageToCode(m.getLanguage());
+            item.isNew = isRecent(m.getUploadDate());
+            item.isFinal = false; // Filmler için genelde false
+            item.season = null;
+            item.episode = null;
+
+            movieItems.add(item);
+            count++;
+        }
+        response.movies = movieItems;
+
+        // 2. Series (20 adet - Bölüm bazlı)
+        List<SoapOpera> episodes = soapOperaService.getRecentEpisodesWithMetadata(20);
+        List<FeaturedItem> tvItems = new java.util.ArrayList<>();
+        for (SoapOpera ep : episodes) {
+            FeaturedItem item = new FeaturedItem();
+            item.id = ep.getId().toString();
+            item.title = ep.getName();
+            // Resim Parent ID'den gelmeli. Service'de content alanına Parent ID'yi
+            // koymuştuk.
+            // Eğer content null ise kendi ID'sini dener ama genelde poster parent'tadır.
+            String imgId = (ep.getContent() != null && !ep.getContent().isEmpty()) ? ep.getContent()
+                    : ep.getId().toString();
+            item.image = "/media/image/" + imgId;
+
+            item.country = mapLanguageToCode(ep.getLanguage());
+            item.isNew = true; // Zaten son eklenenler listesi
+            item.isFinal = ep.getFinalStatus() == 1;
+            item.season = ep.getSeasonNumber();
+            item.episode = ep.getEpisodeNumber();
+
+            tvItems.add(item);
+        }
+        response.tv = tvItems;
+
+        return ResponseEntity.ok(response);
+    }
+
+    private String mapLanguageToCode(String lang) {
+        if (lang == null)
+            return "kr"; // Varsayılan
+        lang = lang.toLowerCase();
+        if (lang.contains("kore") || lang.contains("korea"))
+            return "kr";
+        if (lang.contains("japon") || lang.contains("japan"))
+            return "jp";
+        if (lang.contains("çin") || lang.contains("china"))
+            return "cn";
+        if (lang.contains("tayland") || lang.contains("thai"))
+            return "th";
+        if (lang.contains("tayvan") || lang.contains("taiwan"))
+            return "tw";
+        if (lang.contains("filipin") || lang.contains("phili"))
+            return "ph";
+        if (lang.contains("endonez") || lang.contains("indon"))
+            return "id";
+        if (lang.contains("malez") || lang.contains("malay"))
+            return "my";
+        if (lang.contains("singa"))
+            return "sg";
+        return "kr"; // Bilinmiyorsa Kore varsay
+    }
+
+    private boolean isRecent(java.time.LocalDateTime date) {
+        if (date == null)
+            return false;
+        // 7 günden yeni mi?
+        return date.isAfter(java.time.LocalDateTime.now().minusDays(7));
+    }
+
+    // DTO Classes
+    public static class FeaturedContentResponse {
+        public List<FeaturedItem> movies;
+        public List<FeaturedItem> tv;
+    }
+
+    public static class FeaturedItem {
+        public String id;
+        public String title;
+        public Integer season;
+        public Integer episode;
+        public boolean isNew;
+        public boolean isFinal;
+        public String image;
+        public String country;
     }
 
     @GetMapping("/about")

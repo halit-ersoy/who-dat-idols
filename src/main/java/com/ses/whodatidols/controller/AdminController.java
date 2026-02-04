@@ -239,6 +239,32 @@ public class AdminController {
         }
     }
 
+    // TOPLU FİLM SİLME (BULK DELETE)
+    @PostMapping("/delete-movies-bulk")
+    public ResponseEntity<String> deleteMoviesBulk(@RequestBody List<UUID> ids) {
+        try {
+            for (UUID id : ids) {
+                movieService.deleteMovieById(id);
+            }
+            return ResponseEntity.ok(ids.size() + " film başarıyla silindi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Toplu silme hatası: " + e.getMessage());
+        }
+    }
+
+    // TOPLU DİZİ SİLME (BULK DELETE)
+    @PostMapping("/delete-series-bulk")
+    public ResponseEntity<String> deleteSeriesBulk(@RequestBody List<UUID> ids) {
+        try {
+            for (UUID id : ids) {
+                soapOperaService.deleteSeriesById(id);
+            }
+            return ResponseEntity.ok(ids.size() + " dizi başarıyla silindi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Toplu silme hatası: " + e.getMessage());
+        }
+    }
+
     // HERO YÖNETİMİ
     @GetMapping("/hero-videos")
     public ResponseEntity<List<Map<String, Object>>> getAdminHeroVideos() {
