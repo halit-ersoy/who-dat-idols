@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MediaController {
 
     private static final Logger logger = LoggerFactory.getLogger(MediaController.class);
-    private static final long VIDEO_CHUNK_SIZE = 1024 * 1024; // 1MB
+    private static final long VIDEO_CHUNK_SIZE = 10 * 1024 * 1024; // 10MB
 
     // Desteklenen resim formatları
     public static final String[] SUPPORTED_IMAGE_EXTENSIONS = { ".jpg", ".jpeg", ".png", ".webp" };

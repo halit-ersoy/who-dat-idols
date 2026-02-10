@@ -77,6 +77,7 @@ public class FFmpegUtils {
                 "-vf", "scale=" + width + ":" + height,
                 "-c:v", "libx264",
                 "-preset", "veryfast",
+                "-movflags", "+faststart",
                 "-c:a", "copy",
                 "-y",
                 outputPath);

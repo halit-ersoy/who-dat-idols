@@ -24,7 +24,7 @@ public class TranscodingService {
 
     @SuppressWarnings("null")
     public ResourceRegion resourceRegion(Resource video, String rangeHeader, long contentLength) throws IOException {
-        long chunkSize = 1024 * 1024; // 1 MB
+        long chunkSize = 10 * 1024 * 1024; // 10 MB
 
         if (rangeHeader == null) {
             long rangeLength = Math.min(chunkSize, contentLength);
