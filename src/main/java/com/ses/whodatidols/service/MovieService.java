@@ -59,6 +59,17 @@ public class MovieService {
             } else if (movie.getDurationMinutes() <= 0) {
                 movie.setDurationMinutes(1);
             }
+
+            // Automate HLS Conversion
+            final String input = filePath.toString();
+            final String output = uploadPath.resolve("hls").resolve(movie.getId().toString()).toString();
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    FFmpegUtils.convertToHls(input, output);
+                } catch (Exception e) {
+                    System.err.println("HLS auto-conversion failed: " + e.getMessage());
+                }
+            });
         }
 
         // Burada sadece metadata (isim, yıl vb.) güncellenir.
@@ -96,6 +107,17 @@ public class MovieService {
                 System.out.println("Uyarı: Süre 0 döndü. FFmpeg sunucuda kurulu mu?");
                 movie.setDurationMinutes(1); // Güvenlik önlemi olarak en az 1 dk
             }
+
+            // Automate HLS Conversion
+            final String input = filePath.toString();
+            final String output = uploadPath.resolve("hls").resolve(uuid.toString()).toString();
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    FFmpegUtils.convertToHls(input, output);
+                } catch (Exception e) {
+                    System.err.println("HLS auto-conversion failed: " + e.getMessage());
+                }
+            });
         }
 
         if (image != null && !image.isEmpty()) {
@@ -135,8 +157,20 @@ public class MovieService {
             for (String ext : MediaController.SUPPORTED_IMAGE_EXTENSIONS) {
                 Files.deleteIfExists(uploadPath.resolve(id.toString() + ext));
             }
+
+            // HLS sil
+            deleteDirectory(uploadPath.resolve("hls").resolve(id.toString()));
         } catch (IOException e) {
             System.err.println("Film dosyaları silinirken hata oluştu: " + e.getMessage());
+        }
+    }
+
+    private void deleteDirectory(Path path) throws IOException {
+        if (Files.exists(path)) {
+            Files.walk(path)
+                    .sorted(java.util.Comparator.reverseOrder())
+                    .map(Path::toFile)
+                    .forEach(java.io.File::delete);
         }
     }
 

@@ -1,18 +1,18 @@
 // videoControls.js
 export function initVideoControls(videoId) {
-    const SKIP_SECONDS     = 10;
-    const videoPlayer      = document.getElementById('videoPlayer');
-    const videoSource      = document.getElementById('videoSource');
-    const volumeControl    = document.getElementById('volumeControl');
-    const backwardBtn      = document.getElementById('backwardButton');
-    const forwardBtn       = document.getElementById('forwardButton');
-    const fullscreenBtn    = document.getElementById('fullscreenButton');
-    const playerContainer  = document.getElementById('playerContainer');
+    const SKIP_SECONDS = 10;
+    const videoPlayer = document.getElementById('videoPlayer');
+    const videoSource = document.getElementById('videoSource');
+    const volumeControl = document.getElementById('volumeControl');
+    const backwardBtn = document.getElementById('backwardButton');
+    const forwardBtn = document.getElementById('forwardButton');
+    const fullscreenBtn = document.getElementById('fullscreenButton');
+    const playerContainer = document.getElementById('playerContainer');
     const playPauseWrapper = document.querySelector('.video-wrapper');
-    const titleEl          = document.getElementById('title');
-    const infoEl           = document.getElementById('videoInfo');
-    const prevEpisodeBtn   = document.getElementById('prevEpisode');
-    const nextEpisodeBtn   = document.getElementById('nextEpisode');
+    const titleEl = document.getElementById('title');
+    const infoEl = document.getElementById('videoInfo');
+    const prevEpisodeBtn = document.getElementById('prevEpisode');
+    const nextEpisodeBtn = document.getElementById('nextEpisode');
 
     if (!videoPlayer || !videoSource || !volumeControl || !playPauseWrapper) {
         console.error('Gerekli video oynatıcı elementleri bulunamadı.');
@@ -150,9 +150,9 @@ export function initVideoControls(videoId) {
 
         function updateFullscreenIcon() {
             const isFullscreen = !!(document.fullscreenElement ||
-                                    document.webkitFullscreenElement ||
-                                    document.mozFullScreenElement ||
-                                    document.msFullscreenElement);
+                document.webkitFullscreenElement ||
+                document.mozFullScreenElement ||
+                document.msFullscreenElement);
 
             if (isFullscreen) {
                 fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
@@ -233,7 +233,7 @@ export function initVideoControls(videoId) {
                 if (speedOptionsContainer) {
                     speedOptionsContainer.style.opacity = '0';
                     speedOptionsContainer.style.visibility = 'hidden';
-                    
+
                     // Reset visibility after a short delay so hover can work again
                     setTimeout(() => {
                         speedOptionsContainer.style.opacity = '';
@@ -305,7 +305,7 @@ export function initVideoControls(videoId) {
             playPauseWrapper.classList.add('loaded');
         });
         videoPlayer.addEventListener('pause', updatePlayIcon);
-        
+
         // Skeleton logic
         videoPlayer.addEventListener('waiting', () => {
             playPauseWrapper.classList.remove('loaded');
@@ -322,7 +322,7 @@ export function initVideoControls(videoId) {
         videoPlayer.addEventListener('error', () => {
             playPauseWrapper.classList.add('loaded'); // Hata durumunda skeleton'ı kaldır ki mesaj görünsün
             if (titleEl) titleEl.innerText = 'Video yüklenirken hata oluştu.';
-            if (infoEl)  infoEl.innerText  = 'Video bulunamadı veya oynatılamıyor.';
+            if (infoEl) infoEl.innerText = 'Video bulunamadı veya oynatılamıyor.';
         });
     }
 
@@ -330,14 +330,46 @@ export function initVideoControls(videoId) {
         if (!id) {
             playPauseWrapper.classList.add('loaded'); // ID yoksa skeleton'ı kaldır
             if (titleEl) titleEl.innerText = 'Video bulunamadı';
-            if (infoEl)  infoEl.innerText  = 'Geçerli bir ID girilmedi.';
+            if (infoEl) infoEl.innerText = 'Geçerli bir ID girilmedi.';
             videoPlayer.style.display = 'none';
             return;
         }
-        videoSource.src = `/media/video/${id}`;
+
+        const hlsUrl = `/media/video/${id}/playlist.m3u8`;
+        const mp4Url = `/media/video/${id}`;
+
+        if (Hls.isSupported()) {
+            const hls = new Hls({
+                maxBufferLength: 30, // 30 seconds buffer
+                maxMaxBufferLength: 60,
+            });
+            hls.loadSource(hlsUrl);
+            hls.attachMedia(videoPlayer);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                // HLS successfully loaded
+                console.log('HLS loaded successfully');
+            });
+            hls.on(Hls.Events.ERROR, (event, data) => {
+                if (data.fatal) {
+                    console.warn('HLS fatal error, falling back to MP4:', data.type);
+                    hls.destroy();
+                    fallbackToMp4(mp4Url);
+                }
+            });
+        } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
+            // Native HLS support (Safari)
+            videoPlayer.src = hlsUrl;
+        } else {
+            fallbackToMp4(mp4Url);
+        }
+
+        titleEl.innerText = `İçerik Yükleniyor...`;
+        infoEl.innerText = `ID: ${id}`;
+    }
+
+    function fallbackToMp4(url) {
+        videoSource.src = url;
         videoPlayer.load();
-        titleEl.innerText = `Video ${id}`;
-        infoEl .innerText = `Video ID: ${id}`;
     }
 
     function setupEpisodeNavigation(id) {
@@ -353,7 +385,7 @@ export function initVideoControls(videoId) {
 
     function disableNativeShortcutsOnVideo() {
         videoPlayer.addEventListener('keydown', e => {
-            if (['ArrowLeft','ArrowRight'].includes(e.key)) {
+            if (['ArrowLeft', 'ArrowRight'].includes(e.key)) {
                 e.preventDefault();
                 e.stopPropagation();
             }

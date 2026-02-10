@@ -96,6 +96,34 @@ public class FFmpegUtils {
         }
     }
 
+    public static void convertToHls(String inputPath, String outputFolder) throws IOException, InterruptedException {
+        java.nio.file.Files.createDirectories(java.nio.file.Paths.get(outputFolder));
+
+        String playlistFile = java.nio.file.Paths.get(outputFolder, "playlist.m3u8").toString();
+
+        ProcessBuilder pb = new ProcessBuilder(
+                "ffmpeg",
+                "-i", inputPath,
+                "-codec:", "copy", // Stream copy (no re-encoding, extremely fast)
+                "-start_number", "0",
+                "-hls_time", "10", // 10 second segments
+                "-hls_list_size", "0",
+                "-f", "hls",
+                playlistFile);
+
+        pb.redirectErrorStream(true);
+        Process process = pb.start();
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            while (reader.readLine() != null) {
+            }
+        }
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            throw new RuntimeException("HLS conversion failed with exit code: " + exitCode);
+        }
+    }
+
     public static void convertImageToWebP(String inputPath, String outputPath)
             throws IOException, InterruptedException {
         ProcessBuilder pb = new ProcessBuilder(

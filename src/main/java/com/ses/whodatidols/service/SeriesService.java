@@ -133,6 +133,17 @@ public class SeriesService {
             Path filePath = uploadPath.resolve(fileName);
 
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            // Automate HLS Conversion
+            final String input = filePath.toString();
+            final String output = uploadPath.resolve("hls").resolve(s.getId().toString()).toString();
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    FFmpegUtils.convertToHls(input, output);
+                } catch (Exception e) {
+                    System.err.println("HLS auto-conversion failed (Series): " + e.getMessage());
+                }
+            });
         }
 
         repository.updateSeriesMetadata(s);
@@ -196,6 +207,17 @@ public class SeriesService {
             duration = FFmpegUtils.getVideoDurationInMinutes(filePath.toString());
             if (duration <= 0)
                 duration = 1;
+
+            // Automate HLS Conversion
+            final String input = filePath.toString();
+            final String output = uploadPath.resolve("hls").resolve(episodeId.toString()).toString();
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    FFmpegUtils.convertToHls(input, output);
+                } catch (Exception e) {
+                    System.err.println("HLS auto-conversion failed (Episode): " + e.getMessage());
+                }
+            });
         }
 
         Episode episodeData = new Episode();
@@ -316,10 +338,23 @@ public class SeriesService {
 
     private void deletePhysicalFile(String fileId) {
         try {
-            Path filePath = Paths.get(soapOperasPath, fileId + ".mp4").toAbsolutePath().normalize();
+            Path uploadPath = Paths.get(soapOperasPath).toAbsolutePath().normalize();
+            Path filePath = uploadPath.resolve(fileId + ".mp4");
             Files.deleteIfExists(filePath);
+
+            // HLS sil
+            deleteDirectory(uploadPath.resolve("hls").resolve(fileId));
         } catch (IOException e) {
             System.err.println("Dosya silinemedi: " + e.getMessage());
+        }
+    }
+
+    private void deleteDirectory(Path path) throws IOException {
+        if (Files.exists(path)) {
+            Files.walk(path)
+                    .sorted(java.util.Comparator.reverseOrder())
+                    .map(Path::toFile)
+                    .forEach(java.io.File::delete);
         }
     }
 

@@ -81,7 +81,7 @@ public class MediaController {
         }
     }
 
-    // --- 2. VİDEO STREAMING (Movies, Soap Operas, Trailers) ---
+    // --- 2. VİDEO STREAMING (Movies, Soap Operas, Trailers, HLS) ---
     @SuppressWarnings("null")
     @GetMapping("/video/{id}")
     public ResponseEntity<ResourceRegion> getVideo(
@@ -91,10 +91,7 @@ public class MediaController {
         logger.debug("Requesting video for id={}", id);
 
         try {
-            // Veritabanından içerik türünü (category) öğren
             String category = getContentTypeFromDatabase(id);
-
-            // Kategoriye uygun ana klasörü seç
             Path basePath = getBasePathForCategory(category);
 
             if (basePath == null) {
@@ -102,36 +99,27 @@ public class MediaController {
                 return ResponseEntity.notFound().build();
             }
 
-            // Dosya yolunu oluştur
             Path videoPath = basePath.resolve(id + ".mp4").normalize().toAbsolutePath();
 
-            // Dosya yoksa ve bu bir Soap Opera ise, seri ID'si olabilir, bölüm ID'sini
-            // bulmayı dene
             if (!Files.exists(videoPath) && "soap_opera".equalsIgnoreCase(category)) {
                 UUID episodeId = findFirstEpisodeIdForSeries(id);
                 if (episodeId != null) {
-                    id = episodeId; // ID'yi bulduğumuz bölüm ID'si ile değiştir
+                    id = episodeId;
                     videoPath = basePath.resolve(id + ".mp4").normalize().toAbsolutePath();
                 }
             }
 
-            // Dosya var mı ve güvenli klasörde mi kontrol et (Tekrar kontrol)
             if (!Files.exists(videoPath) || !videoPath.startsWith(basePath)) {
-                logger.warn("Video file not found or path traversal attempt: {} for id: {}", videoPath, id);
+                logger.warn("Video file not found: {} for id: {}", videoPath, id);
                 return ResponseEntity.notFound().build();
             }
 
-            // Video kaynağını hazırla
             UrlResource videoResource = new UrlResource(videoPath.toUri());
             long contentLength = videoResource.contentLength();
             ResourceRegion region = getResourceRegion(videoResource, headers, contentLength);
 
             MediaType mediaType = MediaTypeFactory.getMediaType(videoResource)
                     .orElse(MediaType.APPLICATION_OCTET_STREAM);
-
-            if (mediaType == null) {
-                mediaType = MediaType.APPLICATION_OCTET_STREAM;
-            }
 
             return ResponseEntity
                     .status(HttpStatus.PARTIAL_CONTENT)
@@ -141,7 +129,56 @@ public class MediaController {
 
         } catch (Exception e) {
             logger.error("Error serving video for id {}: {}", id, e.getMessage());
-            throw new RuntimeException("VIDEO_ERROR: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/video/{id}/playlist.m3u8")
+    public ResponseEntity<Resource> getHlsPlaylist(@PathVariable("id") UUID id) {
+        try {
+            String category = getContentTypeFromDatabase(id);
+            Path basePath = getBasePathForCategory(category);
+            if (basePath == null)
+                return ResponseEntity.notFound().build();
+
+            // Try to find HLS directory: basePath/hls/{id}/playlist.m3u8
+            Path hlsPath = basePath.resolve("hls").resolve(id.toString()).resolve("playlist.m3u8");
+
+            if (!Files.exists(hlsPath)) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Resource resource = new UrlResource(hlsPath.toUri());
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType("application/vnd.apple.mpegurl"))
+                    .body(resource);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/video/{id}/{segment}.ts")
+    public ResponseEntity<Resource> getHlsSegment(
+            @PathVariable("id") UUID id,
+            @PathVariable("segment") String segment) {
+        try {
+            String category = getContentTypeFromDatabase(id);
+            Path basePath = getBasePathForCategory(category);
+            if (basePath == null)
+                return ResponseEntity.notFound().build();
+
+            Path segmentPath = basePath.resolve("hls").resolve(id.toString()).resolve(segment + ".ts");
+
+            if (!Files.exists(segmentPath)) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Resource resource = new UrlResource(segmentPath.toUri());
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType("video/MP2T"))
+                    .body(resource);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
