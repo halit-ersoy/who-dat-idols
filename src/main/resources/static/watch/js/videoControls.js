@@ -32,6 +32,7 @@ export function initVideoControls(videoId) {
     setupPlaybackEvents();
     setupErrorHandling();
     loadVideo(videoId);
+    loadSources(videoId);
     setupEpisodeNavigation(videoId);
     disableNativeShortcutsOnVideo();
 
@@ -390,5 +391,91 @@ export function initVideoControls(videoId) {
                 e.stopPropagation();
             }
         }, true);
+    }
+
+    async function loadSources(id) {
+        const switcher = document.getElementById('sourceSwitcher');
+        if (!switcher) return;
+
+        switcher.innerHTML = `
+            <button class="source-btn active" id="btn-hls">
+                <i class="fas fa-bolt"></i> Ana Kaynak (HLS)
+            </button>
+        `;
+
+        document.getElementById('btn-hls').onclick = () => switchToHls();
+
+        try {
+            console.log("DEBUG: Loading sources for contentId:", id);
+            const res = await fetch(`/media/video/${id}/sources`);
+            const sources = await res.json();
+            console.log("DEBUG: Sources received:", sources);
+
+            if (sources.length === 0) {
+                console.log("DEBUG: No external sources found.");
+            }
+
+            sources.forEach(src => {
+                const btn = document.createElement('button');
+                btn.className = 'source-btn';
+                btn.innerHTML = `<i class="fas fa-external-link-alt"></i> ${src.sourceName}`;
+                btn.onclick = () => switchToSource(src, btn);
+                switcher.appendChild(btn);
+            });
+        } catch (err) {
+            console.error('Kaynaklar yüklenemedi:', err);
+        }
+    }
+
+    function switchToHls() {
+        const iframeContainer = document.getElementById('iframePlayerContainer');
+        iframeContainer.style.display = 'none';
+        iframeContainer.innerHTML = '';
+        videoPlayer.style.display = 'block';
+
+        // Show custom controls and play button
+        const controls = document.querySelector('.video-controls');
+        if (controls) controls.style.display = ''; // Revert to CSS default (flex)
+
+        const playBtn = document.querySelector('.play-pause-button');
+        if (playBtn) playBtn.style.display = ''; // Revert to CSS default
+
+        document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-hls').classList.add('active');
+    }
+
+    function switchToSource(source, btn) {
+        videoPlayer.pause();
+        videoPlayer.style.display = 'none';
+
+        // Hide custom controls and play button
+        const controls = document.querySelector('.video-controls');
+        if (controls) controls.style.display = 'none';
+
+        const playBtn = document.querySelector('.play-pause-button');
+        if (playBtn) playBtn.style.display = 'none';
+
+        const iframeContainer = document.getElementById('iframePlayerContainer');
+        iframeContainer.style.display = 'block';
+
+        let finalUrl = source.sourceUrl.trim();
+        // If it's a full iframe tag, extract the src
+        if (finalUrl.toLowerCase().startsWith('<iframe')) {
+            const match = finalUrl.match(/src=["']([^"']+)["']/i);
+            if (match && match[1]) {
+                finalUrl = match[1];
+            }
+        }
+
+        iframeContainer.innerHTML = `
+            <iframe src="${finalUrl}" 
+                    style="width:100%; height:100%; border:none;" 
+                    allowfullscreen 
+                    allow="autoplay; encrypted-media" 
+                    sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation">
+            </iframe>`;
+
+        document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
     }
 }

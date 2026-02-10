@@ -204,7 +204,7 @@
                                 </div>
                             </div>
                             <div class="form-group full-width">
-                                <label for="movieFile">Video Dosyası</label>
+                                <label for="movieFile">Film Videosu</label>
                                 <div class="premium-file-input" id="movieFileContainer">
                                     <input type="file" id="movieFile" accept="video/*" required
                                         onchange="handleFileSelect(this)">
@@ -215,6 +215,16 @@
                                     </label>
                                     <div class="file-info">* Düzenleme modunda boş bırakılabilir.</div>
                                 </div>
+                            </div>
+                            <div class="form-group full-width">
+                                <label><i class="fas fa-external-link-alt"></i> Dış Kaynaklar (Iframe Linkleri)</label>
+                                <div id="movieSourcesList" class="external-sources-container">
+                                    <!-- Dinamik olarak eklenecek -->
+                                </div>
+                                <button type="button" class="btn btn-sm btn-secondary btn-add-source"
+                                    onclick="addSourceField('movie')">
+                                    <i class="fas fa-plus"></i> Kaynak Ekle
+                                </button>
                             </div>
                         </div>
 
@@ -283,7 +293,7 @@
 
                             <!-- Yeni Dizi Alanları (Gruplandırıldı) -->
                             <div id="newSeriesFields">
-                                <div class="form-group full-width">
+                                <div class="form-group">
                                     <label for="seriesName">Dizi Adı</label>
                                     <div class="input-with-action">
                                         <input type="text" id="seriesName" placeholder="Dizi ismini giriniz">
@@ -297,6 +307,15 @@
                                     <label for="seriesCategory">Kategori</label>
                                     <input type="text" id="seriesCategory" placeholder="Dizi kategorileri...">
                                 </div>
+                                <div class="form-group full-width">
+                                    <label for="seriesSummary">Dizi Özeti</label>
+                                    <textarea id="seriesSummary" rows="3"
+                                        placeholder="Dizinin genel konusu..."></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="seriesYear">Yayın Yılı</label>
+                                    <input type="number" id="seriesYear" value="2025">
+                                </div>
                                 <div class="form-group">
                                     <label for="seriesLanguage">Dil</label>
                                     <select id="seriesLanguage">
@@ -306,15 +325,6 @@
                                         <option value="Japonca">Japonca</option>
                                         <option value="Çince">Çince</option>
                                     </select>
-                                </div>
-                                <div class="form-group full-width">
-                                    <label for="seriesSummary">Dizi Özeti</label>
-                                    <textarea id="seriesSummary" rows="3"
-                                        placeholder="Dizinin genel konusu..."></textarea>
-                                </div>
-                                <div class="form-group">
-                                    <label for="seriesYear">Yayın Yılı</label>
-                                    <input type="number" id="seriesYear" value="2025">
                                 </div>
                             </div>
 
@@ -369,6 +379,16 @@
                                     </label>
                                     <div class="file-info">* Düzenleme modunda boş bırakılabilir.</div>
                                 </div>
+                            </div>
+                            <div class="form-group full-width">
+                                <label><i class="fas fa-external-link-alt"></i> Dış Kaynaklar (Iframe Linkleri)</label>
+                                <div id="seriesSourcesList" class="external-sources-container">
+                                    <!-- Dinamik olarak eklenecek -->
+                                </div>
+                                <button type="button" class="btn btn-sm btn-secondary btn-add-source"
+                                    onclick="addSourceField('series')">
+                                    <i class="fas fa-plus"></i> Kaynak Ekle
+                                </button>
                             </div>
                         </div>
 
@@ -464,7 +484,8 @@
                                     <input type="text" id="upcomingSearch" placeholder="Film veya dizi ismi ara..."
                                         autocomplete="off">
                                     <div id="upcomingSearchResults" class="search-results-dropdown"
-                                        style="display: none;"></div>
+                                        style="display: none;">
+                                    </div>
                                 </div>
                                 <input type="hidden" id="upcomingRefId">
                                 <input type="hidden" id="upcomingRefType">

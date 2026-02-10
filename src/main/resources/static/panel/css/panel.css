@@ -199,6 +199,13 @@ body {
     grid-column: span 2;
 }
 
+#newSeriesFields {
+    grid-column: span 2;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+}
+
 .form-group label {
     display: block;
     margin-bottom: 10px;
@@ -378,6 +385,84 @@ body {
     display: flex;
     flex-direction: column;
     gap: 15px;
+}
+
+/* External Sources Section */
+.external-sources-container {
+    margin: 15px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.premium-source-row {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+    animation: slideInUp 0.3s ease;
+}
+
+.premium-source-row:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(30, 215, 96, 0.3);
+}
+
+.premium-source-row .source-inputs {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 12px;
+}
+
+.premium-source-row .input-with-icon {
+    margin-bottom: 0 !important;
+}
+
+.premium-source-row input {
+    margin-bottom: 0 !important;
+    background: rgba(0, 0, 0, 0.2) !important;
+}
+
+.btn-remove-source {
+    background: rgba(231, 76, 60, 0.1);
+    color: #e74c3c;
+    border: 1px solid rgba(231, 76, 60, 0.2);
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-remove-source:hover {
+    background: #e74c3c;
+    color: white;
+    transform: rotate(90deg);
+}
+
+.btn-add-source {
+    background: rgba(30, 215, 96, 0.1);
+    color: #1ed760;
+    border: 1px dashed rgba(30, 215, 96, 0.4);
+    padding: 12px;
+    border-radius: 10px;
+    width: 100%;
+    margin-top: 5px;
+    transition: all 0.3s;
+}
+
+.btn-add-source:hover {
+    background: rgba(30, 215, 96, 0.2);
+    border-style: solid;
+    transform: translateY(-2px);
 }
 
 .series-group {

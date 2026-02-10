@@ -21,6 +21,11 @@ import java.util.Map;
 @Service
 public class TranscodingService {
     private final Map<String, String> transcodedCache = new HashMap<>();
+    private final FFmpegUtils ffmpegUtils;
+
+    public TranscodingService(FFmpegUtils ffmpegUtils) {
+        this.ffmpegUtils = ffmpegUtils;
+    }
 
     @SuppressWarnings("null")
     public ResourceRegion resourceRegion(Resource video, String rangeHeader, long contentLength) throws IOException {
@@ -44,7 +49,7 @@ public class TranscodingService {
     public ResponseEntity<ResourceRegion> getTranscodedVideo(String originalVideoPath, String videoId,
             int targetRes, String rangeHeader) throws IOException {
         try {
-            int[] dimensions = FFmpegUtils.getVideoWidthHeight(originalVideoPath);
+            int[] dimensions = ffmpegUtils.getVideoWidthHeight(originalVideoPath);
             if (dimensions == null) {
                 return ResponseEntity.status(500).build();
             }
@@ -66,7 +71,7 @@ public class TranscodingService {
                 String outFile = tempDir + File.separator + "transcoded_" + videoId + "_" + actualTargetRes + ".mp4";
 
                 try {
-                    FFmpegUtils.transcodeVideo(originalVideoPath, outFile, newWidth, newHeight);
+                    ffmpegUtils.transcodeVideo(originalVideoPath, outFile, newWidth, newHeight);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     return ResponseEntity.status(500).body(null);

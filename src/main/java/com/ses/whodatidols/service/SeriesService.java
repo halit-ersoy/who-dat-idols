@@ -3,6 +3,7 @@ package com.ses.whodatidols.service;
 import com.ses.whodatidols.model.Episode;
 import com.ses.whodatidols.model.Series;
 import com.ses.whodatidols.repository.SeriesRepository;
+import com.ses.whodatidols.repository.VideoSourceRepository;
 import com.ses.whodatidols.controller.MediaController;
 import com.ses.whodatidols.util.FFmpegUtils;
 import com.ses.whodatidols.util.ImageUtils;
@@ -28,15 +29,20 @@ public class SeriesService {
     private final SeriesRepository repository;
     private final TvMazeService tvMazeService;
     private final NotificationService notificationService;
+    private final VideoSourceRepository videoSourceRepository;
+    private final FFmpegUtils ffmpegUtils;
 
     @Value("${media.source.soap_operas.path}")
     private String soapOperasPath;
 
     public SeriesService(SeriesRepository repository, TvMazeService tvMazeService,
-            NotificationService notificationService) {
+            NotificationService notificationService, VideoSourceRepository videoSourceRepository,
+            FFmpegUtils ffmpegUtils) {
         this.repository = repository;
         this.tvMazeService = tvMazeService;
         this.notificationService = notificationService;
+        this.videoSourceRepository = videoSourceRepository;
+        this.ffmpegUtils = ffmpegUtils;
     }
 
     public List<Series> getAllSeries() {
@@ -139,7 +145,7 @@ public class SeriesService {
             final String output = uploadPath.resolve("hls").resolve(s.getId().toString()).toString();
             java.util.concurrent.CompletableFuture.runAsync(() -> {
                 try {
-                    FFmpegUtils.convertToHls(input, output);
+                    ffmpegUtils.convertToHls(input, output);
                 } catch (Exception e) {
                     System.err.println("HLS auto-conversion failed (Series): " + e.getMessage());
                 }
@@ -153,7 +159,7 @@ public class SeriesService {
     }
 
     @Transactional
-    public void saveEpisodeWithFile(Series seriesInfo, int seasonNumber, int episodeNumber, MultipartFile file,
+    public UUID saveEpisodeWithFile(Series seriesInfo, int seasonNumber, int episodeNumber, MultipartFile file,
             MultipartFile image, UUID existingSeriesId)
             throws IOException {
         // 1. DİZİ KONTROLÜ (Parent)
@@ -204,7 +210,7 @@ public class SeriesService {
             Path filePath = uploadPath.resolve(fileName);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            duration = FFmpegUtils.getVideoDurationInMinutes(filePath.toString());
+            duration = ffmpegUtils.getVideoDurationInMinutes(filePath.toString());
             if (duration <= 0)
                 duration = 1;
 
@@ -213,7 +219,7 @@ public class SeriesService {
             final String output = uploadPath.resolve("hls").resolve(episodeId.toString()).toString();
             java.util.concurrent.CompletableFuture.runAsync(() -> {
                 try {
-                    FFmpegUtils.convertToHls(input, output);
+                    ffmpegUtils.convertToHls(input, output);
                 } catch (Exception e) {
                     System.err.println("HLS auto-conversion failed (Episode): " + e.getMessage());
                 }
@@ -248,6 +254,8 @@ public class SeriesService {
         } catch (Exception e) {
             System.err.println("Bildirim oluşturulamadı: " + e.getMessage());
         }
+
+        return episodeId;
     }
 
     private void saveImage(UUID id, MultipartFile image) throws IOException {
@@ -293,6 +301,7 @@ public class SeriesService {
             repository.updateSeriesXML(parentSeries.getId(), cleanXml);
         }
         repository.deleteEpisodeById(id);
+        videoSourceRepository.deleteAllForContent(id);
         deletePhysicalFile(id.toString());
     }
 
@@ -312,6 +321,7 @@ public class SeriesService {
 
         List<Episode> episodes = repository.findEpisodesBySeriesId(id);
         for (Episode ep : episodes) {
+            videoSourceRepository.deleteAllForContent(ep.getId());
             repository.deleteEpisodeById(ep.getId());
             deletePhysicalFile(ep.getId().toString());
         }
@@ -326,6 +336,7 @@ public class SeriesService {
                 try {
                     UUID epId = UUID.fromString(epUuidStr);
                     if (repository.findEpisodeById(epId) != null) {
+                        videoSourceRepository.deleteAllForContent(epId);
                         repository.deleteEpisodeById(epId);
                         deletePhysicalFile(epUuidStr);
                     }
@@ -334,6 +345,7 @@ public class SeriesService {
             }
         }
         repository.deleteSeriesById(id);
+        videoSourceRepository.deleteAllForContent(id);
     }
 
     private void deletePhysicalFile(String fileId) {

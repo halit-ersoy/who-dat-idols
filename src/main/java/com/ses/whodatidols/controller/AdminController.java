@@ -2,6 +2,8 @@ package com.ses.whodatidols.controller;
 
 import com.ses.whodatidols.model.Movie;
 import com.ses.whodatidols.model.Series;
+import com.ses.whodatidols.model.VideoSource;
+import com.ses.whodatidols.repository.VideoSourceRepository;
 import com.ses.whodatidols.service.MovieService;
 import com.ses.whodatidols.service.SeriesService;
 import com.ses.whodatidols.service.TvMazeService;
@@ -32,6 +34,7 @@ public class AdminController {
     private final SeriesService seriesService;
     private final TvMazeService tvMazeService;
     private final JdbcTemplate jdbcTemplate;
+    private final VideoSourceRepository videoSourceRepository;
 
     @Value("${media.source.trailers.path}")
     private String trailersPath;
@@ -50,11 +53,12 @@ public class AdminController {
 
     @Autowired
     public AdminController(MovieService movieService, SeriesService seriesService,
-            TvMazeService tvMazeService, JdbcTemplate jdbcTemplate) {
+            TvMazeService tvMazeService, JdbcTemplate jdbcTemplate, VideoSourceRepository videoSourceRepository) {
         this.movieService = movieService;
         this.seriesService = seriesService;
         this.tvMazeService = tvMazeService;
         this.jdbcTemplate = jdbcTemplate;
+        this.videoSourceRepository = videoSourceRepository;
     }
 
     @GetMapping("/panel")
@@ -119,7 +123,7 @@ public class AdminController {
                 movieService.saveImageFromUrl(movie.getId(), imageUrl);
             }
 
-            return ResponseEntity.ok("Film başarıyla işlendi.");
+            return ResponseEntity.ok("{\"id\": \"" + movie.getId() + "\", \"message\": \"Film başarıyla işlendi.\"}");
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
@@ -136,7 +140,7 @@ public class AdminController {
                 return ResponseEntity.badRequest().body("Film ID bulunamadı.");
             }
             movieService.updateMovie(movie, file, image);
-            return ResponseEntity.ok("Film güncellendi.");
+            return ResponseEntity.ok("{\"id\": \"" + movie.getId() + "\", \"message\": \"Film güncellendi.\"}");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Güncelleme hatası: " + e.getMessage());
         }
@@ -151,7 +155,7 @@ public class AdminController {
             if (s.getId() == null)
                 return ResponseEntity.badRequest().body("Dizi ID yok.");
             seriesService.updateSeriesMetadata(s, file, image);
-            return ResponseEntity.ok("Dizi güncellendi.");
+            return ResponseEntity.ok("{\"id\": \"" + s.getId() + "\", \"message\": \"Dizi güncellendi.\"}");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
         }
@@ -177,9 +181,9 @@ public class AdminController {
             }
 
             seriesInfo.setSummary(summary);
-            // season/episode are passed separately now
-
-            seriesService.saveEpisodeWithFile(seriesInfo, season, episode, file, image, existingSeriesId);
+            // Episode mode doesn't need image here, handled inside saveEpisodeWithFile
+            UUID episodeId = seriesService.saveEpisodeWithFile(seriesInfo, season, episode, file, image,
+                    existingSeriesId);
 
             if (existingSeriesId == null && (image == null || image.isEmpty()) && imageUrl != null
                     && !imageUrl.isEmpty()) {
@@ -189,7 +193,8 @@ public class AdminController {
                 }
             }
 
-            return ResponseEntity.ok("Bölüm başarıyla işlendi (S" + season + "E" + episode + ").");
+            return ResponseEntity.ok("{\"id\": \"" + episodeId + "\", \"message\": \"Bölüm başarıyla işlendi (S"
+                    + season + "E" + episode + ").\"}");
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
@@ -369,6 +374,51 @@ public class AdminController {
             return ResponseEntity.ok("Hero video ve ilgili dosyalar silindi.");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Silme hatası: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/add-source")
+    public ResponseEntity<String> addSource(@RequestBody VideoSource source) {
+        try {
+            if (source.getContentId() == null) {
+                System.err.println("DEBUG: addSource FAILED - contentId is NULL");
+                return ResponseEntity.badRequest().body("Hata: ContentId boş olamaz.");
+            }
+
+            System.out.println("DEBUG: addSource called for contentId=" + source.getContentId());
+            System.out.println("DEBUG: sourceName=" + source.getSourceName());
+            System.out.println("DEBUG: sourceUrl=" + (source.getSourceUrl() != null
+                    ? source.getSourceUrl().substring(0, Math.min(20, source.getSourceUrl().length())) + "..."
+                    : "null"));
+
+            videoSourceRepository.save(source);
+
+            System.out.println("DEBUG: addSource success for name=" + source.getSourceName());
+            return ResponseEntity.ok("Kaynak eklendi.");
+        } catch (Exception e) {
+            System.err.println("DEBUG: addSource error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/delete-source")
+    public ResponseEntity<String> deleteSource(@RequestParam("id") UUID id) {
+        try {
+            videoSourceRepository.delete(id);
+            return ResponseEntity.ok("Kaynak silindi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/delete-sources-for-content")
+    public ResponseEntity<String> deleteSourcesForContent(@RequestParam("contentId") UUID contentId) {
+        try {
+            videoSourceRepository.deleteAllForContent(contentId);
+            return ResponseEntity.ok("Tüm kaynaklar silindi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
         }
     }
 

@@ -1,17 +1,26 @@
 package com.ses.whodatidols.util;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+@Component
 public class FFmpegUtils {
 
-    public static int[] getVideoWidthHeight(String videoPath) {
+    @Value("${ffmpeg.path:ffmpeg}")
+    private String ffmpegPath;
+
+    @Value("${ffprobe.path:ffprobe}")
+    private String ffprobePath;
+
+    public int[] getVideoWidthHeight(String videoPath) {
         try {
             ProcessBuilder pb = new ProcessBuilder(
-                    "ffprobe",
+                    ffprobePath,
                     "-v", "error",
                     "-select_streams", "v:0",
                     "-show_entries", "stream=width,height",
@@ -36,13 +45,10 @@ public class FFmpegUtils {
         return null;
     }
 
-    // --- YENİ EKLENEN: SÜRE HESAPLAMA (JARVIS PRECISION) ---
-    public static int getVideoDurationInMinutes(String videoPath) {
+    public int getVideoDurationInMinutes(String videoPath) {
         try {
-            // Komut: ffprobe -v error -show_entries format=duration -of
-            // default=noprint_wrappers=1:nokey=1 dosya.mp4
             ProcessBuilder pb = new ProcessBuilder(
-                    "ffprobe",
+                    ffprobePath,
                     "-v", "error",
                     "-show_entries", "format=duration",
                     "-of", "default=noprint_wrappers=1:nokey=1",
@@ -53,9 +59,7 @@ public class FFmpegUtils {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 String line = reader.readLine();
                 if (line != null) {
-                    // Saniye cinsinden gelir (örn: 125.456)
                     double seconds = Double.parseDouble(line);
-                    // Dakikaya çevir ve yukarı yuvarla (örn: 2.1 dk -> 3 dk)
                     return (int) Math.ceil(seconds / 60.0);
                 }
             }
@@ -64,15 +68,15 @@ public class FFmpegUtils {
         } catch (Exception e) {
             System.err.println("Süre hesaplanamadı: " + e.getMessage());
         }
-        return 0; // Hata durumunda 0 döner
+        return 0;
     }
 
-    public static void transcodeVideo(String inputPath, String outputPath, int width, int height)
+    public void transcodeVideo(String inputPath, String outputPath, int width, int height)
             throws IOException, InterruptedException {
         Files.deleteIfExists(Paths.get(outputPath));
 
         ProcessBuilder pb = new ProcessBuilder(
-                "ffmpeg",
+                ffmpegPath,
                 "-i", inputPath,
                 "-vf", "scale=" + width + ":" + height,
                 "-c:v", "libx264",
@@ -96,17 +100,17 @@ public class FFmpegUtils {
         }
     }
 
-    public static void convertToHls(String inputPath, String outputFolder) throws IOException, InterruptedException {
+    public void convertToHls(String inputPath, String outputFolder) throws IOException, InterruptedException {
         java.nio.file.Files.createDirectories(java.nio.file.Paths.get(outputFolder));
 
         String playlistFile = java.nio.file.Paths.get(outputFolder, "playlist.m3u8").toString();
 
         ProcessBuilder pb = new ProcessBuilder(
-                "ffmpeg",
+                ffmpegPath,
                 "-i", inputPath,
-                "-codec:", "copy", // Stream copy (no re-encoding, extremely fast)
+                "-codec:", "copy",
                 "-start_number", "0",
-                "-hls_time", "10", // 10 second segments
+                "-hls_time", "10",
                 "-hls_list_size", "0",
                 "-f", "hls",
                 playlistFile);
@@ -124,18 +128,17 @@ public class FFmpegUtils {
         }
     }
 
-    public static void convertImageToWebP(String inputPath, String outputPath)
+    public void convertImageToWebP(String inputPath, String outputPath)
             throws IOException, InterruptedException {
         ProcessBuilder pb = new ProcessBuilder(
-                "ffmpeg",
+                ffmpegPath,
                 "-i", inputPath,
-                "-q:v", "75", // Quality 75% for good balance
+                "-q:v", "75",
                 "-y",
                 outputPath);
         pb.redirectErrorStream(true);
 
         Process process = pb.start();
-        // Consume output to avoid hanging
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             while (reader.readLine() != null) {
             }

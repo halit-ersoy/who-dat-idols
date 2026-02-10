@@ -1,7 +1,11 @@
 package com.ses.whodatidols.controller;
 
+import com.ses.whodatidols.model.VideoSource;
+import com.ses.whodatidols.repository.ContentRepository;
+import com.ses.whodatidols.repository.VideoSourceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -14,6 +18,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,12 +51,17 @@ public class MediaController {
     private String upcomingPath;
 
     private final JdbcTemplate jdbcTemplate;
+    private final ContentRepository contentRepository;
+    private final VideoSourceRepository videoSourceRepository;
 
     // Cache to avoid repeated content type probing
     private final Map<String, MediaType> mediaTypeCache = new ConcurrentHashMap<>();
 
-    public MediaController(JdbcTemplate jdbcTemplate) {
+    public MediaController(JdbcTemplate jdbcTemplate, ContentRepository contentRepository,
+            VideoSourceRepository videoSourceRepository) {
         this.jdbcTemplate = jdbcTemplate;
+        this.contentRepository = contentRepository;
+        this.videoSourceRepository = videoSourceRepository;
     }
 
     // --- 1. STATİK RESİM SUNUCUSU ---
@@ -130,6 +140,20 @@ public class MediaController {
         } catch (Exception e) {
             logger.error("Error serving video for id {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/video/{id}/sources")
+    public ResponseEntity<List<VideoSource>> getSources(@PathVariable("id") UUID id) {
+        try {
+            List<VideoSource> sources = videoSourceRepository.findByContentId(id);
+            if (sources == null)
+                return ResponseEntity.ok(List.of());
+            return ResponseEntity.ok(sources);
+        } catch (Exception e) {
+            logger.error("Error retrieving video sources for id {}: {}", id, e.getMessage());
+            // Return empty list instead of 500 to keep UI functional
+            return ResponseEntity.ok(List.of());
         }
     }
 
@@ -286,7 +310,7 @@ public class MediaController {
             try {
                 String sql = "SELECT [dbo].[GetContentTypeById](?);";
                 String type = jdbcTemplate.queryForObject(sql, String.class, id.toString());
-                if (!"unknown".equalsIgnoreCase(type) && type != null)
+                if (type != null && !"unknown".equalsIgnoreCase(type))
                     return type;
             } catch (Exception e) {
                 // Function might be missing or broken

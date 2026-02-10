@@ -68,5 +68,74 @@ header {
 
 body {
     padding-top: 70px;
-    /* Header yüksekliğine göre ayarlanmalı */
+}
+
+/* Source Switcher */
+.source-switcher-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 25px;
+    background: rgba(40, 40, 40, 0.4);
+    padding: 15px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    margin-top: 10px;
+}
+
+.source-label {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.source-switcher {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.source-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #e0e0e0;
+    padding: 10px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.source-btn i {
+    font-size: 1rem;
+    opacity: 0.7;
+}
+
+.source-btn:hover {
+    background: rgba(30, 215, 96, 0.08);
+    border-color: rgba(30, 215, 96, 0.4);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.source-btn.active {
+    background: linear-gradient(135deg, #1ed760 0%, #1db954 100%);
+    color: #000;
+    border-color: #1ed760;
+    box-shadow: 0 8px 20px rgba(30, 215, 96, 0.35);
+}
+
+.source-btn.active i {
+    opacity: 1;
 }

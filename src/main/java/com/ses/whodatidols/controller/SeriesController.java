@@ -13,7 +13,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/series") // Renamed endpoint to /api/series from /api/soapoperas
+@RequestMapping({ "/api/series", "/api/soapoperas" }) // Added alias for compatibility
 public class SeriesController {
     private final SeriesRepository seriesRepository;
     private final SeriesService seriesService;

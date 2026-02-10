@@ -2,6 +2,7 @@ package com.ses.whodatidols.service;
 
 import com.ses.whodatidols.model.Movie;
 import com.ses.whodatidols.repository.MovieRepository;
+import com.ses.whodatidols.repository.VideoSourceRepository;
 import com.ses.whodatidols.util.FFmpegUtils;
 import com.ses.whodatidols.controller.MediaController;
 import com.ses.whodatidols.util.ImageUtils;
@@ -24,15 +25,20 @@ public class MovieService {
     private final MovieRepository movieRepository;
     private final TvMazeService tvMazeService;
     private final NotificationService notificationService;
+    private final VideoSourceRepository videoSourceRepository;
+    private final FFmpegUtils ffmpegUtils;
 
     @Value("${media.source.movies.path}")
     private String moviesPath;
 
     public MovieService(MovieRepository movieRepository, TvMazeService tvMazeService,
-            NotificationService notificationService) {
+            NotificationService notificationService, VideoSourceRepository videoSourceRepository,
+            FFmpegUtils ffmpegUtils) {
         this.movieRepository = movieRepository;
         this.tvMazeService = tvMazeService;
         this.notificationService = notificationService;
+        this.videoSourceRepository = videoSourceRepository;
+        this.ffmpegUtils = ffmpegUtils;
     }
 
     // Listeyi Getir
@@ -53,7 +59,7 @@ public class MovieService {
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
             // FFprobe ile süreyi hesapla
-            int duration = FFmpegUtils.getVideoDurationInMinutes(filePath.toString());
+            int duration = ffmpegUtils.getVideoDurationInMinutes(filePath.toString());
             if (duration > 0) {
                 movie.setDurationMinutes(duration);
             } else if (movie.getDurationMinutes() <= 0) {
@@ -65,7 +71,7 @@ public class MovieService {
             final String output = uploadPath.resolve("hls").resolve(movie.getId().toString()).toString();
             java.util.concurrent.CompletableFuture.runAsync(() -> {
                 try {
-                    FFmpegUtils.convertToHls(input, output);
+                    ffmpegUtils.convertToHls(input, output);
                 } catch (Exception e) {
                     System.err.println("HLS auto-conversion failed: " + e.getMessage());
                 }
@@ -98,7 +104,7 @@ public class MovieService {
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
             // FFprobe ile süreyi hesapla
-            int duration = FFmpegUtils.getVideoDurationInMinutes(filePath.toString());
+            int duration = ffmpegUtils.getVideoDurationInMinutes(filePath.toString());
 
             if (duration > 0) {
                 movie.setDurationMinutes(duration);
@@ -113,7 +119,7 @@ public class MovieService {
             final String output = uploadPath.resolve("hls").resolve(uuid.toString()).toString();
             java.util.concurrent.CompletableFuture.runAsync(() -> {
                 try {
-                    FFmpegUtils.convertToHls(input, output);
+                    ffmpegUtils.convertToHls(input, output);
                 } catch (Exception e) {
                     System.err.println("HLS auto-conversion failed: " + e.getMessage());
                 }
@@ -138,8 +144,10 @@ public class MovieService {
         }
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public void deleteMovieById(UUID id) {
-        // 1. Veritabanından sil
+        // 1. Veritabanından kaynakları ve filmi sil
+        videoSourceRepository.deleteAllForContent(id);
         movieRepository.deleteById(id);
 
         // 2. Dosyaları fiziksel olarak sil

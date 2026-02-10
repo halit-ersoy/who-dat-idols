@@ -533,8 +533,11 @@
                 method: 'POST',
                 // Remove Content-Type header to allow browser to set boundary for FormData
                 body: formData
-            }).then(res => res.text()).then(msg => {
-                alert(msg); resetMovieForm(); fetchMovies();
+            }).then(res => res.json()).then(async data => {
+                const id = data.id || movieId;
+                await saveExternalSources(id, 'movie');
+                alert(data.message || "Film güncellendi.");
+                resetMovieForm(); fetchMovies();
             }).finally(() => { movieSubmitBtn.disabled = false; });
         } else {
             const formData = new FormData();
@@ -547,7 +550,11 @@
             if (movieImageInput.files.length > 0) formData.append('image', movieImageInput.files[0]);
             if (lastFetchedPosterUrl) formData.append('imageUrl', lastFetchedPosterUrl);
 
-            uploadDataWithProgress('/admin/add-movie', formData, 'movieForm', 'progressWrapperMovie', 'progressBarMovie', 'percentMovie', () => {
+            uploadDataWithProgress('/admin/add-movie', formData, 'movieForm', 'progressWrapperMovie', 'progressBarMovie', 'percentMovie', async (res) => {
+                try {
+                    const data = JSON.parse(res);
+                    if (data.id) await saveExternalSources(data.id, 'movie');
+                } catch (e) { console.error("Source save error:", e); }
                 fetchMovies();
             });
         }
@@ -597,6 +604,14 @@
         // Switch to movie section
         const movieLink = document.querySelector('.nav-link[data-section="movie-section"]');
         if (movieLink) movieLink.click();
+
+        // Load External Sources
+        document.getElementById('movieSourcesList').innerHTML = '';
+        fetch(`/media/video/${movie.id}/sources`)
+            .then(res => res.json())
+            .then(sources => {
+                sources.forEach(src => addSourceField('movie', src.sourceName, src.sourceUrl));
+            });
     };
 
 
@@ -604,6 +619,7 @@
     function resetMovieForm() {
         movieForm.reset();
         movieIdInput.value = "";
+        document.getElementById('movieSourcesList').innerHTML = '';
         movieSubmitBtn.innerText = "FİLMİ KAYDET";
         movieSubmitBtn.classList.add('btn-primary');
         movieSubmitBtn.style.backgroundColor = "";
@@ -737,8 +753,11 @@
             fetch('/admin/update-series', {
                 method: 'POST',
                 body: formData
-            }).then(res => res.text()).then(msg => {
-                alert(msg); resetSeriesForm(); fetchSeries();
+            }).then(res => res.json()).then(async data => {
+                const id = data.id || sId;
+                await saveExternalSources(id, 'series');
+                alert(data.message || "Dizi güncellendi.");
+                resetSeriesForm(); fetchSeries();
             }).catch(err => alert("Hata: " + err))
                 .finally(() => { seriesSubmitBtn.disabled = false; });
         } else {
@@ -766,7 +785,11 @@
                 if (lastFetchedPosterUrl) formData.append('imageUrl', lastFetchedPosterUrl);
             }
 
-            uploadDataWithProgress('/admin/add-series', formData, 'seriesForm', 'progressWrapperSeries', 'progressBarSeries', 'percentSeries', () => {
+            uploadDataWithProgress('/admin/add-series', formData, 'seriesForm', 'progressWrapperSeries', 'progressBarSeries', 'percentSeries', async (res) => {
+                try {
+                    const data = JSON.parse(res);
+                    if (data.id) await saveExternalSources(data.id, 'series');
+                } catch (e) { console.error("Source save error:", e); }
                 fetchSeries();
             });
         }
@@ -905,7 +928,7 @@
             fetchSeries();
         } else {
             existingWrapper.style.display = 'none';
-            newFields.style.display = 'block';
+            newFields.style.display = 'grid';
             updatePosterPreview('series', null);
         }
     };
@@ -990,6 +1013,16 @@
         // Switch to series section
         const seriesLink = document.querySelector('.nav-link[data-section="series-section"]');
         if (seriesLink) seriesLink.click();
+
+        // Load External Sources
+        document.getElementById('seriesSourcesList').innerHTML = '';
+        if (ep.id) {
+            fetch(`/media/video/${ep.id}/sources`)
+                .then(res => res.json())
+                .then(sources => {
+                    sources.forEach(src => addSourceField('series', src.sourceName, src.sourceUrl));
+                });
+        }
     };
 
     function setupSeriesEditMode(btnText) {
@@ -1055,6 +1088,9 @@
         const searchInput = document.getElementById('seriesSearchFilter');
         if (searchInput) searchInput.value = "";
 
+        // Clear sources
+        document.getElementById('seriesSourcesList').innerHTML = '';
+
         resetFileInputs();
     }
 
@@ -1105,12 +1141,17 @@
             }
         });
 
-        xhr.addEventListener("load", function () {
+        xhr.addEventListener("load", async function () {
             if (xhr.status === 200) {
                 alert("İşlem Başarılı!\n" + xhr.responseText);
+
+                // CRITICAL FIX: Run callback (save sources) BEFORE resetting the form!
+                if (successCallback) {
+                    await successCallback(xhr.responseText);
+                }
+
                 document.getElementById(formId).reset();
                 wrapper.style.display = "none";
-                if (successCallback) successCallback();
             } else {
                 alert("Hata Oluştu: " + xhr.statusText + "\n" + xhr.responseText);
             }
@@ -1515,6 +1556,67 @@
                     tbody.appendChild(tr);
                 });
             });
+    }
+
+    window.addSourceField = function (type, name = '', url = '') {
+        const container = document.getElementById(`${type}SourcesList`);
+        if (!container) return;
+
+        const row = document.createElement('div');
+        row.className = 'source-row premium-source-row';
+        row.innerHTML = `
+            <div class="source-inputs">
+                <div class="input-with-icon">
+                    <i class="fas fa-tag"></i>
+                    <input type="text" class="source-name" placeholder="Kaynak Adı (örn: Vidmoly)" value="${name}">
+                </div>
+                <div class="input-with-icon">
+                    <i class="fas fa-link"></i>
+                    <input type="text" class="source-url" placeholder="Iframe URL veya Link" value="${url}">
+                </div>
+            </div>
+            <button type="button" class="btn-remove-source" onclick="this.parentElement.remove()" title="Kaynağı Kaldır">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        container.appendChild(row);
+    };
+
+    async function saveExternalSources(contentId, type) {
+        try {
+            // First delete existing sources
+            await fetch(`/admin/delete-sources-for-content?contentId=${contentId}`, { method: 'DELETE' });
+
+            const listDiv = document.getElementById(`${type}SourcesList`);
+            if (!listDiv) return;
+
+            const rows = listDiv.querySelectorAll('.source-row');
+            let order = 0;
+            for (const row of rows) {
+                const name = row.querySelector('.source-name').value.trim();
+                const url = row.querySelector('.source-url').value.trim();
+
+                if (name && url) {
+                    const res = await fetch('/admin/add-source', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contentId: contentId,
+                            sourceName: name,
+                            sourceUrl: url,
+                            sortOrder: order++
+                        })
+                    });
+                    if (!res.ok) {
+                        const msg = await res.text();
+                        alert(`Kaynak (${name}) kaydedilemedi: ${msg}`);
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Source save error:", e);
+            alert("Kaynaklar kaydedilirken bir hata oluştu. Lütfen konsolu kontrol edin.");
+        }
     }
 
     window.deleteUpcoming = function (id) {
