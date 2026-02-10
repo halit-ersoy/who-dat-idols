@@ -176,6 +176,23 @@
     transform: scale(1.08);
 }
 
+.upcoming-card-image.no-image {
+    background: linear-gradient(135deg, #282828 0%, #121212 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.upcoming-no-image-placeholder {
+    display: none;
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 40px;
+}
+
+.upcoming-card-image.no-image .upcoming-no-image-placeholder {
+    display: block;
+}
+
 .upcoming-play-icon {
     position: absolute;
     top: 50%;

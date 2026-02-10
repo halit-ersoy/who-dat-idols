@@ -22,6 +22,7 @@ import java.util.Map;
 public class TranscodingService {
     private final Map<String, String> transcodedCache = new HashMap<>();
 
+    @SuppressWarnings("null")
     public ResourceRegion resourceRegion(Resource video, String rangeHeader, long contentLength) throws IOException {
         long chunkSize = 1024 * 1024; // 1 MB
 
@@ -39,8 +40,9 @@ public class TranscodingService {
         }
     }
 
+    @SuppressWarnings("null")
     public ResponseEntity<ResourceRegion> getTranscodedVideo(String originalVideoPath, String videoId,
-                                                             int targetRes, String rangeHeader) throws IOException {
+            int targetRes, String rangeHeader) throws IOException {
         try {
             int[] dimensions = FFmpegUtils.getVideoWidthHeight(originalVideoPath);
             if (dimensions == null) {

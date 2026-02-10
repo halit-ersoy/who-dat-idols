@@ -15,7 +15,7 @@ export function initLoadedEpisodesSection() {
     }
 
     // Cache for both translated and upcoming data
-    let episodesData = {translated: null, upcoming: null};
+    let episodesData = { translated: null, upcoming: null };
     let currentMode = 'translated';
     let isLoading = false;
 
@@ -133,7 +133,7 @@ export function initLoadedEpisodesSection() {
         }
 
         // Convert text statuses to percentage values
-        switch(String(status).toLowerCase()) {
+        switch (String(status).toLowerCase()) {
             case 'çevrildi':
             case 'hazır':
             case 'completed':
@@ -249,9 +249,12 @@ export function initLoadedEpisodesSection() {
                 card.onclick = () => window.location.href = `/watch?id=${episode.ID}`;
                 card.innerHTML = `
                 <div class="upcoming-card-image img-skeleton">
-                    <img src="/media/image/${episode.ID}" alt="${episode.name}">
+                    <img src="/media/image/${episode.ID}" alt="${episode.name}" onerror="this.style.display='none'; this.parentElement.classList.add('no-image');">
                     <div class="upcoming-play-icon">
                         <i class="fas fa-play"></i>
+                    </div>
+                    <div class="upcoming-no-image-placeholder">
+                        <i class="fas fa-film"></i>
                     </div>
                 </div>
                 <div class="upcoming-card-content">
@@ -317,9 +320,12 @@ export function initLoadedEpisodesSection() {
                 card.onclick = () => window.location.href = `/watch?id=${episode.ID}`;
                 card.innerHTML = `
                     <div class="upcoming-card-image img-skeleton">
-                        <img src="/media/image/${episode.ID}" alt="${episode.name}">
+                        <img src="/media/image/${episode.ID}" alt="${episode.name}" onerror="this.style.display='none'; this.parentElement.classList.add('no-image');">
                         <div class="upcoming-play-icon">
                             <i class="fas fa-play"></i>
+                        </div>
+                        <div class="upcoming-no-image-placeholder">
+                            <i class="fas fa-film"></i>
                         </div>
                     </div>
                     <div class="upcoming-card-content">
@@ -353,11 +359,11 @@ export function initLoadedEpisodesSection() {
 
         if (prevBtn && nextBtn) {
             prevBtn.addEventListener('click', () => {
-                carousel.scrollBy({left: -800, behavior: 'smooth'});
+                carousel.scrollBy({ left: -800, behavior: 'smooth' });
             });
 
             nextBtn.addEventListener('click', () => {
-                carousel.scrollBy({left: 800, behavior: 'smooth'});
+                carousel.scrollBy({ left: 800, behavior: 'smooth' });
             });
         }
     }

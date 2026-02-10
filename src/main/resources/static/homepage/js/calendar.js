@@ -46,37 +46,13 @@ export function initCalendar() {
     });
 
     function loadCalendarData() {
-        // Updated show data based on user requirements
-        const calendarData = {
-            monday: [],
-            tuesday: [
-                { title: "Street Woman Fighter 3", episode: "Yeni Bölüm", time: "20:00" }
-            ],
-            wednesday: [],
-            thursday: [
-                { title: "The Ex-Morning", episode: "Yeni Bölüm", time: "19:00" },
-                { title: "Seducing Drake Palma", episode: "Yeni Bölüm", time: "21:30" }
-            ],
-            friday: [
-                { title: "Knock Out", episode: "Yeni Bölüm", time: "18:00" },
-                { title: "Pit babe 2", episode: "Yeni Bölüm", time: "20:30" }
-            ],
-            saturday: [
-                { title: "The Next Prince", episode: "Yeni Bölüm", time: "17:00" },
-                { title: "Our Unwritten Seoul", episode: "Yeni Bölüm", time: "19:30" },
-                { title: "Good Boy", episode: "Yeni Bölüm", time: "21:00" }
-            ],
-            sunday: [
-                { title: "Boys in Love", episode: "Yeni Bölüm", time: "16:00" },
-                { title: "My Stubborn", episode: "Yeni Bölüm", time: "17:30" },
-                { title: "Our Unwritten Seoul", episode: "Yeni Bölüm", time: "19:00" },
-                { title: "Good Boy", episode: "Yeni Bölüm", time: "20:30" },
-                { title: "Fresh off the Sea", episode: "Yeni Bölüm", time: "22:00" }
-            ]
-        };
-
-        // Setup the drawer structure
-        createDrawerStructure(calendarData);
+        fetch('/api/calendar')
+            .then(response => response.json())
+            .then(calendarData => {
+                // Setup the drawer structure
+                createDrawerStructure(calendarData);
+            })
+            .catch(error => console.error('Error loading calendar data:', error));
     }
 
     function createDrawerStructure(calendarData) {
@@ -140,7 +116,7 @@ export function initCalendar() {
             weeklyCalendar.appendChild(dayEl);
 
             // Add click event
-            header.addEventListener('click', function() {
+            header.addEventListener('click', function () {
                 toggleDrawer(day);
             });
         });

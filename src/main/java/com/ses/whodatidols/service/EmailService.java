@@ -17,6 +17,7 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
+    @SuppressWarnings("null")
     public void sendVerificationCode(String email, String code) {
         try {
             MimeMessage message = mailSender.createMimeMessage();

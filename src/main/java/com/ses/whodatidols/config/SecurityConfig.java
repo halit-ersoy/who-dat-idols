@@ -52,9 +52,9 @@ public class SecurityConfig {
 
         @Bean
         public InMemoryUserDetailsManager userDetailsService() {
-                UserDetails admin = User.withDefaultPasswordEncoder()
+                UserDetails admin = User.builder()
                                 .username("admin")
-                                .password("Sh218106")
+                                .password("{noop}Sh218106")
                                 .roles("ADMIN")
                                 .build();
 

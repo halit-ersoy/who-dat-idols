@@ -34,6 +34,9 @@
 /* 9) Wishlist styles */
 @import url('wishlist.css');
 
+/* 10) Episode selection */
+@import url('episode-selection.css');
+
 .back-button {
     color: #fff;
     text-decoration: none;
@@ -64,5 +67,6 @@ header {
 }
 
 body {
-    padding-top: 70px; /* Header yüksekliğine göre ayarlanmalı */
+    padding-top: 70px;
+    /* Header yüksekliğine göre ayarlanmalı */
 }

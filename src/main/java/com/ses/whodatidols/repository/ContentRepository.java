@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.HashMap;
 
 @Repository
 public class ContentRepository {
@@ -17,29 +18,42 @@ public class ContentRepository {
 
     public void incrementViewCount(UUID id) {
         String sql = "EXEC IncrementContentCountById @id = ?";
-        jdbcTemplate.update(sql, id);
+        jdbcTemplate.update(sql, id.toString());
     }
 
+    /**
+     * Returns the content type (movie, soap_opera, trailer) for the given ID.
+     * The path resolution is now handled in the Service layer.
+     */
     public String findVideoUrlById(UUID id) {
-        String sqlMovie = "SELECT [sourcePath] FROM [WhoDatIdols].[dbo].[Movie] WHERE [ID] = ?";
         try {
-            String path = jdbcTemplate.queryForObject(sqlMovie, String.class, id.toString());
-            if (path != null && !path.isEmpty()) {
-                return path;
-            }
+            String sql = "SELECT [dbo].[GetContentTypeById](?)";
+            return jdbcTemplate.queryForObject(sql, String.class, id.toString());
         } catch (Exception e) {
-        }
-
-        String sqlSoapOpera = "SELECT [sourcePath] FROM [WhoDatIdols].[dbo].[SoapOpera] WHERE [ID] = ?";
-        try {
-            return jdbcTemplate.queryForObject(sqlSoapOpera, String.class, id.toString());
-        } catch (Exception e) {
-            return null;
+            return "unknown";
         }
     }
 
-    public List<Map<String, Object>> searchContent(String nameTerm, Integer yearTerm, String typeTerm, String categoryTerm) {
-        String sql = "{call SearchContentSmart(?, ?, ?, ?)}";
-        return jdbcTemplate.queryForList(sql, nameTerm, yearTerm, typeTerm, categoryTerm);
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ContentRepository.class);
+
+    public List<Map<String, Object>> searchContent(String nameTerm, Integer yearTerm, String typeTerm,
+            String categoryTerm) {
+        String sql = "EXEC [dbo].[SearchContentSmart] @NameTerm = ?, @YearTerm = ?, @TypeTerm = ?, @CategoryTerm = ?";
+
+        try {
+            return jdbcTemplate.query(sql, (rs, rowNum) -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("ID", rs.getString("ID"));
+                map.put("Name", rs.getString("Name"));
+                map.put("Category", rs.getString("Category"));
+                map.put("Year", rs.getObject("Year"));
+                map.put("Type", rs.getString("Type"));
+                map.put("Description", rs.getString("Description"));
+                return map;
+            }, nameTerm, yearTerm, typeTerm, categoryTerm);
+        } catch (Exception e) {
+            logger.error("Error executing search stored procedure: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 }

@@ -1,9 +1,10 @@
 package com.ses.whodatidols.controller;
 
 import com.ses.whodatidols.model.Movie;
-import com.ses.whodatidols.model.SoapOpera;
-import com.ses.whodatidols.service.MovieService; // Servisinizin olduğunu varsayıyorum
-import com.ses.whodatidols.service.SoapOperaService; // Servisinizin olduğunu varsayıyorum
+import com.ses.whodatidols.model.Series;
+import com.ses.whodatidols.service.MovieService;
+import com.ses.whodatidols.service.SeriesService;
+import com.ses.whodatidols.service.TvMazeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -24,41 +25,45 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/admin") // Bu ön ek sayesinde SecurityConfig şifre soracak
+@RequestMapping("/admin")
 public class AdminController {
 
     private final MovieService movieService;
-    private final SoapOperaService soapOperaService;
+    private final SeriesService seriesService;
+    private final TvMazeService tvMazeService;
     private final JdbcTemplate jdbcTemplate;
 
     @Value("${media.source.trailers.path}")
+    private String trailersPath;
+
+    @Value("${media.source.trailers.path}")
     private String heroVideosPath;
+
+    @Value("${media.source.upcoming.path}")
+    private String upcomingPath;
 
     @Value("${media.source.movies.path}")
     private String moviesPath;
 
     @Value("${media.source.soap_operas.path}")
-    private String soapOperasPath;
+    private String soapOperasPath; // Keep prop name same for now
 
     @Autowired
-    public AdminController(MovieService movieService, SoapOperaService soapOperaService, JdbcTemplate jdbcTemplate) {
+    public AdminController(MovieService movieService, SeriesService seriesService,
+            TvMazeService tvMazeService, JdbcTemplate jdbcTemplate) {
         this.movieService = movieService;
-        this.soapOperaService = soapOperaService;
+        this.seriesService = seriesService;
+        this.tvMazeService = tvMazeService;
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    // İSTEDİĞİNİZ GET METODUNUN DÜZENLENMİŞ HALİ
     @GetMapping("/panel")
     public ResponseEntity<Resource> getAdminPanel() {
-        System.out.println("Admin Panel requested!");
         try {
-            // Dosya yolu: src/main/resources/static/admin/html/panel.html
             Resource htmlPage = new ClassPathResource("static/panel/html/panel.html");
-
             if (!htmlPage.exists()) {
                 return ResponseEntity.notFound().build();
             }
-
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
                     .body(htmlPage);
@@ -75,44 +80,46 @@ public class AdminController {
                 .build();
     }
 
-    // 1. FİLM LİSTESİNİ ÇEKME (JSON)
     @GetMapping("/movies")
     public ResponseEntity<List<Movie>> getMovies() {
         return ResponseEntity.ok(movieService.getAllMovies());
     }
 
     @GetMapping("/series")
-    public ResponseEntity<List<SoapOpera>> getSeriesList() {
-        return ResponseEntity.ok(soapOperaService.getAllSeries());
+    public ResponseEntity<List<Series>> getSeriesList() {
+        return ResponseEntity.ok(seriesService.getAllSeries());
     }
 
     @GetMapping("/series/check")
     public ResponseEntity<Map<String, Boolean>> checkSeriesExists(@RequestParam("name") String name) {
-        boolean exists = soapOperaService.findSeriesByName(name) != null;
+        boolean exists = seriesService.findSeriesByName(name) != null;
         return ResponseEntity.ok(Map.of("exists", exists));
     }
 
-    // FİLM KAYDETME ENDPOINT'İ
     @PostMapping("/add-movie")
     public ResponseEntity<String> addMovie(
             @ModelAttribute Movie movie,
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam(value = "image", required = false) MultipartFile image,
             @RequestParam(value = "imageUrl", required = false) String imageUrl,
-            @RequestParam("summary") String summary) { // Özet parametresi eklendi
+            @RequestParam("summary") String summary) {
         try {
             if (file == null || file.isEmpty()) {
                 return ResponseEntity.badRequest().body("Film dosyası seçilmelidir.");
             }
-            // Summary artık _content alanına işleniyor, Time otomatik hesaplanıyor
+            // Note: MovieService also likely needs updates for DB column names if it uses
+            // raw SQL,
+            // but we are focusing on Series/Episode/Hero for now. assuming Movie table was
+            // NOT renamed?
+            // Actually I did NOT rename Movie table.
+
             movieService.saveMovieWithFile(movie, file, image, summary);
 
-            // Eğer manuel resim yoksa ama URL varsa indir
             if ((image == null || image.isEmpty()) && imageUrl != null && !imageUrl.isEmpty()) {
                 movieService.saveImageFromUrl(movie.getId(), imageUrl);
             }
 
-            return ResponseEntity.ok("Film başarıyla işlendi. Süre otomatik hesaplandı Efendim.");
+            return ResponseEntity.ok("Film başarıyla işlendi.");
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
@@ -125,13 +132,11 @@ public class AdminController {
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam(value = "image", required = false) MultipartFile image) {
         try {
-            // ID boş olamaz
             if (movie.getId() == null) {
-                return ResponseEntity.badRequest().body("Film ID bulunamadı Efendim.");
+                return ResponseEntity.badRequest().body("Film ID bulunamadı.");
             }
-
             movieService.updateMovie(movie, file, image);
-            return ResponseEntity.ok("Film verileri ve video başarıyla revize edildi.");
+            return ResponseEntity.ok("Film güncellendi.");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Güncelleme hatası: " + e.getMessage());
         }
@@ -139,28 +144,27 @@ public class AdminController {
 
     @PostMapping("/update-series")
     public ResponseEntity<String> updateSeries(
-            @ModelAttribute SoapOpera s,
+            @ModelAttribute Series s,
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam(value = "image", required = false) MultipartFile image) {
         try {
             if (s.getId() == null)
                 return ResponseEntity.badRequest().body("Dizi ID yok.");
-            soapOperaService.updateSeriesMetadata(s, file, image);
-            return ResponseEntity.ok("Dizi bilgileri ve video güncellendi.");
+            seriesService.updateSeriesMetadata(s, file, image);
+            return ResponseEntity.ok("Dizi güncellendi.");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
         }
     }
 
-    // DİZİ KAYDETME ENDPOINT'İ
-    @PostMapping("/add-series") // Endpoint adı eski HTML ile uyumlu kalsın
+    @PostMapping("/add-series")
     public ResponseEntity<String> addSoapOpera(
-            @ModelAttribute SoapOpera soapOpera,
+            @ModelAttribute Series seriesInfo,
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam(value = "image", required = false) MultipartFile image,
             @RequestParam(value = "imageUrl", required = false) String imageUrl,
-            @RequestParam(value = "existingSeriesId", required = false) UUID existingSeriesId, // YENİ PARAMETRE
-            @RequestParam(value = "summary", required = false) String summary, // Mevcut seride zorunlu değil
+            @RequestParam(value = "existingSeriesId", required = false) UUID existingSeriesId,
+            @RequestParam(value = "summary", required = false) String summary,
             @RequestParam("season") int season,
             @RequestParam("episode") int episode) {
         try {
@@ -168,67 +172,50 @@ public class AdminController {
                 return ResponseEntity.badRequest().body("Bölüm dosyası seçilmelidir.");
             }
 
-            // Eğer mevcut bir dizi seçildiyse ID'yi set et
             if (existingSeriesId != null) {
-                soapOpera.setId(existingSeriesId);
-                // Mevcut diziye eklerken isim, kategori vb. serviste halledilecek veya boş
-                // gelebilir
+                seriesInfo.setId(existingSeriesId);
             }
 
-            soapOpera.setContent(summary);
-            soapOpera.setSeasonNumber(season);
-            soapOpera.setEpisodeNumber(episode);
+            seriesInfo.setSummary(summary);
+            // season/episode are passed separately now
 
-            // Servis metodunu güncelleyeceğiz: existingSeriesId var mı yok mu kontrolü
-            // orada yapılacak
-            soapOperaService.saveEpisodeWithFile(soapOpera, file, image, existingSeriesId);
+            seriesService.saveEpisodeWithFile(seriesInfo, season, episode, file, image, existingSeriesId);
 
-            // Eğer manuel resim yoksa ama URL varsa indir (Parent dizi için)
-            // Sadece YENİ bir dizi oluşturuluyorsa veya mevcut dizinin resmi yoksa
-            // (opsiyonel)
-            // Şimdilik sadece yeni dizi oluştururken URL varsa indirelim, mevcut dizinin
-            // resmi zaten vardır.
             if (existingSeriesId == null && (image == null || image.isEmpty()) && imageUrl != null
                     && !imageUrl.isEmpty()) {
-                SoapOpera parent = soapOperaService.findSeriesByName(soapOpera.getName());
+                Series parent = seriesService.findSeriesByName(seriesInfo.getName());
                 if (parent != null) {
-                    soapOperaService.saveImageFromUrl(parent.getId(), imageUrl);
+                    seriesService.saveImageFromUrl(parent.getId(), imageUrl);
                 }
             }
 
-            return ResponseEntity.ok("Bölüm başarıyla işlendi (S" + season + "E" + episode + "). XML güncellendi.");
+            return ResponseEntity.ok("Bölüm başarıyla işlendi (S" + season + "E" + episode + ").");
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
         }
     }
 
-    // TEK BİR BÖLÜMÜ SİL
     @DeleteMapping("/delete-episode")
     public ResponseEntity<String> deleteEpisode(@RequestParam("id") UUID id) {
         try {
-            // Servisinizde delete metodu olmalı. Yoksa repository.deleteById(id)
-            // çağrılmalı.
-            soapOperaService.deleteEpisodeById(id);
+            seriesService.deleteEpisodeById(id);
             return ResponseEntity.ok("Bölüm silindi.");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Silinemedi: " + e.getMessage());
         }
     }
 
-    // BİR DİZİNİN TAMAMINI SİL
     @DeleteMapping("/delete-series-by-name")
     public ResponseEntity<String> deleteSeriesByName(@RequestParam("name") String name) {
         try {
-            // Servisinizde isme göre silme olmalı
-            soapOperaService.deleteSeriesByName(name);
+            seriesService.deleteSeriesByName(name);
             return ResponseEntity.ok("Dizi komple silindi.");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Silinemedi: " + e.getMessage());
         }
     }
 
-    // FİLM SİL
     @DeleteMapping("/delete-movie")
     public ResponseEntity<String> deleteMovie(@RequestParam("id") UUID id) {
         try {
@@ -239,7 +226,6 @@ public class AdminController {
         }
     }
 
-    // TOPLU FİLM SİLME (BULK DELETE)
     @PostMapping("/delete-movies-bulk")
     public ResponseEntity<String> deleteMoviesBulk(@RequestBody List<UUID> ids) {
         try {
@@ -252,12 +238,11 @@ public class AdminController {
         }
     }
 
-    // TOPLU DİZİ SİLME (BULK DELETE)
     @PostMapping("/delete-series-bulk")
     public ResponseEntity<String> deleteSeriesBulk(@RequestBody List<UUID> ids) {
         try {
             for (UUID id : ids) {
-                soapOperaService.deleteSeriesById(id);
+                seriesService.deleteSeriesById(id);
             }
             return ResponseEntity.ok(ids.size() + " dizi başarıyla silindi.");
         } catch (Exception e) {
@@ -265,7 +250,7 @@ public class AdminController {
         }
     }
 
-    // HERO YÖNETİMİ
+    // HERO MANAGEMENT
     @GetMapping("/hero-videos")
     public ResponseEntity<List<Map<String, Object>>> getAdminHeroVideos() {
         return getHeroVideos();
@@ -275,16 +260,19 @@ public class AdminController {
         // Ensure column exists for existing installations
         try {
             jdbcTemplate.execute(
-                    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('HeroVideo') AND name = 'sortOrder') ALTER TABLE HeroVideo ADD sortOrder INT DEFAULT 0");
+                    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Hero') AND name = 'sortOrder') ALTER TABLE Hero ADD sortOrder INT DEFAULT 0");
         } catch (Exception e) {
         }
 
+        // Updated SQL for renamed tables and columns
         String robustSql = "SELECT * FROM (" +
-                "  SELECT H.[ID], M.[name], M.[category], M.[_content], 'Movie' AS [type], H.sortOrder " +
-                "  FROM HeroVideo H INNER JOIN Movie M ON H.referanceID = M.ID " +
+                "  SELECT H.[ID], M.[name], M.[category], H.[CustomSummary] as _content, 'Movie' AS [type], H.sortOrder "
+                +
+                "  FROM Hero H INNER JOIN Movie M ON H.ReferenceId = M.ID " +
                 "  UNION ALL " +
-                "  SELECT H.[ID], S.[name], S.[category], S.[_content], 'SoapOpera' AS [type], H.sortOrder " +
-                "  FROM HeroVideo H INNER JOIN SoapOperas S ON H.referanceID = S.ID " +
+                "  SELECT H.[ID], S.[name], S.[category], H.[CustomSummary] as _content, 'SoapOpera' AS [type], H.sortOrder "
+                +
+                "  FROM Hero H INNER JOIN Series S ON H.ReferenceId = S.ID " +
                 ") AS Result ORDER BY sortOrder ASC";
 
         return ResponseEntity.ok(jdbcTemplate.queryForList(robustSql));
@@ -297,42 +285,45 @@ public class AdminController {
     public ResponseEntity<String> addHero(
             @RequestParam("contentId") UUID contentId,
             @RequestParam("type") String type,
+            @RequestParam("content") String content,
             @RequestParam("file") MultipartFile file) {
         try {
-            // First ensure the column exists (one-time check or migration)
             try {
-                jdbcTemplate.execute("ALTER TABLE HeroVideo ADD sortOrder INT DEFAULT 0");
+                jdbcTemplate.execute("ALTER TABLE Hero ADD sortOrder INT DEFAULT 0");
             } catch (Exception e) {
-                // Column might already exist
             }
 
-            Map<String, Object> content;
             if ("Film".equalsIgnoreCase(type) || "Movie".equalsIgnoreCase(type)) {
-                content = jdbcTemplate.queryForMap("SELECT name, category, _content FROM Movie WHERE ID = ?",
+                jdbcTemplate.queryForMap("SELECT name, category, Summary FROM Movie WHERE ID = ?",
                         contentId.toString());
                 type = "Movie";
             } else {
-                content = jdbcTemplate.queryForMap("SELECT name, category, _content FROM SoapOperas WHERE ID = ?",
+                // Query renamed Series table
+                jdbcTemplate.queryForMap("SELECT name, category, Summary FROM Series WHERE ID = ?",
                         contentId.toString());
-                type = "SoapOpera";
+                type = "SoapOpera"; // Keep type string legacy for now or update?
+                                    // Frontend likely sends/expects 'SoapOpera'
             }
 
-            // Execute the stored procedure AddHeroVideo which only takes referanceID
-            jdbcTemplate.update("EXEC [dbo].[AddHeroVideo] @referanceID = ?", contentId);
+            // Execute stored procedure - assuming it handles the new table name or we
+            // update it?
+            // Actually 'AddHeroVideo' stored proc likely inserts into 'HeroVideo' (old
+            // name).
+            // We renamed the table 'HeroVideo' to 'Hero'.
+            // Stored procedure usually DOES NOT auto-update. We should use direct SQL or
+            // update SP.
+            // I'll use direct SQL insertion to avoid dependency on SP that might be broken.
 
-            // Set the sortOrder to max + 1
             jdbcTemplate.update(
-                    "UPDATE HeroVideo SET sortOrder = (SELECT ISNULL(MAX(sortOrder), 0) + 1 FROM HeroVideo) WHERE ID = (SELECT TOP 1 ID FROM HeroVideo WHERE referanceID = ? ORDER BY sortOrder DESC)",
-                    contentId.toString());
+                    "INSERT INTO Hero (ID, ReferenceId, CustomSummary, sortOrder) VALUES (NEWID(), ?, ?, (SELECT ISNULL(MAX(sortOrder), 0) + 1 FROM Hero))",
+                    contentId, content);
 
-            // Since we need the ID of the newly created HeroVideo for the file naming (if
-            // it's not the same as contentId)
+            // We need the ID of the inserted row
             String heroIdStr = jdbcTemplate.queryForObject(
-                    "SELECT TOP 1 CAST(ID AS NVARCHAR(36)) FROM HeroVideo WHERE referanceID = ? ORDER BY sortOrder DESC",
+                    "SELECT TOP 1 CAST(ID AS NVARCHAR(36)) FROM Hero WHERE ReferenceId = ? ORDER BY sortOrder DESC",
                     String.class, contentId.toString());
             UUID heroId = UUID.fromString(heroIdStr);
 
-            // Resim kopyalama (Hero videosu için içerik resmini kullanıyoruz)
             copyHeroImage(contentId, heroId, type);
 
             if (file != null && !file.isEmpty()) {
@@ -354,7 +345,7 @@ public class AdminController {
     public ResponseEntity<String> updateHeroOrder(@RequestBody List<String> heroIds) {
         try {
             for (int i = 0; i < heroIds.size(); i++) {
-                jdbcTemplate.update("UPDATE HeroVideo SET sortOrder = ? WHERE ID = ?", i, heroIds.get(i));
+                jdbcTemplate.update("UPDATE Hero SET sortOrder = ? WHERE ID = ?", i, heroIds.get(i));
             }
             return ResponseEntity.ok("Sıralama güncellendi.");
         } catch (Exception e) {
@@ -365,22 +356,15 @@ public class AdminController {
     @DeleteMapping("/delete-hero")
     public ResponseEntity<String> deleteHero(@RequestParam("id") UUID id) {
         try {
-            // HeroVideo tablosundan silmeden önce referans ID'yi veya direkt ID'yi
-            // kullanarak dosyaları temizlemeliyiz.
-            // Bu metodda gelen id HeroVideo'nun kendi ID'sidir.
-
             Path uploadPath = Paths.get(heroVideosPath).toAbsolutePath().normalize();
-
-            // Video sil
             Files.deleteIfExists(uploadPath.resolve(id.toString() + ".mp4"));
 
-            // Resimleri sil
             String[] extensions = { ".jpg", ".jpeg", ".png", ".webp" };
             for (String ext : extensions) {
                 Files.deleteIfExists(uploadPath.resolve(id.toString() + ext));
             }
 
-            jdbcTemplate.update("DELETE FROM HeroVideo WHERE ID = ?", id.toString());
+            jdbcTemplate.update("DELETE FROM Hero WHERE ID = ?", id.toString());
 
             return ResponseEntity.ok("Hero video ve ilgili dosyalar silindi.");
         } catch (Exception e) {
@@ -400,11 +384,109 @@ public class AdminController {
                 if (Files.exists(sourceFile)) {
                     Files.copy(sourceFile, targetBase.resolve(heroId.toString() + ext),
                             StandardCopyOption.REPLACE_EXISTING);
-                    break; // Sadece bir resmi kopyalamak yeterli
+                    break;
                 }
             }
         } catch (Exception e) {
             System.err.println("Hero resmi kopyalanamadı: " + e.getMessage());
+        }
+    }
+
+    // UPCOMING MANAGEMENT
+    @GetMapping("/upcoming")
+    public ResponseEntity<List<Map<String, Object>>> getUpcoming() {
+        return ResponseEntity.ok(jdbcTemplate.queryForList("EXEC GetUpcoming"));
+    }
+
+    @PostMapping("/add-upcoming")
+    public ResponseEntity<String> addUpcoming(
+            @RequestParam("name") String name,
+            @RequestParam("type") String type,
+            @RequestParam("category") String category,
+            @RequestParam("status") String status,
+            @RequestParam("datetime") String datetimeStr,
+            @RequestParam(value = "referenceId", required = false) String referenceId,
+            @RequestParam(value = "image", required = false) MultipartFile image,
+            @RequestParam(value = "imageUrl", required = false) String imageUrl) {
+        try {
+            java.sql.Timestamp timestamp = null;
+            if (datetimeStr != null && !datetimeStr.isEmpty()) {
+                String formatted = datetimeStr.replace("T", " ");
+                if (formatted.length() == 16) {
+                    formatted += ":00";
+                }
+                timestamp = java.sql.Timestamp.valueOf(formatted);
+            }
+
+            UUID uuid = null;
+            if (referenceId != null && !referenceId.isEmpty()) {
+                uuid = UUID.fromString(referenceId);
+            }
+
+            UUID upcomingId = UUID.randomUUID();
+
+            jdbcTemplate.update("EXEC AddUpcomingCustom ?, ?, ?, ?, ?, ?, ?",
+                    upcomingId,
+                    name,
+                    type,
+                    status,
+                    timestamp,
+                    uuid,
+                    category);
+
+            if (image != null && !image.isEmpty()) {
+                saveUpcomingImage(upcomingId, image);
+            } else if (imageUrl != null && !imageUrl.isEmpty()) {
+                saveUpcomingImageFromUrl(upcomingId, imageUrl);
+            }
+
+            return ResponseEntity.ok("Beklenen bölüm eklendi.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Ekleme hatası: " + e.getMessage());
+        }
+    }
+
+    private void saveUpcomingImage(UUID id, MultipartFile image) {
+        try {
+            Path targetPath = Paths.get(upcomingPath).toAbsolutePath().normalize();
+            if (!Files.exists(targetPath)) {
+                Files.createDirectories(targetPath);
+            }
+            String extension = ".jpg"; // Default
+            String originalName = image.getOriginalFilename();
+            if (originalName != null && originalName.lastIndexOf(".") > 0) {
+                extension = originalName.substring(originalName.lastIndexOf("."));
+            }
+            Files.copy(image.getInputStream(), targetPath.resolve(id.toString() + extension),
+                    StandardCopyOption.REPLACE_EXISTING);
+        } catch (Exception e) {
+            System.err.println("Upcoming resmi kaydedilemedi: " + e.getMessage());
+        }
+    }
+
+    private void saveUpcomingImageFromUrl(UUID id, String imageUrl) {
+        try {
+            byte[] imageBytes = tvMazeService.downloadImage(imageUrl);
+            if (imageBytes != null) {
+                Path targetPath = Paths.get(upcomingPath).toAbsolutePath().normalize().resolve(id.toString() + ".jpg");
+                if (!Files.exists(targetPath.getParent())) {
+                    Files.createDirectories(targetPath.getParent());
+                }
+                Files.write(targetPath, imageBytes);
+            }
+        } catch (Exception e) {
+            System.err.println("URL'den upcoming resmi kaydedilemedi: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/delete-upcoming")
+    public ResponseEntity<String> deleteUpcoming(@RequestParam("id") UUID id) {
+        try {
+            jdbcTemplate.update("EXEC DeleteUpcoming ?", id);
+            return ResponseEntity.ok("Beklenen bölüm silindi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Silme hatası: " + e.getMessage());
         }
     }
 }

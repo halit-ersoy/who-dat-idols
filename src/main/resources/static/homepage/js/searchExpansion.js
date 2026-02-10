@@ -64,9 +64,9 @@ export function initHeaderInteractions() {
     if (searchInput && searchResults) {
         searchInput.addEventListener('input', () => {
             const query = searchInput.value.trim();
-            
+
             clearTimeout(searchTimeout);
-            
+
             if (query.length < 2) {
                 searchResults.innerHTML = '';
                 searchResults.classList.remove('active');
@@ -77,7 +77,7 @@ export function initHeaderInteractions() {
                 try {
                     const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
                     const data = await response.json();
-                    
+
                     displaySearchResults(data, searchResults);
                 } catch (error) {
                     console.error('Search error:', error);
@@ -101,32 +101,42 @@ export function initHeaderInteractions() {
     }
 
     function displaySearchResults(results, container) {
+        console.log('Displaying search results:', results);
         container.innerHTML = '';
-        
-        if (results.length === 0) {
+
+        if (!Array.isArray(results) || results.length === 0) {
             container.innerHTML = '<div class="no-results">Sonuç bulunamadı</div>';
             container.classList.add('active');
             return;
         }
 
-        results.slice(0, 8).forEach(item => {
+        results.slice(0, 10).forEach(item => {
             const resultItem = document.createElement('div');
             resultItem.className = 'search-result-item';
-            
-            const typeLabel = item.Type === 'Movie' ? 'Film' : 'Dizi';
-            const yearInfo = item.Year ? `(${item.Year})` : '';
+
+            // Standardize keys (handling potential casing issues from backend)
+            const id = item.ID || item.id || item.Id;
+            const name = item.Name || item.name || item.NAME || 'İsimsiz';
+            const type = item.Type || item.type || item.TYPE || '';
+            const category = item.Category || item.category || item.CATEGORY || '';
+            const year = item.Year || item.year || item.YEAR;
+
+            const typeLabel = type === 'Movie' ? 'Film' : (type === 'SoapOpera' ? 'Dizi' : type);
+            const yearInfo = year ? `(${year})` : '';
 
             resultItem.innerHTML = `
                 <div class="result-info">
-                    <div class="result-name">${item.Name} ${yearInfo}</div>
-                    <div class="result-meta">${typeLabel} • ${item.Category || ''}</div>
+                    <div class="result-name">${name} ${yearInfo}</div>
+                    <div class="result-meta">${typeLabel} • ${category}</div>
                 </div>
             `;
-            
-            resultItem.addEventListener('click', () => {
-                window.location.href = `/watch?id=${item.ID}`;
-            });
-            
+
+            if (id) {
+                resultItem.addEventListener('click', () => {
+                    window.location.href = `/watch?id=${id}`;
+                });
+            }
+
             container.appendChild(resultItem);
         });
 

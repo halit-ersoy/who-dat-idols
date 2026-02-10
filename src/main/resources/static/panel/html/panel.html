@@ -30,6 +30,12 @@
                 <a href="#series-section" class="nav-link" data-section="series-section">
                     <i class="fas fa-tv"></i> Dizi Yönetimi
                 </a>
+                <a href="#calendar-section" class="nav-link" data-section="calendar-section">
+                    <i class="fas fa-calendar-alt"></i> Takvim Yönetimi
+                </a>
+                <a href="#upcoming-section" class="nav-link" data-section="upcoming-section">
+                    <i class="fas fa-clock"></i> Upcoming Yönetimi
+                </a>
                 <a href="#archive-section" class="nav-link" data-section="archive-section">
                     <i class="fas fa-database"></i> Arşiv & Liste
                 </a>
@@ -50,21 +56,20 @@
             <!-- DASHBOARD SECTION -->
             <section id="dashboard-section" class="admin-section">
                 <div class="form-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 30px;">
-                    <div class="card" style="text-align: center; padding: 25px;">
-                        <i class="fas fa-film"
-                            style="font-size: 2.5rem; color: var(--primary); margin-bottom: 10px;"></i>
-                        <h3 style="font-size: 2.5rem; font-weight: 700;" id="statTotalMovies">-</h3>
-                        <p style="color: var(--text-dim);">Toplam Film</p>
+                    <div class="card card-stat">
+                        <i class="fas fa-film stat-icon-movie"></i>
+                        <h3 id="statTotalMovies">-</h3>
+                        <p>Toplam Film</p>
                     </div>
-                    <div class="card" style="text-align: center; padding: 25px;">
-                        <i class="fas fa-tv" style="font-size: 2.5rem; color: var(--danger); margin-bottom: 10px;"></i>
-                        <h3 style="font-size: 2.5rem; font-weight: 700;" id="statTotalSeries">-</h3>
-                        <p style="color: var(--text-dim);">Toplam Dizi</p>
+                    <div class="card card-stat">
+                        <i class="fas fa-tv stat-icon-series"></i>
+                        <h3 id="statTotalSeries">-</h3>
+                        <p>Toplam Dizi</p>
                     </div>
-                    <div class="card" style="text-align: center; padding: 25px;">
-                        <i class="fas fa-video" style="font-size: 2.5rem; color: #2196f3; margin-bottom: 10px;"></i>
-                        <h3 style="font-size: 2.5rem; font-weight: 700;" id="statTotalEpisodes">-</h3>
-                        <p style="color: var(--text-dim);">Toplam Bölüm</p>
+                    <div class="card card-stat">
+                        <i class="fas fa-video stat-icon-episodes"></i>
+                        <h3 id="statTotalEpisodes">-</h3>
+                        <p>Toplam Bölüm</p>
                     </div>
                 </div>
                 <!-- Quick Actions or Recent Activity could go here -->
@@ -94,9 +99,20 @@
                                 </div>
                             </div>
                             <div class="form-group full-width">
+                                <label for="heroContent">Hero İçerik Yazısı</label>
+                                <textarea id="heroContent" rows="3" required
+                                    placeholder="Hero alanında görünecek özel metni giriniz..."></textarea>
+                            </div>
+                            <div class="form-group full-width">
                                 <label for="heroFile">Hero Videosu (Fragman)</label>
-                                <div class="file-input-wrapper">
-                                    <input type="file" id="heroFile" accept="video/*" required>
+                                <div class="premium-file-input" id="heroFileContainer">
+                                    <input type="file" id="heroFile" accept="video/*" required
+                                        onchange="handleFileSelect(this)">
+                                    <label for="heroFile" class="file-label">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <span class="file-text">Hero Videosunu Seç veya Sürükle</span>
+                                        <span class="file-name">Dosya seçilmedi</span>
+                                    </label>
                                     <div class="file-info">* Bu içerik için fragman videosunu seçin.</div>
                                 </div>
                             </div>
@@ -167,8 +183,14 @@
                                         <i class="fas fa-image"></i>
                                     </div>
                                     <div class="poster-inputs">
-                                        <div class="file-input-wrapper">
-                                            <input type="file" id="movieImage" accept="image/*">
+                                        <div class="premium-file-input compact" id="movieImageContainer">
+                                            <input type="file" id="movieImage" accept="image/*"
+                                                onchange="handleFileSelect(this)">
+                                            <label for="movieImage" class="file-label">
+                                                <i class="fas fa-image"></i>
+                                                <span class="file-text">Görsel Seç</span>
+                                                <span class="file-name">Dosya seçilmedi</span>
+                                            </label>
                                             <div class="file-info">* Cihazdan dosya seçin</div>
                                         </div>
                                         <div class="url-input-wrapper">
@@ -183,8 +205,14 @@
                             </div>
                             <div class="form-group full-width">
                                 <label for="movieFile">Video Dosyası</label>
-                                <div class="file-input-wrapper">
-                                    <input type="file" id="movieFile" accept="video/*" required>
+                                <div class="premium-file-input" id="movieFileContainer">
+                                    <input type="file" id="movieFile" accept="video/*" required
+                                        onchange="handleFileSelect(this)">
+                                    <label for="movieFile" class="file-label">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <span class="file-text">Film Dosyasını Seç veya Sürükle</span>
+                                        <span class="file-name">Dosya seçilmedi</span>
+                                    </label>
                                     <div class="file-info">* Düzenleme modunda boş bırakılabilir.</div>
                                 </div>
                             </div>
@@ -219,19 +247,22 @@
                         <div class="form-grid">
                             <div class="form-group full-width">
                                 <label>İşlem Tipi Seçin</label>
-                                <div class="radio-group" style="display: flex; gap: 20px; margin-top: 5px;">
-                                    <label class="radio-label"
-                                        style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                        <input type="radio" name="seriesMode" value="new" checked
-                                            onchange="toggleSeriesMode()" style="width: auto;">
-                                        <span style="font-weight: 500;">Yeni Dizi Oluştur</span>
-                                    </label>
-                                    <label class="radio-label"
-                                        style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                        <input type="radio" name="seriesMode" value="existing"
-                                            onchange="toggleSeriesMode()" style="width: auto;">
-                                        <span style="font-weight: 500;">Mevcut Seriye Ekle</span>
-                                    </label>
+                                <div class="mode-toggle-container">
+                                    <div class="mode-toggle">
+                                        <input type="radio" name="seriesMode" id="modeNew" value="new" checked
+                                            onchange="toggleSeriesMode()">
+                                        <label for="modeNew">
+                                            <i class="fas fa-plus-circle"></i> Yeni Dizi Oluştur
+                                        </label>
+
+                                        <input type="radio" name="seriesMode" id="modeExisting" value="existing"
+                                            onchange="toggleSeriesMode()">
+                                        <label for="modeExisting">
+                                            <i class="fas fa-layer-group"></i> Mevcut Seriye Ekle
+                                        </label>
+
+                                        <div class="mode-slider"></div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -277,7 +308,7 @@
                                     </select>
                                 </div>
                                 <div class="form-group full-width">
-                                    <label for="seriesSummary">Dizi / Bölüm Özeti</label>
+                                    <label for="seriesSummary">Dizi Özeti</label>
                                     <textarea id="seriesSummary" rows="3"
                                         placeholder="Dizinin genel konusu..."></textarea>
                                 </div>
@@ -285,23 +316,32 @@
                                     <label for="seriesYear">Yayın Yılı</label>
                                     <input type="number" id="seriesYear" value="2025">
                                 </div>
-                                <div class="form-group full-width">
-                                    <label for="seriesImage">Kapak Resmi</label>
-                                    <div class="poster-control-container">
-                                        <div class="poster-preview" id="seriesPosterPreview">
-                                            <i class="fas fa-image"></i>
-                                        </div>
-                                        <div class="poster-inputs">
-                                            <div class="file-input-wrapper">
-                                                <input type="file" id="seriesImage" accept="image/*">
-                                                <div class="file-info">* Cihazdan dosya seçin</div>
+                            </div>
+
+                            <!-- Common Poster Field -->
+                            <div class="form-group full-width">
+                                <label>Dizi / Sezon Afişi</label>
+                                <div class="poster-control-container">
+                                    <div class="poster-preview" id="seriesPosterPreview">
+                                        <i class="fas fa-image"></i>
+                                    </div>
+                                    <div class="poster-inputs">
+                                        <div class="premium-file-input compact" id="seriesImageContainer">
+                                            <input type="file" id="seriesImage" accept="image/*"
+                                                onchange="handleFileSelect(this)">
+                                            <label for="seriesImage" class="file-label">
+                                                <i class="fas fa-image"></i>
+                                                <span class="file-text">Görsel Seç</span>
+                                                <span class="file-name">Dosya seçilmedi</span>
+                                            </label>
+                                            <div class="file-info">* Yeni dizi için yükleyin veya mevcut olanı kalsın.
                                             </div>
-                                            <div class="url-input-wrapper">
-                                                <div class="input-with-icon">
-                                                    <i class="fas fa-link"></i>
-                                                    <input type="text" id="seriesImageUrl"
-                                                        placeholder="Resim URL'si yapıştırın...">
-                                                </div>
+                                        </div>
+                                        <div class="url-input-wrapper">
+                                            <div class="input-with-icon">
+                                                <i class="fas fa-link"></i>
+                                                <input type="text" id="seriesImageUrl"
+                                                    placeholder="Resim URL'si yapıştırın...">
                                             </div>
                                         </div>
                                     </div>
@@ -319,8 +359,14 @@
                             <!-- Bölüm Dosyası (Her iki durumda da gerekli) -->
                             <div class="form-group full-width">
                                 <label for="seriesFile">Bölüm Videosu</label>
-                                <div class="file-input-wrapper">
-                                    <input type="file" id="seriesFile" accept="video/*" required>
+                                <div class="premium-file-input" id="seriesFileContainer">
+                                    <input type="file" id="seriesFile" accept="video/*" required
+                                        onchange="handleFileSelect(this)">
+                                    <label for="seriesFile" class="file-label">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <span class="file-text">Bölüm Dosyasını Seç veya Sürükle</span>
+                                        <span class="file-name">Dosya seçilmedi</span>
+                                    </label>
                                     <div class="file-info">* Düzenleme modunda boş bırakılabilir.</div>
                                 </div>
                             </div>
@@ -341,6 +387,177 @@
                                 style="display: none;">Vazgeç</button>
                         </div>
                     </form>
+                </div>
+            </section>
+
+            <!-- CALENDAR SECTION -->
+            <section id="calendar-section" class="admin-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-calendar-alt"></i> Takvim Yönetimi</h2>
+                    </div>
+                    <form id="calendarForm" class="admin-form">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="calendarDay">Gün</label>
+                                <select id="calendarDay" required>
+                                    <option value="monday">Pazartesi</option>
+                                    <option value="tuesday">Salı</option>
+                                    <option value="wednesday">Çarşamba</option>
+                                    <option value="thursday">Perşembe</option>
+                                    <option value="friday">Cuma</option>
+                                    <option value="saturday">Cumartesi</option>
+                                    <option value="sunday">Pazar</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="calendarTitle">Dizi/Program Adı</label>
+                                <input type="text" id="calendarTitle" required placeholder="Program ismini giriniz">
+                            </div>
+                            <div class="form-group">
+                                <label for="calendarEpisode">Bölüm Bilgisi</label>
+                                <input type="text" id="calendarEpisode" placeholder="Örn: Yeni Bölüm">
+                            </div>
+                            <div class="form-group">
+                                <label for="calendarTime">Saat</label>
+                                <input type="time" id="calendarTime" required>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="addEventBtn">
+                                <i class="fas fa-plus"></i> ETKİNLİK EKLE
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="table-container" style="margin-top: 30px;">
+                        <h3>Haftalık Program</h3>
+                        <table class="admin-table" id="calendarTable">
+                            <thead>
+                                <tr>
+                                    <th>Gün</th>
+                                    <th>Saat</th>
+                                    <th>Program</th>
+                                    <th>Bölüm</th>
+                                    <th>İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Events will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- UPCOMING SECTION -->
+            <section id="upcoming-section" class="admin-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-clock"></i> Upcoming (Yüklenecek Bölümler) Yönetimi</h2>
+                    </div>
+                    <form id="upcomingForm" class="admin-form">
+                        <div class="form-grid">
+                            <div class="form-group full-width">
+                                <label for="upcomingSearch">Arşivden İçerik Seç (Opsiyonel)</label>
+                                <div class="search-select-wrapper">
+                                    <input type="text" id="upcomingSearch" placeholder="Film veya dizi ismi ara..."
+                                        autocomplete="off">
+                                    <div id="upcomingSearchResults" class="search-results-dropdown"
+                                        style="display: none;"></div>
+                                </div>
+                                <input type="hidden" id="upcomingRefId">
+                                <input type="hidden" id="upcomingRefType">
+                                <div id="upcomingRefDisplay" class="selected-item-badge" style="display: none;">
+                                    <span class="text">Seçilen: <strong>-</strong></span>
+                                    <button type="button" class="btn-clear-upcoming"><i
+                                            class="fas fa-times"></i></button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="upcomingName">Görünecek İsim / Başlık</label>
+                                <div class="input-with-action">
+                                    <input type="text" id="upcomingName" required placeholder="Örn: My Demon 11. Bölüm">
+                                    <button type="button" class="btn-fetch" id="fetchUpcomingTvMazeBtn"
+                                        title="TVMaze'den Getir">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="upcomingType">İçerik Tipi</label>
+                                <select id="upcomingType">
+                                    <option value="SoapOpera">Dizi</option>
+                                    <option value="Movie">Film</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="upcomingCategory">Bölüm Kategorisi</label>
+                                <select id="upcomingCategory">
+                                    <option value="Translated">Çevrilenler (Cevrilenler)</option>
+                                    <option value="Upcoming">Beklenenler (Beklenenler)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="upcomingStatus">Durum / Yüzde</label>
+                                <input type="text" id="upcomingStatus" placeholder="Örn: 75% veya Çevriliyor" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="upcomingDatetime">Tahmini Yayın Tarihi</label>
+                                <input type="datetime-local" id="upcomingDatetime" required>
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="upcomingImage">Kapak Resmi</label>
+                                <div class="poster-control-container">
+                                    <div class="poster-preview" id="upcomingPosterPreview">
+                                        <i class="fas fa-image"></i>
+                                    </div>
+                                    <div class="poster-inputs">
+                                        <div class="premium-file-input compact" id="upcomingImageContainer">
+                                            <input type="file" id="upcomingImage" accept="image/*"
+                                                onchange="handleFileSelect(this)">
+                                            <label for="upcomingImage" class="file-label">
+                                                <i class="fas fa-image"></i>
+                                                <span class="file-text">Görsel Seç</span>
+                                                <span class="file-name">Dosya seçilmedi</span>
+                                            </label>
+                                            <div class="file-info">* Cihazdan dosya seçin</div>
+                                        </div>
+                                        <div class="url-input-wrapper">
+                                            <div class="input-with-icon">
+                                                <i class="fas fa-link"></i>
+                                                <input type="text" id="upcomingImageUrl"
+                                                    placeholder="Resim URL'si yapıştırın...">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="addUpcomingBtn">
+                                <i class="fas fa-plus"></i> LİSTEYE EKLE
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="table-container" style="margin-top: 30px;">
+                        <h3>Mevcut Bekleyenler</h3>
+                        <table class="admin-table" id="upcomingTable">
+                            <thead>
+                                <tr>
+                                    <th>İçerik</th>
+                                    <th>Tip</th>
+                                    <th>Durum</th>
+                                    <th>Yayın Tarihi</th>
+                                    <th>İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Upcoming items will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
@@ -370,6 +587,10 @@
                     <div class="card">
                         <div class="card-header">
                             <h2><i class="fas fa-film"></i> Film Arşivi</h2>
+                            <div class="search-archive-wrapper">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="movieArchiveSearch" placeholder="Listede Film ara...">
+                            </div>
                             <button id="btnDeleteSelectedMovies" class="btn btn-sm btn-danger"
                                 style="display: none; margin-left: auto;">
                                 <i class="fas fa-trash"></i> Seçilenleri Sil (<span id="countSelectedMovies">0</span>)
@@ -396,6 +617,10 @@
                             <div style="display: flex; align-items: center; gap: 15px;">
                                 <input type="checkbox" id="selectAllSeries" title="Tüm Dizileri Seç">
                                 <h2><i class="fas fa-tv"></i> Dizi Arşivi</h2>
+                            </div>
+                            <div class="search-archive-wrapper">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="seriesArchiveSearch" placeholder="Listede Dizi ara...">
                             </div>
                             <button id="btnDeleteSelectedSeries" class="btn btn-sm btn-danger"
                                 style="display: none; margin-left: auto;">

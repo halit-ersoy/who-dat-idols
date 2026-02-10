@@ -1,11 +1,12 @@
 package com.ses.whodatidols.controller;
 
+import com.ses.whodatidols.model.Episode;
 import com.ses.whodatidols.model.Movie;
 import com.ses.whodatidols.model.Person;
-import com.ses.whodatidols.model.SoapOpera;
+import com.ses.whodatidols.model.Series;
 import com.ses.whodatidols.repository.PersonRepository;
 import com.ses.whodatidols.service.MovieService;
-import com.ses.whodatidols.service.SoapOperaService;
+import com.ses.whodatidols.service.SeriesService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.io.ClassPathResource;
@@ -16,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,13 +26,13 @@ import java.util.UUID;
 public class HomeController {
     private final PersonRepository personRepository;
     private final MovieService movieService;
-    private final SoapOperaService soapOperaService;
+    private final SeriesService seriesService;
 
     public HomeController(PersonRepository personRepository, MovieService movieService,
-            SoapOperaService soapOperaService) {
+            SeriesService seriesService) {
         this.personRepository = personRepository;
         this.movieService = movieService;
-        this.soapOperaService = soapOperaService;
+        this.seriesService = seriesService;
     }
 
     @GetMapping("/")
@@ -50,16 +50,13 @@ public class HomeController {
         }
     }
 
-    // ... (Existing mappings can stay, skipping showing them all for efficiency if
-    // not modified) ...
-
     @GetMapping("/api/featured-content")
     @ResponseBody
     public ResponseEntity<FeaturedContentResponse> getFeaturedContent() {
         FeaturedContentResponse response = new FeaturedContentResponse();
 
         // 1. Movies (20 adet)
-        List<Movie> movies = movieService.getAllMovies(); // Veritabanından zaten sıralı geliyor
+        List<Movie> movies = movieService.getAllMovies();
         List<FeaturedItem> movieItems = new java.util.ArrayList<>();
         int count = 0;
         for (Movie m : movies) {
@@ -69,7 +66,7 @@ public class HomeController {
             FeaturedItem item = new FeaturedItem();
             item.id = m.getId().toString();
             item.title = m.getName();
-            item.image = "/media/image/" + m.getId(); // Resim endpointi
+            item.image = "/media/image/" + m.getId();
             item.country = mapLanguageToCode(m.getLanguage());
             item.isNew = isRecent(m.getUploadDate());
             item.isFinal = false; // Filmler için genelde false
@@ -82,22 +79,39 @@ public class HomeController {
         response.movies = movieItems;
 
         // 2. Series (20 adet - Bölüm bazlı)
-        List<SoapOpera> episodes = soapOperaService.getRecentEpisodesWithMetadata(20);
+        List<Episode> episodes = seriesService.getRecentEpisodesWithMetadata(20);
         List<FeaturedItem> tvItems = new java.util.ArrayList<>();
-        for (SoapOpera ep : episodes) {
+        for (Episode ep : episodes) {
             FeaturedItem item = new FeaturedItem();
-            item.id = ep.getId().toString();
-            item.title = ep.getName();
-            // Resim Parent ID'den gelmeli. Service'de content alanına Parent ID'yi
-            // koymuştuk.
-            // Eğer content null ise kendi ID'sini dener ama genelde poster parent'tadır.
-            String imgId = (ep.getContent() != null && !ep.getContent().isEmpty()) ? ep.getContent()
-                    : ep.getId().toString();
-            item.image = "/media/image/" + imgId;
+            item.id = ep.getId().toString(); // Item ID is Episode ID
 
-            item.country = mapLanguageToCode(ep.getLanguage());
+            String title = ep.getName();
+            String language = "kr";
+            boolean isFinal = false;
+            String imageId = ep.getId().toString();
+
+            // Fetch Series Metadata (Language, Final Status, Name)
+            if (ep.getSeriesId() != null) {
+                Series series = seriesService.getSeriesById(ep.getSeriesId());
+                if (series != null) {
+                    // Usually we show Series Name for featured item, or "Series - Episode"
+                    // If Episode Name equals Series Name (common in single file uploads without
+                    // specific ep title), use Series Name.
+                    // If different, maybe combine? But frontend logic usually expects Series Title.
+                    // Let's use Series Name preferred.
+                    title = series.getName();
+                    language = series.getLanguage();
+                    isFinal = series.getFinalStatus() == 1;
+                    // Use series image
+                    imageId = series.getId().toString();
+                }
+            }
+
+            item.title = title;
+            item.image = "/media/image/" + imageId;
+            item.country = mapLanguageToCode(language);
             item.isNew = true; // Zaten son eklenenler listesi
-            item.isFinal = ep.getFinalStatus() == 1;
+            item.isFinal = isFinal;
             item.season = ep.getSeasonNumber();
             item.episode = ep.getEpisodeNumber();
 
@@ -236,10 +250,8 @@ public class HomeController {
     @ResponseBody
     public ResponseEntity<?> registerUser(@RequestBody Person person) {
         try {
-            // Call the new method that uses the stored procedure
             Map<String, Object> result = personRepository.registerUser(person);
 
-            // Check if registration was successful
             if ((Boolean) result.get("success")) {
                 return ResponseEntity.ok(result);
             } else {
@@ -330,14 +342,12 @@ public class HomeController {
         try {
             String usernameOrEmail = loginRequest.get("usernameOrEmail");
             if (usernameOrEmail == null) {
-                usernameOrEmail = loginRequest.get("email"); // Fallback for some frontend versions
+                usernameOrEmail = loginRequest.get("email");
             }
             String password = loginRequest.get("password");
 
             Map<String, Object> result = personRepository.loginUser(usernameOrEmail, password);
 
-            // SQL prosedürü Result sütununda bit (Boolean) döndürüyor, Repository bunu
-            // 'success' anahtarına atadı.
             Object successObj = result.get("success");
             boolean isSuccess = false;
             if (successObj instanceof Boolean) {
@@ -352,8 +362,8 @@ public class HomeController {
                     Cookie authCookie = new Cookie("wdiAuth", cookieObj.toString());
                     authCookie.setHttpOnly(true);
                     authCookie.setPath("/");
-                    authCookie.setMaxAge(7 * 24 * 60 * 60); // 7 gün
-                    authCookie.setSecure(true); // HTTPS kullanıldığı için güvenli
+                    authCookie.setMaxAge(7 * 24 * 60 * 60);
+                    authCookie.setSecure(true);
                     response.addCookie(authCookie);
                 }
                 return ResponseEntity.ok(result);
@@ -429,6 +439,28 @@ public class HomeController {
 
         try {
             Map<String, Object> result = personRepository.updatePasswordByCookie(cookie, newPassword);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/api/user/update-profile")
+    @ResponseBody
+    public ResponseEntity<?> updateProfile(
+            @CookieValue(name = "wdiAuth", required = false) String cookie,
+            @RequestBody Map<String, String> request) {
+        if (cookie == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "Unauthorized"));
+        }
+
+        try {
+            Map<String, Object> result = personRepository.updateProfileByCookie(
+                    cookie,
+                    request.get("nickname"),
+                    request.get("name"),
+                    request.get("surname"),
+                    request.get("email"));
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));

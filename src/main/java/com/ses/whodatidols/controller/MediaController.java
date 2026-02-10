@@ -26,7 +26,7 @@ public class MediaController {
     private static final long VIDEO_CHUNK_SIZE = 1024 * 1024; // 1MB
 
     // Desteklenen resim formatları
-    private static final String[] SUPPORTED_IMAGE_EXTENSIONS = { ".jpg", ".jpeg", ".png", ".webp" };
+    public static final String[] SUPPORTED_IMAGE_EXTENSIONS = { ".jpg", ".jpeg", ".png", ".webp" };
 
     // --- PROPERTY DOSYASINDAN GELEN YOLLAR ---
 
@@ -41,6 +41,9 @@ public class MediaController {
 
     @Value("${media.static.images.path}")
     private String staticImagesPath;
+
+    @Value("${media.source.upcoming.path}")
+    private String upcomingPath;
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -79,9 +82,10 @@ public class MediaController {
     }
 
     // --- 2. VİDEO STREAMING (Movies, Soap Operas, Trailers) ---
+    @SuppressWarnings("null")
     @GetMapping("/video/{id}")
     public ResponseEntity<ResourceRegion> getVideo(
-            @PathVariable("id") UUID id,
+            @PathVariable(name = "id") UUID id,
             @RequestHeader HttpHeaders headers) {
 
         logger.debug("Requesting video for id={}", id);
@@ -101,9 +105,19 @@ public class MediaController {
             // Dosya yolunu oluştur
             Path videoPath = basePath.resolve(id + ".mp4").normalize().toAbsolutePath();
 
-            // Dosya var mı ve güvenli klasörde mi kontrol et
+            // Dosya yoksa ve bu bir Soap Opera ise, seri ID'si olabilir, bölüm ID'sini
+            // bulmayı dene
+            if (!Files.exists(videoPath) && "soap_opera".equalsIgnoreCase(category)) {
+                UUID episodeId = findFirstEpisodeIdForSeries(id);
+                if (episodeId != null) {
+                    id = episodeId; // ID'yi bulduğumuz bölüm ID'si ile değiştir
+                    videoPath = basePath.resolve(id + ".mp4").normalize().toAbsolutePath();
+                }
+            }
+
+            // Dosya var mı ve güvenli klasörde mi kontrol et (Tekrar kontrol)
             if (!Files.exists(videoPath) || !videoPath.startsWith(basePath)) {
-                logger.warn("Video file not found or path traversal attempt: {}", videoPath);
+                logger.warn("Video file not found or path traversal attempt: {} for id: {}", videoPath, id);
                 return ResponseEntity.notFound().build();
             }
 
@@ -112,10 +126,16 @@ public class MediaController {
             long contentLength = videoResource.contentLength();
             ResourceRegion region = getResourceRegion(videoResource, headers, contentLength);
 
+            MediaType mediaType = MediaTypeFactory.getMediaType(videoResource)
+                    .orElse(MediaType.APPLICATION_OCTET_STREAM);
+
+            if (mediaType == null) {
+                mediaType = MediaType.APPLICATION_OCTET_STREAM;
+            }
+
             return ResponseEntity
                     .status(HttpStatus.PARTIAL_CONTENT)
-                    .contentType(MediaTypeFactory.getMediaType(videoResource)
-                            .orElse(MediaType.APPLICATION_OCTET_STREAM))
+                    .contentType(mediaType)
                     .header(HttpHeaders.ACCEPT_RANGES, "bytes")
                     .body(region);
 
@@ -126,8 +146,9 @@ public class MediaController {
     }
 
     // --- 3. DİNAMİK RESİM (Thumbnail/Poster) SUNUCUSU ---
+    @SuppressWarnings("null")
     @GetMapping("/image/{id}")
-    public ResponseEntity<Resource> getImage(@PathVariable("id") UUID id) {
+    public ResponseEntity<Resource> getImage(@PathVariable(name = "id") UUID id) {
         logger.debug("Requesting image for id={}", id);
 
         try {
@@ -145,14 +166,28 @@ public class MediaController {
             // İlgili klasörde resmi ara (.jpg, .png vs.)
             Path imagePath = findExistingImage(basePath, id);
 
+            // Fallback for series: if id is an episode, try parent series image
+            if (imagePath == null
+                    && ("soap_opera".equalsIgnoreCase(category) || "unknown".equalsIgnoreCase(category))) {
+                UUID parentId = findParentSeriesId(id);
+                if (parentId != null) {
+                    imagePath = findExistingImage(Paths.get(soapOperasPath).toAbsolutePath().normalize(), parentId);
+                }
+            }
+
             if (imagePath == null) {
-                logger.warn("Image file not found for id: {}", id);
+                logger.warn("Image file not found for id: {} (Category: {})", id, category);
                 return ResponseEntity.notFound().build();
             }
 
             // Resmi sun (1 günlük önbellek ile)
+            MediaType mediaType = determineMediaType(imagePath);
+            if (mediaType == null) {
+                mediaType = MediaType.IMAGE_JPEG;
+            }
+
             return ResponseEntity.ok()
-                    .contentType(determineMediaType(imagePath))
+                    .contentType(mediaType)
                     .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(1)))
                     .body(new UrlResource(imagePath.toUri()));
 
@@ -198,6 +233,8 @@ public class MediaController {
                 return Paths.get(soapOperasPath).toAbsolutePath().normalize();
             case "trailer":
                 return Paths.get(trailersPath).toAbsolutePath().normalize();
+            case "upcoming":
+                return Paths.get(upcomingPath).toAbsolutePath().normalize();
             default:
                 return null;
         }
@@ -205,12 +242,96 @@ public class MediaController {
 
     private String getContentTypeFromDatabase(UUID id) {
         try {
-            // SQL Function: Geriye 'movie', 'soap_opera' vb. döndürmeli
-            String sql = "SELECT [dbo].[GetContentTypeById](?);";
-            return jdbcTemplate.queryForObject(sql, String.class, id.toString());
+            // SQL Function might be broken due to renaming, so we prioritize direct checks
+            // or assume it's updated.
+            // For robustness, let's try the function first, but if it fails or returns
+            // unknown, we check tables.
+            try {
+                String sql = "SELECT [dbo].[GetContentTypeById](?);";
+                String type = jdbcTemplate.queryForObject(sql, String.class, id.toString());
+                if (!"unknown".equalsIgnoreCase(type) && type != null)
+                    return type;
+            } catch (Exception e) {
+                // Function might be missing or broken
+            }
+
+            // Check Series (formerly SoapOperas)
+            Integer isSeries = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM Series WHERE ID = ?", Integer.class,
+                    id.toString());
+            if (isSeries != null && isSeries > 0)
+                return "soap_opera";
+
+            // Check Episode (formerly SoapOpera)
+            Integer isEpisode = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM Episode WHERE ID = ?", Integer.class,
+                    id.toString());
+            if (isEpisode != null && isEpisode > 0)
+                return "soap_opera";
+
+            // Check Movie
+            Integer isMovie = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM Movie WHERE ID = ?", Integer.class,
+                    id.toString());
+            if (isMovie != null && isMovie > 0)
+                return "movie";
+
+            // Check Upcoming
+            Integer isUpcoming = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM Upcoming WHERE ID = ? OR ReferenceId = ?", Integer.class,
+                    id.toString(), id.toString());
+            if (isUpcoming != null && isUpcoming > 0)
+                return "upcoming";
+
+            return "unknown";
         } catch (Exception e) {
             logger.error("DB Error retrieving content type for id {}: {}", id, e.getMessage());
             return "unknown";
+        }
+    }
+
+    private UUID findParentSeriesId(UUID episodeId) {
+        try {
+            // Try FK first
+            try {
+                String sqlFK = "SELECT CAST(SeriesId AS NVARCHAR(36)) FROM Episode WHERE ID = ?";
+                String parentIdStr = jdbcTemplate.queryForObject(sqlFK, String.class, episodeId.toString());
+                if (parentIdStr != null)
+                    return UUID.fromString(parentIdStr);
+            } catch (Exception e) {
+            }
+
+            // Fallback to XML search (Legacy)
+            String sql = "SELECT CAST(ID AS NVARCHAR(36)) FROM Series WHERE EpisodeMetadataXml LIKE ?";
+            String searchTerm = "%" + episodeId.toString() + "%";
+            String parentIdStr = jdbcTemplate.queryForObject(sql, String.class, searchTerm);
+            return parentIdStr != null ? UUID.fromString(parentIdStr) : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private UUID findFirstEpisodeIdForSeries(UUID seriesId) {
+        try {
+            // New schema: Query Episode table directly via SeriesId
+            String sql = "SELECT TOP 1 ID FROM Episode WHERE SeriesId = ? ORDER BY uploadDate DESC";
+            // If FK not populated, fallback to name match (risky if names duplicate, but
+            // fits legacy logic)
+            // The old logic was: WHERE name = (SELECT name FROM SoapOperas WHERE ID = ?)
+
+            try {
+                String idStr = jdbcTemplate.queryForObject(sql, String.class, seriesId.toString());
+                if (idStr != null)
+                    return UUID.fromString(idStr);
+            } catch (Exception e) {
+            }
+
+            // Fallback
+            String sqlFallback = "SELECT TOP 1 ID FROM Episode WHERE name = (SELECT name FROM Series WHERE ID = ?) ORDER BY uploadDate DESC";
+            String idStr = jdbcTemplate.queryForObject(sqlFallback, String.class, seriesId.toString());
+            return idStr != null ? UUID.fromString(idStr) : null;
+        } catch (Exception e) {
+            return null;
         }
     }
 
@@ -225,13 +346,19 @@ public class MediaController {
         return null;
     }
 
+    @SuppressWarnings("null")
     private ResponseEntity<Resource> serveResource(Path path) throws IOException {
         UrlResource resource = new UrlResource(path.toUri());
+        MediaType mediaType = determineMediaType(path);
+        if (mediaType == null) {
+            mediaType = MediaType.APPLICATION_OCTET_STREAM;
+        }
         return ResponseEntity.ok()
-                .contentType(determineMediaType(path))
+                .contentType(mediaType)
                 .body(resource);
     }
 
+    @SuppressWarnings("null")
     private ResourceRegion getResourceRegion(UrlResource resource, HttpHeaders headers, long contentLength)
             throws IOException {
         String range = headers.getFirst(HttpHeaders.RANGE);

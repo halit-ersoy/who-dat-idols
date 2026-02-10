@@ -3,33 +3,18 @@ package com.ses.whodatidols.model;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-public class Movie {
+public class Series {
     private UUID id;
     private String name;
     private String category;
-    private String summary;
-    private int durationMinutes;
-    private String language;
-    private int releaseYear;
+    private String summary; // Formerly _content
+    private String language; // Formerly country
+    private int finalStatus;
+    private String episodeMetadataXml; // Formerly soapOperaSeries (To be deprecated)
+    private int episodeCount;
     private LocalDateTime uploadDate;
 
-    // Constructors
-    public Movie() {
-    }
-
-    public Movie(UUID id, String name, String category, String summary, int durationMinutes,
-            String language, int releaseYear, LocalDateTime uploadDate) {
-        this.id = id;
-        this.name = name;
-        this.category = category;
-        this.summary = summary;
-        this.durationMinutes = durationMinutes;
-        this.language = language;
-        this.releaseYear = releaseYear;
-        this.uploadDate = uploadDate;
-    }
-
-    // Getters and setters
+    // Getter and Setters
     public UUID getId() {
         return id;
     }
@@ -62,14 +47,6 @@ public class Movie {
         this.summary = summary;
     }
 
-    public int getDurationMinutes() {
-        return durationMinutes;
-    }
-
-    public void setDurationMinutes(int durationMinutes) {
-        this.durationMinutes = durationMinutes;
-    }
-
     public String getLanguage() {
         return language;
     }
@@ -78,12 +55,28 @@ public class Movie {
         this.language = language;
     }
 
-    public int getReleaseYear() {
-        return releaseYear;
+    public int getFinalStatus() {
+        return finalStatus;
     }
 
-    public void setReleaseYear(int releaseYear) {
-        this.releaseYear = releaseYear;
+    public void setFinalStatus(int finalStatus) {
+        this.finalStatus = finalStatus;
+    }
+
+    public String getEpisodeMetadataXml() {
+        return episodeMetadataXml;
+    }
+
+    public void setEpisodeMetadataXml(String episodeMetadataXml) {
+        this.episodeMetadataXml = episodeMetadataXml;
+    }
+
+    public int getEpisodeCount() {
+        return episodeCount;
+    }
+
+    public void setEpisodeCount(int episodeCount) {
+        this.episodeCount = episodeCount;
     }
 
     public LocalDateTime getUploadDate() {

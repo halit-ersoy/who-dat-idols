@@ -4,6 +4,7 @@ import com.ses.whodatidols.model.Person;
 import com.ses.whodatidols.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.SqlParameter;
 import org.springframework.stereotype.Repository;
 import java.util.*;
 
@@ -20,39 +21,16 @@ public class PersonRepository {
     }
 
     // SQL sorguları
-    private static final String CALL_VERIFY_GENERATE_CODE =
-            "{call VerifyOrGenerateCode(?, ?, ?, ?)}";
+    private static final String CALL_VERIFY_GENERATE_CODE = "{call VerifyOrGenerateCode(?, ?, ?, ?)}";
 
-    private static final String INSERT_PERSON =
-            "INSERT INTO [WhoDatIdols].[dbo].[Person] (nickname, name, surname, email, password) VALUES (?, ?, ?, ?, ?)";
+    private static final String VALIDATE_BY_NICKNAME = "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Person] WHERE nickname = ? AND password = ?";
 
-    private static final String CHECK_NICKNAME_EXISTS =
-            "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Person] WHERE nickname = ?";
-
-    private static final String CHECK_EMAIL_EXISTS =
-            "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Person] WHERE email = ?";
-
-    private static final String VALIDATE_BY_NICKNAME =
-            "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Person] WHERE nickname = ? AND password = ?";
-
-    private static final String VALIDATE_BY_EMAIL =
-            "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Person] WHERE email = ? AND password = ?";
-
-    private static final String GET_NICKNAME_BY_EMAIL =
-            "SELECT nickname FROM [WhoDatIdols].[dbo].[Person] WHERE email = ?";
-
-    private static final String INSERT_COOKIE =
-            "INSERT INTO [WhoDatIdols].[dbo].[Cookies] (nickname, cookie) VALUES (?, ?)";
-
-    private static final String UPDATE_COOKIE =
-            "UPDATE [WhoDatIdols].[dbo].[Cookies] SET cookie = ? WHERE nickname = ?";
-
-    private static final String CHECK_COOKIE_EXISTS =
-            "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Cookies] WHERE nickname = ?";
+    private static final String VALIDATE_BY_EMAIL = "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Person] WHERE email = ? AND password = ?";
 
     /**
      * Verifies if a user exists and generates a verification code
      */
+    @SuppressWarnings("unchecked")
     public Map<String, Object> generateResetCode(String nicknameOrEmail) {
         try {
             // Generate a random 6-digit code
@@ -65,7 +43,7 @@ public class PersonRepository {
                 callableStatement.setString(3, null);
                 callableStatement.setString(4, code);
                 return callableStatement;
-            }, Collections.emptyList());
+            }, Collections.<SqlParameter>emptyList());
 
             if (result.containsKey("#result-set-1")) {
                 List<Map<String, Object>> resultSet = (List<Map<String, Object>>) result.get("#result-set-1");
@@ -84,7 +62,8 @@ public class PersonRepository {
                                 // Email sending failed, update response
                                 Map<String, Object> emailFailure = new HashMap<>();
                                 emailFailure.put("Result", false);
-                                emailFailure.put("Message", "E-posta gönderimi başarısız oldu. Lütfen daha sonra tekrar deneyin.");
+                                emailFailure.put("Message",
+                                        "E-posta gönderimi başarısız oldu. Lütfen daha sonra tekrar deneyin.");
                                 return emailFailure;
                             }
                         }
@@ -110,9 +89,11 @@ public class PersonRepository {
             return error;
         }
     }
+
     /**
      * Verifies the reset code
      */
+    @SuppressWarnings("unchecked")
     public Map<String, Object> verifyResetCode(String nicknameOrEmail, String code) {
         try {
             Map<String, Object> result = jdbcTemplate.call(connection -> {
@@ -122,7 +103,7 @@ public class PersonRepository {
                 callableStatement.setString(3, null);
                 callableStatement.setString(4, null);
                 return callableStatement;
-            }, Collections.emptyList());
+            }, Collections.<SqlParameter>emptyList());
 
             if (result.containsKey("#result-set-1")) {
                 List<Map<String, Object>> resultSet = (List<Map<String, Object>>) result.get("#result-set-1");
@@ -147,6 +128,7 @@ public class PersonRepository {
     /**
      * Resets the password using verification code
      */
+    @SuppressWarnings("unchecked")
     public Map<String, Object> resetPassword(String nicknameOrEmail, String code, String newPassword) {
         try {
             Map<String, Object> result = jdbcTemplate.call(connection -> {
@@ -156,7 +138,7 @@ public class PersonRepository {
                 callableStatement.setString(3, newPassword);
                 callableStatement.setString(4, null);
                 return callableStatement;
-            }, Collections.emptyList());
+            }, Collections.<SqlParameter>emptyList());
 
             if (result.containsKey("#result-set-1")) {
                 List<Map<String, Object>> resultSet = (List<Map<String, Object>>) result.get("#result-set-1");
@@ -193,13 +175,14 @@ public class PersonRepository {
         return emailMatch != null && emailMatch > 0;
     }
 
+    @SuppressWarnings("unchecked")
     public Map<String, Object> loginUser(String usernameOrEmail, String password) {
         Map<String, Object> result = jdbcTemplate.call(connection -> {
             var callableStatement = connection.prepareCall("{call LoginAndSetCookie(?, ?)}");
             callableStatement.setString(1, usernameOrEmail);
             callableStatement.setString(2, password);
             return callableStatement;
-        }, Collections.emptyList());
+        }, Collections.<SqlParameter>emptyList());
 
         Map<String, Object> response = new HashMap<>();
         if (result.containsKey("#result-set-1")) {
@@ -211,7 +194,7 @@ public class PersonRepository {
                 if (row.get("Result") == null && row.get("result") != null) {
                     response.put("success", row.get("result"));
                 }
-                
+
                 response.put("message", row.get("Message"));
                 if (row.get("Message") == null && row.get("message") != null) {
                     response.put("message", row.get("message"));
@@ -232,6 +215,7 @@ public class PersonRepository {
         return response;
     }
 
+    @SuppressWarnings("unchecked")
     public Map<String, Object> registerUser(Person person) {
         Map<String, Object> result = jdbcTemplate.call(connection -> {
             var callableStatement = connection.prepareCall("{call RegisterUser(?, ?, ?, ?, ?)}");
@@ -241,7 +225,7 @@ public class PersonRepository {
             callableStatement.setString(4, person.getEmail());
             callableStatement.setString(5, person.getPassword());
             return callableStatement;
-        }, Collections.emptyList());
+        }, Collections.<SqlParameter>emptyList());
 
         Map<String, Object> response = new HashMap<>();
         if (result.containsKey("#result-set-1")) {
@@ -266,6 +250,12 @@ public class PersonRepository {
     public Map<String, Object> updatePasswordByCookie(String cookie, String newPassword) {
         String sql = "EXEC UpdatePasswordByCookie @cookie = ?, @password = ?";
         return jdbcTemplate.queryForMap(sql, UUID.fromString(cookie), newPassword);
+    }
+
+    public Map<String, Object> updateProfileByCookie(String cookie, String nickname, String name, String surname,
+            String email) {
+        String sql = "EXEC UpdateUserProfile @cookie = ?, @nickname = ?, @name = ?, @surname = ?, @email = ?";
+        return jdbcTemplate.queryForMap(sql, UUID.fromString(cookie), nickname, name, surname, email);
     }
 
 }

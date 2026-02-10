@@ -3,6 +3,7 @@ package com.ses.whodatidols.service;
 import com.ses.whodatidols.model.Movie;
 import com.ses.whodatidols.repository.MovieRepository;
 import com.ses.whodatidols.util.FFmpegUtils;
+import com.ses.whodatidols.controller.MediaController;
 import com.ses.whodatidols.util.ImageUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -22,13 +23,16 @@ public class MovieService {
 
     private final MovieRepository movieRepository;
     private final TvMazeService tvMazeService;
+    private final NotificationService notificationService;
 
     @Value("${media.source.movies.path}")
     private String moviesPath;
 
-    public MovieService(MovieRepository movieRepository, TvMazeService tvMazeService) {
+    public MovieService(MovieRepository movieRepository, TvMazeService tvMazeService,
+            NotificationService notificationService) {
         this.movieRepository = movieRepository;
         this.tvMazeService = tvMazeService;
+        this.notificationService = notificationService;
     }
 
     // Listeyi Getir
@@ -51,9 +55,9 @@ public class MovieService {
             // FFprobe ile süreyi hesapla
             int duration = FFmpegUtils.getVideoDurationInMinutes(filePath.toString());
             if (duration > 0) {
-                movie.setTime(duration);
-            } else if (movie.getTime() <= 0) {
-                movie.setTime(1);
+                movie.setDurationMinutes(duration);
+            } else if (movie.getDurationMinutes() <= 0) {
+                movie.setDurationMinutes(1);
             }
         }
 
@@ -70,7 +74,7 @@ public class MovieService {
         UUID uuid = UUID.randomUUID();
         movie.setId(uuid);
         movie.setUploadDate(LocalDateTime.now());
-        movie.setContent(summary); // Özet _content'e gidiyor
+        movie.setSummary(summary); // Özet summary'e gidiyor
 
         if (file != null && !file.isEmpty()) {
             Path uploadPath = Paths.get(moviesPath).toAbsolutePath().normalize();
@@ -86,11 +90,11 @@ public class MovieService {
             int duration = FFmpegUtils.getVideoDurationInMinutes(filePath.toString());
 
             if (duration > 0) {
-                movie.setTime(duration);
+                movie.setDurationMinutes(duration);
                 System.out.println("Süre Hesaplandı: " + duration + " dakika");
             } else {
                 System.out.println("Uyarı: Süre 0 döndü. FFmpeg sunucuda kurulu mu?");
-                movie.setTime(1); // Güvenlik önlemi olarak en az 1 dk
+                movie.setDurationMinutes(1); // Güvenlik önlemi olarak en az 1 dk
             }
         }
 
@@ -99,6 +103,17 @@ public class MovieService {
         }
 
         movieRepository.save(movie);
+
+        // Bildirim oluştur
+        try {
+            notificationService.createNotification(
+                    "Yeni Film Eklendi!",
+                    movie.getName() + " sitemize eklenmiştir. Hemen izleyin!",
+                    uuid,
+                    "Movie");
+        } catch (Exception e) {
+            System.err.println("Bildirim oluşturulamadı: " + e.getMessage());
+        }
     }
 
     public void deleteMovieById(UUID id) {
@@ -117,8 +132,7 @@ public class MovieService {
             Files.deleteIfExists(uploadPath.resolve(id.toString() + ".mp4"));
 
             // Resimleri sil
-            String[] supportedExtensions = { ".jpg", ".jpeg", ".png", ".webp" };
-            for (String ext : supportedExtensions) {
+            for (String ext : MediaController.SUPPORTED_IMAGE_EXTENSIONS) {
                 Files.deleteIfExists(uploadPath.resolve(id.toString() + ext));
             }
         } catch (IOException e) {
@@ -132,8 +146,7 @@ public class MovieService {
             Files.createDirectories(uploadPath);
 
         // Eski resimleri temizle
-        String[] supportedExtensions = { ".webp", ".jpg", ".jpeg", ".png" };
-        for (String ext : supportedExtensions) {
+        for (String ext : MediaController.SUPPORTED_IMAGE_EXTENSIONS) {
             Files.deleteIfExists(uploadPath.resolve(id.toString() + ext));
         }
 
@@ -142,15 +155,7 @@ public class MovieService {
             ImageUtils.saveAsJpg(image.getInputStream(), finalPath);
         } catch (Exception e) {
             System.err.println("JPG dönüşüm hatası: " + e.getMessage());
-            // DEBUG: Throw exception to see why it fails
             throw new RuntimeException("JPG_CONVERSION_ERROR_UPLOAD: " + e.getMessage(), e);
-            // Fallback removed temporarily
-            /*
-             * String originalExt = getExtension(image.getOriginalFilename());
-             * Files.copy(image.getInputStream(), uploadPath.resolve(id.toString() +
-             * originalExt),
-             * StandardCopyOption.REPLACE_EXISTING);
-             */
         }
     }
 
@@ -164,8 +169,7 @@ public class MovieService {
             Files.createDirectories(uploadPath);
 
         // Eski resimleri temizle
-        String[] supportedExtensions = { ".webp", ".jpg", ".jpeg", ".png" };
-        for (String ext : supportedExtensions) {
+        for (String ext : MediaController.SUPPORTED_IMAGE_EXTENSIONS) {
             Files.deleteIfExists(uploadPath.resolve(id.toString() + ext));
         }
 
@@ -174,12 +178,7 @@ public class MovieService {
             ImageUtils.saveImageFromUrlAsJpg(imageUrl, finalPath);
         } catch (Exception e) {
             System.err.println("JPG dönüşüm hatası (URL): " + e.getMessage());
-            // DEBUG: Throw exception
             throw new RuntimeException("JPG_CONVERSION_ERROR_URL: " + e.getMessage(), e);
-            /*
-             * // Fallback: Save bytes as jpg if conversion fails
-             * Files.write(uploadPath.resolve(id.toString() + ".jpg"), imageBytes);
-             */
         }
     }
 }

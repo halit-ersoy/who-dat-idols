@@ -19,7 +19,7 @@ export function initNewSoapOperasSection() {
 
     async function fetchSoapOperas(day = 20) {
         try {
-            const response = await fetch(`/api/soapoperas/recent?day=${day}`);
+            const response = await fetch(`/api/series/recent?day=${day}`);
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }

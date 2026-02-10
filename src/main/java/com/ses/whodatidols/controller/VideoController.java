@@ -6,7 +6,6 @@ import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.util.List;
 import java.util.Map;
@@ -19,7 +18,8 @@ public class VideoController {
     private final TranscodingService transcodingService;
     private final JdbcTemplate jdbcTemplate;
 
-    public VideoController(VideoService videoService, TranscodingService transcodingService, JdbcTemplate jdbcTemplate) {
+    public VideoController(VideoService videoService, TranscodingService transcodingService,
+            JdbcTemplate jdbcTemplate) {
         this.videoService = videoService;
         this.transcodingService = transcodingService;
         this.jdbcTemplate = jdbcTemplate;
@@ -59,11 +59,11 @@ public class VideoController {
         try {
             String sql = "{call AddOrUpdateComment(?, ?, ?, ?, ?)}";
             jdbcTemplate.update(sql,
-                    id,                          // @ID
-                    cookieUuid,                  // @cookie
+                    id, // @ID
+                    cookieUuid, // @cookie
                     new java.sql.Timestamp(System.currentTimeMillis()), // @datetime
-                    spoiler ? 1 : 0,            // @spoiler
-                    commentText                 // @comment
+                    spoiler ? 1 : 0, // @spoiler
+                    commentText // @comment
             );
 
             return ResponseEntity.ok().build();

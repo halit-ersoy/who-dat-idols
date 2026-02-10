@@ -1,211 +1,236 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dizi İzle - Who Dat Idols?</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/watch/css/watch.css">
 </head>
+
 <body>
-<header>
-    <div class="logo">WDI</div>
-    <a href="/" class="back-button"><i class="fas fa-arrow-left"></i> Anasayfaya Dön</a>
-</header>
+    <header>
+        <div class="logo">WDI</div>
+        <a href="/" class="back-button"><i class="fas fa-arrow-left"></i> Anasayfaya Dön</a>
+    </header>
 
-<div class="content-wrapper">
-    <div class="watch-container">
-        <div class="video-title" id="title">Yükleniyor...</div>
+    <div class="content-wrapper">
+        <div class="watch-container">
+            <div class="video-title" id="title">Yükleniyor...</div>
 
-        <div class="player-container" id="playerContainer">
-            <div class="video-wrapper">
-            <div class="video-skeleton">
-            </div>
-            <video id="videoPlayer" controlsList="nodownload" oncontextmenu="return false">
-                <source id="videoSource" src="" type="video/mp4">
-                Tarayıcınız video etiketini desteklemiyor.
-            </video>
-        </div>
+            <div class="player-container" id="playerContainer">
+                <div class="video-wrapper">
+                    <div class="video-skeleton">
+                    </div>
+                    <video id="videoPlayer" controlsList="nodownload" oncontextmenu="return false">
+                        <source id="videoSource" src="" type="video/mp4">
+                        Tarayıcınız video etiketini desteklemiyor.
+                    </video>
+                </div>
 
-        <div class="video-controls">
-            <div class="progress-container" id="progressContainer">
-                <div class="progress-bar" id="progressBar">
-                    <div class="progress-knob"></div>
+                <div class="video-controls">
+                    <div class="progress-container" id="progressContainer">
+                        <div class="progress-bar" id="progressBar">
+                            <div class="progress-knob"></div>
+                        </div>
+                    </div>
+                    <div class="time-display" id="timeDisplay">00:00 / 00:00</div>
+                    <button class="control-button" id="backwardButton"><i class="fas fa-backward"></i> 10s</button>
+                    <div class="volume-control-wrapper">
+                        <i class="fas fa-volume-up"></i>
+                        <input type="range" id="volumeControl" min="0" max="1" step="0.1" value="1">
+                    </div>
+                    <button class="control-button" id="forwardButton">10s <i class="fas fa-forward"></i></button>
+                    <div class="speed-control-wrapper">
+                        <button class="control-button" id="speedButton">1x</button>
+                        <div class="speed-options">
+                            <div class="speed-option" data-speed="0.5">0.5x</div>
+                            <div class="speed-option" data-speed="1">1x</div>
+                            <div class="speed-option" data-speed="1.5">1.5x</div>
+                            <div class="speed-option" data-speed="2">2x</div>
+                            <div class="speed-option" data-speed="3">3x</div>
+                            <div class="speed-option" data-speed="4">4x</div>
+                        </div>
+                    </div>
+                    <button class="control-button" id="fullscreenButton" title="Tam Ekran"><i
+                            class="fas fa-expand"></i></button>
                 </div>
             </div>
-            <div class="time-display" id="timeDisplay">00:00 / 00:00</div>
-            <button class="control-button" id="backwardButton"><i class="fas fa-backward"></i> 10s</button>
-            <div class="volume-control-wrapper">
-                <i class="fas fa-volume-up"></i>
-                <input type="range" id="volumeControl" min="0" max="1" step="0.1" value="1">
+
+            <div class="info-bar">
+                <span id="videoInfo">İlgili bölüm bilgisi buraya gelecek</span>
+                <button class="glow-button"><i class="fas fa-plus"></i> İstek Listesine Ekle</button>
             </div>
-            <button class="control-button" id="forwardButton">10s <i class="fas fa-forward"></i></button>
-            <div class="speed-control-wrapper">
-                <button class="control-button" id="speedButton">1x</button>
-                <div class="speed-options">
-                    <div class="speed-option" data-speed="0.5">0.5x</div>
-                    <div class="speed-option" data-speed="1">1x</div>
-                    <div class="speed-option" data-speed="1.5">1.5x</div>
-                    <div class="speed-option" data-speed="2">2x</div>
-                    <div class="speed-option" data-speed="3">3x</div>
-                    <div class="speed-option" data-speed="4">4x</div>
+
+            <!-- Episode Selection Drawer -->
+            <div class="episode-selection-section">
+                <div class="episode-toggle">
+                    <span>Bölüm Listesi</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+
+                <div class="episode-selection-container">
+                    <div class="season-tabs" id="seasonTabs">
+                        <!-- Season tabs will be populated here -->
+                    </div>
+                    <div class="episodes-grid" id="episodesGrid">
+                        <!-- Episodes will be populated here -->
+                    </div>
                 </div>
             </div>
-            <button class="control-button" id="fullscreenButton" title="Tam Ekran"><i class="fas fa-expand"></i></button>
-        </div>
-    </div>
 
-        <div class="info-bar">
-            <span id="videoInfo">İlgili bölüm bilgisi buraya gelecek</span>
-            <button class="glow-button"><i class="fas fa-plus"></i> İstek Listesine Ekle</button>
-        </div>
-
-        <!-- Add to List Modal -->
-        <div id="addToListModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>İstek Listenize Ekleyin</h3>
-                    <span class="close-modal">&times;</span>
-                </div>
-                <div class="modal-body">
-                    <div class="lists-container">
-                        <h4>Mevcut Listeleriniz</h4>
-                        <div id="userLists" class="user-lists">
-                            <!-- Lists will be populated here -->
-                            <div class="loading-spinner">
-                                <i class="fas fa-spinner fa-spin"></i> Listeler yükleniyor...
+            <!-- Add to List Modal -->
+            <div id="addToListModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>İstek Listenize Ekleyin</h3>
+                        <span class="close-modal">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <div class="lists-container">
+                            <h4>Mevcut Listeleriniz</h4>
+                            <div id="userLists" class="user-lists">
+                                <!-- Lists will be populated here -->
+                                <div class="loading-spinner">
+                                    <i class="fas fa-spinner fa-spin"></i> Listeler yükleniyor...
+                                </div>
+                            </div>
+                        </div>
+                        <div class="new-list-form">
+                            <h4>Yeni Liste Oluştur</h4>
+                            <div class="input-group">
+                                <input type="text" id="newListName" placeholder="Liste adı girin..." maxlength="100">
+                                <button id="createListBtn" class="btn-create-list">
+                                    <i class="fas fa-plus"></i> Oluştur
+                                </button>
                             </div>
                         </div>
                     </div>
-                    <div class="new-list-form">
-                        <h4>Yeni Liste Oluştur</h4>
-                        <div class="input-group">
-                            <input type="text" id="newListName" placeholder="Liste adı girin..." maxlength="100">
-                            <button id="createListBtn" class="btn-create-list">
-                                <i class="fas fa-plus"></i> Oluştur
-                            </button>
-                        </div>
-                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="content-details-section">
-            <div class="details-toggle">
-                <span>İçerik Detayları</span>
-                <i class="fas fa-chevron-down"></i>
-            </div>
+            <div class="content-details-section">
+                <div class="details-toggle">
+                    <span>İçerik Detayları</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
 
-            <div class="content-details-container">
-                <div class="details-grid">
-                    <div class="details-poster">
-                        <div class="img-skeleton">
-                            <img id="contentPoster" src="" alt="Content Poster">
-                        </div>
-                        <div class="rating-badge">
-                            <span id="contentRating">9.2</span>
-                            <i class="fas fa-star"></i>
-                        </div>
-                    </div>
-                    <div class="details-info">
-                        <h2 id="contentTitle">Yükleniyor...</h2>
-                        <div class="genre-tags" id="genreTags">
-                            <!-- Genre tags will be added dynamically -->
-                        </div>
-                        <div class="details-meta">
-                            <span id="releaseYear">2024</span>
-                            <span class="separator">•</span>
-                            <span id="contentDuration">45 dk</span>
-                            <span class="separator">•</span>
-                            <span id="contentLanguage">Türkçe</span>
-                        </div>
-                        <div class="plot-summary">
-                            <p id="contentPlot">Yükleniyor...</p>
-                        </div>
-                        <div class="details-section">
-                            <h3>Oyuncular</h3>
-                            <div class="cast-list" id="castList">
-                                <!-- Cast members will be added dynamically -->
+                <div class="content-details-container">
+                    <div class="details-grid">
+                        <div class="details-poster">
+                            <div class="img-skeleton">
+                                <img id="contentPoster" src="" alt="Content Poster">
+                            </div>
+                            <div class="rating-badge">
+                                <span id="contentRating">9.2</span>
+                                <i class="fas fa-star"></i>
                             </div>
                         </div>
-                        <div class="details-section">
-                            <h3>Sezon & Bölüm Bilgisi</h3>
-                            <div class="season-info" id="seasonInfo">
-                                <span id="seasonNumber">Sezon 1</span>
+                        <div class="details-info">
+                            <h2 id="contentTitle">Yükleniyor...</h2>
+                            <div class="genre-tags" id="genreTags">
+                                <!-- Genre tags will be added dynamically -->
+                            </div>
+                            <div class="details-meta">
+                                <span id="releaseYear">2024</span>
                                 <span class="separator">•</span>
-                                <span id="episodeNumber">Bölüm 1</span>
+                                <span id="contentDuration">45 dk</span>
                                 <span class="separator">•</span>
-                                <span id="totalEpisodes">Toplam 10 Bölüm</span>
+                                <span id="contentLanguage">Türkçe</span>
+                            </div>
+                            <div class="plot-summary">
+                                <p id="contentPlot">Yükleniyor...</p>
+                            </div>
+                            <div class="details-section">
+                                <h3>Oyuncular</h3>
+                                <div class="cast-list" id="castList">
+                                    <!-- Cast members will be added dynamically -->
+                                </div>
+                            </div>
+                            <div class="details-section">
+                                <h3>Sezon & Bölüm Bilgisi</h3>
+                                <div class="season-info" id="seasonInfo">
+                                    <span id="seasonNumber">Sezon 1</span>
+                                    <span class="separator">•</span>
+                                    <span id="episodeNumber">Bölüm 1</span>
+                                    <span class="separator">•</span>
+                                    <span id="totalEpisodes">Toplam 10 Bölüm</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <div class="episode-navigation">
+                <button id="prevEpisode" class="nav-button" disabled><i class="fas fa-step-backward"></i> Önceki
+                    Bölüm</button>
+                <button id="nextEpisode" class="nav-button"><i class="fas fa-step-forward"></i> Sonraki Bölüm</button>
+            </div>
         </div>
 
-        <div class="episode-navigation">
-            <button id="prevEpisode" class="nav-button" disabled><i class="fas fa-step-backward"></i> Önceki Bölüm</button>
-            <button id="nextEpisode" class="nav-button"><i class="fas fa-step-forward"></i> Sonraki Bölüm</button>
-        </div>
-    </div>
-
-    <div class="recommendation-section">
-        <h3>Benzer İçerikler</h3>
-        <div class="recommendation-cards">
-            <div class="rec-card">
-                <div class="rec-image img-skeleton">
-                    <img src="https://picsum.photos/300/170?random=1" alt="Öneri 1">
-                </div>
-                <div class="rec-title">Öneri 1</div>
-            </div>
-            <div class="rec-card">
-                <div class="rec-image img-skeleton">
-                    <img src="https://picsum.photos/300/170?random=2" alt="Öneri 2">
-                </div>
-                <div class="rec-title">Öneri 2</div>
-            </div>
-            <div class="rec-card">
-                <div class="rec-image img-skeleton">
-                    <img src="https://picsum.photos/300/170?random=3" alt="Öneri 3">
-                </div>
-                <div class="rec-title">Öneri 3</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Comments Section -->
-    <div class="comments-section">
-        <h3>Yorumlar</h3>
-        <div class="comments-container">
-            <div id="comments-list">
-                <!-- Comments will be loaded here -->
-            </div>
-            <div class="comment-form">
-                <div class="user-avatar">
-                    <i class="fas fa-user"></i>
-                </div>
-                <form id="commentForm">
-                    <textarea id="commentText" placeholder="Bu dizi hakkında düşünceleriniz neler?"></textarea>
-                    <div class="form-actions">
-                        <button type="submit" class="comment-submit-btn"><i class="fas fa-paper-plane"></i> Yorum Yap</button>
+        <div class="recommendation-section">
+            <h3>Benzer İçerikler</h3>
+            <div class="recommendation-cards">
+                <div class="rec-card">
+                    <div class="rec-image img-skeleton">
+                        <img src="https://picsum.photos/300/170?random=1" alt="Öneri 1">
                     </div>
-                </form>
+                    <div class="rec-title">Öneri 1</div>
+                </div>
+                <div class="rec-card">
+                    <div class="rec-image img-skeleton">
+                        <img src="https://picsum.photos/300/170?random=2" alt="Öneri 2">
+                    </div>
+                    <div class="rec-title">Öneri 2</div>
+                </div>
+                <div class="rec-card">
+                    <div class="rec-image img-skeleton">
+                        <img src="https://picsum.photos/300/170?random=3" alt="Öneri 3">
+                    </div>
+                    <div class="rec-title">Öneri 3</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comments Section -->
+        <div class="comments-section">
+            <h3>Yorumlar</h3>
+            <div class="comments-container">
+                <div id="comments-list">
+                    <!-- Comments will be loaded here -->
+                </div>
+                <div class="comment-form">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <form id="commentForm">
+                        <textarea id="commentText" placeholder="Bu dizi hakkında düşünceleriniz neler?"></textarea>
+                        <div class="form-actions">
+                            <button type="submit" class="comment-submit-btn"><i class="fas fa-paper-plane"></i> Yorum
+                                Yap</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<footer>
-    <div class="footer-links">
-        <a href="/">Anasayfa</a>
-        <a href="/about">Hakkımızda</a>
-        <a href="/privacy_policy">Gizlilik Politikası</a>
-        <a href="/terms_of_use">Kullanım Şartları</a>
-        <a href="/sss">SSS</a>
-    </div>
-    <p>&copy; 2025 Who Dat Idols? Tüm hakları saklıdır.</p>
-</footer>
-<script type="module" src="/watch/js/watch.js"></script>
+    <footer>
+        <div class="footer-links">
+            <a href="/">Anasayfa</a>
+            <a href="/about">Hakkımızda</a>
+            <a href="/privacy_policy">Gizlilik Politikası</a>
+            <a href="/terms_of_use">Kullanım Şartları</a>
+            <a href="/sss">SSS</a>
+        </div>
+        <p>&copy; 2025 Who Dat Idols? Tüm hakları saklıdır.</p>
+    </footer>
+    <script type="module" src="/watch/js/watch.js"></script>
 </body>
+
 </html>

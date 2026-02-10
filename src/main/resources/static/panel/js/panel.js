@@ -37,13 +37,42 @@
             return;
         }
 
-        preview.innerHTML = `<img src="${urlOrSource}" alt="Poster Önizleme">`;
+        preview.innerHTML = `<img src="${urlOrSource}" alt="Poster Önizleme" onerror="this.onerror=null; this.outerHTML='<i class=\'fas fa-image\'></i>'">`;
     }
 
     // Sayfa açılınca mevcut listeleri çek
     fetchHeroVideos();
     fetchMovies();
     fetchSeries();
+
+    // Archive Search for Movies
+    const movieSearchInput = document.getElementById('movieArchiveSearch');
+    if (movieSearchInput) {
+        movieSearchInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('#movieTable tbody tr');
+            rows.forEach(row => {
+                const name = row.cells[1].innerText.toLowerCase();
+                row.style.display = name.includes(query) ? '' : 'none';
+            });
+        });
+    }
+
+    // Archive Search for Series
+    const seriesArchiveSearchInput = document.getElementById('seriesArchiveSearch');
+    if (seriesArchiveSearchInput) {
+        seriesArchiveSearchInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase().trim();
+            const groups = document.querySelectorAll('#seriesAccordion .series-group');
+            groups.forEach(group => {
+                const h3 = group.querySelector('h3');
+                if (h3) {
+                    const name = h3.innerText.toLowerCase();
+                    group.style.display = name.includes(query) ? '' : 'none';
+                }
+            });
+        });
+    }
 
     /* ===========================================================
        TOPLU SİLME (BULK DELETE) YÖNETİMİ
@@ -151,6 +180,93 @@
     }
 
     /* ===========================================================
+       TAKVİM YÖNETİMİ
+       =========================================================== */
+    const calendarForm = document.getElementById('calendarForm');
+
+    if (calendarForm) {
+        fetchCalendarEvents();
+
+        calendarForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const data = {
+                dayOfWeek: document.getElementById('calendarDay').value,
+                title: document.getElementById('calendarTitle').value,
+                episode: document.getElementById('calendarEpisode').value,
+                showTime: document.getElementById('calendarTime').value,
+                sortOrder: 0
+            };
+
+            const btn = document.getElementById('addEventBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> EKLENİYOR...';
+            btn.disabled = true;
+
+            fetch('/admin/calendar/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(res => {
+                if (res.ok) {
+                    calendarForm.reset();
+                    fetchCalendarEvents();
+                } else {
+                    res.text().then(msg => alert("Hata: " + msg));
+                }
+            }).catch(err => alert("Hata: " + err))
+                .finally(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                });
+        });
+    }
+
+    function fetchCalendarEvents() {
+        fetch('/api/calendar')
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.querySelector('#calendarTable tbody');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+
+                const daysOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+                const dayNames = {
+                    'monday': 'Pazartesi', 'tuesday': 'Salı', 'wednesday': 'Çarşamba',
+                    'thursday': 'Perşembe', 'friday': 'Cuma', 'saturday': 'Cumartesi', 'sunday': 'Pazar'
+                };
+
+                daysOrder.forEach(day => {
+                    if (data[day] && data[day].length > 0) {
+                        data[day].forEach(event => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td>${dayNames[day]}</td>
+                                <td>${event.time}</td>
+                                <td style="font-weight: 600;">${event.title}</td>
+                                <td>${event.episode}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-danger" onclick='deleteCalendarEvent("${event.id}")'><i class="fas fa-trash"></i> SİL</button>
+                                </td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    }
+                });
+            })
+            .catch(err => console.error("Takvim verisi alınamadı:", err));
+    }
+
+    window.deleteCalendarEvent = function (id) {
+        if (!confirm("Bu etkinliği silmek istediğinize emin misiniz?")) return;
+
+        fetch(`/admin/calendar/delete?id=${id}`, { method: 'DELETE' })
+            .then(res => {
+                if (res.ok) fetchCalendarEvents();
+                else res.text().then(msg => alert("Hata: " + msg));
+            });
+    };
+
+    /* ===========================================================
        HERO YÖNETİMİ
        =========================================================== */
     const heroForm = document.getElementById('heroForm');
@@ -160,6 +276,7 @@
     const selectedContentIdInput = document.getElementById('selectedContentId');
     const selectedContentTypeInput = document.getElementById('selectedContentType');
     const selectedContentDisplay = document.getElementById('selectedContentDisplay');
+    const heroContentInput = document.getElementById('heroContent'); // Textarea
 
     // Archive search logic for Hero (DYNAMIC SEARCH)
     let searchTimeout;
@@ -220,12 +337,19 @@
         selectedContentDisplay.style.display = 'flex';
         heroSearchResults.style.display = 'none';
         heroSearchInput.value = '';
+
+        // Pre-fill content if possible (Optional but good UX)
+        // We can fetch the details to get the summary
+        // For now, let's just leave it empty or clear it, user wants custom text
+        // Or if you want to pre-fill:
+        // fetchDetailsAndFill(item.id, item.type);
     }
 
     document.querySelector('.btn-clear').onclick = () => {
         selectedContentIdInput.value = '';
         selectedContentTypeInput.value = '';
         selectedContentDisplay.style.display = 'none';
+        heroContentInput.value = '';
     };
 
     heroForm.addEventListener('submit', function (e) {
@@ -242,6 +366,7 @@
         const formData = new FormData();
         formData.append('contentId', contentId);
         formData.append('type', type);
+        formData.append('content', heroContentInput.value);
         formData.append('file', file);
 
         uploadDataWithProgress('/admin/add-hero', formData, 'heroForm', 'progressWrapperHero', 'progressBarHero', 'percentHero', () => {
@@ -249,6 +374,7 @@
             selectedContentDisplay.style.display = 'none';
             selectedContentIdInput.value = '';
             selectedContentTypeInput.value = '';
+            heroContentInput.value = '';
         });
     });
 
@@ -384,12 +510,13 @@
         const isEditMode = movieId !== "";
 
         if (isEditMode) {
+
             const formData = new FormData();
             formData.append('id', movieId);
             formData.append('name', document.getElementById('movieName').value);
             formData.append('category', document.getElementById('movieCategory').value);
-            formData.append('content', document.getElementById('movieSummary').value);
-            formData.append('year', document.getElementById('movieYear').value);
+            formData.append('summary', document.getElementById('movieSummary').value);
+            formData.append('releaseYear', document.getElementById('movieYear').value);
             formData.append('language', document.getElementById('movieLanguage').value);
 
             if (movieImageInput.files.length > 0) {
@@ -404,6 +531,7 @@
 
             fetch('/admin/update-movie', {
                 method: 'POST',
+                // Remove Content-Type header to allow browser to set boundary for FormData
                 body: formData
             }).then(res => res.text()).then(msg => {
                 alert(msg); resetMovieForm(); fetchMovies();
@@ -413,7 +541,7 @@
             formData.append('name', document.getElementById('movieName').value);
             formData.append('category', document.getElementById('movieCategory').value);
             formData.append('summary', document.getElementById('movieSummary').value);
-            formData.append('year', document.getElementById('movieYear').value);
+            formData.append('releaseYear', document.getElementById('movieYear').value);
             formData.append('language', document.getElementById('movieLanguage').value);
             if (movieFileInput.files.length > 0) formData.append('file', movieFileInput.files[0]);
             if (movieImageInput.files.length > 0) formData.append('image', movieImageInput.files[0]);
@@ -438,7 +566,7 @@
                     tr.innerHTML = `
                         <td><input type="checkbox" class="movie-checkbox" value="${movie.id}" onchange="toggleMovieSelection('${movie.id}', this.checked)"></td>
                         <td style="font-weight: 600;">${movie.name}</td>
-                        <td>${movie.year}</td>
+                        <td>${movie.releaseYear}</td>
                         <td style="color: var(--text-dim);">${movie.category}</td>
                         <td>
                             <button class="btn btn-sm btn-edit" onclick='editMovie(${JSON.stringify(movie).replace(/'/g, "&#39;")})'><i class="fas fa-edit"></i> DÜZENLE</button>
@@ -455,8 +583,8 @@
         movieIdInput.value = movie.id;
         document.getElementById('movieName').value = movie.name;
         document.getElementById('movieCategory').value = movie.category;
-        document.getElementById('movieSummary').value = movie.content;
-        document.getElementById('movieYear').value = movie.year;
+        document.getElementById('movieSummary').value = movie.summary;
+        document.getElementById('movieYear').value = movie.releaseYear;
         document.getElementById('movieLanguage').value = movie.language;
 
         movieSubmitBtn.innerText = "DEĞİŞİKLİKLERİ KAYDET";
@@ -471,19 +599,8 @@
         if (movieLink) movieLink.click();
     };
 
-    function updateMovie(data) {
-        movieSubmitBtn.innerText = "GÜNCELLENİYOR...";
-        movieSubmitBtn.disabled = true;
-        fetch('/admin/update-movie', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        }).then(res => res.text()).then(msg => {
-            alert(msg); resetMovieForm(); fetchMovies();
-        }).finally(() => { movieSubmitBtn.disabled = false; });
-    }
 
-    movieCancelBtn.addEventListener('click', resetMovieForm);
+
     function resetMovieForm() {
         movieForm.reset();
         movieIdInput.value = "";
@@ -494,11 +611,11 @@
         movieCancelBtn.style.display = "none";
         movieFileInput.setAttribute('required', 'required');
 
-        // Resim önizlemesi veya dosya adını temizlemek gerekirse buraya eklenebilir
         if (movieImageInput) movieImageInput.value = "";
         if (moviePosterUrlInput) moviePosterUrlInput.value = "";
         lastFetchedPosterUrl = "";
         updatePosterPreview('movie', null);
+        resetFileInputs();
     }
 
     window.deleteMovie = function (id, name) {
@@ -604,7 +721,7 @@
             formData.append('id', sId);
             formData.append('name', document.getElementById('seriesName').value);
             formData.append('category', document.getElementById('seriesCategory').value);
-            formData.append('content', document.getElementById('seriesSummary').value);
+            formData.append('summary', document.getElementById('seriesSummary').value);
             formData.append('language', document.getElementById('seriesLanguage').value);
 
             if (seriesImageInput.files.length > 0) {
@@ -676,23 +793,27 @@
                 }
 
                 // Sort series by name
-                seriesList.sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+                seriesList.sort((a, b) => (a.name || "").localeCompare(b.name || "", 'tr'));
 
                 seriesList.forEach(series => {
                     // Populate Card Grid
                     const card = document.createElement('div');
                     card.className = 'series-card';
                     card.dataset.id = series.id;
-                    card.dataset.name = series.name.toLowerCase();
+                    card.dataset.name = (series.name || "").toLowerCase();
 
                     // Correct poster path using MediaController endpoint
                     const posterPath = `/media/image/${series.id}`;
 
                     card.innerHTML = `
-                        <img src="${posterPath}" class="series-card-poster" onerror="this.src='/images/placeholder.webp'">
+                        <img src="${posterPath}" class="series-card-poster" onerror="this.onerror=null; this.src='/images/placeholder.webp'">
                         <div class="series-card-info">
                             <div class="series-card-title">${series.name}</div>
-                            <div class="series-card-meta">${series.year || '-'} â€¢ ${series.language || '-'}</div>
+                            <div class="series-card-meta">
+                                <span><i class="fas fa-calendar-alt"></i> ${series.year || '-'}</span>
+                                &bull;
+                                <span><i class="fas fa-language"></i> ${series.language || '-'}</span>
+                            </div>
                         </div>
                     `;
 
@@ -700,23 +821,30 @@
                         document.querySelectorAll('.series-card').forEach(c => c.classList.remove('selected'));
                         card.classList.add('selected');
                         selectedSeriesIdInput.value = series.id;
+                        updatePosterPreview('series', posterPath);
                     };
 
                     cardGrid.appendChild(card);
 
                     // Populate Accordion
-                    const episodes = parseEpisodesFromXML(series.xmlData, series.name, series.category, series.content, series.language, series.year);
-                    const episodeCount = episodes.length;
+                    // TODO: Fetch episodes via API instead of XML parsing for the list
+                    const episodes = parseEpisodesFromXML(series.episodeMetadataXml, series.name, series.category, series.summary, series.language, series.year);
+                    const episodeCount = series.episodeCount || 0;
 
                     const groupDiv = document.createElement('div');
                     groupDiv.className = 'series-group';
 
                     groupDiv.innerHTML = `
                         <div class="series-header" onclick="toggleAccordion(this)">
-                            <div class="series-info" style="display: flex; align-items: center; gap: 10px;">
+                            <div class="series-info" style="display: flex; align-items: center; gap: 15px;">
                                 <input type="checkbox" class="series-checkbox" value="${series.id}" onclick="event.stopPropagation(); toggleSeriesSelection('${series.id}', this.checked)">
-                                <h3>${series.name}</h3>
-                                    ${series.category || 'Genel'} • ${series.language || '-'} • ${episodeCount} Bölüm
+                                <div class="series-title-wrapper">
+                                    <h3>${series.name}</h3>
+                                    <div class="series-meta-info">
+                                        <span class="meta-item"><i class="fas fa-tags"></i> ${series.category || 'Genel'}</span>
+                                        <span class="meta-item"><i class="fas fa-globe"></i> ${series.language || '-'}</span>
+                                        <span class="meta-item"><i class="fas fa-video"></i> ${episodeCount} Bölüm</span>
+                                    </div>
                                 </div>
                             </div>
                             <div class="series-actions" onclick="event.stopPropagation()">
@@ -743,7 +871,8 @@
             })
             .catch(err => {
                 console.error("Dizi listesi hatası:", err);
-                document.getElementById('seriesAccordion').innerHTML = '<div class="loading-state" style="color:var(--danger);">Veriler alınırken bir hata oluştu.</div>';
+                // More detailed error for debugging
+                document.getElementById('seriesAccordion').innerHTML = `<div class="loading-state" style="color:var(--danger);">Veriler alınırken bir hata oluştu: ${err.message}</div>`;
             });
 
         // Add search filter logic
@@ -777,6 +906,7 @@
         } else {
             existingWrapper.style.display = 'none';
             newFields.style.display = 'block';
+            updatePosterPreview('series', null);
         }
     };
 
@@ -835,9 +965,11 @@
         seriesIdInput.value = series.id;
         document.getElementById('seriesName').value = series.name;
         document.getElementById('seriesCategory').value = series.category;
-        document.getElementById('seriesSummary').value = series.content || series._content;
+        // UPDATE: series.content is now series.summary
+        document.getElementById('seriesSummary').value = series.summary || series.content || series._content;
         document.getElementById('seriesLanguage').value = series.language;
 
+        updatePosterPreview('series', `/media/image/${series.id}`);
         setupSeriesEditMode("DİZİ BİLGİSİNİ GÜNCELLE");
 
         // Switch to series section
@@ -922,6 +1054,8 @@
         if (selectedSeriesIdInput) selectedSeriesIdInput.value = "";
         const searchInput = document.getElementById('seriesSearchFilter');
         if (searchInput) searchInput.value = "";
+
+        resetFileInputs();
     }
 
     /* ===========================================================
@@ -1017,6 +1151,16 @@
         searchTvMaze(query, 'Series');
     });
 
+    const fetchUpcomingTvMazeBtn = document.getElementById('fetchUpcomingTvMazeBtn');
+    if (fetchUpcomingTvMazeBtn) {
+        fetchUpcomingTvMazeBtn.addEventListener('click', () => {
+            const query = document.getElementById('upcomingName').value.trim();
+            if (!query) return alert("Lütfen aramak için bir show adı girin!");
+            currentFetchType = 'Upcoming';
+            searchTvMaze(query, 'Upcoming');
+        });
+    }
+
     async function searchTvMaze(query, type) {
         console.log("Fetching TVMaze for:", query, "at URL:", `/public/api/tvmaze/search?query=${encodeURIComponent(query)}`);
         tmdbResultsGrid.innerHTML = '<div class="loading-state">TVMaze taranıyor...</div>';
@@ -1100,7 +1244,7 @@
             // Language matching
             const langMap = { 'Korean': 'Korece', 'English': 'İngilizce', 'Japanese': 'Japonca', 'Turkish': 'Türkçe' };
             document.getElementById('movieLanguage').value = langMap[data.language] || 'İngilizce';
-        } else {
+        } else if (type === 'Series') {
             document.getElementById('seriesName').value = data.name;
             document.getElementById('seriesYear').value = data.premiered ? data.premiered.substring(0, 4) : "2025";
             document.getElementById('seriesSummary').value = cleanSummary;
@@ -1110,6 +1254,10 @@
 
             const langMap = { 'Korean': 'Korece', 'Turkish': 'Türkçe', 'English': 'İngilizce', 'Japanese': 'Japonca' };
             document.getElementById('seriesLanguage').value = langMap[data.language] || 'Korece';
+        } else if (type === 'Upcoming') {
+            document.getElementById('upcomingName').value = data.name;
+            document.getElementById('upcomingImageUrl').value = lastFetchedPosterUrl;
+            updatePosterPreview('upcoming', lastFetchedPosterUrl);
         }
     }
 
@@ -1135,12 +1283,246 @@
         let episodeCount = 0;
         if (window.currentSeries) {
             window.currentSeries.forEach(s => {
-                // Parse XML to count episodes
-                const episodes = parseEpisodesFromXML(s.xmlData, "", "", "", "", "");
-                episodeCount += episodes.length;
+                episodeCount += (s.episodeCount || 0);
+            });
+            const epEl = document.getElementById('statTotalEpisodes');
+            if (epEl) epEl.innerText = episodeCount;
+        }
+    }
+
+    /* ===========================================================
+       PREMIUM DOSYA YÜKLEME MANTIĞI
+       =========================================================== */
+    window.handleFileSelect = function (input) {
+        const container = input.closest('.premium-file-input');
+        const nameSpan = container.querySelector('.file-name');
+
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            nameSpan.innerText = file.name;
+            container.classList.add('has-file');
+
+            // Boyut kontrolü uyarısı (opsiyonel görsel feedback)
+            const sizeMB = file.size / (1024 * 1024);
+            if (sizeMB > 95) {
+                nameSpan.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${file.name} (Büyük Dosya)`;
+                nameSpan.style.color = "var(--danger)";
+            } else {
+                nameSpan.style.color = "";
+            }
+        } else {
+            nameSpan.innerText = "Dosya seçilmedi";
+            container.classList.remove('has-file');
+        }
+    };
+
+    function resetFileInputs() {
+        document.querySelectorAll('.premium-file-input').forEach(container => {
+            const input = container.querySelector('input[type="file"]');
+            const nameSpan = container.querySelector('.file-name');
+            if (input) input.value = '';
+            if (nameSpan) nameSpan.innerText = "Dosya seçilmedi";
+            container.classList.remove('has-file');
+        });
+    }
+
+    // Drag and Drop Logic
+    document.querySelectorAll('.premium-file-input').forEach(container => {
+        const input = container.querySelector('input[type="file"]');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            container.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            container.addEventListener(eventName, () => container.classList.add('drag-over'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            container.addEventListener(eventName, () => container.classList.remove('drag-over'), false);
+        });
+
+        container.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            input.files = files;
+            window.handleFileSelect(input);
+        }, false);
+    });
+
+    /* ===========================================================
+       UPCOMING (BEKLENENLER) YÖNETİMİ
+       =========================================================== */
+    const upcomingForm = document.getElementById('upcomingForm');
+    const upcomingSearchInput = document.getElementById('upcomingSearch');
+    const upcomingSearchResults = document.getElementById('upcomingSearchResults');
+    const upcomingRefIdInput = document.getElementById('upcomingRefId');
+    const upcomingRefTypeInput = document.getElementById('upcomingRefType');
+    const upcomingRefDisplay = document.getElementById('upcomingRefDisplay');
+
+    if (upcomingForm) {
+        fetchUpcoming();
+
+        // Search logic for upcoming reference
+        upcomingSearchInput.addEventListener('input', function () {
+            const query = this.value.trim();
+            if (query.length < 2) {
+                upcomingSearchResults.style.display = 'none';
+                return;
+            }
+            fetch(`/api/search?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(data => {
+                    upcomingSearchResults.innerHTML = '';
+                    if (data.length === 0) {
+                        upcomingSearchResults.innerHTML = '<div class="search-result-item">Sonuç bulunamadı</div>';
+                    } else {
+                        data.slice(0, 10).forEach(item => {
+                            const div = document.createElement('div');
+                            div.className = 'search-result-item';
+                            div.innerHTML = `<span>${item.Name || item.name}</span> <small>${item.Type || item.type}</small>`;
+                            div.onclick = () => {
+                                upcomingRefIdInput.value = item.ID || item.id;
+                                upcomingRefTypeInput.value = item.Type || item.type;
+                                upcomingRefDisplay.querySelector('strong').innerText = item.Name || item.name;
+                                upcomingRefDisplay.style.display = 'flex';
+                                upcomingSearchResults.style.display = 'none';
+                                upcomingSearchInput.value = '';
+                                // Also pre-fill the name field
+                                document.getElementById('upcomingName').value = item.Name || item.name;
+                                document.getElementById('upcomingType').value = (item.Type === 'Movie' ? 'Movie' : 'SoapOpera');
+                            };
+                            upcomingSearchResults.appendChild(div);
+                        });
+                    }
+                    upcomingSearchResults.style.display = 'block';
+                });
+        });
+
+        document.querySelector('.btn-clear-upcoming').onclick = () => {
+            upcomingRefIdInput.value = '';
+            upcomingRefTypeInput.value = '';
+            upcomingRefDisplay.style.display = 'none';
+        };
+
+        // File selection UI handler for upcoming
+        const upcomingImageInput = document.getElementById('upcomingImage');
+        const upcomingImageUrlInput = document.getElementById('upcomingImageUrl');
+        const upcomingImageName = document.querySelector('#upcomingImageContainer .file-name');
+        // upcomingForm is already declared globally, no need to redeclare here unless scope is intended to be local.
+        // const upcomingForm = document.getElementById('upcomingForm');
+
+        if (upcomingImageUrlInput) {
+            upcomingImageUrlInput.addEventListener('input', function () {
+                updatePosterPreview('upcoming', this.value);
+                if (this.value) {
+                    lastFetchedPosterUrl = this.value;
+                    currentFetchType = 'Upcoming';
+                }
             });
         }
-        const epEl = document.getElementById('statTotalEpisodes');
-        if (epEl) epEl.innerText = episodeCount;
+        if (upcomingImageInput) {
+            upcomingImageInput.addEventListener('change', function () {
+                if (this.files && this.files.length > 0) {
+                    const file = this.files[0];
+                    upcomingImageName.innerText = file.name;
+                    document.getElementById('upcomingImageContainer').classList.add('has-file');
+
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        updatePosterPreview('upcoming', e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    upcomingImageName.innerText = "Dosya seçilmedi";
+                    document.getElementById('upcomingImageContainer').classList.remove('has-file');
+                    updatePosterPreview('upcoming', null);
+                }
+            });
+        }
+
+        upcomingForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('name', document.getElementById('upcomingName').value);
+            formData.append('type', document.getElementById('upcomingType').value);
+            formData.append('category', document.getElementById('upcomingCategory').value);
+            formData.append('status', document.getElementById('upcomingStatus').value);
+            formData.append('datetime', document.getElementById('upcomingDatetime').value);
+
+            const refId = upcomingRefIdInput.value;
+            if (refId) formData.append('referenceId', refId);
+
+            const imageFile = upcomingImageInput.files[0];
+            const manualImageUrl = document.getElementById('upcomingImageUrl').value.trim();
+
+            if (imageFile) {
+                formData.append('image', imageFile);
+            } else if (manualImageUrl) {
+                formData.append('imageUrl', manualImageUrl);
+            } else if (lastFetchedPosterUrl && currentFetchType === 'Upcoming') {
+                formData.append('imageUrl', lastFetchedPosterUrl);
+            }
+
+            fetch('/admin/add-upcoming', {
+                method: 'POST',
+                body: formData
+            }).then(res => {
+                if (res.ok) {
+                    upcomingForm.reset();
+                    upcomingRefDisplay.style.display = 'none';
+                    upcomingRefIdInput.value = '';
+                    if (document.getElementById('upcomingImageUrl')) document.getElementById('upcomingImageUrl').value = '';
+                    upcomingImageName.innerText = "Resim seçin veya sürükleyin";
+                    document.getElementById('upcomingImageContainer').classList.remove('has-file');
+                    updatePosterPreview('upcoming', null);
+                    lastFetchedPosterUrl = "";
+                    fetchUpcoming();
+                } else {
+                    res.text().then(msg => alert("Hata: " + msg));
+                }
+            });
+        });
     }
+
+    function fetchUpcoming() {
+        fetch('/admin/upcoming')
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.querySelector('#upcomingTable tbody');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+                data.forEach(item => {
+                    const tr = document.createElement('tr');
+                    const catBadge = item.Category === 'Translated' ?
+                        '<span class="badge" style="background: #1ed760; color: #fff; padding: 4px 8px; border-radius: 4px; font-weight: 700;">ÇEVRİLEN</span>' :
+                        '<span class="badge" style="background: #6c757d; color: #fff; padding: 4px 8px; border-radius: 4px; font-weight: 700;">BEKLENEN</span>';
+
+                    tr.innerHTML = `
+                        <td style="font-weight: 600;">${item.name}</td>
+                        <td>${item.type === 'Movie' ? 'Film' : 'Dizi'} ${catBadge}</td>
+                        <td><span class="badge" style="background: var(--primary-dim); color: var(--primary); padding: 4px 8px; border-radius: 4px; font-weight: 700;">${item.status}</span></td>
+                        <td>${new Date(item.datetime).toLocaleString('tr-TR')}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick='deleteUpcoming("${item.upcomingId}")'><i class="fas fa-trash"></i> SİL</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+    }
+
+    window.deleteUpcoming = function (id) {
+        if (!confirm("Bunu silmek istediğinize emin misiniz?")) return;
+        fetch(`/admin/delete-upcoming?id=${id}`, { method: 'DELETE' })
+            .then(res => {
+                if (res.ok) fetchUpcoming();
+                else res.text().then(msg => alert("Hata: " + msg));
+            });
+    };
 });

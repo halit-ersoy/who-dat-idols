@@ -1,382 +1,401 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no">
     <title>Who Dat Idols? - Streaming Platform</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Poppins:wght@300;400;600&display=swap"
-          rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Poppins:wght@300;400;600&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/homepage/css/main.css">
 </head>
+
 <body>
-<div id="loading-screen">
-    <div class="loading-text">WDI</div>
-</div>
-<header id="header">
-    <a href="/" class="logo-link" aria-label="Ana sayfa">
-        <div class="logo">WDI</div>
-    </a>
-
-    <button class="mobile-menu-toggle" aria-label="Menüyü aç/kapat" id="mobile-menu-toggle">
-        <i class="fas fa-bars"></i>
-    </button>
-
-    <nav class="nav-menu" role="navigation" aria-label="Ana navigasyon">
-        <div class="nav-item">
-            <a href="#" class="nav-link">Programlar <i class="fas fa-chevron-down"></i></a>
-            <div class="dropdown-menu">
-                <a href="#">Reality Show</a>
-                <a href="#">Müzik Programları</a>
-                <a href="#">Yarışmalar</a>
-                <a href="#">Talk Show</a>
-            </div>
-        </div>
-        <div class="nav-item">
-            <a href="#" class="nav-link">Diziler <i class="fas fa-chevron-down"></i></a>
-            <div class="dropdown-menu">
-                <a href="#">Kore Dizileri</a>
-                <a href="#">Tayland Dizileri</a>
-                <a href="#">Japon Dizileri</a>
-                <a href="#">Çin Dizileri</a>
-            </div>
-        </div>
-        <a href="#" class="nav-link">BL Dizileri</a>
-        <a href="#" class="nav-link">Takvim</a>
-    </nav>
-
-    <div class="header-right">
-        <div class="search" role="search">
-            <input type="text" placeholder="Film veya dizi ara..." aria-label="Film veya dizi ara" id="search-input">
-            <button class="search-button" aria-label="Ara">
-                <i class="fas fa-search"></i>
-            </button>
-            <div class="search-results" id="search-results"></div>
-        </div>
-
-        <div class="user-controls">
-            <button class="notifications-btn" aria-label="Bildirimler" id="notifications-btn">
-                <i class="fas fa-bell"></i>
-                <span class="notification-badge">2</span>
-            </button>
-            <button class="login-btn" aria-label="Oturum aç" id="login-btn">OTURUM AÇ</button>
-        </div>
+    <div id="loading-screen">
+        <div class="loading-text">WDI</div>
     </div>
-    <div class="login-modal-overlay" id="login-modal">
-        <div class="login-modal">
-            <button class="close-modal" id="close-modal">
-                <i class="fas fa-times"></i>
-            </button>
-            <div class="login-header">
-                <div class="login-logo">WhoDatIdols</div>
-                <h2 class="login-title">Hoşgeldiniz</h2>
-                <p class="login-subtitle">Hesabınıza giriş yapın</p>
-            </div>
-            <div class="login-form">
-                <div class="form-group">
-                    <label for="email">E-posta veya kullanıcı adı</label>
-                    <input type="text" class="form-control" id="email" placeholder="E-posta veya kullanıcı adı">
-                    <span class="highlight"></span>
-                </div>
-                <div class="form-group">
-                    <label for="password">Şifre</label>
-                    <input type="password" class="form-control" id="password" placeholder="Şifreniz">
-                    <span class="highlight"></span>
-                </div>
-                <div class="forgot-password">
-                    <a href="#">Şifremi unuttum</a>
-                </div>
-                <button class="login-btn-page" id="login-submit">Giriş Yap</button>
-                <div class="login-divider">veya</div>
-                <div class="social-login">
-                    <button class="social-btn">
-                        <i class="fab fa-google"></i>
-                    </button>
-                    <button class="social-btn">
-                        <i class="fab fa-facebook-f"></i>
-                    </button>
-                    <button class="social-btn">
-                        <i class="fab fa-twitter"></i>
-                    </button>
-                    <button class="social-btn">
-                        <i class="fab fa-apple"></i>
-                    </button>
-                </div>
-                <div class="register-link">
-                    Hesabınız yok mu? <a href="#">Hesap oluştur</a>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="login-modal-overlay" id="register-modal">
-        <div class="login-modal">
-            <button class="close-modal" id="close-register-modal">
-                <i class="fas fa-times"></i>
-            </button>
-            <div class="login-header">
-                <div class="login-logo">Who Dat Idols?</div>
-                <div class="login-title">Hesap Oluştur</div>
-                <div class="login-subtitle">Dünyanın en iyi idol içerik platformuna üye ol</div>
-            </div>
-            <div class="login-form">
-                <div class="form-group">
-                    <label for="first-name">Ad</label>
-                    <input type="text" id="first-name" class="form-control" placeholder="Adınızı giriniz">
-                </div>
-                <div class="form-group">
-                    <label for="last-name">Soyad</label>
-                    <input type="text" id="last-name" class="form-control" placeholder="Soyadınızı giriniz">
-                </div>
-                <div class="form-group">
-                    <label for="nickname">Kullanıcı Adı</label>
-                    <input type="text" id="nickname" class="form-control" placeholder="Kullanıcı adınızı giriniz">
-                </div>
-                <div class="form-group">
-                    <label for="register-email">E-posta</label>
-                    <input type="email" id="register-email" class="form-control"
-                           placeholder="E-posta adresinizi giriniz">
-                </div>
-                <div class="form-group">
-                    <label for="register-password">Şifre</label>
-                    <input type="password" id="register-password" class="form-control" placeholder="Şifrenizi giriniz">
-                </div>
-                <button class="login-btn-page" id="register-submit">Kayıt Ol</button>
-                <div class="login-divider">veya</div>
-                <div class="social-login">
-                    <button class="social-btn">
-                        <i class="fab fa-google"></i>
-                    </button>
-                    <button class="social-btn">
-                        <i class="fab fa-facebook-f"></i>
-                    </button>
-                    <button class="social-btn">
-                        <i class="fab fa-twitter"></i>
-                    </button>
-                    <button class="social-btn">
-                        <i class="fab fa-apple"></i>
-                    </button>
-                </div>
-                <div class="register-link login-link">
-                    Zaten hesabınız var mı? <a href="#" id="login-link">Giriş Yap</a>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="login-modal-overlay" id="forgot-password-modal">
-        <div class="login-modal">
-            <button class="close-modal" id="close-forgot-modal">
-                <i class="fas fa-times"></i>
-            </button>
-            <div class="login-header">
-                <div class="login-logo">WhoDatIdols</div>
-                <h2 class="login-title">Şifremi Unuttum</h2>
-                <p class="login-subtitle">Şifre sıfırlamak için e-posta veya kullanıcı adınızı girin</p>
-            </div>
-            <div class="login-form">
-                <div class="form-group">
-                    <label for="forgot-email">E-posta veya kullanıcı adı</label>
-                    <input type="text" class="form-control" id="forgot-email"
-                           placeholder="E-posta veya kullanıcı adınızı giriniz">
-                    <span class="highlight"></span>
-                </div>
-                <button class="login-btn-page" id="forgot-password-submit">Şifremi Sıfırla</button>
-                <div class="register-link login-link">
-                    Şifrenizi hatırladınız mı? <a href="#" id="back-to-login">Giriş Yap</a>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="calendar-modal-overlay" id="calendar-modal">
-        <div class="calendar-modal">
-            <button class="close-modal" id="close-calendar-modal">
-                <i class="fas fa-times"></i>
-            </button>
-            <div class="calendar-header">
-                <h2>Takvim</h2>
-            </div>
-            <div class="weekly-calendar">
-                <div class="calendar-day">
-                    <h3>Pazartesi</h3>
-                    <div class="calendar-shows" id="monday-shows"></div>
-                </div>
-                <div class="calendar-day">
-                    <h3>Salı</h3>
-                    <div class="calendar-shows" id="tuesday-shows"></div>
-                </div>
-                <div class="calendar-day">
-                    <h3>Çarşamba</h3>
-                    <div class="calendar-shows" id="wednesday-shows"></div>
-                </div>
-                <div class="calendar-day">
-                    <h3>Perşembe</h3>
-                    <div class="calendar-shows" id="thursday-shows"></div>
-                </div>
-                <div class="calendar-day">
-                    <h3>Cuma</h3>
-                    <div class="calendar-shows" id="friday-shows"></div>
-                </div>
-                <div class="calendar-day">
-                    <h3>Cumartesi</h3>
-                    <div class="calendar-shows" id="saturday-shows"></div>
-                </div>
-                <div class="calendar-day">
-                    <h3>Pazar</h3>
-                    <div class="calendar-shows" id="sunday-shows"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-</header>
-<section class="hero">
-    <button id="stopTrailerBtn" class="glow-button stop-trailer-btn">
-        <i class="fas fa-pause"></i> İZLEMEYİ DURDUR
-    </button>
-    <div class="hero-videos">
-
-    </div>
-    <button class="hero-nav prev-hero" aria-label="Önceki">
-        <i class="fas fa-chevron-left"></i>
-    </button>
-    <button class="hero-nav next-hero" aria-label="Sonraki">
-        <i class="fas fa-chevron-right"></i>
-    </button>
-    <div class="hero-indicators">
-        <span class="hero-indicator active" data-index="0"></span>
-        <span class="hero-indicator" data-index="1"></span>
-        <span class="hero-indicator" data-index="2"></span>
-    </div>
-    <div class="scroll-indicator">
-        <i class="fas fa-chevron-down"></i>
-    </div>
-</section>
-<section class="section weekly-best-content weekly-best-section">
-    <div class="section-header">
-        <h2>HAFTANIN EN İYİLERİ</h2>
-        <div class="section-actions">
-            <div class="weekly-best-toggle">
-                <button id="weekly-tv-toggle" class="weekly-toggle-btn active">Diziler</button>
-                <button id="weekly-movies-toggle" class="weekly-toggle-btn">Filmler</button>
-            </div>
-        </div>
-    </div>
-    <div class="weekly-best-grid"></div>
-</section>
-<section class="upcoming-episodes-section">
-    <div class="upcoming-episodes-header">
-        <h2 class="upcoming-episodes-title">YÜKLENECEK BÖLÜMLER</h2>
-        <div class="upcoming-episodes-actions">
-            <div class="upcoming-episodes-toggle">
-                <button id="upcoming-translated-toggle" class="upcoming-toggle-btn active">Çevrilenler</button>
-                <button id="upcoming-new-toggle" class="upcoming-toggle-btn">Beklenenler</button>
-            </div>
-        </div>
-    </div>
-    <div class="upcoming-carousel-container">
-        <button class="upcoming-carousel-nav upcoming-prev-btn" data-carousel="upcoming-episodes-carousel" aria-label="Önceki">
-            <i class="fas fa-chevron-left"></i>
-        </button>
-        <div class="upcoming-carousel" id="upcoming-episodes-carousel">
-            <!-- Items will be populated by JavaScript -->
-        </div>
-        <button class="upcoming-carousel-nav upcoming-next-btn" data-carousel="upcoming-episodes-carousel" aria-label="Sonraki">
-            <i class="fas fa-chevron-right"></i>
-        </button>
-    </div>
-</section>
-<section class="section featured-content">
-    <div class="section-header">
-        <h2>SON EKLENENLER</h2>
-        <div class="section-actions">
-            <div class="featured-toggle">
-                <button id="featured-tv-toggle" class="featured-toggle-btn active">Diziler</button>
-                <button id="featured-movies-toggle" class="featured-toggle-btn">Filmler</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="featured-grid">
-        <!-- JavaScript ile doldurulacak -->
-    </div>
-</section>
-<section class="section new-soap-operas">
-    <div class="section-header">
-        <h2>YENİ EKLENEN DİZİLER</h2>
-        <a href="#" class="view-all">
-            Tümünü Gör <i class="fas fa-chevron-right"></i>
+    <header id="header">
+        <a href="/" class="logo-link" aria-label="Ana sayfa">
+            <div class="logo">WDI</div>
         </a>
-    </div>
-    <div class="carousel-container">
-        <button class="carousel-nav prev-btn" data-carousel="new-soap-operas-carousel" aria-label="Önceki">
+
+        <button class="mobile-menu-toggle" aria-label="Menüyü aç/kapat" id="mobile-menu-toggle">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <nav class="nav-menu" role="navigation" aria-label="Ana navigasyon">
+            <div class="nav-item">
+                <a href="#" class="nav-link">Programlar <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="#">Reality Show</a>
+                    <a href="#">Müzik Programları</a>
+                    <a href="#">Yarışmalar</a>
+                    <a href="#">Talk Show</a>
+                </div>
+            </div>
+            <div class="nav-item">
+                <a href="#" class="nav-link">Diziler <i class="fas fa-chevron-down"></i></a>
+                <div class="dropdown-menu">
+                    <a href="#">Kore Dizileri</a>
+                    <a href="#">Tayland Dizileri</a>
+                    <a href="#">Japon Dizileri</a>
+                    <a href="#">Çin Dizileri</a>
+                </div>
+            </div>
+            <a href="#" class="nav-link">BL Dizileri</a>
+            <a href="#" class="nav-link">Takvim</a>
+        </nav>
+
+        <div class="header-right">
+            <div class="search" role="search">
+                <input type="text" placeholder="Film veya dizi ara..." aria-label="Film veya dizi ara"
+                    id="search-input">
+                <button class="search-button" aria-label="Ara">
+                    <i class="fas fa-search"></i>
+                </button>
+                <div class="search-results" id="search-results"></div>
+            </div>
+
+            <div class="user-controls">
+                <div class="notifications-wrapper" id="notifications-wrapper">
+                    <button class="notifications-btn" aria-label="Bildirimler" id="notifications-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge" id="notification-badge" style="display: none;">0</span>
+                    </button>
+                    <div class="notifications-dropdown" id="notifications-dropdown">
+                        <div class="notifications-header">
+                            <h3>Bildirimler</h3>
+                        </div>
+                        <div class="notifications-list" id="notifications-list">
+                            <!-- Notifications will be populated here -->
+                            <div class="notification-empty">Henüz bildirim yok.</div>
+                        </div>
+                    </div>
+                </div>
+                <button class="login-btn" aria-label="Oturum aç" id="login-btn">OTURUM AÇ</button>
+            </div>
+        </div>
+        <div class="login-modal-overlay" id="login-modal">
+            <div class="login-modal">
+                <button class="close-modal" id="close-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="login-header">
+                    <div class="login-logo">WhoDatIdols</div>
+                    <h2 class="login-title">Hoşgeldiniz</h2>
+                    <p class="login-subtitle">Hesabınıza giriş yapın</p>
+                </div>
+                <div class="login-form">
+                    <div class="form-group">
+                        <label for="email">E-posta veya kullanıcı adı</label>
+                        <input type="text" class="form-control" id="email" placeholder="E-posta veya kullanıcı adı">
+                        <span class="highlight"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Şifre</label>
+                        <input type="password" class="form-control" id="password" placeholder="Şifreniz">
+                        <span class="highlight"></span>
+                    </div>
+                    <div class="forgot-password">
+                        <a href="#">Şifremi unuttum</a>
+                    </div>
+                    <button class="login-btn-page" id="login-submit">Giriş Yap</button>
+                    <div class="login-divider">veya</div>
+                    <div class="social-login">
+                        <button class="social-btn">
+                            <i class="fab fa-google"></i>
+                        </button>
+                        <button class="social-btn">
+                            <i class="fab fa-facebook-f"></i>
+                        </button>
+                        <button class="social-btn">
+                            <i class="fab fa-twitter"></i>
+                        </button>
+                        <button class="social-btn">
+                            <i class="fab fa-apple"></i>
+                        </button>
+                    </div>
+                    <div class="register-link">
+                        Hesabınız yok mu? <a href="#">Hesap oluştur</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="login-modal-overlay" id="register-modal">
+            <div class="login-modal">
+                <button class="close-modal" id="close-register-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="login-header">
+                    <div class="login-logo">Who Dat Idols?</div>
+                    <div class="login-title">Hesap Oluştur</div>
+                    <div class="login-subtitle">Dünyanın en iyi idol içerik platformuna üye ol</div>
+                </div>
+                <div class="login-form">
+                    <div class="form-group">
+                        <label for="first-name">Ad</label>
+                        <input type="text" id="first-name" class="form-control" placeholder="Adınızı giriniz">
+                    </div>
+                    <div class="form-group">
+                        <label for="last-name">Soyad</label>
+                        <input type="text" id="last-name" class="form-control" placeholder="Soyadınızı giriniz">
+                    </div>
+                    <div class="form-group">
+                        <label for="nickname">Kullanıcı Adı</label>
+                        <input type="text" id="nickname" class="form-control" placeholder="Kullanıcı adınızı giriniz">
+                    </div>
+                    <div class="form-group">
+                        <label for="register-email">E-posta</label>
+                        <input type="email" id="register-email" class="form-control"
+                            placeholder="E-posta adresinizi giriniz">
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">Şifre</label>
+                        <input type="password" id="register-password" class="form-control"
+                            placeholder="Şifrenizi giriniz">
+                    </div>
+                    <button class="login-btn-page" id="register-submit">Kayıt Ol</button>
+                    <div class="login-divider">veya</div>
+                    <div class="social-login">
+                        <button class="social-btn">
+                            <i class="fab fa-google"></i>
+                        </button>
+                        <button class="social-btn">
+                            <i class="fab fa-facebook-f"></i>
+                        </button>
+                        <button class="social-btn">
+                            <i class="fab fa-twitter"></i>
+                        </button>
+                        <button class="social-btn">
+                            <i class="fab fa-apple"></i>
+                        </button>
+                    </div>
+                    <div class="register-link login-link">
+                        Zaten hesabınız var mı? <a href="#" id="login-link">Giriş Yap</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="login-modal-overlay" id="forgot-password-modal">
+            <div class="login-modal">
+                <button class="close-modal" id="close-forgot-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="login-header">
+                    <div class="login-logo">WhoDatIdols</div>
+                    <h2 class="login-title">Şifremi Unuttum</h2>
+                    <p class="login-subtitle">Şifre sıfırlamak için e-posta veya kullanıcı adınızı girin</p>
+                </div>
+                <div class="login-form">
+                    <div class="form-group">
+                        <label for="forgot-email">E-posta veya kullanıcı adı</label>
+                        <input type="text" class="form-control" id="forgot-email"
+                            placeholder="E-posta veya kullanıcı adınızı giriniz">
+                        <span class="highlight"></span>
+                    </div>
+                    <button class="login-btn-page" id="forgot-password-submit">Şifremi Sıfırla</button>
+                    <div class="register-link login-link">
+                        Şifrenizi hatırladınız mı? <a href="#" id="back-to-login">Giriş Yap</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="calendar-modal-overlay" id="calendar-modal">
+            <div class="calendar-modal">
+                <button class="close-modal" id="close-calendar-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="calendar-header">
+                    <h2>Takvim</h2>
+                </div>
+                <div class="weekly-calendar">
+                    <div class="calendar-day">
+                        <h3>Pazartesi</h3>
+                        <div class="calendar-shows" id="monday-shows"></div>
+                    </div>
+                    <div class="calendar-day">
+                        <h3>Salı</h3>
+                        <div class="calendar-shows" id="tuesday-shows"></div>
+                    </div>
+                    <div class="calendar-day">
+                        <h3>Çarşamba</h3>
+                        <div class="calendar-shows" id="wednesday-shows"></div>
+                    </div>
+                    <div class="calendar-day">
+                        <h3>Perşembe</h3>
+                        <div class="calendar-shows" id="thursday-shows"></div>
+                    </div>
+                    <div class="calendar-day">
+                        <h3>Cuma</h3>
+                        <div class="calendar-shows" id="friday-shows"></div>
+                    </div>
+                    <div class="calendar-day">
+                        <h3>Cumartesi</h3>
+                        <div class="calendar-shows" id="saturday-shows"></div>
+                    </div>
+                    <div class="calendar-day">
+                        <h3>Pazar</h3>
+                        <div class="calendar-shows" id="sunday-shows"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <section class="hero">
+        <button id="stopTrailerBtn" class="glow-button stop-trailer-btn">
+            <i class="fas fa-pause"></i> İZLEMEYİ DURDUR
+        </button>
+        <div class="hero-videos">
+
+        </div>
+        <button class="hero-nav prev-hero" aria-label="Önceki">
             <i class="fas fa-chevron-left"></i>
         </button>
-        <div class="carousel" id="new-soap-operas-carousel"></div>
-        <button class="carousel-nav next-btn" data-carousel="new-soap-operas-carousel" aria-label="Sonraki">
+        <button class="hero-nav next-hero" aria-label="Sonraki">
             <i class="fas fa-chevron-right"></i>
         </button>
-    </div>
-</section>
-<section id="new-soap-operas-all" class="section new-soap-operas-all-section hidden">
-    <div class="section-header">
-        <h2>TÜM YENİ EKLENEN DİZİLER</h2>
-        <button class="close-all-btn">
-            <i class="fas fa-times"></i>
-        </button>
-    </div>
-    <div class="new-soap-operas-all-grid"></div>
-    <div class="load-more-container">
-        <button id="load-more-new-soap-operas" class="load-more-btn">
-            <span>DAHA FAZLA YÜKLE</span>
+        <div class="hero-indicators">
+            <span class="hero-indicator active" data-index="0"></span>
+            <span class="hero-indicator" data-index="1"></span>
+            <span class="hero-indicator" data-index="2"></span>
+        </div>
+        <div class="scroll-indicator">
             <i class="fas fa-chevron-down"></i>
-        </button>
+        </div>
+    </section>
+    <section class="section weekly-best-content weekly-best-section">
+        <div class="section-header">
+            <h2>HAFTANIN EN İYİLERİ</h2>
+            <div class="section-actions">
+                <div class="weekly-best-toggle">
+                    <button id="weekly-tv-toggle" class="weekly-toggle-btn active">Diziler</button>
+                    <button id="weekly-movies-toggle" class="weekly-toggle-btn">Filmler</button>
+                </div>
+            </div>
+        </div>
+        <div class="weekly-best-grid"></div>
+    </section>
+    <section class="upcoming-episodes-section">
+        <div class="upcoming-episodes-header">
+            <h2 class="upcoming-episodes-title">YÜKLENECEK BÖLÜMLER</h2>
+            <div class="upcoming-episodes-actions">
+                <div class="upcoming-episodes-toggle">
+                    <button id="upcoming-translated-toggle" class="upcoming-toggle-btn active">Çevrilenler</button>
+                    <button id="upcoming-new-toggle" class="upcoming-toggle-btn">Beklenenler</button>
+                </div>
+            </div>
+        </div>
+        <div class="upcoming-carousel-container">
+            <button class="upcoming-carousel-nav upcoming-prev-btn" data-carousel="upcoming-episodes-carousel"
+                aria-label="Önceki">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="upcoming-carousel" id="upcoming-episodes-carousel">
+                <!-- Items will be populated by JavaScript -->
+            </div>
+            <button class="upcoming-carousel-nav upcoming-next-btn" data-carousel="upcoming-episodes-carousel"
+                aria-label="Sonraki">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </section>
+    <section class="section featured-content">
+        <div class="section-header">
+            <h2>SON EKLENENLER</h2>
+            <div class="section-actions">
+                <div class="featured-toggle">
+                    <button id="featured-tv-toggle" class="featured-toggle-btn active">Diziler</button>
+                    <button id="featured-movies-toggle" class="featured-toggle-btn">Filmler</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="featured-grid">
+            <!-- JavaScript ile doldurulacak -->
+        </div>
+    </section>
+    <section class="section new-soap-operas">
+        <div class="section-header">
+            <h2>YENİ EKLENEN DİZİLER</h2>
+            <a href="#" class="view-all">
+                Tümünü Gör <i class="fas fa-chevron-right"></i>
+            </a>
+        </div>
+        <div class="carousel-container">
+            <button class="carousel-nav prev-btn" data-carousel="new-soap-operas-carousel" aria-label="Önceki">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="carousel" id="new-soap-operas-carousel"></div>
+            <button class="carousel-nav next-btn" data-carousel="new-soap-operas-carousel" aria-label="Sonraki">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </section>
+    <section id="new-soap-operas-all" class="section new-soap-operas-all-section hidden">
+        <div class="section-header">
+            <h2>TÜM YENİ EKLENEN DİZİLER</h2>
+            <button class="close-all-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="new-soap-operas-all-grid"></div>
+        <div class="load-more-container">
+            <button id="load-more-new-soap-operas" class="load-more-btn">
+                <span>DAHA FAZLA YÜKLE</span>
+                <i class="fas fa-chevron-down"></i>
+            </button>
+        </div>
+    </section>
+    <section class="section new-movies">
+        <div class="section-header">
+            <h2>YENİ EKLENEN FİLMLER</h2>
+            <a href="#" class="view-all">
+                Tümünü Gör <i class="fas fa-chevron-right"></i>
+            </a>
+        </div>
+        <div class="carousel-container">
+            <button class="carousel-nav prev-btn" data-carousel="new-movies-carousel" aria-label="Önceki">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="carousel" id="new-movies-carousel"></div>
+            <button class="carousel-nav next-btn" data-carousel="new-movies-carousel" aria-label="Sonraki">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </section>
+    <section id="new-movies-all" class="section new-movies-all-section hidden">
+        <div class="section-header">
+            <h2>TÜM YENİ EKLENEN FİLMLER</h2>
+            <button class="close-all-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="new-movies-all-grid"></div>
+        <div class="load-more-container">
+            <button id="load-more-new-movies" class="load-more-btn">
+                <span>DAHA FAZLA YÜKLE</span>
+                <i class="fas fa-chevron-down"></i>
+            </button>
+        </div>
+    </section>
+    <div class="announcement">
+        <i class="fas fa-bullhorn"></i>
+        DUYURU: Sitemizde bulunan "BL Drama Turkey, Asian Drama House, Asian Drama Alarm" içerikleri kendi sitemiz ve
+        ortak olduğumuz sitelerdir. Çalma veya emek hırsızlığı gibi bir durum yoktur!
     </div>
-</section>
-<section class="section new-movies">
-    <div class="section-header">
-        <h2>YENİ EKLENEN FİLMLER</h2>
-        <a href="#" class="view-all">
-            Tümünü Gör <i class="fas fa-chevron-right"></i>
-        </a>
-    </div>
-    <div class="carousel-container">
-        <button class="carousel-nav prev-btn" data-carousel="new-movies-carousel" aria-label="Önceki">
-            <i class="fas fa-chevron-left"></i>
-        </button>
-        <div class="carousel" id="new-movies-carousel"></div>
-        <button class="carousel-nav next-btn" data-carousel="new-movies-carousel" aria-label="Sonraki">
-            <i class="fas fa-chevron-right"></i>
-        </button>
-    </div>
-</section>
-<section id="new-movies-all" class="section new-movies-all-section hidden">
-    <div class="section-header">
-        <h2>TÜM YENİ EKLENEN FİLMLER</h2>
-        <button class="close-all-btn">
-            <i class="fas fa-times"></i>
-        </button>
-    </div>
-    <div class="new-movies-all-grid"></div>
-    <div class="load-more-container">
-        <button id="load-more-new-movies" class="load-more-btn">
-            <span>DAHA FAZLA YÜKLE</span>
-            <i class="fas fa-chevron-down"></i>
-        </button>
-    </div>
-</section>
-<div class="announcement">
-    <i class="fas fa-bullhorn"></i>
-    DUYURU: Sitemizde bulunan "BL Drama Turkey, Asian Drama House, Asian Drama Alarm" içerikleri kendi sitemiz ve
-    ortak olduğumuz sitelerdir. Çalma veya emek hırsızlığı gibi bir durum yoktur!
-</div>
-<footer>
-    <div class="footer-links">
-        <a href="/" class="active">Anasayfa</a>
-        <a href="/about">Hakkımızda</a>
-        <a href="/privacy_policy">Gizlilik Politikası</a>
-        <a href="/terms_of_use">Kullanım Şartları</a>
-        <a href="/sss">SSS</a>
-    </div>
-    &copy; 2025 Who Dat Idols? Tüm hakları saklıdır.
-</footer>
-<script type="module" src="/homepage/js/main.js"></script>
+    <footer>
+        <div class="footer-links">
+            <a href="/" class="active">Anasayfa</a>
+            <a href="/about">Hakkımızda</a>
+            <a href="/privacy_policy">Gizlilik Politikası</a>
+            <a href="/terms_of_use">Kullanım Şartları</a>
+            <a href="/sss">SSS</a>
+        </div>
+        &copy; 2025 Who Dat Idols? Tüm hakları saklıdır.
+    </footer>
+    <script type="module" src="/homepage/js/main.js"></script>
 </body>
+
 </html>

@@ -53,3 +53,6 @@
 
 /* 16) Scrool */
 @import url('/elements/scrool.css');
+
+/* 17) Notifications */
+@import url('notifications.css');

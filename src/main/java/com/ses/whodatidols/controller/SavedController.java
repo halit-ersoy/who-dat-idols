@@ -21,7 +21,7 @@ public class SavedController {
     @GetMapping("/translated")
     public ResponseEntity<?> getTranslatedEpisodes() {
         try {
-            List<Map<String, Object>> result = jdbcTemplate.queryForList("EXEC GetTranslated");
+            List<Map<String, Object>> result = jdbcTemplate.queryForList("EXEC GetUpcoming 'Translated'");
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             Map<String, Object> error = new HashMap<>();
@@ -34,7 +34,7 @@ public class SavedController {
     @GetMapping("/loaded")
     public ResponseEntity<?> getLoadedEpisodes() {
         try {
-            List<Map<String, Object>> result = jdbcTemplate.queryForList("EXEC GetLoaded");
+            List<Map<String, Object>> result = jdbcTemplate.queryForList("EXEC GetUpcoming 'Upcoming'");
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             Map<String, Object> error = new HashMap<>();
@@ -51,8 +51,7 @@ public class SavedController {
         if (cookie == null || cookie.isEmpty()) {
             return ResponseEntity.status(401).body(Map.of(
                     "Result", 0,
-                    "Message", "Authentication required"
-            ));
+                    "Message", "Authentication required"));
         }
 
         try {
@@ -66,18 +65,17 @@ public class SavedController {
             String sql = "{call ToggleVideoSave(?, ?, ?, ?, ?)}";
             List<Map<String, Object>> lists = jdbcTemplate.queryForList(
                     sql,
-                    "get",          // @mode
-                    null,           // @title
-                    null,           // @new_title
-                    null,           // @video_id
-                    cookieUuid      // @cookie
+                    "get", // @mode
+                    null, // @title
+                    null, // @new_title
+                    null, // @video_id
+                    cookieUuid // @cookie
             );
             return ResponseEntity.ok(lists);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of(
                     "Result", 0,
-                    "Message", "Error retrieving lists: " + e.getMessage()
-            ));
+                    "Message", "Error retrieving lists: " + e.getMessage()));
         }
     }
 
@@ -89,8 +87,7 @@ public class SavedController {
         if (cookie == null || cookie.isEmpty()) {
             return ResponseEntity.status(401).body(Map.of(
                     "Result", 0,
-                    "Message", "Authentication required"
-            ));
+                    "Message", "Authentication required"));
         }
 
         try {
@@ -104,11 +101,11 @@ public class SavedController {
             String sql = "{call ToggleVideoSave(?, ?, ?, ?, ?)}";
             Map<String, Object> result = jdbcTemplate.queryForMap(
                     sql,
-                    "create",       // @mode
-                    title,          // @title
-                    null,           // @new_title
-                    null,           // @video_id
-                    cookieUuid      // @cookie
+                    "create", // @mode
+                    title, // @title
+                    null, // @new_title
+                    null, // @video_id
+                    cookieUuid // @cookie
             );
             return ResponseEntity.ok(result);
         } catch (Exception e) {
@@ -128,8 +125,7 @@ public class SavedController {
         if (cookie == null || cookie.isEmpty()) {
             return ResponseEntity.status(401).body(Map.of(
                     "Result", 0,
-                    "Message", "Authentication required"
-            ));
+                    "Message", "Authentication required"));
         }
 
         try {
@@ -143,11 +139,11 @@ public class SavedController {
             String sql = "{call ToggleVideoSave(?, ?, ?, ?, ?)}";
             Map<String, Object> result = jdbcTemplate.queryForMap(
                     sql,
-                    "add",          // @mode
-                    title,          // @title
-                    null,           // @new_title
-                    videoId,        // @video_id
-                    cookieUuid      // @cookie
+                    "add", // @mode
+                    title, // @title
+                    null, // @new_title
+                    videoId, // @video_id
+                    cookieUuid // @cookie
             );
             return ResponseEntity.ok(result);
         } catch (Exception e) {
@@ -166,8 +162,7 @@ public class SavedController {
         if (cookie == null || cookie.isEmpty()) {
             return ResponseEntity.status(401).body(Map.of(
                     "Result", 0,
-                    "Message", "Authentication required"
-            ));
+                    "Message", "Authentication required"));
         }
 
         try {
@@ -181,11 +176,11 @@ public class SavedController {
             String sql = "{call ToggleVideoSave(?, ?, ?, ?, ?)}";
             Map<String, Object> result = jdbcTemplate.queryForMap(
                     sql,
-                    "remove",       // @mode
-                    null,           // @title
-                    null,           // @new_title
-                    videoId,        // @video_id
-                    cookieUuid      // @cookie
+                    "remove", // @mode
+                    null, // @title
+                    null, // @new_title
+                    videoId, // @video_id
+                    cookieUuid // @cookie
             );
             return ResponseEntity.ok(result);
         } catch (Exception e) {
@@ -204,8 +199,7 @@ public class SavedController {
         if (cookie == null || cookie.isEmpty()) {
             return ResponseEntity.status(401).body(Map.of(
                     "Result", 0,
-                    "Message", "Authentication required"
-            ));
+                    "Message", "Authentication required"));
         }
 
         try {
@@ -219,11 +213,11 @@ public class SavedController {
             String sql = "{call ToggleVideoSave(?, ?, ?, ?, ?)}";
             Map<String, Object> result = jdbcTemplate.queryForMap(
                     sql,
-                    "deleteList",   // @mode
-                    title,          // @title
-                    null,           // @new_title
-                    null,           // @video_id
-                    cookieUuid      // @cookie
+                    "deleteList", // @mode
+                    title, // @title
+                    null, // @new_title
+                    null, // @video_id
+                    cookieUuid // @cookie
             );
             return ResponseEntity.ok(result);
         } catch (Exception e) {
@@ -243,8 +237,7 @@ public class SavedController {
         if (cookie == null || cookie.isEmpty()) {
             return ResponseEntity.status(401).body(Map.of(
                     "Result", 0,
-                    "Message", "Authentication required"
-            ));
+                    "Message", "Authentication required"));
         }
 
         try {
@@ -258,11 +251,11 @@ public class SavedController {
             String sql = "{call ToggleVideoSave(?, ?, ?, ?, ?)}";
             Map<String, Object> result = jdbcTemplate.queryForMap(
                     sql,
-                    "renameList",   // @mode
-                    title,          // @title
-                    newTitle,       // @new_title
-                    null,           // @video_id
-                    cookieUuid      // @cookie
+                    "renameList", // @mode
+                    title, // @title
+                    newTitle, // @new_title
+                    null, // @video_id
+                    cookieUuid // @cookie
             );
             return ResponseEntity.ok(result);
         } catch (Exception e) {

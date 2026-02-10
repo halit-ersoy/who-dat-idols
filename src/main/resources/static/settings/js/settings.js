@@ -34,17 +34,68 @@ async function setupProfileSection() {
         throw new Error('Failed to fetch profile data');
     }
     const data = await response.json();
-    if (!data.Result) {
-        throw new Error(data.Message || 'No user data');
-    }
 
-    document.getElementById('user-avatar').innerText = data.nickname.charAt(0).toUpperCase();
+    // Header/Sidebar info
+    document.getElementById('user-avatar').innerText = (data.nickname || '').charAt(0).toUpperCase();
     document.getElementById('user-fullname').innerText = `${data.name} ${data.surname}`;
     document.getElementById('user-nickname').innerText = `@${data.nickname}`;
-    document.getElementById('user-name').innerText = data.name;
-    document.getElementById('user-surname').innerText = data.surname;
-    document.getElementById('settings-nickname').innerText = data.nickname;
-    document.getElementById('user-email').innerText = data.email;
+
+    // Form inputs
+    document.getElementById('input-name').value = data.name || '';
+    document.getElementById('input-surname').value = data.surname || '';
+    document.getElementById('input-nickname').value = data.nickname || '';
+    document.getElementById('input-email').value = data.email || '';
+
+    initProfileForm();
+}
+
+function initProfileForm() {
+    const profileForm = document.getElementById('profile-form');
+    if (profileForm) {
+        profileForm.addEventListener('submit', handleProfileUpdate);
+    }
+}
+
+async function handleProfileUpdate(e) {
+    e.preventDefault();
+    const updateBtn = document.getElementById('update-profile-btn');
+    const messageDiv = document.getElementById('profile-message');
+
+    const payload = {
+        name: document.getElementById('input-name').value.trim(),
+        surname: document.getElementById('input-surname').value.trim(),
+        nickname: document.getElementById('input-nickname').value.trim(),
+        email: document.getElementById('input-email').value.trim()
+    };
+
+    try {
+        updateBtn.disabled = true;
+        updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Güncelleniyor...';
+
+        const response = await fetch('/api/user/update-profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+
+        if (response.ok && (data.Result || data.success)) {
+            updateBtn.innerHTML = '<i class="fas fa-check"></i> Başarılı';
+            // Update sidebar info
+            document.getElementById('user-fullname').innerText = `${payload.name} ${payload.surname}`;
+            document.getElementById('user-nickname').innerText = `@${payload.nickname}`;
+        } else {
+            showButtonError(updateBtn, 'Başarısız');
+        }
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        showButtonError(updateBtn, 'Hata');
+    } finally {
+        setTimeout(() => {
+            updateBtn.disabled = false;
+            updateBtn.innerHTML = 'Profil Bilgilerini Güncelle';
+        }, 3000);
+    }
 }
 
 /**
