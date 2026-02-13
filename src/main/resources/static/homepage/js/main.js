@@ -16,7 +16,11 @@ import { initNotifications } from "./notifications.js";
 window.addEventListener('load', () => {
     const loadingScreen = document.getElementById('loading-screen');
     if (loadingScreen) {
-        loadingScreen.style.display = 'none';
+        loadingScreen.classList.add('fade-out');
+        // Optional: remove from DOM after transition
+        setTimeout(() => {
+            loadingScreen.remove();
+        }, 800);
     }
 });
 
