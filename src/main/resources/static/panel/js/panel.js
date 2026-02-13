@@ -317,10 +317,12 @@
                 const type = item.Type || item.type;
                 const id = item.ID || item.id;
 
+                const isMovie = type && type.toLowerCase() === 'movie';
+
                 div.innerHTML = `
                     <div class="result-info">
                         <span style="font-weight: 600;">${name}</span>
-                        <span class="item-type">${type === 'Movie' ? 'Film' : 'Dizi'}</span>
+                        <span class="item-type">${isMovie ? 'Film' : 'Dizi'}</span>
                     </div>
                 `;
                 div.onclick = () => selectHeroContent({ id, name, type });
@@ -333,7 +335,10 @@
     function selectHeroContent(item) {
         selectedContentIdInput.value = item.id;
         selectedContentTypeInput.value = item.type;
-        selectedContentDisplay.querySelector('strong').innerText = item.name + ' (' + (item.type === 'Movie' ? 'Film' : 'Dizi') + ')';
+
+        const isMovie = item.type && item.type.toLowerCase() === 'movie';
+
+        selectedContentDisplay.querySelector('strong').innerText = item.name + ' (' + (isMovie ? 'Film' : 'Dizi') + ')';
         selectedContentDisplay.style.display = 'flex';
         heroSearchResults.style.display = 'none';
         heroSearchInput.value = '';

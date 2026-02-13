@@ -4,11 +4,10 @@ export function initNewMoviesSection() {
     const viewAllBtn = document.querySelector('.new-movies .view-all');
     const newMoviesAllSection = document.getElementById('new-movies-all');
     const newMoviesAllGrid = document.querySelector('.new-movies-all-grid');
-    const loadMoreBtn = document.getElementById('load-more-new-movies');
     const closeAllBtn = document.querySelector('.new-movies-all-section .close-all-btn');
     const newMoviesCarousel = document.getElementById('new-movies-carousel');
 
-    if (!viewAllBtn || !newMoviesAllSection || !newMoviesAllGrid || !loadMoreBtn || !closeAllBtn || !newMoviesCarousel) {
+    if (!viewAllBtn || !newMoviesAllSection || !newMoviesAllGrid || !closeAllBtn || !newMoviesCarousel) {
         console.error('New Movies Section: Gerekli elementler bulunamadı.');
         return;
     }

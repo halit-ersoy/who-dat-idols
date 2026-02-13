@@ -24,11 +24,11 @@ public class HeroController {
     public ResponseEntity<List<Map<String, Object>>> getHeroVideos() {
         // Updated for Hero table, Series table, ReferenceId columns
         String robustSql = "SELECT * FROM (" +
-                "  SELECT H.[ID], M.[name], M.[category], H.[CustomSummary] as _content, 'Movie' AS [type], H.sortOrder "
+                "  SELECT H.[ID], H.[ReferenceId], M.[name], M.[category], H.[CustomSummary] as _content, 'Movie' AS [type], H.sortOrder "
                 +
                 "  FROM Hero H INNER JOIN Movie M ON H.ReferenceId = M.ID " +
                 "  UNION ALL " +
-                "  SELECT H.[ID], S.[name], S.[category], H.[CustomSummary] as _content, 'SoapOpera' AS [type], H.sortOrder "
+                "  SELECT H.[ID], H.[ReferenceId], S.[name], S.[category], H.[CustomSummary] as _content, 'SoapOpera' AS [type], H.sortOrder "
                 +
                 "  FROM Hero H INNER JOIN Series S ON H.ReferenceId = S.ID " +
                 ") AS Result ORDER BY sortOrder ASC";

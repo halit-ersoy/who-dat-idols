@@ -4,11 +4,10 @@ export function initNewSoapOperasSection() {
     const viewAllBtn = document.querySelector('.new-soap-operas .view-all');
     const newSoapOperasAllSection = document.getElementById('new-soap-operas-all');
     const newSoapOperasAllGrid = document.querySelector('.new-soap-operas-all-grid');
-    const loadMoreBtn = document.getElementById('load-more-new-soap-operas');
     const closeAllBtn = document.querySelector('#new-soap-operas-all .close-all-btn');
     const newSoapOperasCarousel = document.querySelector('.new-soap-operas .carousel');
 
-    if (!viewAllBtn || !newSoapOperasAllSection || !newSoapOperasAllGrid || !loadMoreBtn || !closeAllBtn || !newSoapOperasCarousel) {
+    if (!viewAllBtn || !newSoapOperasAllSection || !newSoapOperasAllGrid || !closeAllBtn || !newSoapOperasCarousel) {
         console.error('New Soap Operas Section: Gerekli elementler bulunamadı.');
         return;
     }

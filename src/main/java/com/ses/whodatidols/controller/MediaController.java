@@ -344,6 +344,13 @@ public class MediaController {
             if (isUpcoming != null && isUpcoming > 0)
                 return "upcoming";
 
+            // Check Hero (Trailers)
+            Integer isHero = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM Hero WHERE ID = ?", Integer.class,
+                    id.toString());
+            if (isHero != null && isHero > 0)
+                return "trailer";
+
             return "unknown";
         } catch (Exception e) {
             logger.error("DB Error retrieving content type for id {}: {}", id, e.getMessage());

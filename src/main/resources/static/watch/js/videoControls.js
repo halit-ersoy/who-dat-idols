@@ -31,10 +31,12 @@ export function initVideoControls(videoId) {
     setupViewCount();
     setupPlaybackEvents();
     setupErrorHandling();
-    loadVideo(videoId);
-    loadSources(videoId);
+    // loadVideo(videoId); // Moved to initializeContent
+    // loadSources(videoId); // Moved to initializeContent
     setupEpisodeNavigation(videoId);
     disableNativeShortcutsOnVideo();
+
+    initializeContent(videoId);
 
     // --- Fonksiyonlar ---
 
@@ -393,17 +395,47 @@ export function initVideoControls(videoId) {
         }, true);
     }
 
-    async function loadSources(id) {
+    async function checkMainSourceAvailability(id) {
+        try {
+            // Check if the HLS playlist exists
+            const response = await fetch(`/media/video/${id}/playlist.m3u8`, { method: 'HEAD' });
+            return response.ok;
+        } catch (error) {
+            console.warn("Main source check failed:", error);
+            return false;
+        }
+    }
+
+    async function initializeContent(id) {
+        if (!id) {
+            loadVideo(id); // Handle no ID case inside loadVideo
+            return;
+        }
+
+        let hasMainSource = await checkMainSourceAvailability(id);
+
+        // If main source check fails (e.g. 404), maybe we still want to try loading external sources
+        await loadSources(id, hasMainSource);
+    }
+
+    async function loadSources(id, hasMainSource) {
         const switcher = document.getElementById('sourceSwitcher');
         if (!switcher) return;
 
-        switcher.innerHTML = `
-            <button class="source-btn active" id="btn-hls">
-                <i class="fas fa-bolt"></i> Ana Kaynak (HLS)
-            </button>
-        `;
+        switcher.innerHTML = '';
 
-        document.getElementById('btn-hls').onclick = () => switchToHls();
+        if (hasMainSource) {
+            switcher.innerHTML = `
+                <button class="source-btn active" id="btn-hls">
+                    <i class="fas fa-bolt"></i> Ana Kaynak (HLS)
+                </button>
+            `;
+            document.getElementById('btn-hls').onclick = () => switchToHls();
+            loadVideo(id); // Initialize main player
+        } else {
+            // Hide main video player if no main source
+            videoPlayer.style.display = 'none';
+        }
 
         try {
             console.log("DEBUG: Loading sources for contentId:", id);
@@ -411,8 +443,10 @@ export function initVideoControls(videoId) {
             const sources = await res.json();
             console.log("DEBUG: Sources received:", sources);
 
-            if (sources.length === 0) {
-                console.log("DEBUG: No external sources found.");
+            if (sources.length === 0 && !hasMainSource) {
+                console.log("DEBUG: No external sources found and no main source.");
+                if (titleEl) titleEl.innerText = 'Video kaynağı bulunamadı.';
+                if (infoEl) infoEl.innerText = 'Bu içerik için henüz bir video kaynağı eklenmemiş.';
             }
 
             sources.forEach(src => {
@@ -422,6 +456,18 @@ export function initVideoControls(videoId) {
                 btn.onclick = () => switchToSource(src, btn);
                 switcher.appendChild(btn);
             });
+
+            // Auto-switch logic if no main source
+            if (!hasMainSource && sources.length > 0) {
+                // Determine which button to click (should be the first one we just added)
+                // Since we empty the switcher, and if !hasMainSource we didn't add the HLS button,
+                // the first child should be the first external source.
+                const firstExternalBtn = switcher.firstElementChild;
+                if (firstExternalBtn) {
+                    firstExternalBtn.click();
+                }
+            }
+
         } catch (err) {
             console.error('Kaynaklar yüklenemedi:', err);
         }
@@ -448,6 +494,9 @@ export function initVideoControls(videoId) {
         videoPlayer.pause();
         videoPlayer.style.display = 'none';
 
+        // Force hide skeleton for external sources
+        playPauseWrapper.classList.add('loaded');
+
         // Hide custom controls and play button
         const controls = document.querySelector('.video-controls');
         if (controls) controls.style.display = 'none';
@@ -457,6 +506,8 @@ export function initVideoControls(videoId) {
 
         const iframeContainer = document.getElementById('iframePlayerContainer');
         iframeContainer.style.display = 'block';
+        // Ensure iframe container is above everything else just in case
+        iframeContainer.style.zIndex = '10';
 
         let finalUrl = source.sourceUrl.trim();
         // If it's a full iframe tag, extract the src
@@ -470,9 +521,12 @@ export function initVideoControls(videoId) {
         iframeContainer.innerHTML = `
             <iframe src="${finalUrl}" 
                     style="width:100%; height:100%; border:none;" 
+                    frameborder="0"
                     allowfullscreen 
-                    allow="autoplay; encrypted-media" 
-                    sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation">
+                    webkitallowfullscreen
+                    mozallowfullscreen
+                    allow="autoplay; encrypted-media; fullscreen; picture-in-picture; screen-wake-lock; accelerometer; gyroscope" 
+                    sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation allow-presentation">
             </iframe>`;
 
         document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('active'));

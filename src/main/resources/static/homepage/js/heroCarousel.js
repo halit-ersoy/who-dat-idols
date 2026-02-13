@@ -59,7 +59,7 @@ export function initHeroCarousel() {
                         <div class="hero-stat"><i class="fas fa-film"></i> ${category}</div>
                     </div>
                     <div class="hero-buttons animate-slide-up">
-                        <button onclick="window.location.href='/watch?id=${hero.ID}'" class="pulse-button">
+                        <button onclick="window.location.href='/watch?id=${hero.ReferenceId}'" class="pulse-button">
                             <i class="fas fa-play"></i> ŞİMDİ İZLE
                         </button>
                         <button class="glow-button trailer-btn" data-index="${index}">
