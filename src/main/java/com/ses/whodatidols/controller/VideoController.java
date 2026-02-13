@@ -6,6 +6,7 @@ import com.ses.whodatidols.model.Episode;
 import com.ses.whodatidols.model.Movie;
 import com.ses.whodatidols.repository.MovieRepository;
 import com.ses.whodatidols.repository.SeriesRepository;
+import com.ses.whodatidols.repository.ContentRepository;
 import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,13 +23,16 @@ public class VideoController {
     private final TranscodingService transcodingService;
     private final MovieRepository movieRepository;
     private final SeriesRepository seriesRepository;
+    private final ContentRepository contentRepository;
 
     public VideoController(VideoService videoService, TranscodingService transcodingService,
-            MovieRepository movieRepository, SeriesRepository seriesRepository) {
+            MovieRepository movieRepository, SeriesRepository seriesRepository,
+            ContentRepository contentRepository) {
         this.videoService = videoService;
         this.transcodingService = transcodingService;
         this.movieRepository = movieRepository;
         this.seriesRepository = seriesRepository;
+        this.contentRepository = contentRepository;
     }
 
     @GetMapping("/details")
@@ -103,5 +107,18 @@ public class VideoController {
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Failed to increment view count");
         }
+    }
+
+    @GetMapping("/similar")
+    public ResponseEntity<List<Map<String, Object>>> getSimilarContent(@RequestParam("id") UUID id) {
+        // If the ID is an episode, we should find recommendations based on the series
+        UUID contentIdForSearch = id;
+        Episode episode = seriesRepository.findEpisodeById(id);
+        if (episode != null && episode.getSeriesId() != null) {
+            contentIdForSearch = episode.getSeriesId();
+        }
+
+        List<Map<String, Object>> similar = contentRepository.findSimilarContent(contentIdForSearch, 12);
+        return ResponseEntity.ok(similar);
     }
 }

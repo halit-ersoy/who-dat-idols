@@ -56,4 +56,55 @@ public class ContentRepository {
             throw e;
         }
     }
+
+    public List<Map<String, Object>> findSimilarContent(UUID contentId, int limit) {
+        String sql = """
+                WITH TargetCategories AS (
+                    SELECT CategoryID FROM SeriesCategories WHERE SeriesID = ?
+                    UNION ALL
+                    SELECT CategoryID FROM MovieCategories WHERE MovieID = ?
+                ),
+                SimilarSeries AS (
+                    SELECT S.ID, S.Name, 'soap_opera' as Type, S.viewCount,
+                           (SELECT STRING_AGG(C.Name, ', ') FROM Categories C JOIN SeriesCategories SC2 ON SC2.CategoryID = C.ID WHERE SC2.SeriesID = S.ID) as Category,
+                           COUNT(SC.CategoryID) as MatchCount
+                    FROM Series S
+                    JOIN SeriesCategories SC ON S.ID = SC.SeriesID
+                    WHERE SC.CategoryID IN (SELECT CategoryID FROM TargetCategories)
+                      AND S.ID <> ?
+                    GROUP BY S.ID, S.Name, S.viewCount
+                ),
+                SimilarMovies AS (
+                    SELECT M.ID, M.Name, 'movie' as Type, M.viewCount,
+                           (SELECT STRING_AGG(C.Name, ', ') FROM Categories C JOIN MovieCategories MC2 ON MC2.CategoryID = C.ID WHERE MC2.MovieID = M.ID) as Category,
+                           COUNT(MC.CategoryID) as MatchCount
+                    FROM Movie M
+                    JOIN MovieCategories MC ON M.ID = MC.MovieID
+                    WHERE MC.CategoryID IN (SELECT CategoryID FROM TargetCategories)
+                      AND M.ID <> ?
+                    GROUP BY M.ID, M.Name, M.viewCount
+                )
+                SELECT TOP (?) ID, Name, Type, Category, viewCount FROM (
+                    SELECT * FROM SimilarSeries
+                    UNION ALL
+                    SELECT * FROM SimilarMovies
+                ) Final
+                ORDER BY MatchCount DESC, viewCount DESC
+                """;
+
+        try {
+            return jdbcTemplate.query(sql, (rs, rowNum) -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("ID", rs.getString("ID"));
+                map.put("Name", rs.getString("Name"));
+                map.put("Category", rs.getString("Category"));
+                map.put("Type", rs.getString("Type"));
+                map.put("viewCount", rs.getInt("viewCount"));
+                return map;
+            }, contentId.toString(), contentId.toString(), contentId.toString(), contentId.toString(), limit);
+        } catch (Exception e) {
+            logger.error("Error finding similar content for {}: {}", contentId, e.getMessage());
+            return List.of();
+        }
+    }
 }

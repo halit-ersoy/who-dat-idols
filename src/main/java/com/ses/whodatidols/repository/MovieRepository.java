@@ -26,41 +26,73 @@ public class MovieRepository {
     // --- KAYIT (INSERT) İŞLEMİ ---
     public void save(Movie movie) {
         String sql = "INSERT INTO [WhoDatIdols].[dbo].[Movie] " +
-                "(ID, name, category, Summary, DurationMinutes, language, ReleaseYear, uploadDate) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                "(ID, name, Summary, DurationMinutes, language, ReleaseYear, uploadDate) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         jdbcTemplate.update(sql,
                 movie.getId().toString(),
                 movie.getName(),
-                movie.getCategory(),
                 movie.getSummary(),
                 movie.getDurationMinutes(),
                 movie.getLanguage(),
                 movie.getReleaseYear(),
                 java.sql.Timestamp.valueOf(movie.getUploadDate()));
+
+        // Update categories in junction table
+        updateMovieCategories(movie.getId(), movie.getCategory());
     }
 
     // --- LİSTELEME (TÜM FİLMLER) ---
     public List<Movie> findAll() {
-        String sql = "SELECT * FROM [WhoDatIdols].[dbo].[Movie] ORDER BY uploadDate DESC";
+        String sql = """
+                SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.ReleaseYear, M.uploadDate,
+                       (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                        JOIN MovieCategories MC ON MC.CategoryID = C.ID
+                        WHERE MC.MovieID = M.ID) as category
+                FROM [WhoDatIdols].[dbo].[Movie] M
+                ORDER BY M.uploadDate DESC
+                """;
         return jdbcTemplate.query(sql, new MovieRowMapper());
     }
 
     // --- GÜNCELLEME (UPDATE) ---
     public void update(Movie movie) {
-        // Not: Dosya değişirse ID sabit kaldığı için dosya üzerine yazılır.
-        // Burada sadece metin verilerini güncelliyoruz.
         String sql = "UPDATE [WhoDatIdols].[dbo].[Movie] SET " +
-                "name = ?, category = ?, Summary = ?, ReleaseYear = ?, language = ? " +
+                "name = ?, Summary = ?, ReleaseYear = ?, language = ? " +
                 "WHERE ID = ?";
 
         jdbcTemplate.update(sql,
                 movie.getName(),
-                movie.getCategory(),
                 movie.getSummary(),
                 movie.getReleaseYear(),
                 movie.getLanguage(),
                 movie.getId().toString());
+
+        // Update categories in junction table
+        updateMovieCategories(movie.getId(), movie.getCategory());
+    }
+
+    private void updateMovieCategories(UUID movieId, String categoriesStr) {
+        // Clear existing
+        jdbcTemplate.update("DELETE FROM MovieCategories WHERE MovieID = ?", movieId.toString());
+
+        if (categoriesStr != null && !categoriesStr.isBlank()) {
+            for (String cat : categoriesStr.split(",")) {
+                String trimmed = cat.trim();
+                if (trimmed.isEmpty())
+                    continue;
+
+                // Ensure category exists in Categories table or just join if we assume they
+                // exist
+                // For robustness:
+                jdbcTemplate.update(
+                        "IF NOT EXISTS (SELECT 1 FROM Categories WHERE Name = ?) INSERT INTO Categories (Name) VALUES (?)",
+                        trimmed, trimmed);
+                jdbcTemplate.update(
+                        "INSERT INTO MovieCategories (MovieID, CategoryID) SELECT ?, ID FROM Categories WHERE Name = ?",
+                        movieId.toString(), trimmed);
+            }
+        }
     }
 
     // --- SİLME (DELETE) ---
@@ -80,8 +112,15 @@ public class MovieRepository {
 
     public Movie findMovieById(UUID id) {
         try {
-            return jdbcTemplate.queryForObject("SELECT * FROM [WhoDatIdols].[dbo].[Movie] WHERE ID = ?",
-                    new MovieRowMapper(), id.toString());
+            String sql = """
+                    SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.ReleaseYear, M.uploadDate,
+                           (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                            JOIN MovieCategories MC ON MC.CategoryID = C.ID
+                            WHERE MC.MovieID = M.ID) as category
+                    FROM [WhoDatIdols].[dbo].[Movie] M
+                    WHERE M.ID = ?
+                    """;
+            return jdbcTemplate.queryForObject(sql, new MovieRowMapper(), id.toString());
         } catch (EmptyResultDataAccessException e) {
             return null;
         }

@@ -189,25 +189,16 @@
 
         <div class="recommendation-section">
             <h3>Benzer İçerikler</h3>
-            <div class="recommendation-cards">
-                <div class="rec-card">
-                    <div class="rec-image img-skeleton">
-                        <img src="https://picsum.photos/300/170?random=1" alt="Öneri 1">
-                    </div>
-                    <div class="rec-title">Öneri 1</div>
+            <div class="recommendation-carousel-container">
+                <button class="carousel-nav prev-btn" id="recPrevBtn" aria-label="Önceki">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="recommendation-cards" id="recommendationCards">
+                    <!-- JavaScript ile doldurulacak -->
                 </div>
-                <div class="rec-card">
-                    <div class="rec-image img-skeleton">
-                        <img src="https://picsum.photos/300/170?random=2" alt="Öneri 2">
-                    </div>
-                    <div class="rec-title">Öneri 2</div>
-                </div>
-                <div class="rec-card">
-                    <div class="rec-image img-skeleton">
-                        <img src="https://picsum.photos/300/170?random=3" alt="Öneri 3">
-                    </div>
-                    <div class="rec-title">Öneri 3</div>
-                </div>
+                <button class="carousel-nav next-btn" id="recNextBtn" aria-label="Sonraki">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
             </div>
         </div>
 

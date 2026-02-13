@@ -23,15 +23,19 @@ public class HeroController {
     @GetMapping("/videos")
     public ResponseEntity<List<Map<String, Object>>> getHeroVideos() {
         // Updated for Hero table, Series table, ReferenceId columns
-        String robustSql = "SELECT * FROM (" +
-                "  SELECT H.[ID], H.[ReferenceId], M.[name], M.[category], H.[CustomSummary] as _content, 'Movie' AS [type], H.sortOrder "
-                +
-                "  FROM Hero H INNER JOIN Movie M ON H.ReferenceId = M.ID " +
-                "  UNION ALL " +
-                "  SELECT H.[ID], H.[ReferenceId], S.[name], S.[category], H.[CustomSummary] as _content, 'SoapOpera' AS [type], H.sortOrder "
-                +
-                "  FROM Hero H INNER JOIN Series S ON H.ReferenceId = S.ID " +
-                ") AS Result ORDER BY sortOrder ASC";
+        String robustSql = """
+                SELECT * FROM (
+                  SELECT H.[ID], H.[ReferenceId], M.[name],
+                         (SELECT STRING_AGG(C.Name, ', ') FROM Categories C JOIN MovieCategories MC ON MC.CategoryID = C.ID WHERE MC.MovieID = M.ID) as [category],
+                         H.[CustomSummary] as _content, 'Movie' AS [type], H.sortOrder
+                  FROM Hero H INNER JOIN Movie M ON H.ReferenceId = M.ID
+                  UNION ALL
+                  SELECT H.[ID], H.[ReferenceId], S.[name],
+                         (SELECT STRING_AGG(C.Name, ', ') FROM Categories C JOIN SeriesCategories SC ON SC.CategoryID = C.ID WHERE SC.SeriesID = S.ID) as [category],
+                         H.[CustomSummary] as _content, 'SoapOpera' AS [type], H.sortOrder
+                  FROM Hero H INNER JOIN Series S ON H.ReferenceId = S.ID
+                ) AS Result ORDER BY sortOrder ASC
+                """;
 
         List<Map<String, Object>> heroVideos = jdbcTemplate.queryForList(robustSql);
         return ResponseEntity.ok(heroVideos);

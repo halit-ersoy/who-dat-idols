@@ -79,13 +79,29 @@ public class SeriesRepository {
         // Optimized query with subquery for count.
         // Also assuming Series table is just 'Series' now.
         // We use LEFT JOIN or Correlated Subquery. Subquery is safer for 1:N count.
-        String sql = "SELECT S.*, (SELECT COUNT(*) FROM Episode E WHERE E.SeriesId = S.ID) as episodeCount FROM Series S ORDER BY S.name";
+        String sql = """
+                SELECT S.ID, S.name, S.Summary, S.Language, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                       (SELECT COUNT(*) FROM Episode E WHERE E.SeriesId = S.ID) as episodeCount,
+                       (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                        JOIN SeriesCategories SC ON SC.CategoryID = C.ID
+                        WHERE SC.SeriesID = S.ID) as category
+                FROM Series S
+                ORDER BY S.name
+                """;
         return jdbcTemplate.query(sql, seriesRowMapper);
     }
 
     public Series findSeriesByName(String name) {
         try {
-            return jdbcTemplate.queryForObject("SELECT * FROM Series WHERE name = ?", seriesRowMapper, name);
+            String sql = """
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                           (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                            JOIN SeriesCategories SC ON SC.CategoryID = C.ID
+                            WHERE SC.SeriesID = S.ID) as category
+                    FROM Series S
+                    WHERE S.name = ?
+                    """;
+            return jdbcTemplate.queryForObject(sql, seriesRowMapper, name);
         } catch (Exception e) {
             return null;
         }
@@ -93,7 +109,15 @@ public class SeriesRepository {
 
     public Series findSeriesById(UUID id) {
         try {
-            return jdbcTemplate.queryForObject("SELECT * FROM Series WHERE ID = ?", seriesRowMapper, id.toString());
+            String sql = """
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                           (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                            JOIN SeriesCategories SC ON SC.CategoryID = C.ID
+                            WHERE SC.SeriesID = S.ID) as category
+                    FROM Series S
+                    WHERE S.ID = ?
+                    """;
+            return jdbcTemplate.queryForObject(sql, seriesRowMapper, id.toString());
         } catch (Exception e) {
             return null;
         }
@@ -109,26 +133,49 @@ public class SeriesRepository {
 
     public void createSeries(Series series) {
         jdbcTemplate.update(
-                "INSERT INTO Series (ID, name, category, Summary, Language, finalStatus, EpisodeMetadataXml, uploadDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO Series (ID, name, Summary, Language, finalStatus, EpisodeMetadataXml, uploadDate) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 series.getId().toString(),
                 series.getName(),
-                series.getCategory(),
                 series.getSummary(),
                 series.getLanguage(),
                 series.getFinalStatus(),
                 series.getEpisodeMetadataXml(),
                 series.getUploadDate());
+
+        updateSeriesCategories(series.getId(), series.getCategory());
     }
 
     public void updateSeriesMetadata(Series series) {
         jdbcTemplate.update(
-                "UPDATE Series SET name=?, category=?, Summary=?, Language=?, finalStatus=? WHERE ID=?",
+                "UPDATE Series SET name=?, Summary=?, Language=?, finalStatus=? WHERE ID=?",
                 series.getName(),
-                series.getCategory(),
                 series.getSummary(),
                 series.getLanguage(),
                 series.getFinalStatus(),
                 series.getId().toString());
+
+        updateSeriesCategories(series.getId(), series.getCategory());
+    }
+
+    private void updateSeriesCategories(UUID seriesId, String categoriesStr) {
+        // Clear existing
+        jdbcTemplate.update("DELETE FROM SeriesCategories WHERE SeriesID = ?", seriesId.toString());
+
+        if (categoriesStr != null && !categoriesStr.isBlank()) {
+            for (String cat : categoriesStr.split(",")) {
+                String trimmed = cat.trim();
+                if (trimmed.isEmpty())
+                    continue;
+
+                // Ensure category exists
+                jdbcTemplate.update(
+                        "IF NOT EXISTS (SELECT 1 FROM Categories WHERE Name = ?) INSERT INTO Categories (Name) VALUES (?)",
+                        trimmed, trimmed);
+                jdbcTemplate.update(
+                        "INSERT INTO SeriesCategories (SeriesID, CategoryID) SELECT ?, ID FROM Categories WHERE Name = ?",
+                        seriesId.toString(), trimmed);
+            }
+        }
     }
 
     public void updateSeriesXML(UUID id, String xml) {
@@ -179,7 +226,15 @@ public class SeriesRepository {
     public Series findSeriesByEpisodeId(UUID episodeId) {
         try {
             // Priority 1: Use FK JOIN (New optimized schema)
-            String sql = "SELECT S.* FROM Series S JOIN Episode E ON E.SeriesId = S.ID WHERE E.ID = ?";
+            String sql = """
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                           (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                            JOIN SeriesCategories SC ON SC.CategoryID = C.ID
+                            WHERE SC.SeriesID = S.ID) as category
+                    FROM Series S
+                    JOIN Episode E ON E.SeriesId = S.ID
+                    WHERE E.ID = ?
+                    """;
             return jdbcTemplate.queryForObject(sql, seriesRowMapper, episodeId.toString());
         } catch (Exception e) {
             // Priority 2: Fallback to XML (Legacy/Transition support)
@@ -189,8 +244,14 @@ public class SeriesRepository {
 
     public Series findSeriesByEpisodeIdInsideXML(String episodeId) {
         try {
-            // Note: EpisodeMetadataXml is the renamed column
-            String sql = "SELECT * FROM Series WHERE EpisodeMetadataXml LIKE ?";
+            String sql = """
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                           (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                            JOIN SeriesCategories SC ON SC.CategoryID = C.ID
+                            WHERE SC.SeriesID = S.ID) as category
+                    FROM Series S
+                    WHERE S.EpisodeMetadataXml LIKE ?
+                    """;
             return jdbcTemplate.queryForObject(sql, seriesRowMapper, "%" + episodeId + "%");
         } catch (Exception e) {
             return null;
@@ -232,7 +293,15 @@ public class SeriesRepository {
         // But RowMapper doesn't map it, so it naturally won't be in the object.
         // This might be fine if we just want the list sorted by DB.
 
-        return jdbcTemplate.query("SELECT TOP (?) * FROM Series ORDER BY uploadDate DESC", seriesRowMapper, limit);
+        String sql = """
+                SELECT TOP (?) S.ID, S.name, S.Summary, S.Language, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                       (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                        JOIN SeriesCategories SC ON SC.CategoryID = C.ID
+                        WHERE SC.SeriesID = S.ID) as category
+                FROM Series S
+                ORDER BY S.uploadDate DESC
+                """;
+        return jdbcTemplate.query(sql, seriesRowMapper, limit);
     }
 
     public List<Episode> findTop6EpisodesByCount() {
