@@ -340,6 +340,20 @@
     }
 }
 
+/* Threaded replies indentation */
+.replies-container {
+    margin-left: 50px;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    padding-left: 10px;
+    margin-top: 10px;
+}
+
+@media (max-width: 768px) {
+    .replies-container {
+        margin-left: 20px;
+    }
+}
+
 /* Reply Section */
 .reply-form-container {
     background: #222;

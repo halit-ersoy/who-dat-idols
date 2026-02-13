@@ -27,7 +27,8 @@ public class CommentRepository {
                         p.profilePhoto,
                         c.LikeCount,
                         c.ParentId,
-                        CASE WHEN cl.UserId IS NOT NULL THEN 1 ELSE 0 END as isLiked
+                        CASE WHEN cl.UserId IS NOT NULL THEN 1 ELSE 0 END as isLiked,
+                        CASE WHEN c.UserId = p_me.ID THEN 1 ELSE 0 END as isAuthor
                     FROM Comments c
                     LEFT JOIN Person p ON c.UserId = p.ID
                     LEFT JOIN Person p_me ON p_me.cookie = ?
@@ -47,41 +48,23 @@ public class CommentRepository {
         java.util.Map<UUID, CommentViewModel> map = new java.util.HashMap<>();
         List<CommentViewModel> roots = new java.util.ArrayList<>();
 
+        // Initialize maps and reply lists
         for (CommentViewModel c : flatComments) {
             map.put(c.getId(), c);
-            c.setReplies(new java.util.ArrayList<>());
+            if (c.getReplies() == null) {
+                c.setReplies(new java.util.ArrayList<>());
+            }
         }
 
-        // Use a separate iteration for list because we modified the map values
-        // potentially?
-        // Actually references are same.
-        // We need to re-iterate the flat list to find parents.
-        // But since we want to return roots, let's look at the implementation.
-        // The query returns everything.
-
+        // Build tree
         for (CommentViewModel c : flatComments) {
-            // We need to check ParentId.
-            // BUT wait, mapping row doesn't extract ParentId yet. Logic handled in
-            // RowMapper.
-            // Let's assume RowMapper extracts ParentId but it is not exposed in ViewModel
-            // directly?
-            // We need ParentId in ViewModel to build tree.
-            // I will add a transient field or just use a dedicated DTO, but for now let's
-            // use the field logic.
-            // Oops, I didn't add parentId to ViewModel. Let's assume flat list for now or
-            // fetch hierarchy.
-            // Actually, `getComments` usually returns top level.
-            // Let's keep it simple: Return flat list properly ordered, or simple hierarchy.
-            // The user requested replies.
-            roots.add(c);
+            if (c.getParentId() != null && map.containsKey(c.getParentId())) {
+                map.get(c.getParentId()).getReplies().add(c);
+            } else {
+                roots.add(c);
+            }
         }
 
-        // For now returning flat list as "roots" but filtered by parentId would be
-        // better.
-        // However, I will stick to flat list if I don't implement the tree logic fully
-        // in this step.
-        // Wait, the prompt asked for replies.
-        // I'll update the RowMapper to handle the new fields.
         return roots;
     }
 
@@ -125,6 +108,34 @@ public class CommentRepository {
         }
     }
 
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteComment(UUID commentId, String cookie) {
+        // First delete likes for the entire tree
+        String deleteLikesSql = """
+                    WITH CommentTree AS (
+                        SELECT ID FROM Comments WHERE ID = ? AND UserId = (SELECT ID FROM Person WHERE cookie = ?)
+                        UNION ALL
+                        SELECT c.ID FROM Comments c
+                        INNER JOIN CommentTree ct ON c.ParentId = ct.ID
+                    )
+                    DELETE FROM CommentLikes WHERE CommentId IN (SELECT ID FROM CommentTree)
+                """;
+
+        // Then delete the comments themselves
+        String deleteCommentsSql = """
+                    WITH CommentTree AS (
+                        SELECT ID FROM Comments WHERE ID = ? AND UserId = (SELECT ID FROM Person WHERE cookie = ?)
+                        UNION ALL
+                        SELECT c.ID FROM Comments c
+                        INNER JOIN CommentTree ct ON c.ParentId = ct.ID
+                    )
+                    DELETE FROM Comments WHERE ID IN (SELECT ID FROM CommentTree)
+                """;
+
+        jdbcTemplate.update(deleteLikesSql, commentId.toString(), cookie);
+        jdbcTemplate.update(deleteCommentsSql, commentId.toString(), cookie);
+    }
+
     private static class CommentRowMapper implements RowMapper<CommentViewModel> {
         @Override
         public CommentViewModel mapRow(@org.springframework.lang.NonNull ResultSet rs, int rowNum) throws SQLException {
@@ -135,10 +146,13 @@ public class CommentRepository {
             vm.setSpoiler(rs.getBoolean("Spoiler"));
             vm.setLikeCount(rs.getInt("LikeCount"));
             vm.setLikedByCurrentUser(rs.getInt("isLiked") > 0);
+            vm.setAuthor(rs.getInt("isAuthor") > 0);
             vm.setProfilePhoto(rs.getString("profilePhoto"));
 
             String parentIdStr = rs.getString("ParentId");
-            // We could store parentId if we want to build tree
+            if (parentIdStr != null) {
+                vm.setParentId(UUID.fromString(parentIdStr));
+            }
 
             java.sql.Timestamp ts = rs.getTimestamp("date");
             if (ts != null) {

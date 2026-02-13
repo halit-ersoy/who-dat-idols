@@ -81,58 +81,49 @@ export function initCommentsSection(videoId) {
             const res = await fetch(`/api/video/comments?id=${videoId}`);
             if (!res.ok) throw new Error();
             const data = await res.json();
-            setCommentCount(data.length); // Total count might need adjustment if recursive
+
+            // Calculate total comments (including replies)
+            let totalCount = 0;
+            const countRecursive = (list) => {
+                totalCount += list.length;
+                list.forEach(c => {
+                    if (c.replies) countRecursive(c.replies);
+                });
+            };
+            countRecursive(data);
+            setCommentCount(totalCount);
+
             commentsList.innerHTML = '';
 
-            // Render comments recursively
-            // The backend returns a flat list currently, or maybe logic was updated to return tree?
-            // Wait, the repository logic returns flat list with existing logic.
-            // Let's assume flat list and build tree client side if needed, OR 
-            // since I didn't verify if backend returns tree structure in JSON (it returns List<CommentViewModel>),
-            // and `buildCommentTree` in Java was returning a flat list of ALL comments.
-            // We need to handle hierarchy here.
+            if (data.length === 0) {
+                commentsList.innerHTML = '<div class="no-comments">Henüz yorum yapılmamış. İlk yorumu siz yapın!</div>';
+                return;
+            }
 
-            const commentsMap = {};
-            const roots = [];
-
-            // First pass: map everyone
             data.forEach(c => {
-                c.children = [];
-                commentsMap[c.id] = c;
+                renderCommentRecursive(c, commentsList);
             });
-
-            // Second pass: link parents
-            data.forEach(c => {
-                // We need parentId in view model, I missed adding it to the JS map logic?
-                // The ViewModel has `replies` list but Repository logic was "return roots".
-                // If Repository returns flat list, we need parentId property.
-                // I forgot to add `parentId` to `CommentViewModel`.
-                // BUT, the Java code `buildCommentTree` returned `roots` list where `roots` contained ALL comments.
-                // Let's check Java logic again... 
-                // "roots.add(c)" for ALL comments. So it returns a flat list.
-                // And we didn't add `parentId` field to ViewModel.
-                // This means frontend CANNOT know the hierarchy!
-
-                // CRITICAL FIX: I need to add `parentId` to ViewModel first!
-                // Proceeding with assumption I will fix ViewModel immediately after this.
-                // Assume `c.parentId` exists.
-            });
-
-            // SINCE I CANNOT fix backend in this tool call, I will write the code assuming flat list for now
-            // and simply render them linearly, BUT logically I should fix backend.
-            // However, strictly following the request to update JS now.
-
-            // Let's render flat list for now to at least show them, sorted by date.
-            data
-                .sort((a, b) => new Date(b.date) - new Date(a.date))
-                .forEach(c => {
-                    const el = createCommentElement(c);
-                    commentsList.appendChild(el);
-                });
 
         } catch (e) {
             commentsList.innerHTML = '<div class="error-message">Yorumlar yüklenirken hata oluştu.</div>';
             console.error(e);
+        }
+    }
+
+    function renderCommentRecursive(comment, container) {
+        const el = createCommentElement(comment);
+        container.appendChild(el);
+
+        if (comment.replies && comment.replies.length > 0) {
+            let repliesContainer = el.querySelector('.replies-container');
+            if (!repliesContainer) {
+                repliesContainer = document.createElement('div');
+                repliesContainer.className = 'replies-container';
+                el.appendChild(repliesContainer);
+            }
+            comment.replies.forEach(reply => {
+                renderCommentRecursive(reply, repliesContainer);
+            });
         }
     }
 
@@ -171,6 +162,7 @@ export function initCommentsSection(videoId) {
                 <span>${c.likeCount}</span>
             </button>
             <button class="action-button reply-btn" data-id="${c.id}"><i class="far fa-comment"></i> Yanıtla</button>
+            ${c.author ? `<button class="action-button delete-btn" data-id="${c.id}"><i class="far fa-trash-alt"></i> Sil</button>` : ''}
           </div>
           <div class="reply-form-container" id="reply-form-${c.id}" style="display:none; margin-top:10px;">
                 <textarea id="reply-input-${c.id}" class="comment-input" placeholder="Yanıtınızı yazın..." rows="2"></textarea>
@@ -190,8 +182,15 @@ export function initCommentsSection(videoId) {
             form.style.display = form.style.display === 'none' ? 'block' : 'none';
         };
 
+        const deleteBtn = card.querySelector('.delete-btn');
+        if (deleteBtn) {
+            deleteBtn.onclick = () => handleDeleteComment(c.id);
+        }
+
         const submitReplyBtn = card.querySelector('.submit-reply-btn');
-        submitReplyBtn.onclick = () => onSubmitComment(null, c.id);
+        if (submitReplyBtn) {
+            submitReplyBtn.onclick = () => onSubmitComment(null, c.id);
+        }
 
         const spoilerBtn = card.querySelector('.show-spoiler-btn');
         spoilerBtn?.addEventListener('click', () => {
@@ -219,6 +218,33 @@ export function initCommentsSection(videoId) {
             }
         } catch (e) {
             console.error('Like failed', e);
+        }
+    }
+
+    async function handleDeleteComment(commentId) {
+        if (!confirm('Bu yorumu silmek istediğinize emin misiniz?')) return;
+
+        try {
+            const res = await fetch(`/api/video/comment?commentId=${commentId}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+            if (res.ok) {
+                const el = document.getElementById(`comment-${commentId}`);
+                if (el) {
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateX(20px)';
+                    setTimeout(() => {
+                        el.remove();
+                        // Potentially reload or just decrement count
+                        loadComments();
+                    }, 300);
+                }
+            } else {
+                alert('Yorum silinemedi. Yetkiniz olmayabilir.');
+            }
+        } catch (e) {
+            console.error('Delete failed', e);
         }
     }
 

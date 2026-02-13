@@ -66,4 +66,21 @@ public class CommentController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    @DeleteMapping("/comment")
+    public ResponseEntity<Void> deleteComment(
+            @RequestParam("commentId") UUID commentId,
+            @CookieValue(name = "wdiAuth", required = false) String cookie) {
+
+        if (cookie == null || cookie.trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            commentRepository.deleteComment(commentId, cookie);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }

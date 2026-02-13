@@ -4,12 +4,14 @@ import java.time.LocalDateTime;
 
 public class CommentViewModel {
     private java.util.UUID id;
+    private java.util.UUID parentId;
     private String nickname;
     private String comment;
     private LocalDateTime date;
     private boolean spoiler;
     private int likeCount;
     private boolean likedByCurrentUser;
+    private boolean author;
     private java.util.List<CommentViewModel> replies;
     private String profilePhoto;
 
@@ -19,6 +21,14 @@ public class CommentViewModel {
 
     public void setId(java.util.UUID id) {
         this.id = id;
+    }
+
+    public java.util.UUID getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(java.util.UUID parentId) {
+        this.parentId = parentId;
     }
 
     public String getNickname() {
@@ -75,6 +85,14 @@ public class CommentViewModel {
 
     public void setReplies(java.util.List<CommentViewModel> replies) {
         this.replies = replies;
+    }
+
+    public boolean isAuthor() {
+        return author;
+    }
+
+    public void setAuthor(boolean author) {
+        this.author = author;
     }
 
     public String getProfilePhoto() {
