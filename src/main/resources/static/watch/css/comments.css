@@ -62,7 +62,7 @@
     color: #1ed760;
     flex-shrink: 0;
     transition: all 0.3s ease;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
     border: 2px solid transparent;
 }
 
@@ -249,9 +249,17 @@
 }
 
 @keyframes likeEffect {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.5); }
-    100% { transform: scale(1); }
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.5);
+    }
+
+    100% {
+        transform: scale(1);
+    }
 }
 
 .no-comments {
@@ -265,23 +273,47 @@
 }
 
 @keyframes pulse {
-    from { background-color: #242424; }
-    to { background-color: #282828; }
+    from {
+        background-color: #242424;
+    }
+
+    to {
+        background-color: #282828;
+    }
 }
 
 @keyframes slideDown {
-    from { transform: scaleY(0.7); opacity: 0; }
-    to { transform: scaleY(1); opacity: 1; }
+    from {
+        transform: scaleY(0.7);
+        opacity: 0;
+    }
+
+    to {
+        transform: scaleY(1);
+        opacity: 1;
+    }
 }
 
 @keyframes errorShake {
-    0%, 100% { transform: translateX(0); }
-    20%, 60% { transform: translateX(-5px); }
-    40%, 80% { transform: translateX(5px); }
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    20%,
+    60% {
+        transform: translateX(-5px);
+    }
+
+    40%,
+    80% {
+        transform: translateX(5px);
+    }
 }
 
 .error-shake {
-    animation: errorShake 0.5s cubic-bezier(0.36,0.07,0.19,0.97) both;
+    animation: errorShake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
 @media (max-width: 768px) {
@@ -290,16 +322,77 @@
         align-items: center;
         gap: 10px;
     }
+
     #commentForm {
         width: 100%;
     }
+
     #commentText {
         min-height: 60px;
     }
+
     .char-counter {
         bottom: 65px;
     }
+
     .user-avatar {
         margin-bottom: 5px;
     }
+}
+
+/* Reply Section */
+.reply-form-container {
+    background: #222;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+    border-left: 3px solid #1ed760;
+    animation: slideDown 0.3s ease;
+}
+
+.comment-input {
+    width: 100%;
+    background: #333;
+    border: 1px solid #444;
+    color: #fff;
+    padding: 10px;
+    border-radius: 6px;
+    resize: vertical;
+    font-family: inherit;
+    transition: border-color 0.3s;
+}
+
+.comment-input:focus {
+    outline: none;
+    border-color: #1ed760;
+}
+
+.comment-button-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+
+.submit-comment-btn {
+    background: #1ed760;
+    color: #000;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.submit-comment-btn:hover {
+    background: #1fdf64;
+    transform: scale(1.05);
+}
+
+.action-button.liked i {
+    color: #1ed760;
+}
+
+.action-button.reply-btn:hover {
+    color: #fff;
 }
