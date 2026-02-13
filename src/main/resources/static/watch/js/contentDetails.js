@@ -2,7 +2,7 @@
 import { handleImageSkeleton } from '../../elements/userLogged.js';
 
 export function initContentDetails(videoId) {
-    const detailsToggle    = document.querySelector('.details-toggle');
+    const detailsToggle = document.querySelector('.details-toggle');
     const detailsContainer = document.querySelector('.content-details-container');
 
     detailsToggle?.addEventListener('click', () => {
@@ -13,59 +13,63 @@ export function initContentDetails(videoId) {
     if (videoId) loadContentDetails(videoId);
 }
 
-function loadContentDetails(id) {
-    // Örnek statik veri; ihtiyaç halinde API çağrısı yapılabilir
-    const data = {
-        title: "Who Dat Idols - Grup Belgeseli",
-        poster: "https://picsum.photos/400/600",
-        rating: "9.2", year: "2024", duration: "45 dk", language: "Türkçe",
-        plot: "K-Pop dünyasının yeni yıldızları 'Who Dat Idols' grubunun oluşum hikayesi, ...",
-        genres: ["Belgesel","Müzik","Biyografi"],
-        season: 1, episode: +id, totalEpisodes: 10,
-        cast: [
-            {name:"Ji-soo Park", role:"Kendisi", avatar:"https://picsum.photos/200"},
-            {name:"Min-ho Lee", role:"Kendisi", avatar:"https://picsum.photos/201"},
-            {name:"Jae-hyun Kim",role:"Kendisi", avatar:"https://picsum.photos/202"},
-            {name:"Yuna Choi",role:"Anlatıcı",avatar:"https://picsum.photos/203"},
-            {name:"Seo-jun Jung",role:"Yapımcı",avatar:"https://picsum.photos/204"}
-        ]
-    };
+async function loadContentDetails(id) {
+    try {
+        const response = await fetch(`/api/video/details?id=${id}`);
+        if (!response.ok) throw new Error('Details not found');
+        const data = await response.json();
 
-    document.getElementById('contentTitle').textContent     = data.title;
-    const posterImg = document.getElementById('contentPoster');
-    posterImg.src = data.poster;
-    handleImageSkeleton(posterImg);
-    document.getElementById('contentRating').textContent   = data.rating;
-    document.getElementById('releaseYear').textContent     = data.year;
-    document.getElementById('contentDuration').textContent = data.duration;
-    document.getElementById('contentLanguage').textContent = data.language;
-    document.getElementById('contentPlot').textContent     = data.plot;
-    document.getElementById('seasonNumber').textContent    = `Sezon ${data.season}`;
-    document.getElementById('episodeNumber').textContent   = `Bölüm ${data.episode}`;
-    document.getElementById('totalEpisodes').textContent   = `Toplam ${data.totalEpisodes} Bölüm`;
+        // Update Title - Both in content details and the top video header
+        const titleEl = document.getElementById('title');
+        const contentTitleEl = document.getElementById('contentTitle');
+        if (titleEl) titleEl.innerText = data.title;
+        if (contentTitleEl) contentTitleEl.innerText = data.title;
 
-    const genresEl = document.getElementById('genreTags');
-    genresEl.innerHTML = '';
-    data.genres.forEach(g => {
-        const span = document.createElement('span');
-        span.className = 'genre-tag';
-        span.textContent = g;
-        genresEl.appendChild(span);
-    });
+        // Update document title
+        document.title = `${data.title} - Who Dat Idols?`;
 
-    const castList = document.getElementById('castList');
-    castList.innerHTML = '';
-    data.cast.forEach(m => {
-        const div = document.createElement('div');
-        div.className = 'cast-member';
-        div.innerHTML = `
-      <div class="cast-avatar img-skeleton">
-        <img src="${m.avatar}" alt="${m.name}">
-      </div>
-      <div class="cast-name">${m.name}</div>
-      <div class="cast-role">${m.role}</div>
-    `;
-        handleImageSkeleton(div.querySelector('img'));
-        castList.appendChild(div);
-    });
+        const posterImg = document.getElementById('contentPoster');
+        // Use the generic image endpoint we know works
+        posterImg.src = `/media/image/${id}`;
+        handleImageSkeleton(posterImg);
+
+        // Rating - placeholder for now as logic isn't in details endpoint yet
+        // document.getElementById('contentRating').textContent = data.rating || "N/A";
+
+        document.getElementById('releaseYear').textContent = data.year;
+        document.getElementById('contentDuration').textContent = data.duration;
+        document.getElementById('contentLanguage').textContent = data.language;
+        document.getElementById('contentPlot').textContent = data.plot;
+
+        // Season/Episode Info (Only for episodes)
+        const seasonInfo = document.getElementById('seasonInfo');
+        if (data.type === 'episode') {
+            seasonInfo.style.display = 'flex';
+            document.getElementById('seasonNumber').textContent = `Sezon ${data.season}`;
+            document.getElementById('episodeNumber').textContent = `Bölüm ${data.episode}`;
+            document.getElementById('totalEpisodes').style.display = 'none'; // Hide total for now
+        } else {
+            seasonInfo.style.display = 'none';
+        }
+
+        const genresEl = document.getElementById('genreTags');
+        genresEl.innerHTML = '';
+        if (data.genres) {
+            data.genres.forEach(g => {
+                const span = document.createElement('span');
+                span.className = 'genre-tag';
+                span.textContent = g.trim();
+                genresEl.appendChild(span);
+            });
+        }
+
+        // Cast - placeholder or need to fetch separately? 
+        // For now clear it or leave empty as API doesn't return cast yet
+        const castList = document.getElementById('castList');
+        castList.innerHTML = '<p style="color:#aaa; font-size:0.9em;">Oyuncu bilgisi bulunamadı.</p>';
+
+    } catch (error) {
+        console.error('Content details loading error:', error);
+        document.getElementById('contentTitle').innerText = "Detaylar yüklenemedi";
+    }
 }

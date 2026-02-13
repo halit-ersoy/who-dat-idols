@@ -78,6 +78,15 @@ public class MovieRepository {
         return jdbcTemplate.query("EXEC GetTop6MovieIdsByCount", new MovieRowMapper());
     }
 
+    public Movie findMovieById(UUID id) {
+        try {
+            return jdbcTemplate.queryForObject("SELECT * FROM [WhoDatIdols].[dbo].[Movie] WHERE ID = ?",
+                    new MovieRowMapper(), id.toString());
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
     public String getImagePathById(UUID movieId) {
         // SQL Injection riskine karşı parametreli sorgu
         String sql = "SELECT [Summary] FROM [WhoDatIdols].[dbo].[Movie] WHERE [ID] = ?";

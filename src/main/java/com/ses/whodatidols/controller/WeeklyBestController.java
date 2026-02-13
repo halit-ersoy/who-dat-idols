@@ -38,8 +38,10 @@ public class WeeklyBestController {
 
                     vm.setId(movie.getId().toString());
                     vm.setTitle(movie.getName());
+                    String durationText = movie.getDurationMinutes() > 0 ? " • " + movie.getDurationMinutes() + " dk"
+                            : "";
                     vm.setInfo(
-                            movie.getReleaseYear() + " • " + mainCategory + " • " + movie.getDurationMinutes() + " dk");
+                            movie.getReleaseYear() + " • " + mainCategory + durationText);
 
                     // Set the thumbnail URL to use the image API endpoint
                     vm.setThumbnailUrl("/media/image/" + movie.getId());

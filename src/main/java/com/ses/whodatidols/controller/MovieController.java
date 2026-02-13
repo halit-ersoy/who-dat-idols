@@ -34,8 +34,10 @@ public class MovieController {
 
                     vm.setId(movie.getId().toString());
                     vm.setTitle(movie.getName());
+                    String durationText = movie.getDurationMinutes() > 0 ? " • " + movie.getDurationMinutes() + " dk"
+                            : "";
                     vm.setInfo(
-                            movie.getReleaseYear() + " • " + mainCategory + " • " + movie.getDurationMinutes() + " dk");
+                            movie.getReleaseYear() + " • " + mainCategory + durationText);
 
                     // Updated to use the new media endpoint
                     vm.setThumbnailUrl("/media/image/" + movie.getId());
