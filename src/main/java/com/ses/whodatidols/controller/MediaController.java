@@ -406,9 +406,16 @@ public class MediaController {
     private Path findExistingImage(Path basePath, UUID id) {
         // Temel klasörde ID + Uzantı kombinasyonlarını dener
         for (String ext : SUPPORTED_IMAGE_EXTENSIONS) {
-            Path path = basePath.resolve(id + ext).normalize();
+            // 1. Try lowercase UUID (Standard)
+            Path path = basePath.resolve(id.toString() + ext).normalize();
             if (Files.exists(path) && path.startsWith(basePath)) {
                 return path;
+            }
+
+            // 2. Try Uppercase UUID (Linux/Legacy compatibility)
+            Path upperPath = basePath.resolve(id.toString().toUpperCase() + ext).normalize();
+            if (Files.exists(upperPath) && upperPath.startsWith(basePath)) {
+                return upperPath;
             }
         }
         return null;
