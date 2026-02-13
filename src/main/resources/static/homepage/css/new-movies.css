@@ -7,7 +7,7 @@
 }
 
 .new-movies-all-section {
-    background-color: #121212;
+    background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
     overflow: hidden;
     -webkit-transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -25,33 +25,106 @@
 
 .new-movies-all-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 20px;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 25px;
+    /* Increased gap */
     width: 100%;
     max-width: 1800px;
     margin: 0 auto;
+}
+
+/* Search Bar Styles */
+.all-section-search {
+    position: relative;
+    max-width: 350px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: 30px;
+}
+
+.all-section-search input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.08);
+    /* Slightly lighter for contrast */
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    padding: 12px 20px 12px 45px;
+    border-radius: 50px;
+    /* Pill shape */
+    font-size: 0.95rem;
+    font-family: 'Poppins', sans-serif;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.all-section-search input:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.12);
+    border-color: #1ed760;
+    box-shadow: 0 0 20px rgba(30, 215, 96, 0.3), inset 0 0 5px rgba(30, 215, 96, 0.1);
+    transform: scale(1.02);
+}
+
+.all-section-search i {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1rem;
+    pointer-events: none;
+    transition: color 0.3s ease;
+}
+
+.all-section-search input:focus+i {
+    color: #1ed760;
 }
 
 .new-movies-item {
     opacity: 0;
     -webkit-transform: translateY(30px);
     transform: translateY(30px);
-    -webkit-animation: fadeInUp 0.5s forwards;
-    animation: fadeInUp 0.5s forwards;
-    background-color: #181818;
-    border-radius: 8px;
+    -webkit-animation: fadeInUp 0.3s forwards;
+    animation: fadeInUp 0.3s forwards;
+    background-color: #1e1e1e;
+    border-radius: 12px;
     overflow: hidden;
-    -webkit-transition: all 0.3s ease;
-    transition: all 0.3s ease;
+    -webkit-transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
     position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    /* Subtle border */
 }
 
 .new-movies-item:hover {
-    background-color: #282828;
-    -webkit-transform: translateY(-10px) scale(1.03);
-    transform: translateY(-10px) scale(1.03);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    background-color: #2a2a2a;
+    -webkit-transform: translateY(-8px) scale(1.02);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4), 0 0 15px rgba(30, 215, 96, 0.2);
+    /* Brand glow */
+    border-color: rgba(30, 215, 96, 0.4);
     z-index: 2;
+}
+
+/* Missing Image Placeholder */
+.card-image-container.image-error {
+    background-color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-image-container.image-error img {
+    display: none;
+}
+
+.card-image-container.image-error::before {
+    content: '\f008';
+    /* FontAwesome film icon alternative */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    font-size: 40px;
+    color: rgba(255, 255, 255, 0.1);
 }
 
 @-webkit-keyframes fadeInUp {
@@ -61,6 +134,7 @@
         transform: translateY(0);
     }
 }
+
 @keyframes fadeInUp {
     to {
         opacity: 1;
@@ -73,72 +147,67 @@
 .close-all-btn {
     background-color: rgba(255, 255, 255, 0.1);
     color: white;
-    border: none;
-    width: 40px;
-    height: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 45px;
+    height: 45px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    -webkit-transition: all 0.3s ease;
-    transition: all 0.3s ease;
-    font-size: 18px;
+    -webkit-transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    font-size: 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .close-all-btn:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-    -webkit-transform: rotate(90deg);
-    transform: rotate(90deg);
+    background-color: #ff4757;
+    border-color: #ff4757;
+    -webkit-transform: rotate(90deg) scale(1.1);
+    transform: rotate(90deg) scale(1.1);
+    box-shadow: 0 0 15px rgba(255, 71, 87, 0.4);
 }
 
-/* Load More */
-.load-more-container {
+/* Pagination Controls */
+.pagination-container {
     display: flex;
     justify-content: center;
-    margin-top: 40px;
+    align-items: center;
+    margin-top: 50px;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
-.load-more-btn {
-    background-color: rgba(30, 215, 96, 0.1);
-    color: #1ed760;
-    border: 2px solid #1ed760;
-    border-radius: 30px;
-    padding: 12px 30px;
-    font-size: 16px;
+.pagination-btn {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     display: flex;
     align-items: center;
-    gap: 10px;
-    -webkit-transition: all 0.3s ease;
-    transition: all 0.3s ease;
-    opacity: 1;
+    justify-content: center;
 }
 
-.load-more-btn:hover {
-    background-color: rgba(30, 215, 96, 0.2);
-    -webkit-transform: translateY(-3px);
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(30, 215, 96, 0.2);
+.pagination-btn:hover {
+    border-color: #1ed760;
+    color: #1ed760;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(30, 215, 96, 0.1);
 }
 
-.load-more-btn.hidden {
-    opacity: 0;
-    pointer-events: none;
-    height: 0;
-    padding: 0;
-    margin: 0;
-}
-
-.load-more-btn i {
-    -webkit-transition: transform 0.3s ease;
-    transition: transform 0.3s ease;
-}
-
-.load-more-btn:hover i {
-    -webkit-transform: translateY(3px);
-    transform: translateY(3px);
+.pagination-btn.active {
+    background: #1ed760;
+    color: #000;
+    border-color: #1ed760;
+    box-shadow: 0 0 15px rgba(30, 215, 96, 0.4);
+    transform: scale(1.1);
 }
 
 /* Responsive grid adjustments */

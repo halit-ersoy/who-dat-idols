@@ -176,6 +176,17 @@ public class SeriesRepository {
     // But let's keep it compatible with the previous
     // 'findSeriesByEpisodeIdInsideXML' logic for now using the old column
     // (renamed).
+    public Series findSeriesByEpisodeId(UUID episodeId) {
+        try {
+            // Priority 1: Use FK JOIN (New optimized schema)
+            String sql = "SELECT S.* FROM Series S JOIN Episode E ON E.SeriesId = S.ID WHERE E.ID = ?";
+            return jdbcTemplate.queryForObject(sql, seriesRowMapper, episodeId.toString());
+        } catch (Exception e) {
+            // Priority 2: Fallback to XML (Legacy/Transition support)
+            return findSeriesByEpisodeIdInsideXML(episodeId.toString());
+        }
+    }
+
     public Series findSeriesByEpisodeIdInsideXML(String episodeId) {
         try {
             // Note: EpisodeMetadataXml is the renamed column

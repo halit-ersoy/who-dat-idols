@@ -16,6 +16,7 @@ export function handleImageSkeleton(img) {
             });
             img.addEventListener('error', () => {
                 parent.classList.add('loaded'); // Hide skeleton on error too
+                parent.classList.add('image-error'); // Add error class for styling
             });
         }
     }

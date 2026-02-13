@@ -30,29 +30,38 @@ export async function initEpisodeSelection(videoId) {
     await checkAutoOpen();
 
     async function checkAutoOpen() {
+        console.log('DEBUG: checkAutoOpen starting for videoId:', videoId);
         try {
+            // 1. Try fetching as a series
             let response = await fetch(`/api/soapoperas/${videoId}/episodes`);
             if (response.ok) {
                 const eps = await response.json();
+                console.log('DEBUG: checkAutoOpen (series check) result:', eps);
                 if (eps && eps.length > 0) {
-                    allEpisodes = eps;
-                    renderSeasonTabs();
-                    renderEpisodes(allEpisodes[0].seasonNumber);
-                    // Auto-expand drawer for series
-                    toggle.classList.add('active');
-                    container.classList.add('open');
-                    isLoaded = true;
-                    // Show section for series
-                    section.style.display = 'block';
+                    const lastEp = eps[eps.length - 1];
+                    console.log('DEBUG: Redirecting to last episode:', lastEp.id);
+                    window.location.href = `/watch?id=${lastEp.id}`;
                     return;
                 }
             }
 
-            // No episodes found - likely a movie, hide the section
+            // 2. Try fetching as an episode to see if it has a parent series
+            const parentRes = await fetch(`/api/soapoperas/episode/${videoId}/parent`);
+            console.log('DEBUG: checkAutoOpen (parent check) status:', parentRes.status);
+            if (parentRes.ok) {
+                const parent = await parentRes.json();
+                console.log('DEBUG: Parent series found:', parent);
+                if (parent) {
+                    section.style.display = 'block';
+                    section.style.opacity = '1'; // Force opacity if animation is delayed
+                    return;
+                }
+            }
+
+            console.log('DEBUG: Neither series nor episode, hiding section.');
             section.style.display = 'none';
         } catch (err) {
-            console.error('Auto-open check failed:', err);
-            // On error, hide the section
+            console.error('DEBUG: Drawer visibility check failed:', err);
             section.style.display = 'none';
         }
     }
@@ -70,7 +79,7 @@ export async function initEpisodeSelection(videoId) {
                 data = await response.json();
             }
 
-            // If empty or error, try fetching via parent
+            // If empty or error, try fetching via parent (this is the case when watching an episode)
             if (!response.ok || data.length === 0) {
                 const parentRes = await fetch(`/api/soapoperas/episode/${videoId}/parent`);
                 if (parentRes.ok) {
@@ -92,7 +101,7 @@ export async function initEpisodeSelection(videoId) {
             renderSeasonTabs();
 
             // Find current episode's season if possible, otherwise first season
-            const currentEp = allEpisodes.find(ep => ep.id === videoId);
+            const currentEp = allEpisodes.find(ep => ep.id.toLowerCase() === videoId.toLowerCase());
             currentSeason = currentEp ? currentEp.seasonNumber : allEpisodes[0].seasonNumber;
 
             // Update active tab in UI
@@ -136,7 +145,7 @@ export async function initEpisodeSelection(videoId) {
         filtered.forEach(ep => {
             const card = document.createElement('div');
             card.className = 'episode-card';
-            if (ep.id === videoId) card.classList.add('active');
+            if (ep.id.toLowerCase() === videoId.toLowerCase()) card.classList.add('active');
 
             const mins = ep.duration || 0;
             const durationStr = mins > 0 ? `${mins} dk` : 'Bilinmiyor';
