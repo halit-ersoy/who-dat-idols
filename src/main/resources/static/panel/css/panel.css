@@ -1457,3 +1457,50 @@ input[type='checkbox']:hover {
 .action-btn-premium:active {
     transform: translateY(0) scale(0.95);
 }
+
+/* Order Controls */
+.order-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.btn-order {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-dim);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    font-size: 0.9rem;
+}
+
+.btn-order:hover {
+    background: var(--primary);
+    color: #000;
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(30, 215, 96, 0.3);
+}
+
+.btn-order:active {
+    transform: translateY(0);
+}
+
+.order-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text-main);
+    width: 24px;
+    height: 32px;
+    /* Match button height for vertical alignment */
+}

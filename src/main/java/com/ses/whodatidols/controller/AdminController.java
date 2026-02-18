@@ -45,6 +45,7 @@ public class AdminController {
     private final VideoSourceRepository videoSourceRepository;
     private final PersonRepository personRepository;
     private final CommentRepository commentRepository;
+    private final com.ses.whodatidols.repository.HeroRepository heroRepository;
 
     @Value("${media.source.trailers.path}")
     private String trailersPath;
@@ -65,7 +66,7 @@ public class AdminController {
     public AdminController(MovieService movieService, SeriesService seriesService,
             TvMazeService tvMazeService, JdbcTemplate jdbcTemplate,
             VideoSourceRepository videoSourceRepository, PersonRepository personRepository,
-            CommentRepository commentRepository) {
+            CommentRepository commentRepository, com.ses.whodatidols.repository.HeroRepository heroRepository) {
         this.movieService = movieService;
         this.seriesService = seriesService;
         this.tvMazeService = tvMazeService;
@@ -73,6 +74,7 @@ public class AdminController {
         this.videoSourceRepository = videoSourceRepository;
         this.personRepository = personRepository;
         this.commentRepository = commentRepository;
+        this.heroRepository = heroRepository;
     }
 
     @GetMapping("/panel")
@@ -283,27 +285,7 @@ public class AdminController {
     }
 
     private ResponseEntity<List<Map<String, Object>>> getHeroVideos() {
-        try {
-            jdbcTemplate.execute(
-                    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Hero') AND name = 'sortOrder') ALTER TABLE Hero ADD sortOrder INT DEFAULT 0");
-        } catch (Exception e) {
-        }
-
-        String robustSql = "SELECT * FROM (" +
-                "  SELECT H.[ID], M.[name], " +
-                "  (SELECT STRING_AGG(C.Name, ', ') FROM Categories C JOIN MovieCategories MC ON MC.CategoryID = C.ID WHERE MC.MovieID = M.ID) as [category], "
-                +
-                "  H.[CustomSummary] as _content, 'Movie' AS [type], H.sortOrder " +
-                "  FROM Hero H INNER JOIN Movie M ON H.ReferenceId = M.ID " +
-                "  UNION ALL " +
-                "  SELECT H.[ID], S.[name], " +
-                "  (SELECT STRING_AGG(C.Name, ', ') FROM Categories C JOIN SeriesCategories SC ON SC.CategoryID = C.ID WHERE SC.SeriesID = S.ID) as [category], "
-                +
-                "  H.[CustomSummary] as _content, 'SoapOpera' AS [type], H.sortOrder " +
-                "  FROM Hero H INNER JOIN Series S ON H.ReferenceId = S.ID " +
-                ") AS Result ORDER BY sortOrder ASC";
-
-        return ResponseEntity.ok(jdbcTemplate.queryForList(robustSql));
+        return ResponseEntity.ok(heroRepository.getHeroVideos());
     }
 
     @Caching(evict = {
@@ -316,29 +298,13 @@ public class AdminController {
             @RequestParam("content") String content,
             @RequestParam("file") MultipartFile file) {
         try {
-            try {
-                jdbcTemplate.execute("ALTER TABLE Hero ADD sortOrder INT DEFAULT 0");
-            } catch (Exception e) {
-            }
-
             if ("Film".equalsIgnoreCase(type) || "Movie".equalsIgnoreCase(type)) {
-                jdbcTemplate.queryForMap("SELECT name FROM Movie WHERE ID = ?",
-                        contentId.toString());
                 type = "Movie";
             } else {
-                jdbcTemplate.queryForMap("SELECT name FROM Series WHERE ID = ?",
-                        contentId.toString());
                 type = "SoapOpera";
             }
 
-            jdbcTemplate.update(
-                    "INSERT INTO Hero (ID, ReferenceId, CustomSummary, sortOrder) VALUES (NEWID(), ?, ?, (SELECT ISNULL(MAX(sortOrder), 0) + 1 FROM Hero))",
-                    contentId, content);
-
-            String heroIdStr = jdbcTemplate.queryForObject(
-                    "SELECT TOP 1 CAST(ID AS NVARCHAR(36)) FROM Hero WHERE ReferenceId = ? ORDER BY sortOrder DESC",
-                    String.class, contentId.toString());
-            UUID heroId = UUID.fromString(heroIdStr);
+            UUID heroId = heroRepository.addHero(contentId, content, type);
 
             copyHeroImage(contentId, heroId, type);
 
@@ -357,18 +323,18 @@ public class AdminController {
         }
     }
 
+    @CacheEvict(value = "heroVideos", allEntries = true)
     @PostMapping("/update-hero-order")
     public ResponseEntity<String> updateHeroOrder(@RequestBody List<String> heroIds) {
         try {
-            for (int i = 0; i < heroIds.size(); i++) {
-                jdbcTemplate.update("UPDATE Hero SET sortOrder = ? WHERE ID = ?", i, heroIds.get(i));
-            }
+            heroRepository.updateHeroOrder(heroIds);
             return ResponseEntity.ok("Sıralama güncellendi.");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Sıralama hatası: " + e.getMessage());
         }
     }
 
+    @CacheEvict(value = "heroVideos", allEntries = true)
     @DeleteMapping("/delete-hero")
     public ResponseEntity<String> deleteHero(@RequestParam("id") UUID id) {
         try {
@@ -380,7 +346,7 @@ public class AdminController {
                 Files.deleteIfExists(uploadPath.resolve(id.toString() + ext));
             }
 
-            jdbcTemplate.update("DELETE FROM Hero WHERE ID = ?", id.toString());
+            heroRepository.deleteHero(id);
 
             return ResponseEntity.ok("Hero video ve ilgili dosyalar silindi.");
         } catch (Exception e) {

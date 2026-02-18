@@ -420,11 +420,19 @@
                     const id = hero.ID || hero.id;
                     const category = hero.category || hero.Category || '-';
 
+                    const isFirst = index === 0;
+                    const isLast = index === heroes.length - 1;
+
                     tr.innerHTML = `
                         <td>
                             <div class="order-controls">
-                                <button class="btn-order" onclick="moveHero(${index}, -1)"><i class="fas fa-chevron-up"></i></button>
-                                <button class="btn-order" onclick="moveHero(${index}, 1)"><i class="fas fa-chevron-down"></i></button>
+                                <span class="order-index">${index + 1}</span>
+                                <button class="btn-order" onclick="moveHero(${index}, -1)" title="Yukarı Taşı" style="${isFirst ? 'visibility:hidden' : ''}">
+                                    <i class="fas fa-chevron-up"></i>
+                                </button>
+                                <button class="btn-order" onclick="moveHero(${index}, 1)" title="Aşağı Taşı" style="${isLast ? 'visibility:hidden' : ''}">
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
                             </div>
                         </td>
                         <td style="font-weight: 600;">${name}</td>
@@ -478,11 +486,19 @@
             const id = hero.ID || hero.id;
             const category = hero.category || hero.Category || '-';
 
+            const isFirst = index === 0;
+            const isLast = index === heroes.length - 1;
+
             tr.innerHTML = `
                 <td>
                     <div class="order-controls">
-                        <button class="btn-order" onclick="moveHero(${index}, -1)"><i class="fas fa-chevron-up"></i></button>
-                        <button class="btn-order" onclick="moveHero(${index}, 1)"><i class="fas fa-chevron-down"></i></button>
+                        <span class="order-index">${index + 1}</span>
+                        <button class="btn-order" onclick="moveHero(${index}, -1)" title="Yukarı Taşı" style="${isFirst ? 'visibility:hidden' : ''}">
+                             <i class="fas fa-chevron-up"></i>
+                        </button>
+                        <button class="btn-order" onclick="moveHero(${index}, 1)" title="Aşağı Taşı" style="${isLast ? 'visibility:hidden' : ''}">
+                             <i class="fas fa-chevron-down"></i>
+                        </button>
                     </div>
                 </td>
                 <td style="font-weight: 600;">${name}</td>

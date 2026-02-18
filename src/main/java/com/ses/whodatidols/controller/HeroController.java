@@ -2,7 +2,7 @@ package com.ses.whodatidols.controller;
 
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.core.JdbcTemplate;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,31 +13,15 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/hero")
 public class HeroController {
-    private final JdbcTemplate jdbcTemplate;
+    private final com.ses.whodatidols.repository.HeroRepository heroRepository;
 
-    public HeroController(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    public HeroController(com.ses.whodatidols.repository.HeroRepository heroRepository) {
+        this.heroRepository = heroRepository;
     }
 
     @Cacheable("heroVideos")
     @GetMapping("/videos")
     public ResponseEntity<List<Map<String, Object>>> getHeroVideos() {
-        // Updated for Hero table, Series table, ReferenceId columns
-        String robustSql = """
-                SELECT * FROM (
-                  SELECT H.[ID], H.[ReferenceId], M.[name],
-                         (SELECT STRING_AGG(C.Name, ', ') FROM Categories C JOIN MovieCategories MC ON MC.CategoryID = C.ID WHERE MC.MovieID = M.ID) as [category],
-                         H.[CustomSummary] as _content, 'Movie' AS [type], H.sortOrder
-                  FROM Hero H INNER JOIN Movie M ON H.ReferenceId = M.ID
-                  UNION ALL
-                  SELECT H.[ID], H.[ReferenceId], S.[name],
-                         (SELECT STRING_AGG(C.Name, ', ') FROM Categories C JOIN SeriesCategories SC ON SC.CategoryID = C.ID WHERE SC.SeriesID = S.ID) as [category],
-                         H.[CustomSummary] as _content, 'SoapOpera' AS [type], H.sortOrder
-                  FROM Hero H INNER JOIN Series S ON H.ReferenceId = S.ID
-                ) AS Result ORDER BY sortOrder ASC
-                """;
-
-        List<Map<String, Object>> heroVideos = jdbcTemplate.queryForList(robustSql);
-        return ResponseEntity.ok(heroVideos);
+        return ResponseEntity.ok(heroRepository.getHeroVideos());
     }
 }
