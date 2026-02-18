@@ -67,7 +67,14 @@ public class HomeController {
             item.id = m.getId().toString();
             item.title = m.getName();
             item.image = "/media/image/" + m.getId();
-            item.country = mapLanguageToCode(m.getLanguage());
+
+            // Use explicit country if available, otherwise fallback to language mapping
+            if (m.getCountry() != null && !m.getCountry().isEmpty()) {
+                item.country = m.getCountry();
+            } else {
+                item.country = mapLanguageToCode(m.getLanguage());
+            }
+
             item.isNew = isRecent(m.getUploadDate());
             item.isFinal = false; // Filmler için genelde false
             item.season = null;
@@ -87,6 +94,7 @@ public class HomeController {
 
             String title = ep.getName();
             String language = "kr";
+            String country = null;
             boolean isFinal = false;
             String imageId = ep.getId().toString();
 
@@ -101,6 +109,7 @@ public class HomeController {
                     // Let's use Series Name preferred.
                     title = series.getName();
                     language = series.getLanguage();
+                    country = series.getCountry();
                     isFinal = series.getFinalStatus() == 1;
                     // Use series image
                     imageId = series.getId().toString();
@@ -109,7 +118,14 @@ public class HomeController {
 
             item.title = title;
             item.image = "/media/image/" + imageId;
-            item.country = mapLanguageToCode(language);
+
+            // Use explicit country if available, otherwise fallback to language mapping
+            if (country != null && !country.isEmpty()) {
+                item.country = country;
+            } else {
+                item.country = mapLanguageToCode(language);
+            }
+
             item.isNew = true; // Zaten son eklenenler listesi
             item.isFinal = isFinal;
             item.season = ep.getSeasonNumber();

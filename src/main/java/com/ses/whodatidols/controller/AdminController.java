@@ -122,11 +122,13 @@ public class AdminController {
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam(value = "image", required = false) MultipartFile image,
             @RequestParam(value = "imageUrl", required = false) String imageUrl,
-            @RequestParam("summary") String summary) {
+            @RequestParam("summary") String summary,
+            @RequestParam(value = "country", required = false) String country) {
         try {
             if (file == null || file.isEmpty()) {
                 return ResponseEntity.badRequest().body("Film dosyası seçilmelidir.");
             }
+            movie.setCountry(country);
             movieService.saveMovieWithFile(movie, file, image, summary);
 
             if ((image == null || image.isEmpty()) && imageUrl != null && !imageUrl.isEmpty()) {
@@ -144,11 +146,13 @@ public class AdminController {
     public ResponseEntity<String> updateMovie(
             @ModelAttribute Movie movie,
             @RequestParam(value = "file", required = false) MultipartFile file,
-            @RequestParam(value = "image", required = false) MultipartFile image) {
+            @RequestParam(value = "image", required = false) MultipartFile image,
+            @RequestParam(value = "country", required = false) String country) {
         try {
             if (movie.getId() == null) {
                 return ResponseEntity.badRequest().body("Film ID bulunamadı.");
             }
+            movie.setCountry(country);
             movieService.updateMovie(movie, file, image);
             return ResponseEntity.ok("{\"id\": \"" + movie.getId() + "\", \"message\": \"Film güncellendi.\"}");
         } catch (Exception e) {
@@ -160,10 +164,12 @@ public class AdminController {
     public ResponseEntity<String> updateSeries(
             @ModelAttribute Series s,
             @RequestParam(value = "file", required = false) MultipartFile file,
-            @RequestParam(value = "image", required = false) MultipartFile image) {
+            @RequestParam(value = "image", required = false) MultipartFile image,
+            @RequestParam(value = "country", required = false) String country) {
         try {
             if (s.getId() == null)
                 return ResponseEntity.badRequest().body("Dizi ID yok.");
+            s.setCountry(country);
             seriesService.updateSeriesMetadata(s, file, image);
             return ResponseEntity.ok("{\"id\": \"" + s.getId() + "\", \"message\": \"Dizi güncellendi.\"}");
         } catch (Exception e) {
@@ -179,6 +185,7 @@ public class AdminController {
             @RequestParam(value = "imageUrl", required = false) String imageUrl,
             @RequestParam(value = "existingSeriesId", required = false) UUID existingSeriesId,
             @RequestParam(value = "summary", required = false) String summary,
+            @RequestParam(value = "country", required = false) String country,
             @RequestParam("season") int season,
             @RequestParam("episode") int episode) {
         try {
@@ -191,6 +198,7 @@ public class AdminController {
             }
 
             seriesInfo.setSummary(summary);
+            seriesInfo.setCountry(country);
             UUID episodeId = seriesService.saveEpisodeWithFile(seriesInfo, season, episode, file, image,
                     existingSeriesId);
 

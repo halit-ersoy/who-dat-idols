@@ -39,6 +39,26 @@ async function loadContentDetails(id) {
         document.getElementById('releaseYear').textContent = data.year;
         document.getElementById('contentDuration').textContent = data.duration;
         document.getElementById('contentLanguage').textContent = data.language;
+
+        const countryName = getCountryName(data.country);
+        const countryEl = document.getElementById('contentCountry');
+        if (countryEl) {
+            if (countryName) {
+                countryEl.textContent = countryName;
+                countryEl.style.display = 'inline';
+                // Previous separator
+                if (countryEl.previousElementSibling && countryEl.previousElementSibling.classList.contains('separator')) {
+                    countryEl.previousElementSibling.style.display = 'inline';
+                }
+            } else {
+                countryEl.style.display = 'none';
+                // Hide separator if no country
+                if (countryEl.previousElementSibling && countryEl.previousElementSibling.classList.contains('separator')) {
+                    countryEl.previousElementSibling.style.display = 'none';
+                }
+            }
+        }
+
         document.getElementById('contentPlot').textContent = data.plot;
 
         // Season/Episode/Navigation Visibility (Only for episodes)
@@ -76,8 +96,31 @@ async function loadContentDetails(id) {
         const castList = document.getElementById('castList');
         castList.innerHTML = '<p style="color:#aaa; font-size:0.9em;">Oyuncu bilgisi bulunamadı.</p>';
 
+        // Broadcast seriesId for other modules (like listModal)
+        if (data.seriesId) {
+            document.body.dataset.seriesId = data.seriesId;
+            const event = new CustomEvent('contentDetailsLoaded', { detail: { seriesId: data.seriesId } });
+            document.dispatchEvent(event);
+        }
+
     } catch (error) {
         console.error('Content details loading error:', error);
         document.getElementById('contentTitle').innerText = "Detaylar yüklenemedi";
     }
+}
+
+function getCountryName(code) {
+    if (!code) return null;
+    const countries = {
+        'kr': 'Güney Kore',
+        'jp': 'Japonya',
+        'th': 'Tayland',
+        'cn': 'Çin',
+        'tw': 'Tayvan',
+        'ph': 'Filipinler',
+        'id': 'Endonezya',
+        'my': 'Malezya',
+        'sg': 'Singapur'
+    };
+    return countries[code.toLowerCase()] || code;
 }

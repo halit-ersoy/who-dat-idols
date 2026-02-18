@@ -8,7 +8,8 @@ public class Series {
     private String name;
     private String category;
     private String summary; // Formerly _content
-    private String language; // Formerly country
+    private String language;
+    private String country;
     private int finalStatus;
     private String episodeMetadataXml; // Formerly soapOperaSeries (To be deprecated)
     private int episodeCount;
@@ -53,6 +54,14 @@ public class Series {
 
     public void setLanguage(String language) {
         this.language = language;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
     }
 
     public int getFinalStatus() {

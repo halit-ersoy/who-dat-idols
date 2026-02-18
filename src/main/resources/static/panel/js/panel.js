@@ -562,6 +562,7 @@
             formData.append('summary', document.getElementById('movieSummary').value);
             formData.append('releaseYear', document.getElementById('movieYear').value);
             formData.append('language', document.getElementById('movieLanguage').value);
+            formData.append('country', document.getElementById('movieCountry').value);
 
             if (movieImageInput.files.length > 0) {
                 formData.append('image', movieImageInput.files[0]);
@@ -590,6 +591,7 @@
             formData.append('summary', document.getElementById('movieSummary').value);
             formData.append('releaseYear', document.getElementById('movieYear').value);
             formData.append('language', document.getElementById('movieLanguage').value);
+            formData.append('country', document.getElementById('movieCountry').value);
             if (movieFileInput.files.length > 0) formData.append('file', movieFileInput.files[0]);
             if (movieImageInput.files.length > 0) formData.append('image', movieImageInput.files[0]);
             if (lastFetchedPosterUrl) formData.append('imageUrl', lastFetchedPosterUrl);
@@ -636,6 +638,9 @@
         document.getElementById('movieCategory').value = movie.category;
         document.getElementById('movieSummary').value = movie.summary;
         document.getElementById('movieYear').value = movie.releaseYear;
+
+        // Country population
+        document.getElementById('movieCountry').value = movie.country || 'kr';
 
         // Language matching (defensive)
         const languageSelect = document.getElementById('movieLanguage');
@@ -688,7 +693,9 @@
         movieFileInput.setAttribute('required', 'required');
 
         if (movieImageInput) movieImageInput.value = "";
+        if (movieImageInput) movieImageInput.value = "";
         if (moviePosterUrlInput) moviePosterUrlInput.value = "";
+        document.getElementById('movieCountry').value = 'kr';
         lastFetchedPosterUrl = "";
         updatePosterPreview('movie', null);
         resetFileInputs();
@@ -789,6 +796,7 @@
             formData.append('category', document.getElementById('seriesCategory').value);
             formData.append('summary', document.getElementById('seriesSummary').value);
             formData.append('language', document.getElementById('seriesLanguage').value);
+            formData.append('country', document.getElementById('seriesCountry').value);
 
             if (seriesImageInput.files.length > 0) {
                 formData.append('image', seriesImageInput.files[0]);
@@ -863,6 +871,7 @@
             formData.append('summary', document.getElementById('seriesSummary').value);
             formData.append('year', document.getElementById('seriesYear').value);
             formData.append('language', document.getElementById('seriesLanguage').value);
+            formData.append('country', document.getElementById('seriesCountry').value);
             if (seriesImageInput.files.length > 0) formData.append('image', seriesImageInput.files[0]);
             if (lastFetchedPosterUrl) formData.append('imageUrl', lastFetchedPosterUrl);
         }
@@ -1073,6 +1082,9 @@
         document.getElementById('seriesCategory').value = series.category;
         document.getElementById('seriesSummary').value = series.summary || series.content || series._content;
 
+        // Country population
+        document.getElementById('seriesCountry').value = series.country || 'kr';
+
         // Language matching
         const languageSelect = document.getElementById('seriesLanguage');
         const incomingLang = series.language ? series.language.trim() : "";
@@ -1225,7 +1237,9 @@
         document.getElementById('modeNew').checked = true;
 
         if (seriesImageInput) seriesImageInput.value = "";
+        if (seriesImageInput) seriesImageInput.value = "";
         if (seriesPosterUrlInput) seriesPosterUrlInput.value = "";
+        document.getElementById('seriesCountry').value = 'kr';
         lastFetchedPosterUrl = "";
         updatePosterPreview('series', null);
 

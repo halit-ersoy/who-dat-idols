@@ -35,7 +35,7 @@
 
     // --- Favori Listeleri Başlat ---
     async function initFavorites() {
-        container.innerHTML = `<div class="loading"><p>Yükleniyor...</p></div>`;
+        container.innerHTML = `<div class="loading-spinner"><div class="spinner"></div><p>Listeleriniz yükleniyor...</p></div>`;
         try {
             const lists = await fetchUserLists();
             if (!lists.length) {
@@ -52,10 +52,12 @@
 
     // --- Event Delegation Handler ---
     function handleContainerClick(e) {
-        // İzle butonu
-        if (e.target.closest('.watch-btn')) {
-            const id = e.target.closest('.content-item').dataset.id;
-            window.location.href = `/watch?id=${id}`;
+        // İzle butonu (overlay içindeki play butonu veya kart tıklaması)
+        if (e.target.closest('.watch-btn') || e.target.closest('.play-overlay')) {
+            const item = e.target.closest('.content-item');
+            if (item) {
+                window.location.href = `/watch?id=${item.dataset.id}`;
+            }
             return;
         }
         // Kaldır butonu
@@ -66,19 +68,20 @@
             return;
         }
         // Liste düzenle (kalem ikonu)
-        if (e.target.closest('.edit-list-btn')) {
+        if (e.target.closest('.list-action-btn')) {
+            e.stopPropagation(); // Header click tetiklenmesin
             const wrapper = e.target.closest('.list-wrapper');
             openModal('edit', wrapper.dataset.listName, wrapper);
             return;
         }
-        // Video öğesinin kendisine tıklandığında
-        if (e.target.closest('.content-item') && !e.target.closest('.content-buttons')) {
+        // Video öğesinin kendisine tıklandığında (genel kart tıklaması)
+        if (e.target.closest('.content-item') && !e.target.closest('.remove-btn')) {
             const item = e.target.closest('.content-item');
             window.location.href = `/watch?id=${item.dataset.id}`;
             return;
         }
         // Liste başlığına tıklayıp aç/kapa
-        if (e.target.closest('.list-header') && !e.target.closest('.list-action-btn')) {
+        if (e.target.closest('.list-header')) {
             const wrapper = e.target.closest('.list-wrapper');
             toggleCollapse(wrapper);
         }
@@ -92,7 +95,9 @@
 
         // Ortak ayarlar
         modal.style.display = 'flex';
-        setTimeout(() => modal.classList.add('show'), 10);
+        // Force reflow
+        modal.offsetHeight;
+        modal.classList.add('show');
 
         if (mode === 'create') {
             modalTitle.textContent = 'Yeni Liste Oluştur';
@@ -120,12 +125,12 @@
         const title = nameInput.value.trim();
         if (!title) {
             const originalPlaceholder = nameInput.placeholder;
-            nameInput.style.border = '2px solid #ff4646';
+            nameInput.style.borderColor = '#ff4646';
             nameInput.placeholder = 'Liste adı boş olamaz';
             nameInput.focus();
             setTimeout(() => {
                 nameInput.placeholder = originalPlaceholder;
-                nameInput.style.border = '2px solid rgba(255,255,255,0.1)';
+                nameInput.style.borderColor = '';
             }, 2400);
             return;
         }
@@ -133,7 +138,7 @@
             if (currentMode === 'create') {
                 await createNewList(title);
                 await initFavorites();
-                flashButton(createListBtn, '<i class="fas fa-check"></i> Liste başarıyla oluşturuldu');
+                flashButton(createListBtn, '<i class="fas fa-check"></i> Oluşturuldu');
             } else {
                 if (title === currentListName) {
                     closeModal();
@@ -141,44 +146,43 @@
                 }
                 const res = await renameList(currentListName, title);
                 if (res.Result === 1) {
-                    flashButton(createListBtn, '<i class="fas fa-check"></i> Liste adı değiştirildi');
+                    flashButton(createListBtn, '<i class="fas fa-check"></i> Güncellendi');
                     setTimeout(() => location.reload(), 500);
                 } else {
-                    flashButton(createListBtn, '<i class="fas fa-times"></i> Liste adı değiştirilemedi');
+                    flashButton(createListBtn, '<i class="fas fa-times"></i> Hata');
                 }
             }
             closeModal();
         } catch (err) {
             console.error(err);
-            flashButton(createListBtn, '<i class="fas fa-times"></i> Hata oluştu');
+            flashButton(createListBtn, '<i class="fas fa-times"></i> Hata');
         }
     }
 
-    // --- Silme Onay Kutusu ---
-    function handleDeleteConfirm() {
-        // Sadece düzenleme modundaysa göster
+    // --- Silme İşlemi (Direkt) ---
+    async function handleDeleteConfirm() {
+        // Sadece düzenleme modundaysa çalışır
         if (currentMode !== 'edit') return;
 
-        const overlay = document.createElement('div');
-        overlay.className = 'confirm-overlay';
-        overlay.innerHTML = `
-      <div class="confirm-box">
-        <h3>Listeyi Sil</h3>
-        <p>"${escapeHtml(currentListName)}" listesini silmek istediğinize emin misiniz?</p>
-        <div class="confirm-actions">
-          <button class="btn-cancel confirm-cancel">İptal</button>
-          <button class="btn-delete confirm-delete">Sil</button>
-        </div>
-      </div>
-    `;
-        document.body.appendChild(overlay);
+        const originalText = deleteBtn.innerHTML;
+        deleteBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Siliniyor...';
+        deleteBtn.disabled = true;
 
-        overlay.querySelector('.confirm-cancel').onclick = () => overlay.remove();
-        overlay.querySelector('.confirm-delete').onclick = async () => {
-            try {
-                await deleteList(currentListName);
-                flashButton(createListBtn, '<i class="fas fa-check"></i> Liste silindi');
-                // Animasyonla kaldır
+        try {
+            await deleteList(currentListName);
+
+            // Başarılı feedback
+            deleteBtn.innerHTML = '<i class="fas fa-check"></i> Silindi';
+
+            // 3 saniye bekle
+            await new Promise(resolve => setTimeout(resolve, 3000));
+
+            // Butonu eski haline getir
+            deleteBtn.innerHTML = originalText;
+            deleteBtn.disabled = false;
+
+            // Listeyi UI'dan kaldır
+            if (currentListElem) {
                 currentListElem.style.transition = 'all 0.4s ease';
                 currentListElem.style.opacity = '0';
                 currentListElem.style.transform = 'translateY(-20px)';
@@ -188,14 +192,17 @@
                         showNoListsMessage();
                     }
                 }, 450);
-            } catch (err) {
-                console.error(err);
-                flashButton(createListBtn, '<i class="fas fa-times"></i> Liste silinemedi');
-            } finally {
-                overlay.remove();
-                closeModal();
             }
-        };
+            closeModal();
+
+        } catch (err) {
+            console.error(err);
+            deleteBtn.innerHTML = '<i class="fas fa-times"></i> Hata';
+            setTimeout(() => {
+                deleteBtn.innerHTML = originalText;
+                deleteBtn.disabled = false;
+            }, 3000);
+        }
     }
 
     // --- Listeden Öğe Kaldır ---
@@ -210,7 +217,7 @@
                 const grid = item.closest('.item-grid');
                 const content = item.closest('.list-content');
                 item.remove();
-                
+
                 // Video sayısını güncelle
                 if (wrapper) {
                     const countSpan = wrapper.querySelector('.video-count');
@@ -219,21 +226,19 @@
                 }
 
                 if (!grid.children.length) {
-                    grid.innerHTML = renderItems([]);
+                    grid.innerHTML = `<div class="empty-list" style="padding: 30px;"><p style="color:var(--text-muted)">Bu liste boş.</p></div>`;
                 }
-                
+
                 // Yüksekliği yeniden hesapla (eğer açıksa)
                 if (wrapper && wrapper.classList.contains('expanded')) {
-                    if (content.style.height === 'auto') {
-                        // Eğer auto ise bir şey yapmaya gerek yok, otomatik genişler/daralır
-                    } else {
+                    if (content.style.height !== 'auto') {
                         content.style.height = content.scrollHeight + 'px';
                     }
                 }
             }, 300);
         } catch (err) {
             console.error(err);
-            flashButton(createListBtn, '<i class="fas fa-times"></i> Hata oluştu');
+            flashButton(createListBtn, '<i class="fas fa-times"></i> Hata');
         }
     }
 
@@ -241,19 +246,19 @@
     function setupCollapsibleLists() {
         document.querySelectorAll('.list-wrapper').forEach(wrapper => {
             const header = wrapper.querySelector('.list-header');
-            const icon = header.querySelector('.toggle-indicator') ||
-                header.insertBefore(document.createElement('i'), header.querySelector('.list-actions'));
-            icon.className = 'fas fa-chevron-down toggle-indicator';
-            
+            // Toggle indicator ekle (eğer yoksa)
+            if (!header.querySelector('.toggle-indicator')) {
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-chevron-down toggle-indicator';
+                // Başlığın içine, action butonundan önce ekle
+                header.insertBefore(icon, header.querySelector('.list-actions'));
+            }
+
             const content = wrapper.querySelector('.list-content');
             if (!wrapper.classList.contains('expanded')) {
                 content.style.height = '0';
-                content.style.paddingTop = '0';
-                content.style.paddingBottom = '0';
             } else {
                 content.style.height = 'auto';
-                content.style.paddingTop = '';
-                content.style.paddingBottom = '';
             }
         });
     }
@@ -262,51 +267,38 @@
         const content = wrapper.querySelector('.list-content');
         const isExpanding = !wrapper.classList.contains('expanded');
 
-            // Diğerlerini kapat
-            document.querySelectorAll('.list-wrapper.expanded').forEach(w => {
-                if (w !== wrapper) {
-                    w.classList.remove('expanded');
-                    const otherContent = w.querySelector('.list-content');
-                    
-                    if (otherContent.style.height === 'auto') {
-                        otherContent.style.height = otherContent.scrollHeight + 'px';
-                        otherContent.offsetHeight;
-                    }
-                    
-                    otherContent.style.height = '0';
-                    otherContent.style.paddingTop = '0';
-                    otherContent.style.paddingBottom = '0';
-                }
-            });
+        // Diğerlerini kapat (İsteğe bağlı - Akordeon etkisi için)
+        document.querySelectorAll('.list-wrapper.expanded').forEach(w => {
+            if (w !== wrapper) {
+                w.classList.remove('expanded');
+                const otherContent = w.querySelector('.list-content');
+                // Mevcut yüksekliği set et ki transition çalışsın
+                otherContent.style.height = otherContent.scrollHeight + 'px';
+                // Force reflow
+                otherContent.offsetHeight;
+                otherContent.style.height = '0';
+            }
+        });
 
         if (isExpanding) {
             wrapper.classList.add('expanded');
-            content.style.paddingTop = '';
-            content.style.paddingBottom = '';
-            // Bir sonraki frame'de scrollHeight'ı alarak render edilmesini bekleyelim
-            requestAnimationFrame(() => {
-                content.style.height = content.scrollHeight + 'px';
-                
-                // Animasyon bitince height: auto yapalım ki içerik değişirse sorun olmasın
-                const onTransitionEnd = (e) => {
-                    if (e.propertyName === 'height') {
-                        content.style.height = 'auto';
-                        content.removeEventListener('transitionend', onTransitionEnd);
-                    }
-                };
-                content.addEventListener('transitionend', onTransitionEnd);
-            });
+            content.style.height = content.scrollHeight + 'px';
+
+            const onTransitionEnd = (e) => {
+                if (e.propertyName === 'height') {
+                    content.style.height = 'auto'; // İçerik değişirse esnek olsun
+                    content.removeEventListener('transitionend', onTransitionEnd);
+                }
+            };
+            content.addEventListener('transitionend', onTransitionEnd);
         } else {
             wrapper.classList.remove('expanded');
-            // 'auto' ise önce rakamsal değere çevirip sonra 0 yapmalıyız
+            // 'auto' ise önce pixel değerine çek
             if (content.style.height === 'auto') {
                 content.style.height = content.scrollHeight + 'px';
-                // Force reflow
-                content.offsetHeight;
+                content.offsetHeight; // Force reflow
             }
             content.style.height = '0';
-            content.style.paddingTop = '0';
-            content.style.paddingBottom = '0';
         }
     }
 
@@ -315,7 +307,7 @@
         if (!localStorage.getItem('wdiUserToken')) {
             throw new Error('Oturum açmalısınız');
         }
-        const res = await fetch('/api/saved/lists', {credentials: 'include'});
+        const res = await fetch('/api/saved/lists', { credentials: 'include' });
         if (!res.ok) throw new Error('Listeler alınamadı');
         return processListData(await res.json());
     }
@@ -324,14 +316,14 @@
         if (!Array.isArray(data) || !data.length) return [];
         const map = {};
         data.forEach(item => {
-            if (!map[item.ListName]) map[item.ListName] = {name: item.ListName, videos: []};
+            if (!map[item.ListName]) map[item.ListName] = { name: item.ListName, videos: [] };
             if (item.VideoID) {
                 map[item.ListName].videos.push({
                     id: item.VideoID,
                     title: item.VideoName || 'Başlıksız Video',
-                    image: 'media/image/' + item.VideoID,
-                    year: item.Year || 'N/A',
-                    type: (item.Category || '').split(',')[0] || 'Video'
+                    image: '/media/image/' + item.VideoID, // Düzeltildi: absolute path
+                    year: item.Year || '',
+                    type: (item.Category || '').split(',')[0] || ''
                 });
             }
         });
@@ -350,8 +342,8 @@
     async function renameList(oldName, newName) {
         const res = await fetch(
             `/api/saved/rename-list?title=${encodeURIComponent(oldName)}&newTitle=${encodeURIComponent(newName)}`, {
-                method: 'POST', credentials: 'include'
-            }
+            method: 'POST', credentials: 'include'
+        }
         );
         const data = await res.json();
         if (data.Result !== 1) throw new Error(data.Message || 'Hata');
@@ -384,19 +376,18 @@
             const wrap = document.createElement('div');
             wrap.className = 'list-wrapper';
             wrap.dataset.listName = list.name;
-            wrap.style.animationDelay = `${0.1 * (index + 1)}s`;
-            
+            // Sıralı animasyon için delay
+            wrap.style.animationDelay = `${index * 0.1}s`;
+
             const count = list.videos.length;
             wrap.innerHTML = `
         <div class="list-header">
           <h3 class="list-title">
-            <i class="fas fa-list"></i> 
+            <i class="fas fa-bookmark" style="color:var(--primary)"></i> 
             ${escapeHtml(list.name)} 
             <span class="video-count">(${count} video)</span>
           </h3>
-          <div class="list-actions">
-            <button class="list-action-btn edit-list-btn" title="Listeyi Düzenle"><i class="fas fa-edit"></i></button>
-          </div>
+          <button class="list-action-btn edit-list-btn" title="Listeyi Düzenle"><i class="fas fa-pen"></i></button>
         </div>
         <div class="list-content">
           <div class="list-content-inner">
@@ -410,18 +401,21 @@
 
     function renderItems(videos) {
         if (!videos.length) {
-            return `<div class="empty-list"><i class="fas fa-film"></i><p>Henüz video yok.</p></div>`;
+            return `<div class="empty-list" style="padding: 20px;"><p style="color:var(--text-muted)">Henüz video eklenmemiş.</p></div>`;
         }
         return videos.map(v => `
       <div class="content-item" data-id="${v.id}">
-        <img src="${v.image}" alt="${escapeHtml(v.title)}">
+        <img src="${v.image}" loading="lazy" alt="${escapeHtml(v.title)}" onerror="this.src='/elements/img/default_movie.jpg'">
+        
+        <div class="play-overlay"><i class="fas fa-play"></i></div>
+        <button class="remove-btn" title="Listeden Kaldır"><i class="fas fa-times"></i></button>
+        
         <div class="content-overlay">
           <h4 class="content-title">${escapeHtml(v.title)}</h4>
-          <div class="content-meta"><span>${v.year}</span><span>${v.type}</span></div>
-        </div>
-        <div class="content-buttons">
-          <button class="content-btn watch-btn" title="İzle"><i class="fas fa-play"></i></button>
-          <button class="content-btn remove-btn" title="Kaldır"><i class="fas fa-times"></i></button>
+          <div class="content-meta">
+            ${v.year ? `<span>${v.year}</span>` : ''}
+            ${v.type ? `<span style="margin-left:8px; opacity:0.7">• ${v.type}</span>` : ''}
+          </div>
         </div>
       </div>
     `).join('');
@@ -431,10 +425,9 @@
     function showNoListsMessage() {
         container.innerHTML = `
       <div class="empty-list">
-        <i class="fas fa-heart-broken"></i>
-        <h3>Henüz istek listeniz yok</h3>
-        <p>İzlerken "İstek Listesine Ekle" tıklayın.</p>
-        <a href="/" class="btn-primary">Anasayfa</a>
+        <i class="fas fa-layer-group" style="opacity:0.3"></i>
+        <h3>Henüz listeniz yok</h3>
+        <p>İçerikleri gruplamak için yeni bir liste oluşturun.</p>
       </div>
     `;
     }
@@ -442,10 +435,10 @@
     function showError(msg) {
         container.innerHTML = `
       <div class="empty-list">
-        <i class="fas fa-exclamation-circle"></i>
+        <i class="fas fa-exclamation-triangle" style="color:#ff4646"></i>
         <h3>Hata</h3>
         <p>${escapeHtml(msg)}</p>
-        <button class="btn-primary retry-btn"><i class="fas fa-redo"></i> Tekrar</button>
+        <button class="btn-primary retry-btn" style="margin-top:15px"><i class="fas fa-redo"></i> Tekrar Dene</button>
       </div>
     `;
         container.querySelector('.retry-btn')
@@ -454,54 +447,21 @@
 
     function flashButton(btn, html) {
         const orig = btn.innerHTML;
+        const origWidth = btn.offsetWidth;
         btn.innerHTML = html;
-        setTimeout(() => btn.innerHTML = orig, 3000);
+        // Genişliği korumaya çalış (opsiyonel)
+        setTimeout(() => btn.innerHTML = orig, 2000);
     }
 
     function escapeHtml(str) {
+        if (!str) return '';
         const d = document.createElement('div');
         d.textContent = str;
         return d.innerHTML;
     }
 
     function injectStyles() {
-        if (document.getElementById('favorites-styles')) return;
-        const css = document.createElement('style');
-        css.id = 'favorites-styles';
-        css.textContent = `
-      .toast { position: fixed; top: 20px; right: 20px; padding: 12px 20px;
-        border-radius: 8px; display: flex; align-items: center; gap: 8px;
-        background: rgba(0,0,0,0.8); color: #fff; opacity: 0;
-        transition: opacity 0.3s ease; z-index: 10000;
-      }
-      .toast.success { background: rgba(30,215,96,0.9); color: #000; }
-      .toast.error   { background: rgba(255,70,70,0.9); }
-      .confirm-overlay {
-        position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-        display: flex; align-items: center; justify-content: center;
-        z-index: 10001;
-      }
-      .confirm-box {
-        background: #222; color: #fff; padding: 20px; border-radius: 8px;
-        max-width: 300px; text-align: center;
-        box-shadow: 0 15px 30px rgba(0,0,0,0.4);
-      }
-      .confirm-actions {
-        margin-top: 15px; display: flex; justify-content: space-around; gap: 10px;
-      }
-      .confirm-actions button {
-        padding: 10px 15px; border-radius: 8px; border: none;
-        font-weight: 600; cursor: pointer; transition: all 0.3s ease;
-      }
-      .confirm-cancel { background: rgba(255,255,255,0.1); color: #fff; }
-      .confirm-delete {
-        background: linear-gradient(135deg, #ff4646, #d32f2f); color: #fff;
-      }
-      .confirm-actions button:hover {
-        transform: translateY(-3px); box-shadow: 0 5px 10px rgba(0,0,0,0.3);
-      }
-    `;
-        document.head.appendChild(css);
+        // CSS dosyası zaten yüklü, ek stillere gerek kalmadı
     }
 
 })();

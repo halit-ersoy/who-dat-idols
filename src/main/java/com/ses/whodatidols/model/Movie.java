@@ -10,6 +10,7 @@ public class Movie {
     private String summary;
     private int durationMinutes;
     private String language;
+    private String country;
     private int releaseYear;
     private LocalDateTime uploadDate;
 
@@ -76,6 +77,14 @@ public class Movie {
 
     public void setLanguage(String language) {
         this.language = language;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
     }
 
     public int getReleaseYear() {

@@ -21,13 +21,27 @@ public class MovieRepository {
 
     public MovieRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+        ensureSchema();
+    }
+
+    private void ensureSchema() {
+        try {
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Movie' AND COLUMN_NAME = 'Country') "
+                            +
+                            "BEGIN " +
+                            "    ALTER TABLE Movie ADD Country NVARCHAR(50); " +
+                            "END");
+        } catch (Exception e) {
+            System.err.println("Schema update failed: " + e.getMessage());
+        }
     }
 
     // --- KAYIT (INSERT) İŞLEMİ ---
     public void save(Movie movie) {
         String sql = "INSERT INTO [WhoDatIdols].[dbo].[Movie] " +
-                "(ID, name, Summary, DurationMinutes, language, ReleaseYear, uploadDate) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                "(ID, name, Summary, DurationMinutes, language, Country, ReleaseYear, uploadDate) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         jdbcTemplate.update(sql,
                 movie.getId().toString(),
@@ -35,6 +49,7 @@ public class MovieRepository {
                 movie.getSummary(),
                 movie.getDurationMinutes(),
                 movie.getLanguage(),
+                movie.getCountry(),
                 movie.getReleaseYear(),
                 java.sql.Timestamp.valueOf(movie.getUploadDate()));
 
@@ -45,7 +60,7 @@ public class MovieRepository {
     // --- LİSTELEME (TÜM FİLMLER) ---
     public List<Movie> findAll() {
         String sql = """
-                SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.ReleaseYear, M.uploadDate,
+                SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN MovieCategories MC ON MC.CategoryID = C.ID
                         WHERE MC.MovieID = M.ID) as category
@@ -58,7 +73,7 @@ public class MovieRepository {
     // --- GÜNCELLEME (UPDATE) ---
     public void update(Movie movie) {
         String sql = "UPDATE [WhoDatIdols].[dbo].[Movie] SET " +
-                "name = ?, Summary = ?, ReleaseYear = ?, language = ? " +
+                "name = ?, Summary = ?, ReleaseYear = ?, language = ?, Country = ? " +
                 "WHERE ID = ?";
 
         jdbcTemplate.update(sql,
@@ -66,6 +81,7 @@ public class MovieRepository {
                 movie.getSummary(),
                 movie.getReleaseYear(),
                 movie.getLanguage(),
+                movie.getCountry(),
                 movie.getId().toString());
 
         // Update categories in junction table
@@ -113,7 +129,7 @@ public class MovieRepository {
     public Movie findMovieById(UUID id) {
         try {
             String sql = """
-                    SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.ReleaseYear, M.uploadDate,
+                    SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN MovieCategories MC ON MC.CategoryID = C.ID
                             WHERE MC.MovieID = M.ID) as category
@@ -147,6 +163,14 @@ public class MovieRepository {
             movie.setSummary(rs.getString("Summary")); // UPDATED
             movie.setDurationMinutes(rs.getInt("DurationMinutes")); // UPDATED
             movie.setLanguage(rs.getString("language"));
+
+            // Handle nullable Country
+            try {
+                movie.setCountry(rs.getString("Country"));
+            } catch (SQLException e) {
+                // Column might not exist in some projections or failures
+            }
+
             movie.setReleaseYear(rs.getInt("ReleaseYear")); // UPDATED
 
             // uploadDate null gelebilir, kontrol ediyoruz

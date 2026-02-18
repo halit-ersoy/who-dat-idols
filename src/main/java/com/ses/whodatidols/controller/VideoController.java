@@ -60,6 +60,7 @@ public class VideoController {
                     response.put("genres",
                             series.getCategory() != null ? List.of(series.getCategory().split(",")) : List.of());
                     response.put("language", series.getLanguage());
+                    response.put("country", series.getCountry());
                 } else {
                     response.put("title", episode.getName());
                 }
@@ -70,6 +71,7 @@ public class VideoController {
             response.put("season", episode.getSeasonNumber());
             response.put("episode", episode.getEpisodeNumber());
             response.put("type", "episode");
+            response.put("seriesId", episode.getSeriesId()); // Added for frontend list check
             return ResponseEntity.ok(response);
         }
 
@@ -83,6 +85,7 @@ public class VideoController {
             response.put("genres",
                     movie.getCategory() != null ? List.of(movie.getCategory().split(",")) : List.of());
             response.put("language", movie.getLanguage());
+            response.put("country", movie.getCountry());
             response.put("type", "movie");
             return ResponseEntity.ok(response);
         }

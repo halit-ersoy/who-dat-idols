@@ -8,19 +8,30 @@ export function initListModal() {
     glowButton.parentNode.replaceChild(newButton, glowButton);
 
     // Check if video is already in any list
-    checkVideoInLists().then(isInList => {
-        updateButtonState(newButton, isInList);
-
-        // Set click handler based on state
-        if (isInList) {
-            newButton.addEventListener('click', removeVideoDirectly);
-        } else {
+    const checkAndInit = () => {
+        checkVideoInLists().then(isInList => {
+            updateButtonState(newButton, isInList);
+            if (isInList) {
+                newButton.removeEventListener('click', openModal);
+                newButton.addEventListener('click', removeVideoDirectly);
+            } else {
+                newButton.removeEventListener('click', removeVideoDirectly);
+                newButton.addEventListener('click', openModal);
+            }
+        }).catch(err => {
+            console.error("Error checking lists:", err);
             newButton.addEventListener('click', openModal);
+        });
+    };
+
+    checkAndInit();
+
+    // Listen for Series ID broadcast from contentDetails
+    document.addEventListener('contentDetailsLoaded', (e) => {
+        if (e.detail && e.detail.seriesId) {
+            // Re-check with series ID known
+            checkAndInit();
         }
-    }).catch(err => {
-        console.error("Error checking lists:", err);
-        // Default to add functionality if check fails
-        newButton.addEventListener('click', openModal);
     });
 }
 
@@ -30,6 +41,9 @@ let modal, selectedName;
 async function checkVideoInLists() {
     const videoId = new URLSearchParams(window.location.search).get('id');
     if (!videoId) return false;
+
+    // Get seriesId if available (from contentDetails)
+    const seriesId = document.body.dataset.seriesId || null;
 
     try {
         const res = await fetch('/api/saved/lists', { credentials: 'include' });
@@ -49,9 +63,12 @@ async function checkVideoInLists() {
 
         // Compare using normalized strings
         const normalizedVideoId = String(videoId).trim().toLowerCase();
-        const isInList = videos.some(item =>
-            String(item.VideoID).trim().toLowerCase() === normalizedVideoId
-        );
+        const normalizedSeriesId = seriesId ? String(seriesId).trim().toLowerCase() : null;
+
+        const isInList = videos.some(item => {
+            const itemVid = String(item.VideoID).trim().toLowerCase();
+            return itemVid === normalizedVideoId || (normalizedSeriesId && itemVid === normalizedSeriesId);
+        });
 
         return isInList;
     } catch (err) {
@@ -216,7 +233,7 @@ function showListActions(isInList) {
     `;
         modal.querySelector('.modal-body').appendChild(actions);
         actions.querySelector('.btn-cancel').onclick = closeModal;
-        actions.querySelector('.btn-save').onclick   = isInList ? removeFromList : addToList;
+        actions.querySelector('.btn-save').onclick = isInList ? removeFromList : addToList;
     } else {
         const btn = actions.querySelector('.btn-save');
         btn.innerHTML = `<i class="fas fa-${isInList ? 'times' : 'plus'}"></i> ${isInList ? 'Çıkar' : 'Ekle'}`;
@@ -229,7 +246,7 @@ async function addToList() {
     try {
         const res = await fetch(
             `/api/saved/add?title=${encodeURIComponent(selectedName)}&videoId=${videoId}`,
-            { method:'POST', credentials:'include' }
+            { method: 'POST', credentials: 'include' }
         );
         const d = await res.json();
         if (d.Result === 1) {
@@ -259,7 +276,7 @@ async function removeFromList() {
     const videoId = new URLSearchParams(window.location.search).get('id');
     try {
         const res = await fetch(`/api/saved/remove?videoId=${videoId}`, {
-            method:'POST', credentials:'include'
+            method: 'POST', credentials: 'include'
         });
         const d = await res.json();
         if (d.Result === 1) {
@@ -277,31 +294,31 @@ function showMessage(type, text) {
     modal.querySelectorAll('.success-message, .error-message').forEach(x => x.remove());
     const div = document.createElement('div');
     div.className = type === 'success' ? 'success-message' : 'error-message';
-    div.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':'exclamation-circle'}"></i> ${text}`;
+    div.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${text}`;
     modal.querySelector('.modal-body').appendChild(div);
     if (type === 'success') setTimeout(() => div.remove(), 3000);
 }
 
 function setupCreateList() {
-    const btn   = modal.querySelector('#createListBtn');
+    const btn = modal.querySelector('#createListBtn');
     const input = modal.querySelector('#newListName');
     btn?.addEventListener('click', async () => {
         const name = input.value.trim();
         if (!name) return showMessage('error', 'Ad boş olamaz.');
         try {
             const res = await fetch(`/api/saved/create?title=${encodeURIComponent(name)}`, {
-                method:'POST', credentials:'include'
+                method: 'POST', credentials: 'include'
             });
-            const d   = await res.json();
+            const d = await res.json();
             if (d.Result === 1) {
                 input.value = '';
                 loadUserLists();
-                showMessage('success','Liste oluşturuldu. Şimdi ekleyebilirsiniz.');
+                showMessage('success', 'Liste oluşturuldu. Şimdi ekleyebilirsiniz.');
             } else {
                 showMessage('error', d.Message);
             }
         } catch {
-            showMessage('error','Oluştururken hata oluştu.');
+            showMessage('error', 'Oluştururken hata oluştu.');
         }
     });
 }
