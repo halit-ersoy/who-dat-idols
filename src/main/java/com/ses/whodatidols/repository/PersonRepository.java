@@ -189,30 +189,47 @@ public class PersonRepository {
             List<Map<String, Object>> resultSet = (List<Map<String, Object>>) result.get("#result-set-1");
             if (!resultSet.isEmpty()) {
                 Map<String, Object> row = resultSet.get(0);
-                // SQL procedures return 'Result', 'Message', 'Nickname', 'Cookie'
-                response.put("success", row.get("Result"));
-                if (row.get("Result") == null && row.get("result") != null) {
-                    response.put("success", row.get("result"));
-                }
-
-                response.put("message", row.get("Message"));
-                if (row.get("Message") == null && row.get("message") != null) {
-                    response.put("message", row.get("message"));
-                }
-
-                response.put("nickname", row.get("Nickname"));
-                if (row.get("Nickname") == null && row.get("nickname") != null) {
-                    response.put("nickname", row.get("nickname"));
-                }
-
-                response.put("cookie", row.get("Cookie"));
-                if (row.get("Cookie") == null && row.get("cookie") != null) {
-                    response.put("cookie", row.get("cookie"));
+                for (String key : row.keySet()) {
+                    String lowerKey = key.toLowerCase();
+                    Object value = row.get(key);
+                    if (lowerKey.equals("result"))
+                        response.put("success", value);
+                    else if (lowerKey.equals("message"))
+                        response.put("message", value);
+                    else if (lowerKey.equals("nickname"))
+                        response.put("nickname", value);
+                    else if (lowerKey.equals("cookie"))
+                        response.put("cookie", value);
+                    else if (lowerKey.equals("isbanned"))
+                        response.put("isBanned", value);
+                    else if (lowerKey.equals("banreason"))
+                        response.put("banReason", value);
+                    response.put(key, value);
                 }
             }
         }
 
         return response;
+    }
+
+    public Optional<Person> findByNicknameOrEmail(String usernameOrEmail) {
+        String sql = "SELECT ID, nickname, name, surname, email, password, isBanned, banReason, role FROM [WhoDatIdols].[dbo].[Person] WHERE nickname = ? OR email = ?";
+        return jdbcTemplate.query(sql, (rs) -> {
+            if (rs.next()) {
+                Person p = new Person();
+                p.setId(UUID.fromString(rs.getString("ID")));
+                p.setNickname(rs.getString("nickname"));
+                p.setName(rs.getString("name"));
+                p.setSurname(rs.getString("surname"));
+                p.setEmail(rs.getString("email"));
+                p.setPassword(rs.getString("password"));
+                p.setBanned(rs.getBoolean("isBanned"));
+                p.setBanReason(rs.getString("banReason"));
+                p.setRole(rs.getString("role"));
+                return Optional.of(p);
+            }
+            return Optional.empty();
+        }, usernameOrEmail, usernameOrEmail);
     }
 
     @SuppressWarnings("unchecked")
@@ -258,4 +275,42 @@ public class PersonRepository {
         return jdbcTemplate.queryForMap(sql, UUID.fromString(cookie), nickname, name, surname, email);
     }
 
+    public List<Person> findAllUsers() {
+        try {
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Person') AND name = 'role') ALTER TABLE Person ADD role NVARCHAR(50) DEFAULT 'USER'");
+        } catch (Exception e) {
+        }
+
+        String sql = "SELECT ID, nickname, name, surname, email, isBanned, banReason, role FROM [WhoDatIdols].[dbo].[Person]";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            Person p = new Person();
+            p.setId(UUID.fromString(rs.getString("ID")));
+            p.setNickname(rs.getString("nickname"));
+            p.setName(rs.getString("name"));
+            p.setSurname(rs.getString("surname"));
+            p.setEmail(rs.getString("email"));
+            p.setBanned(rs.getBoolean("isBanned"));
+            p.setBanReason(rs.getString("banReason"));
+            p.setRole(rs.getString("role"));
+            return p;
+        });
+    }
+
+    public void updateUserRole(UUID userId, String role) {
+        String sql = "UPDATE [WhoDatIdols].[dbo].[Person] SET role = ? WHERE ID = ?";
+        jdbcTemplate.update(sql, role, userId.toString());
+    }
+
+    public void deleteUser(UUID userId) {
+        String sql = "DELETE FROM [WhoDatIdols].[dbo].[Person] WHERE ID = ?";
+        jdbcTemplate.update(sql, userId.toString());
+    }
+
+    public void toggleUserBanStatus(UUID userId, boolean ban, String reason) {
+        String sql = "UPDATE [WhoDatIdols].[dbo].[Person] SET isBanned = ?, banReason = ? " +
+                (ban ? ", cookie = NULL " : "") +
+                "WHERE ID = ?";
+        jdbcTemplate.update(sql, ban ? 1 : 0, reason, userId.toString());
+    }
 }

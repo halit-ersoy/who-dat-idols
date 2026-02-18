@@ -86,7 +86,7 @@ public class SeriesRepository {
                         JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                         WHERE SC.SeriesID = S.ID) as category
                 FROM Series S
-                ORDER BY S.name
+                ORDER BY S.viewCount DESC, S.name ASC
                 """;
         return jdbcTemplate.query(sql, seriesRowMapper);
     }
@@ -307,5 +307,18 @@ public class SeriesRepository {
     public List<Episode> findTop6EpisodesByCount() {
         String sql = "SELECT TOP 6 * FROM Episode ORDER BY viewCount DESC";
         return jdbcTemplate.query(sql, episodeRowMapper);
+    }
+
+    public List<Series> findTop6SeriesByCount() {
+        String sql = """
+                SELECT TOP 6 S.ID, S.name, S.Summary, S.Language, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                       (SELECT COUNT(*) FROM Episode E WHERE E.SeriesId = S.ID) as episodeCount,
+                       (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                        JOIN SeriesCategories SC ON SC.CategoryID = C.ID
+                        WHERE SC.SeriesID = S.ID) as category
+                FROM Series S
+                ORDER BY S.viewCount DESC, S.name ASC
+                """;
+        return jdbcTemplate.query(sql, seriesRowMapper);
     }
 }

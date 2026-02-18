@@ -55,7 +55,11 @@ export function initCommentsSection(videoId) {
         }
 
         try {
-            let url = `/api/video/comment?id=${videoId}&spoiler=false`;
+            const spoilerOn = parentId
+                ? document.getElementById(`reply-spoiler-${parentId}`)?.checked
+                : document.getElementById('spoilerCheck')?.checked;
+
+            let url = `/api/video/comment?id=${videoId}&spoiler=${!!spoilerOn}`;
             if (parentId) url += `&parentId=${parentId}`;
 
             const res = await fetch(url, {
@@ -70,6 +74,16 @@ export function initCommentsSection(videoId) {
             loadComments();
 
             if (input) input.value = '';
+
+            // Reset spoiler check
+            if (parentId) {
+                const spCheck = document.getElementById(`reply-spoiler-${parentId}`);
+                if (spCheck) spCheck.checked = false;
+            } else {
+                const spCheck = document.getElementById('spoilerCheck');
+                if (spCheck) spCheck.checked = false;
+            }
+
             incrementCommentCount();
         } catch {
             alert('Yorum gönderilemedi.');
@@ -141,13 +155,20 @@ export function initCommentsSection(videoId) {
             ? `<img src="${c.profilePhoto}" class="user-avatar-img" alt="${c.nickname}">`
             : `<div class="user-avatar"><i class="fas fa-user"></i></div>`;
 
-        let contentHtml = c.spoiler
-            ? `<div class="spoiler-warning">
-                 <i class="fas fa-exclamation-triangle"></i> Spoiler
-                 <button class="show-spoiler-btn">Göster</button>
-               </div>
-               <div class="comment-content hidden">${c.comment}</div>`
-            : `<div class="comment-content">${c.comment}</div>`;
+        let contentHtml = '';
+        if (c.spoiler) {
+            contentHtml = `
+                <div class="spoiler-overlay" onclick="this.parentElement.querySelector('.comment-content').classList.remove('blurred'); this.remove();">
+                    <div class="spoiler-info">
+                        <i class="fas fa-eye-slash"></i> Spoiler İçeriyor
+                    </div>
+                    <button class="btn-reveal">Detayı Gör</button>
+                </div>
+                <div class="comment-content blurred">${c.comment}</div>
+            `;
+        } else {
+            contentHtml = `<div class="comment-content">${c.comment}</div>`;
+        }
 
         card.innerHTML = `
           <div class="comment-header">
@@ -166,8 +187,12 @@ export function initCommentsSection(videoId) {
           </div>
           <div class="reply-form-container" id="reply-form-${c.id}" style="display:none; margin-top:10px;">
                 <textarea id="reply-input-${c.id}" class="comment-input" placeholder="Yanıtınızı yazın..." rows="2"></textarea>
-                <div class="comment-button-container">
-                    <button class="submit-comment-btn submit-reply-btn" data-id="${c.id}">Gönder</button>
+                <div class="comment-button-container" style="justify-content: space-between; align-items: center;">
+                    <label class="spoiler-toggle" style="margin-top: 5px;">
+                        <input type="checkbox" id="reply-spoiler-${c.id}">
+                        <span class="toggle-text"><i class="fas fa-mask"></i> Spoiler</span>
+                    </label>
+                    <button class="submit-comment-btn submit-reply-btn" data-id="${c.id}" style="margin-top: 5px;">Gönder</button>
                 </div>
           </div>
         `;
@@ -192,11 +217,6 @@ export function initCommentsSection(videoId) {
             submitReplyBtn.onclick = () => onSubmitComment(null, c.id);
         }
 
-        const spoilerBtn = card.querySelector('.show-spoiler-btn');
-        spoilerBtn?.addEventListener('click', () => {
-            card.querySelector('.spoiler-warning').remove();
-            card.querySelector('.comment-content').classList.remove('hidden');
-        });
 
         return card;
     }

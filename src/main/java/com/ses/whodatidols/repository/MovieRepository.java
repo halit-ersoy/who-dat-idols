@@ -50,7 +50,7 @@ public class MovieRepository {
                         JOIN MovieCategories MC ON MC.CategoryID = C.ID
                         WHERE MC.MovieID = M.ID) as category
                 FROM [WhoDatIdols].[dbo].[Movie] M
-                ORDER BY M.uploadDate DESC
+                ORDER BY M.viewCount DESC, M.uploadDate DESC
                 """;
         return jdbcTemplate.query(sql, new MovieRowMapper());
     }

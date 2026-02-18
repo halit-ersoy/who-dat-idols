@@ -195,11 +195,13 @@ body {
     gap: 25px;
 }
 
-.form-group.full-width {
-    grid-column: span 2;
+.form-group.full-width,
+.full-width {
+    grid-column: span 2 !important;
 }
 
-#newSeriesFields {
+#newSeriesFields,
+#episodeFields {
     grid-column: span 2;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -563,6 +565,23 @@ body {
     background-color: var(--primary);
     color: #000;
     border-color: var(--primary);
+}
+
+.view-count-input {
+    width: 120px !important;
+    padding: 8px 12px !important;
+    font-size: 0.9rem !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    color: white !important;
+    text-align: center;
+}
+
+.view-count-input:focus {
+    border-color: var(--primary) !important;
+    outline: none;
+    background: rgba(255, 255, 255, 0.1) !important;
 }
 
 /* Search Select Styles */
@@ -1321,4 +1340,120 @@ input[type='checkbox']:hover {
     display: flex;
     flex-direction: column;
     gap: 15px;
+}
+
+/* Premium Role Switcher Component */
+.role-switcher {
+    display: flex;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 4px;
+    border-radius: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    width: fit-content;
+    backdrop-filter: blur(10px);
+}
+
+.role-btn {
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
+    color: rgba(255, 255, 255, 0.4);
+    background: transparent;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    outline: none;
+}
+
+.role-btn:hover {
+    color: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.role-btn.active {
+    color: #fff;
+    transform: scale(1.05);
+}
+
+.role-btn.active[data-role="USER"] {
+    background: rgba(179, 179, 179, 0.2);
+    color: #fff;
+    border-color: rgba(179, 179, 179, 0.3);
+    box-shadow: 0 0 15px rgba(179, 179, 179, 0.1);
+}
+
+.role-btn.active[data-role="ADMIN"] {
+    background: rgba(30, 215, 96, 0.2);
+    color: var(--primary);
+    border-color: rgba(30, 215, 96, 0.4);
+    box-shadow: 0 0 15px rgba(30, 215, 96, 0.3);
+}
+
+.role-btn.active[data-role="SUPER_ADMIN"] {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+    border-color: rgba(255, 193, 7, 0.4);
+    box-shadow: 0 0 15px rgba(255, 193, 7, 0.4);
+}
+
+/* Premium Action Buttons */
+.action-btn-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.action-btn-premium {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 0.85rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.action-btn-premium:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.action-btn-premium.btn-ban:hover {
+    background: rgba(255, 59, 48, 0.15);
+    color: #ff3b30;
+    border-color: rgba(255, 59, 48, 0.3);
+    box-shadow: 0 4px 12px rgba(255, 59, 48, 0.15);
+}
+
+.action-btn-premium.btn-unban:hover {
+    background: rgba(30, 215, 96, 0.15);
+    color: var(--primary);
+    border-color: rgba(30, 215, 96, 0.3);
+    box-shadow: 0 4px 12px rgba(30, 215, 96, 0.15);
+}
+
+.action-btn-premium.btn-delete:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.action-btn-premium i {
+    transition: transform 0.2s ease;
+}
+
+.action-btn-premium:active {
+    transform: translateY(0) scale(0.95);
 }

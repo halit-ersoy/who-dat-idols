@@ -1,13 +1,19 @@
 package com.ses.whodatidols.model;
 
+import java.util.UUID;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class Person {
-    private java.util.UUID id;
+    private UUID id;
     private String nickname;
     private String name;
     private String surname;
     private String email;
     private String password;
     private String profilePhoto;
+    private boolean isBanned;
+    private String banReason;
+    private String role;
 
     // Default constructor
     public Person() {
@@ -22,11 +28,11 @@ public class Person {
     }
 
     // Getters and setters
-    public java.util.UUID getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(java.util.UUID id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
@@ -76,5 +82,30 @@ public class Person {
 
     public void setProfilePhoto(String profilePhoto) {
         this.profilePhoto = profilePhoto;
+    }
+
+    @JsonProperty("isBanned")
+    public boolean isBanned() {
+        return isBanned;
+    }
+
+    public void setBanned(boolean banned) {
+        isBanned = banned;
+    }
+
+    public String getBanReason() {
+        return banReason;
+    }
+
+    public void setBanReason(String banReason) {
+        this.banReason = banReason;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 }

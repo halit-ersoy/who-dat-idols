@@ -44,6 +44,29 @@
     fetchHeroVideos();
     fetchMovies();
     fetchSeries();
+    fetchViewStats();
+
+    // Role-based UI initialization
+    window.currentAdmin = null;
+    fetch('/admin/me')
+        .then(res => res.json())
+        .then(user => {
+            window.currentAdmin = user;
+            const isSuperAdmin = user.roles.includes('ROLE_SUPER_ADMIN');
+
+            // Hide user management link if not super admin
+            if (!isSuperAdmin) {
+                const userNavLink = document.querySelector('.nav-link[data-section="user-section"]');
+                if (userNavLink) userNavLink.style.display = 'none';
+            } else {
+                fetchUsers();
+            }
+
+            // Update welcome message
+            const welcomeH1 = document.querySelector('.welcome h1');
+            if (welcomeH1) welcomeH1.innerText = `Hoş Geldin, ${user.username} 👋`;
+        })
+        .catch(err => console.error("Admin info error:", err));
 
     // Archive Search for Movies
     const movieSearchInput = document.getElementById('movieArchiveSearch');
@@ -597,7 +620,23 @@
         document.getElementById('movieCategory').value = movie.category;
         document.getElementById('movieSummary').value = movie.summary;
         document.getElementById('movieYear').value = movie.releaseYear;
-        document.getElementById('movieLanguage').value = movie.language;
+
+        // Language matching (defensive)
+        const languageSelect = document.getElementById('movieLanguage');
+        const incomingLang = movie.language ? movie.language.trim() : "";
+
+        let found = false;
+        for (let i = 0; i < languageSelect.options.length; i++) {
+            if (languageSelect.options[i].value === incomingLang) {
+                languageSelect.selectedIndex = i;
+                found = true;
+                break;
+            }
+        }
+        if (!found) languageSelect.value = "Türkçe"; // Default if not found
+
+        // Update Poster Preview
+        updatePosterPreview('movie', `/media/image/${movie.id}?t=${Date.now()}`);
 
         movieSubmitBtn.innerText = "DEĞİŞİKLİKLERİ KAYDET";
         movieSubmitBtn.classList.remove('btn-primary');
@@ -660,6 +699,7 @@
        =========================================================== */
     const seriesForm = document.getElementById('seriesForm');
     const seriesIdInput = document.getElementById('seriesId');
+    const episodeIdInput = document.getElementById('episodeId');
     const seriesCancelBtn = document.getElementById('cancelSeriesEditBtn');
     const seriesSubmitBtn = document.getElementById('seriesSubmitBtn');
     const seriesFileInput = document.getElementById('seriesFile');
@@ -721,9 +761,61 @@
     seriesForm.addEventListener('submit', async function (e) {
         e.preventDefault();
         const sId = seriesIdInput.value;
+        const epId = episodeIdInput.value;
         const mode = document.querySelector('input[name="seriesMode"]:checked').value;
 
-        // Block if series exists and we are in New mode
+        // Form Mode Handling
+        if (sId !== "" && epId === "") {
+            // SERIES METADATA EDIT MODE
+            const formData = new FormData();
+            formData.append('id', sId);
+            formData.append('name', document.getElementById('seriesName').value);
+            formData.append('category', document.getElementById('seriesCategory').value);
+            formData.append('summary', document.getElementById('seriesSummary').value);
+            formData.append('language', document.getElementById('seriesLanguage').value);
+
+            if (seriesImageInput.files.length > 0) {
+                formData.append('image', seriesImageInput.files[0]);
+            }
+
+            seriesSubmitBtn.innerText = "GÜNCELLENİYOR...";
+            seriesSubmitBtn.disabled = true;
+
+            fetch('/admin/update-series', {
+                method: 'POST',
+                body: formData
+            }).then(res => res.json()).then(data => {
+                alert(data.message || "Dizi bilgileri güncellendi.");
+                resetSeriesForm();
+                fetchSeries();
+            }).catch(err => alert("Hata: " + err))
+                .finally(() => { seriesSubmitBtn.disabled = false; });
+            return;
+        }
+
+        if (epId !== "") {
+            // EPISODE EDIT MODE
+            const formData = new FormData();
+            formData.append('episodeId', epId);
+            formData.append('season', document.getElementById('seasonNum').value);
+            formData.append('episodeNum', document.getElementById('episodeNum').value);
+
+            if (seriesFileInput.files.length > 0) {
+                formData.append('file', seriesFileInput.files[0]);
+            }
+
+            seriesSubmitBtn.innerText = "BÖLÜM GÜNCELLENİYOR...";
+            seriesSubmitBtn.disabled = true;
+
+            uploadDataWithProgress('/admin/update-episode', formData, 'seriesForm', 'progressWrapperSeries', 'progressBarSeries', 'percentSeries', async (res) => {
+                await saveExternalSources(epId, 'series');
+                resetSeriesForm();
+                fetchSeries();
+            });
+            return;
+        }
+
+        // ADD NEW SERIES or ADD TO EXISTING SERIES MODE
         if (sId === "" && mode === 'new') {
             const name = seriesNameInput.value.trim();
             try {
@@ -737,67 +829,35 @@
             } catch (e) { }
         }
 
-        if (sId !== "") {
-            const formData = new FormData();
-            formData.append('id', sId);
+        const formData = new FormData();
+        const existingId = document.getElementById('selectedSeriesId').value;
+
+        // Episode specific fields
+        formData.append('season', document.getElementById('seasonNum').value);
+        formData.append('episode', document.getElementById('episodeNum').value);
+        if (seriesFileInput.files.length > 0) formData.append('file', seriesFileInput.files[0]);
+
+        if (mode === 'existing') {
+            if (!existingId) return alert("Lütfen bir dizi seçin!");
+            formData.append('existingSeriesId', existingId);
+        } else {
+            // New Series Mode
             formData.append('name', document.getElementById('seriesName').value);
             formData.append('category', document.getElementById('seriesCategory').value);
             formData.append('summary', document.getElementById('seriesSummary').value);
+            formData.append('year', document.getElementById('seriesYear').value);
             formData.append('language', document.getElementById('seriesLanguage').value);
-
-            if (seriesImageInput.files.length > 0) {
-                formData.append('image', seriesImageInput.files[0]);
-            }
-            if (seriesFileInput.files.length > 0) {
-                formData.append('file', seriesFileInput.files[0]);
-            }
-
-            seriesSubmitBtn.innerText = "GÜNCELLENİYOR...";
-            seriesSubmitBtn.disabled = true;
-
-            fetch('/admin/update-series', {
-                method: 'POST',
-                body: formData
-            }).then(res => res.json()).then(async data => {
-                const id = data.id || sId;
-                await saveExternalSources(id, 'series');
-                alert(data.message || "Dizi güncellendi.");
-                resetSeriesForm(); fetchSeries();
-            }).catch(err => alert("Hata: " + err))
-                .finally(() => { seriesSubmitBtn.disabled = false; });
-        } else {
-            const formData = new FormData();
-            const mode = document.querySelector('input[name="seriesMode"]:checked').value;
-            const existingId = document.getElementById('selectedSeriesId').value;
-
-            // Common fields for both modes
-            formData.append('season', document.getElementById('seasonNum').value);
-            formData.append('episode', document.getElementById('episodeNum').value);
-            if (seriesFileInput.files.length > 0) formData.append('file', seriesFileInput.files[0]);
-
-            if (mode === 'existing') {
-                if (!existingId) return alert("Lütfen bir dizi seçin!");
-                formData.append('existingSeriesId', existingId);
-                // No need for name, category etc.
-            } else {
-                // New Series Mode
-                formData.append('name', document.getElementById('seriesName').value);
-                formData.append('category', document.getElementById('seriesCategory').value);
-                formData.append('summary', document.getElementById('seriesSummary').value);
-                formData.append('year', document.getElementById('seriesYear').value);
-                formData.append('language', document.getElementById('seriesLanguage').value);
-                if (seriesImageInput.files.length > 0) formData.append('image', seriesImageInput.files[0]);
-                if (lastFetchedPosterUrl) formData.append('imageUrl', lastFetchedPosterUrl);
-            }
-
-            uploadDataWithProgress('/admin/add-series', formData, 'seriesForm', 'progressWrapperSeries', 'progressBarSeries', 'percentSeries', async (res) => {
-                try {
-                    const data = JSON.parse(res);
-                    if (data.id) await saveExternalSources(data.id, 'series');
-                } catch (e) { console.error("Source save error:", e); }
-                fetchSeries();
-            });
+            if (seriesImageInput.files.length > 0) formData.append('image', seriesImageInput.files[0]);
+            if (lastFetchedPosterUrl) formData.append('imageUrl', lastFetchedPosterUrl);
         }
+
+        uploadDataWithProgress('/admin/add-series', formData, 'seriesForm', 'progressWrapperSeries', 'progressBarSeries', 'percentSeries', async (res) => {
+            try {
+                const data = JSON.parse(res);
+                if (data.id) await saveExternalSources(data.id, 'series');
+            } catch (e) { console.error("Source save error:", e); }
+            fetchSeries();
+        });
     });
 
     function fetchSeries() {
@@ -887,7 +947,8 @@
                                         <strong>Sezon ${ep.season} - Bölüm ${ep.episode}</strong>
                                     </div>
                                     <div class="episode-actions">
-                                        <button class="btn btn-sm btn-edit" onclick='preloadEpisodeForm(${JSON.stringify(ep).replace(/'/g, "&#39;")})'><i class="fas fa-copy"></i> KOPYALA</button>
+                                        <button class="btn btn-sm btn-edit" onclick='editEpisode(${JSON.stringify(ep).replace(/'/g, "&#39;")})'><i class="fas fa-edit"></i> DÜZENLE</button>
+                                        <button class="btn btn-sm btn-edit" style="background:#6c757d;" onclick='preloadEpisodeForm(${JSON.stringify(ep).replace(/'/g, "&#39;")})'><i class="fas fa-copy"></i> KOPYALA</button>
                                         <button class="btn btn-sm btn-danger" onclick='deleteEpisode("${ep.id}")'><i class="fas fa-trash"></i> SİL</button>
                                     </div>
                                 </div>
@@ -990,17 +1051,70 @@
     };
 
     window.editSeriesMetadata = function (series) {
+        resetSeriesForm();
         seriesIdInput.value = series.id;
         document.getElementById('seriesName').value = series.name;
         document.getElementById('seriesCategory').value = series.category;
-        // UPDATE: series.content is now series.summary
         document.getElementById('seriesSummary').value = series.summary || series.content || series._content;
-        document.getElementById('seriesLanguage').value = series.language;
 
-        updatePosterPreview('series', `/media/image/${series.id}`);
+        // Language matching
+        const languageSelect = document.getElementById('seriesLanguage');
+        const incomingLang = series.language ? series.language.trim() : "";
+
+        let found = false;
+        for (let i = 0; i < languageSelect.options.length; i++) {
+            if (languageSelect.options[i].value === incomingLang) {
+                languageSelect.selectedIndex = i;
+                found = true;
+                break;
+            }
+        }
+        if (!found) languageSelect.value = "Korece";
+
+        updatePosterPreview('series', `/media/image/${series.id}?t=${Date.now()}`);
+
+        // Form Layout for Series Edit
+        document.getElementById('seriesModeGroup').style.display = 'none';
+        document.getElementById('newSeriesFields').style.display = 'grid';
+        document.getElementById('episodeFields').style.display = 'none';
+        document.getElementById('seriesPosterGroup').style.display = 'block';
+
+        document.getElementById('seriesFormStatus').style.display = 'block';
+        document.getElementById('seriesFormModeText').innerText = "Dizi Bilgilerini Düzenle";
+
         setupSeriesEditMode("DİZİ BİLGİSİNİ GÜNCELLE");
 
-        // Switch to series section
+        const seriesLink = document.querySelector('.nav-link[data-section="series-section"]');
+        if (seriesLink) seriesLink.click();
+    };
+
+    window.editEpisode = function (ep) {
+        resetSeriesForm();
+        episodeIdInput.value = ep.id;
+        document.getElementById('seasonNum').value = ep.season;
+        document.getElementById('episodeNum').value = ep.episode;
+
+        // Form Layout for Episode Edit
+        document.getElementById('seriesModeGroup').style.display = 'none';
+        document.getElementById('newSeriesFields').style.display = 'none';
+        document.getElementById('episodeFields').style.display = 'grid';
+        document.getElementById('seriesPosterGroup').style.display = 'none';
+
+        document.getElementById('seriesFormStatus').style.display = 'block';
+        document.getElementById('seriesFormModeText').innerText = `Bölüm Düzenle (${ep.name})`;
+
+        setupSeriesEditMode("BÖLÜMÜ GÜNCELLE");
+
+        // Load External Sources
+        document.getElementById('seriesSourcesList').innerHTML = '';
+        if (ep.id) {
+            fetch(`/media/video/${ep.id}/sources`)
+                .then(res => res.json())
+                .then(sources => {
+                    sources.forEach(src => addSourceField('series', src.sourceName, src.sourceUrl));
+                });
+        }
+
         const seriesLink = document.querySelector('.nav-link[data-section="series-section"]');
         if (seriesLink) seriesLink.click();
     };
@@ -1074,12 +1188,25 @@
     function resetSeriesForm() {
         seriesForm.reset();
         seriesIdInput.value = "";
+        episodeIdInput.value = "";
+
+        document.getElementById('seriesFormStatus').style.display = 'none';
+        document.getElementById('seriesFormModeText').innerText = "-";
+
         seriesSubmitBtn.innerText = "BÖLÜMÜ / DİZİYİ KAYDET";
         seriesSubmitBtn.classList.add('btn-primary');
         seriesSubmitBtn.style.backgroundColor = "";
         seriesSubmitBtn.style.color = "";
         seriesCancelBtn.style.display = "none";
         seriesFileInput.setAttribute('required', 'required');
+
+        // Reset visibility to default (New mode)
+        document.getElementById('seriesModeGroup').style.display = 'block';
+        document.getElementById('newSeriesFields').style.display = 'grid';
+        document.getElementById('episodeFields').style.display = 'grid';
+        document.getElementById('seriesPosterGroup').style.display = 'block';
+        document.getElementById('existingSeriesSelectWrapper').style.display = 'none';
+        document.getElementById('modeNew').checked = true;
 
         if (seriesImageInput) seriesImageInput.value = "";
         if (seriesPosterUrlInput) seriesPosterUrlInput.value = "";
@@ -1631,5 +1758,316 @@
                 if (res.ok) fetchUpcoming();
                 else res.text().then(msg => alert("Hata: " + msg));
             });
+    };
+
+    /* ===========================================================
+       VIEW MANAGEMENT (İZLENME YÖNETİMİ)
+       =========================================================== */
+    const viewStatsSearchInput = document.getElementById('viewStatsSearch');
+    if (viewStatsSearchInput) {
+        viewStatsSearchInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('#viewStatsTable tbody tr');
+            rows.forEach(row => {
+                const name = row.cells[0].innerText.toLowerCase();
+                row.style.display = name.includes(query) ? '' : 'none';
+            });
+        });
+    }
+
+    function fetchViewStats() {
+        fetch('/admin/view-stats')
+            .then(res => res.json())
+            .then(stats => {
+                const tbody = document.querySelector('#viewStatsTable tbody');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+                stats.forEach(item => {
+                    const tr = document.createElement('tr');
+                    const isMovie = item.Type === 'Movie';
+                    tr.innerHTML = `
+                        <td style="font-weight: 600;">${item.Name}</td>
+                        <td><span class="item-type">${isMovie ? 'Film' : 'Dizi'}</span></td>
+                        <td>
+                            <input type="number" class="view-count-input" value="${item.viewCount}" id="view_input_${item.ID}">
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="updateViewCount('${item.ID}', '${item.Type}')">
+                                <i class="fas fa-save"></i> GÜNCELLE
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(err => console.error("View stats error:", err));
+    }
+
+    window.updateViewCount = function (id, type) {
+        const input = document.getElementById(`view_input_${id}`);
+        if (!input) return;
+        const newCount = input.value;
+
+        const formData = new URLSearchParams();
+        formData.append('id', id);
+        formData.append('type', type);
+        formData.append('count', newCount);
+
+        fetch('/admin/update-view-count', {
+            method: 'POST',
+            body: formData
+        }).then(res => {
+            if (res.ok) {
+                alert("İzlenme sayısı başarıyla güncellendi.");
+                // Sync with other tables if needed, or just let it be
+            } else {
+                res.text().then(msg => alert("Hata: " + msg));
+            }
+        });
+    }
+
+    /* ===========================================================
+       KULLANICI YÖNETİMİ (USER MANAGEMENT)
+       =========================================================== */
+    const userSearchInput = document.getElementById('userSearch');
+    if (userSearchInput) {
+        userSearchInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('#userTable tbody tr');
+            rows.forEach(row => {
+                const nickname = row.cells[0].innerText.toLowerCase();
+                const email = row.cells[1].innerText.toLowerCase();
+                row.style.display = (nickname.includes(query) || email.includes(query)) ? '' : 'none';
+            });
+        });
+    }
+
+    const banModal = document.getElementById('banModal');
+    let currentBanUserId = null;
+
+    window.openBanModal = function (userId, nickname) {
+        currentBanUserId = userId;
+        document.getElementById('banUserPlaceholder').innerHTML = `<strong>${nickname}</strong> kullanıcısını yasaklamak üzeresiniz.`;
+        document.getElementById('banReason').value = '';
+        banModal.style.display = 'block';
+    };
+
+    document.querySelectorAll('.close-ban-modal').forEach(btn => {
+        btn.onclick = () => { banModal.style.display = 'none'; };
+    });
+
+    document.getElementById('confirmBanBtn').onclick = () => {
+        const reason = document.getElementById('banReason').value.trim();
+        if (!reason) return alert("Lütfen bir yasaklama nedeni giriniz!");
+        toggleUserBan(currentBanUserId, true, reason);
+    };
+
+    function fetchUsers() {
+        const isSuperAdmin = window.currentAdmin && window.currentAdmin.roles.includes('ROLE_SUPER_ADMIN');
+        if (!isSuperAdmin) return;
+
+        fetch('/admin/users')
+            .then(res => res.json())
+            .then(users => {
+                const tbody = document.querySelector('#userTable tbody');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+                users.forEach(user => {
+                    const tr = document.createElement('tr');
+                    const isBanned = user.isBanned;
+                    const statusBadge = isBanned ?
+                        '<span class="badge" style="background:#dc3545; color:#fff; padding:4px 8px; border-radius:4px; font-weight: 700;">Yasaklı</span>' :
+                        '<span class="badge" style="background:#1ed760; color:#fff; padding:4px 8px; border-radius:4px; font-weight: 700;">Aktif</span>';
+
+                    tr.innerHTML = `
+                        <td style="font-weight: 600;">${user.nickname}</td>
+                        <td>${user.email || '-'}</td>
+                        <td>${user.name} ${user.surname}</td>
+                        <td>
+                            <div class="role-switcher">
+                                <button class="role-btn ${user.role === 'USER' || !user.role ? 'active' : ''}" data-role="USER" onclick="updateUserRoleUnified('${user.id}', 'USER', this)">User</button>
+                                <button class="role-btn ${user.role === 'ADMIN' ? 'active' : ''}" data-role="ADMIN" onclick="updateUserRoleUnified('${user.id}', 'ADMIN', this)">Admin</button>
+                                <button class="role-btn ${user.role === 'SUPER_ADMIN' ? 'active' : ''}" data-role="SUPER_ADMIN" onclick="updateUserRoleUnified('${user.id}', 'SUPER_ADMIN', this)">Super</button>
+                            </div>
+                        </td>
+                        <td>${statusBadge}</td>
+                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${user.banReason || ''}">${user.banReason || '-'}</td>
+                        <td>
+                            <div class="action-btn-group">
+                                ${isBanned ?
+                            `<button class="action-btn-premium btn-unban" onclick="toggleUserBan('${user.id}', false, '')" title="Yasağı Kaldır"><i class="fas fa-undo"></i></button>` :
+                            `<button class="action-btn-premium btn-ban" onclick="openBanModal('${user.id}', '${user.nickname}')" title="Yasakla"><i class="fas fa-ban"></i></button>`
+                        }
+                                <button class="action-btn-premium btn-delete" onclick="deleteUser('${user.id}', '${user.nickname}')" title="Kullanıcıyı Sil"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(err => console.error("User fetch error:", err));
+    }
+
+    window.updateUserRoleUnified = function (userId, role, btnElement) {
+        if (!confirm(`Kullanıcı rolünü "${role}" olarak güncellemek istediğinize emin misiniz?`)) {
+            return;
+        }
+
+        const formData = new URLSearchParams();
+        formData.append('userId', userId);
+        formData.append('role', role);
+
+        // Visual update
+        const parent = btnElement.parentElement;
+        parent.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+        btnElement.classList.add('active');
+
+        fetch('/admin/update-role', {
+            method: 'POST',
+            body: formData
+        }).then(res => {
+            if (res.ok) {
+                alert("Rol başarıyla güncellendi.");
+                fetchUsers();
+            } else {
+                res.text().then(msg => alert("Hata: " + msg));
+            }
+        });
+    };
+
+    window.toggleUserBan = function (userId, ban, reason) {
+        const formData = new URLSearchParams();
+        formData.append('userId', userId);
+        formData.append('ban', ban);
+        formData.append('reason', reason);
+
+        fetch('/admin/ban-user', {
+            method: 'POST',
+            body: formData
+        }).then(res => {
+            if (res.ok) {
+                alert(ban ? "Kullanıcı yasaklandı." : "Kullanıcının yasağı kaldırıldı.");
+                if (banModal) banModal.style.display = 'none';
+                fetchUsers();
+            } else {
+                res.text().then(msg => alert("Hata: " + msg));
+            }
+        });
+    };
+
+    window.deleteUser = function (userId, nickname) {
+        if (!confirm(`"${nickname}" isimli kullanıcıyı kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`)) {
+            return;
+        }
+
+        fetch(`/admin/delete-user?userId=${userId}`, {
+            method: 'DELETE'
+        }).then(res => {
+            if (res.ok) {
+                alert("Kullanıcı başarıyla silindi.");
+                fetchUsers();
+            } else {
+                res.text().then(msg => alert("Hata: " + msg));
+            }
+        });
+    };
+
+    /* ===========================================================
+       YORUM YÖNETİMİ (COMMENT MODERATION)
+       =========================================================== */
+    const commentsTableBody = document.querySelector('#commentsTable tbody');
+    const refreshCommentsBtn = document.getElementById('refreshCommentsBtn');
+
+    if (refreshCommentsBtn) {
+        refreshCommentsBtn.addEventListener('click', fetchPendingComments);
+    }
+
+    // Navigasyon değiştiğinde Comments sekmesine tıklanırsa verileri çek
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', function () {
+            if (this.getAttribute('data-section') === 'comments-section') {
+                fetchPendingComments();
+            }
+        });
+    });
+
+    function fetchPendingComments() {
+        if (!commentsTableBody) return;
+
+        commentsTableBody.innerHTML = '<tr><td colspan="6" class="text-center">Yükleniyor...</td></tr>';
+
+        fetch('/admin/comments/pending')
+            .then(res => res.json())
+            .then(comments => {
+                commentsTableBody.innerHTML = '';
+                if (comments.length === 0) {
+                    commentsTableBody.innerHTML = '<tr><td colspan="6" class="text-center">Onay bekleyen yorum yok.</td></tr>';
+                    return;
+                }
+
+                comments.forEach(comment => {
+                    const tr = document.createElement('tr');
+                    const dateStr = new Date(comment.date).toLocaleString('tr-TR');
+                    // Kullanıcı resmi istenmediği için kaldırıldı.
+                    // const profilePhoto = comment.profilePhoto || '/images/default-avatar.png';
+
+                    // Content Name ve Link
+                    const contentName = comment.contentName || comment.contentId || 'İçerik';
+                    const contentLink = comment.contentId ? `<a href="/watch?id=${comment.contentId}" target="_blank" style="color: var(--primary-color); font-weight: 500;">${contentName}</a>` : '-';
+
+                    tr.innerHTML = `
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-weight: 600;">${comment.nickname}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="max-width: 300px; white-space: pre-wrap;">${comment.comment}</div>
+                            ${comment.spoiler ? '<span class="badge badge-warning" style="font-size: 0.7em;">SPOILER</span>' : ''}
+                        </td>
+                        <td>${contentLink}</td>
+                        <td>${dateStr}</td>
+                        <td><span class="badge badge-warning">Onay Bekliyor</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-success" onclick="approveComment('${comment.id}')" title="Onayla"><i class="fas fa-check"></i></button>
+                            <button class="btn btn-sm btn-danger" onclick="rejectComment('${comment.id}')" title="Reddet/Sil"><i class="fas fa-times"></i></button>
+                        </td>
+                    `;
+                    commentsTableBody.appendChild(tr);
+                });
+            })
+            .catch(err => {
+                console.error("Comments fetch error:", err);
+                commentsTableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Yorumlar yüklenirken hata oluştu.</td></tr>';
+            });
+    }
+
+    window.approveComment = function (id) {
+        if (!confirm("Bu yorumu onaylamak istiyor musunuz?")) return;
+
+        fetch(`/admin/comments/approve?commentId=${id}`, { method: 'POST' })
+            .then(res => {
+                if (res.ok) {
+                    // Remove row or refresh
+                    fetchPendingComments();
+                } else {
+                    res.text().then(msg => alert("Hata: " + msg));
+                }
+            })
+            .catch(err => alert("Hata: " + err));
+    };
+
+    window.rejectComment = function (id) {
+        if (!confirm("Bu yorumu reddetmek (silmek) istediğinize emin misiniz?")) return;
+
+        fetch(`/admin/comments/reject?commentId=${id}`, { method: 'DELETE' })
+            .then(res => {
+                if (res.ok) {
+                    fetchPendingComments();
+                } else {
+                    res.text().then(msg => alert("Hata: " + msg));
+                }
+            })
+            .catch(err => alert("Hata: " + err));
     };
 });

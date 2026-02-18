@@ -41,15 +41,23 @@ async function loadContentDetails(id) {
         document.getElementById('contentLanguage').textContent = data.language;
         document.getElementById('contentPlot').textContent = data.plot;
 
-        // Season/Episode Info (Only for episodes)
-        const seasonInfo = document.getElementById('seasonInfo');
+        // Season/Episode/Navigation Visibility (Only for episodes)
+        const seasonSection = document.getElementById('seasonSection');
+        const episodeNav = document.getElementById('episodeNav');
+        const episodeDrawer = document.getElementById('episodeSection');
+
         if (data.type === 'episode') {
-            seasonInfo.style.display = 'flex';
+            if (seasonSection) seasonSection.style.display = 'block';
+            if (episodeNav) episodeNav.style.display = 'flex';
+            if (episodeDrawer) episodeDrawer.style.display = 'block';
+
             document.getElementById('seasonNumber').textContent = `Sezon ${data.season}`;
             document.getElementById('episodeNumber').textContent = `Bölüm ${data.episode}`;
             document.getElementById('totalEpisodes').style.display = 'none'; // Hide total for now
         } else {
-            seasonInfo.style.display = 'none';
+            if (seasonSection) seasonSection.style.display = 'none';
+            if (episodeNav) episodeNav.style.display = 'none';
+            if (episodeDrawer) episodeDrawer.style.display = 'none';
         }
 
         const genresEl = document.getElementById('genreTags');

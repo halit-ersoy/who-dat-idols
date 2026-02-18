@@ -1,13 +1,17 @@
 package com.ses.whodatidols.config;
 
+import com.ses.whodatidols.model.Person;
+import com.ses.whodatidols.repository.PersonRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.SecurityFilterChain;
+
+import java.util.Optional;
 
 @Configuration
 @EnableWebSecurity
@@ -16,48 +20,59 @@ public class SecurityConfig {
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
                 http
-                                // CSRF'i kapatıyoruz ki POST isteklerinde "Token" hatası almayalım
                                 .csrf(csrf -> csrf.disable())
-
-                                .authorizeHttpRequests((requests) -> requests
-                                                // 1. Sadece Admin paneli "/admin/**" şifreli olsun (ROLE_ADMIN gerekir)
-                                                .requestMatchers("/admin/**").hasRole("ADMIN")
-
-                                                // 2. Kendi yazdığınız login endpoint'i dahil her şeye izin ver
-                                                // Özellikle "/login", "/register", "/api/**" gibi yolları açık bırakın
-                                                .requestMatchers("/login", "/register", "/", "/home/**", "/watch/**",
-                                                                "/css/**", "/js/**", "/images/**",
-                                                                "/public/api/tvmaze/**")
-                                                .permitAll()
-
-                                                // Geri kalan her şey de açık olsun
+                                .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers("/admin/users", "/admin/ban-user",
+                                                                "/admin/update-role", "/admin/delete-user")
+                                                .hasRole("SUPER_ADMIN")
+                                                .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                                                 .anyRequest().permitAll())
-
-                                // Spring Security'nin kendi login formu SADECE Admin paneline girmeye çalışınca
-                                // çıksın
-                                // Sizin ana sayfanızdaki login butonu buraya düşmemeli.
-                                .formLogin((form) -> form
-                                                .loginPage("/login-admin") // Change default login page to avoid
-                                                                           // conflict
+                                .formLogin(form -> form
+                                                .loginPage("/login-admin")
                                                 .loginProcessingUrl("/login-admin")
-                                                .failureUrl("/login-admin?error")
-                                                .permitAll()
-                                                // Admin giriş yaparsa nereye gitsin?
-                                                .defaultSuccessUrl("/admin/panel", true))
-
-                                .logout((logout) -> logout.permitAll());
+                                                .defaultSuccessUrl("/admin", true)
+                                                .permitAll())
+                                .logout(logout -> logout
+                                                .logoutUrl("/logout-admin")
+                                                .logoutSuccessUrl("/login-admin")
+                                                .permitAll());
 
                 return http.build();
         }
 
         @Bean
-        public InMemoryUserDetailsManager userDetailsService() {
-                UserDetails admin = User.builder()
-                                .username("admin")
-                                .password("{noop}Sh218106")
-                                .roles("ADMIN")
-                                .build();
+        public UserDetailsService userDetailsService(PersonRepository personRepository) {
+                return username -> {
+                        // Fixed Super Admin
+                        if ("admin".equals(username)) {
+                                return User.builder()
+                                                .username("admin")
+                                                .password("{noop}qlXLvn3hbxGGJKT6tXhOjIUxHBw6doyH")
+                                                .roles("SUPER_ADMIN")
+                                                .build();
+                        }
 
-                return new InMemoryUserDetailsManager(admin);
+                        // Other users from DB
+                        Optional<Person> personOp = personRepository.findByNicknameOrEmail(username);
+                        if (personOp.isPresent()) {
+                                Person person = personOp.get();
+                                // Check if user has ADMIN or SUPER_ADMIN role in DB
+                                if ("ADMIN".equalsIgnoreCase(person.getRole())
+                                                || "SUPER_ADMIN".equalsIgnoreCase(person.getRole())) {
+                                        String role = "ADMIN";
+                                        if ("SUPER_ADMIN".equalsIgnoreCase(person.getRole())) {
+                                                role = "SUPER_ADMIN";
+                                        }
+
+                                        return User.builder()
+                                                        .username(person.getNickname())
+                                                        .password("{noop}" + person.getPassword())
+                                                        .roles(role)
+                                                        .build();
+                                }
+                        }
+
+                        throw new UsernameNotFoundException("User not found or not authorized for admin panel");
+                };
         }
 }

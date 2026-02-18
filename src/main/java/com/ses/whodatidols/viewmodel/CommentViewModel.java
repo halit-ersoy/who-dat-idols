@@ -102,4 +102,34 @@ public class CommentViewModel {
     public void setProfilePhoto(String profilePhoto) {
         this.profilePhoto = profilePhoto;
     }
+
+    private boolean approved;
+
+    public boolean isApproved() {
+        return approved;
+    }
+
+    public void setApproved(boolean approved) {
+        this.approved = approved;
+    }
+
+    private java.util.UUID contentId;
+
+    public java.util.UUID getContentId() {
+        return contentId;
+    }
+
+    public void setContentId(java.util.UUID contentId) {
+        this.contentId = contentId;
+    }
+
+    private String contentName;
+
+    public String getContentName() {
+        return contentName;
+    }
+
+    public void setContentName(String contentName) {
+        this.contentName = contentName;
+    }
 }

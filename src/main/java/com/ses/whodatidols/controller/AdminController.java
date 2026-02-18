@@ -2,8 +2,12 @@ package com.ses.whodatidols.controller;
 
 import com.ses.whodatidols.model.Movie;
 import com.ses.whodatidols.model.Series;
+import com.ses.whodatidols.model.Person;
 import com.ses.whodatidols.model.VideoSource;
+import com.ses.whodatidols.repository.PersonRepository;
 import com.ses.whodatidols.repository.VideoSourceRepository;
+import com.ses.whodatidols.repository.CommentRepository;
+import com.ses.whodatidols.viewmodel.CommentViewModel;
 import com.ses.whodatidols.service.MovieService;
 import com.ses.whodatidols.service.SeriesService;
 import com.ses.whodatidols.service.TvMazeService;
@@ -20,11 +24,15 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 
 import java.nio.file.*;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/admin")
@@ -35,6 +43,8 @@ public class AdminController {
     private final TvMazeService tvMazeService;
     private final JdbcTemplate jdbcTemplate;
     private final VideoSourceRepository videoSourceRepository;
+    private final PersonRepository personRepository;
+    private final CommentRepository commentRepository;
 
     @Value("${media.source.trailers.path}")
     private String trailersPath;
@@ -49,16 +59,20 @@ public class AdminController {
     private String moviesPath;
 
     @Value("${media.source.soap_operas.path}")
-    private String soapOperasPath; // Keep prop name same for now
+    private String soapOperasPath;
 
     @Autowired
     public AdminController(MovieService movieService, SeriesService seriesService,
-            TvMazeService tvMazeService, JdbcTemplate jdbcTemplate, VideoSourceRepository videoSourceRepository) {
+            TvMazeService tvMazeService, JdbcTemplate jdbcTemplate,
+            VideoSourceRepository videoSourceRepository, PersonRepository personRepository,
+            CommentRepository commentRepository) {
         this.movieService = movieService;
         this.seriesService = seriesService;
         this.tvMazeService = tvMazeService;
         this.jdbcTemplate = jdbcTemplate;
         this.videoSourceRepository = videoSourceRepository;
+        this.personRepository = personRepository;
+        this.commentRepository = commentRepository;
     }
 
     @GetMapping("/panel")
@@ -111,12 +125,6 @@ public class AdminController {
             if (file == null || file.isEmpty()) {
                 return ResponseEntity.badRequest().body("Film dosyası seçilmelidir.");
             }
-            // Note: MovieService also likely needs updates for DB column names if it uses
-            // raw SQL,
-            // but we are focusing on Series/Episode/Hero for now. assuming Movie table was
-            // NOT renamed?
-            // Actually I did NOT rename Movie table.
-
             movieService.saveMovieWithFile(movie, file, image, summary);
 
             if ((image == null || image.isEmpty()) && imageUrl != null && !imageUrl.isEmpty()) {
@@ -181,7 +189,6 @@ public class AdminController {
             }
 
             seriesInfo.setSummary(summary);
-            // Episode mode doesn't need image here, handled inside saveEpisodeWithFile
             UUID episodeId = seriesService.saveEpisodeWithFile(seriesInfo, season, episode, file, image,
                     existingSeriesId);
 
@@ -208,6 +215,20 @@ public class AdminController {
             return ResponseEntity.ok("Bölüm silindi.");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Silinemedi: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/update-episode")
+    public ResponseEntity<String> updateEpisode(
+            @RequestParam("episodeId") UUID episodeId,
+            @RequestParam("season") int season,
+            @RequestParam("episodeNum") int episodeNum,
+            @RequestParam(value = "file", required = false) MultipartFile file) {
+        try {
+            seriesService.updateEpisode(episodeId, season, episodeNum, file);
+            return ResponseEntity.ok("{\"id\": \"" + episodeId + "\", \"message\": \"Bölüm güncellendi.\"}");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Bölüm güncelleme hatası: " + e.getMessage());
         }
     }
 
@@ -262,21 +283,23 @@ public class AdminController {
     }
 
     private ResponseEntity<List<Map<String, Object>>> getHeroVideos() {
-        // Ensure column exists for existing installations
         try {
             jdbcTemplate.execute(
                     "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Hero') AND name = 'sortOrder') ALTER TABLE Hero ADD sortOrder INT DEFAULT 0");
         } catch (Exception e) {
         }
 
-        // Updated SQL for renamed tables and columns
         String robustSql = "SELECT * FROM (" +
-                "  SELECT H.[ID], M.[name], M.[category], H.[CustomSummary] as _content, 'Movie' AS [type], H.sortOrder "
+                "  SELECT H.[ID], M.[name], " +
+                "  (SELECT STRING_AGG(C.Name, ', ') FROM Categories C JOIN MovieCategories MC ON MC.CategoryID = C.ID WHERE MC.MovieID = M.ID) as [category], "
                 +
+                "  H.[CustomSummary] as _content, 'Movie' AS [type], H.sortOrder " +
                 "  FROM Hero H INNER JOIN Movie M ON H.ReferenceId = M.ID " +
                 "  UNION ALL " +
-                "  SELECT H.[ID], S.[name], S.[category], H.[CustomSummary] as _content, 'SoapOpera' AS [type], H.sortOrder "
+                "  SELECT H.[ID], S.[name], " +
+                "  (SELECT STRING_AGG(C.Name, ', ') FROM Categories C JOIN SeriesCategories SC ON SC.CategoryID = C.ID WHERE SC.SeriesID = S.ID) as [category], "
                 +
+                "  H.[CustomSummary] as _content, 'SoapOpera' AS [type], H.sortOrder " +
                 "  FROM Hero H INNER JOIN Series S ON H.ReferenceId = S.ID " +
                 ") AS Result ORDER BY sortOrder ASC";
 
@@ -299,31 +322,19 @@ public class AdminController {
             }
 
             if ("Film".equalsIgnoreCase(type) || "Movie".equalsIgnoreCase(type)) {
-                jdbcTemplate.queryForMap("SELECT name, category, Summary FROM Movie WHERE ID = ?",
+                jdbcTemplate.queryForMap("SELECT name FROM Movie WHERE ID = ?",
                         contentId.toString());
                 type = "Movie";
             } else {
-                // Query renamed Series table
-                jdbcTemplate.queryForMap("SELECT name, category, Summary FROM Series WHERE ID = ?",
+                jdbcTemplate.queryForMap("SELECT name FROM Series WHERE ID = ?",
                         contentId.toString());
-                type = "SoapOpera"; // Keep type string legacy for now or update?
-                                    // Frontend likely sends/expects 'SoapOpera'
+                type = "SoapOpera";
             }
-
-            // Execute stored procedure - assuming it handles the new table name or we
-            // update it?
-            // Actually 'AddHeroVideo' stored proc likely inserts into 'HeroVideo' (old
-            // name).
-            // We renamed the table 'HeroVideo' to 'Hero'.
-            // Stored procedure usually DOES NOT auto-update. We should use direct SQL or
-            // update SP.
-            // I'll use direct SQL insertion to avoid dependency on SP that might be broken.
 
             jdbcTemplate.update(
                     "INSERT INTO Hero (ID, ReferenceId, CustomSummary, sortOrder) VALUES (NEWID(), ?, ?, (SELECT ISNULL(MAX(sortOrder), 0) + 1 FROM Hero))",
                     contentId, content);
 
-            // We need the ID of the inserted row
             String heroIdStr = jdbcTemplate.queryForObject(
                     "SELECT TOP 1 CAST(ID AS NVARCHAR(36)) FROM Hero WHERE ReferenceId = ? ORDER BY sortOrder DESC",
                     String.class, contentId.toString());
@@ -381,22 +392,11 @@ public class AdminController {
     public ResponseEntity<String> addSource(@RequestBody VideoSource source) {
         try {
             if (source.getContentId() == null) {
-                System.err.println("DEBUG: addSource FAILED - contentId is NULL");
                 return ResponseEntity.badRequest().body("Hata: ContentId boş olamaz.");
             }
-
-            System.out.println("DEBUG: addSource called for contentId=" + source.getContentId());
-            System.out.println("DEBUG: sourceName=" + source.getSourceName());
-            System.out.println("DEBUG: sourceUrl=" + (source.getSourceUrl() != null
-                    ? source.getSourceUrl().substring(0, Math.min(20, source.getSourceUrl().length())) + "..."
-                    : "null"));
-
             videoSourceRepository.save(source);
-
-            System.out.println("DEBUG: addSource success for name=" + source.getSourceName());
             return ResponseEntity.ok("Kaynak eklendi.");
         } catch (Exception e) {
-            System.err.println("DEBUG: addSource error: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
         }
@@ -503,7 +503,7 @@ public class AdminController {
             if (!Files.exists(targetPath)) {
                 Files.createDirectories(targetPath);
             }
-            String extension = ".jpg"; // Default
+            String extension = ".jpg";
             String originalName = image.getOriginalFilename();
             if (originalName != null && originalName.lastIndexOf(".") > 0) {
                 extension = originalName.substring(originalName.lastIndexOf("."));
@@ -537,6 +537,116 @@ public class AdminController {
             return ResponseEntity.ok("Beklenen bölüm silindi.");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Silme hatası: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/view-stats")
+    public ResponseEntity<List<Map<String, Object>>> getViewStats() {
+        String sql = """
+                SELECT ID, Name, 'Movie' as Type, viewCount FROM Movie
+                UNION ALL
+                SELECT ID, Name, 'SoapOpera' as Type, viewCount FROM Series
+                ORDER BY viewCount DESC, Name ASC
+                """;
+        return ResponseEntity.ok(jdbcTemplate.queryForList(sql));
+    }
+
+    @PostMapping("/update-view-count")
+    public ResponseEntity<String> updateViewCount(
+            @RequestParam("id") UUID id,
+            @RequestParam("type") String type,
+            @RequestParam("count") int count) {
+        try {
+            String tableName = "Movie".equalsIgnoreCase(type) ? "Movie" : "Series";
+            jdbcTemplate.update("UPDATE " + tableName + " SET viewCount = ? WHERE ID = ?", count, id.toString());
+            return ResponseEntity.ok("İzlenme sayısı güncellendi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Güncelleme hatası: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<List<Person>> getAllUsers() {
+        return ResponseEntity.ok(personRepository.findAllUsers());
+    }
+
+    @PostMapping("/ban-user")
+    public ResponseEntity<String> toggleBanUser(
+            @RequestParam("userId") UUID userId,
+            @RequestParam("ban") boolean ban,
+            @RequestParam(value = "reason", required = false) String reason) {
+        try {
+            personRepository.toggleUserBanStatus(userId, ban, reason);
+            return ResponseEntity.ok(ban ? "Kullanıcı banlandı." : "Kullanıcı banı kaldırıldı.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<Map<String, Object>> getCurrentUser(Authentication authentication) {
+        if (authentication == null)
+            return ResponseEntity.status(401).build();
+
+        Map<String, Object> user = new HashMap<>();
+        user.put("username", authentication.getName());
+        user.put("roles", authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList()));
+
+        return ResponseEntity.ok(user);
+    }
+
+    @PostMapping("/update-role")
+    public ResponseEntity<String> updateUserRole(
+            @RequestParam("userId") UUID userId,
+            @RequestParam("role") String role) {
+        try {
+            personRepository.updateUserRole(userId, role);
+            return ResponseEntity.ok("Kullanıcı rolü güncellendi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/delete-user")
+    public ResponseEntity<String> deleteUser(@RequestParam("userId") UUID userId) {
+        try {
+            personRepository.deleteUser(userId);
+            return ResponseEntity.ok("Kullanıcı başarıyla silindi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+        }
+    }
+
+    // Comment Moderation Endpoints
+
+    @GetMapping("/comments/pending")
+    public ResponseEntity<List<CommentViewModel>> getPendingComments() {
+        try {
+            return ResponseEntity.ok(commentRepository.getPendingComments());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @PostMapping("/comments/approve")
+    public ResponseEntity<String> approveComment(@RequestParam("commentId") UUID commentId) {
+        try {
+            commentRepository.approveComment(commentId);
+            return ResponseEntity.ok("Yorum onaylandı.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/comments/reject")
+    public ResponseEntity<String> rejectComment(@RequestParam("commentId") UUID commentId) {
+        try {
+            commentRepository.rejectComment(commentId);
+            return ResponseEntity.ok("Yorum reddedildi/silindi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
         }
     }
 }

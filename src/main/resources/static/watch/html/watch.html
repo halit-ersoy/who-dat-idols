@@ -81,7 +81,7 @@
             </div>
 
             <!-- Episode Selection Drawer -->
-            <div class="episode-selection-section">
+            <div class="episode-selection-section" id="episodeSection">
                 <div class="episode-toggle">
                     <span>Bölüm Listesi</span>
                     <i class="fas fa-chevron-down"></i>
@@ -165,7 +165,7 @@
                                     <!-- Cast members will be added dynamically -->
                                 </div>
                             </div>
-                            <div class="details-section">
+                            <div class="details-section" id="seasonSection">
                                 <h3>Sezon & Bölüm Bilgisi</h3>
                                 <div class="season-info" id="seasonInfo">
                                     <span id="seasonNumber">Sezon 1</span>
@@ -180,7 +180,7 @@
                 </div>
             </div>
 
-            <div class="episode-navigation">
+            <div class="episode-navigation" id="episodeNav">
                 <button id="prevEpisode" class="nav-button" disabled><i class="fas fa-step-backward"></i> Önceki
                     Bölüm</button>
                 <button id="nextEpisode" class="nav-button"><i class="fas fa-step-forward"></i> Sonraki Bölüm</button>
@@ -216,6 +216,10 @@
                     <form id="commentForm">
                         <textarea id="commentText" placeholder="Bu dizi hakkında düşünceleriniz neler?"></textarea>
                         <div class="form-actions">
+                            <label class="spoiler-toggle">
+                                <input type="checkbox" id="spoilerCheck">
+                                <span class="toggle-text"><i class="fas fa-mask"></i> Spoiler İçerir</span>
+                            </label>
                             <button type="submit" class="comment-submit-btn"><i class="fas fa-paper-plane"></i> Yorum
                                 Yap</button>
                         </div>

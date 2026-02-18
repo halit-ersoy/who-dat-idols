@@ -258,6 +258,52 @@ public class SeriesService {
         return episodeId;
     }
 
+    @Transactional
+    public void updateEpisode(UUID episodeId, int seasonNumber, int episodeNumber, MultipartFile file)
+            throws IOException {
+        Episode ep = repository.findEpisodeById(episodeId);
+        if (ep == null)
+            throw new RuntimeException("Bölüm bulunamadı.");
+
+        Series parent = repository.findSeriesByEpisodeId(episodeId);
+        if (parent != null) {
+            // Check if season or episode number changed to update XML
+            if (ep.getSeasonNumber() != seasonNumber || ep.getEpisodeNumber() != episodeNumber) {
+                String currentXml = parent.getEpisodeMetadataXml();
+                String removedXml = removeEpisodeFromXML(currentXml, episodeId.toString());
+                String updatedXml = injectEpisodeToXML(removedXml, seasonNumber, episodeNumber, episodeId.toString());
+                repository.updateSeriesXML(parent.getId(), updatedXml);
+            }
+        }
+
+        ep.setSeasonNumber(seasonNumber);
+        ep.setEpisodeNumber(episodeNumber);
+
+        if (file != null && !file.isEmpty()) {
+            Path uploadPath = Paths.get(soapOperasPath).toAbsolutePath().normalize();
+            String fileName = episodeId.toString() + ".mp4";
+            Path filePath = uploadPath.resolve(fileName);
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            int duration = ffmpegUtils.getVideoDurationInMinutes(filePath.toString());
+            if (duration > 0)
+                ep.setDurationMinutes(duration);
+
+            // Automate HLS Conversion
+            final String input = filePath.toString();
+            final String output = uploadPath.resolve("hls").resolve(episodeId.toString()).toString();
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    ffmpegUtils.convertToHls(input, output);
+                } catch (Exception e) {
+                    System.err.println("HLS conversion failed (Update): " + e.getMessage());
+                }
+            });
+        }
+
+        repository.updateEpisode(ep);
+    }
+
     private void saveImage(UUID id, MultipartFile image) throws IOException {
         Path uploadPath = Paths.get(soapOperasPath).toAbsolutePath().normalize();
         if (!Files.exists(uploadPath))
@@ -406,5 +452,9 @@ public class SeriesService {
 
     public List<Episode> getTop6EpisodesByCount() {
         return repository.findTop6EpisodesByCount();
+    }
+
+    public List<Series> getTop6SeriesByCount() {
+        return repository.findTop6SeriesByCount();
     }
 }

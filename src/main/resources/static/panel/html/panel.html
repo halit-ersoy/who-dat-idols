@@ -39,6 +39,15 @@
                 <a href="#archive-section" class="nav-link" data-section="archive-section">
                     <i class="fas fa-database"></i> Arşiv & Liste
                 </a>
+                <a href="#view-management-section" class="nav-link" data-section="view-management-section">
+                    <i class="fas fa-eye"></i> İzlenme Yönetimi
+                </a>
+                <a href="#comments-section" class="nav-link" data-section="comments-section">
+                    <i class="fas fa-comments"></i> Yorum Yönetimi
+                </a>
+                <a href="#user-section" class="nav-link" data-section="user-section">
+                    <i class="fas fa-users"></i> Kullanıcılar
+                </a>
             </nav>
         </aside>
 
@@ -254,8 +263,14 @@
                     </div>
                     <form id="seriesForm" class="admin-form">
                         <input type="hidden" id="seriesId">
+                        <input type="hidden" id="episodeId">
+
+                        <div id="seriesFormStatus" class="form-status-badge" style="display: none;">
+                            <span>İşlem: <strong id="seriesFormModeText">-</strong></span>
+                        </div>
+
                         <div class="form-grid">
-                            <div class="form-group full-width">
+                            <div class="form-group full-width" id="seriesModeGroup">
                                 <label>İşlem Tipi Seçin</label>
                                 <div class="mode-toggle-container">
                                     <div class="mode-toggle">
@@ -292,7 +307,7 @@
                             </div>
 
                             <!-- Yeni Dizi Alanları (Gruplandırıldı) -->
-                            <div id="newSeriesFields">
+                            <div id="newSeriesFields" class="full-width">
                                 <div class="form-group">
                                     <label for="seriesName">Dizi Adı</label>
                                     <div class="input-with-action">
@@ -323,72 +338,75 @@
                                         <option value="Türkçe">Türkçe</option>
                                         <option value="İngilizce">İngilizce</option>
                                         <option value="Japonca">Japonca</option>
+                                        <option value="Tayca">Tayca</option>
                                         <option value="Çince">Çince</option>
                                     </select>
                                 </div>
-                            </div>
-
-                            <!-- Common Poster Field -->
-                            <div class="form-group full-width">
-                                <label>Dizi / Sezon Afişi</label>
-                                <div class="poster-control-container">
-                                    <div class="poster-preview" id="seriesPosterPreview">
-                                        <i class="fas fa-image"></i>
-                                    </div>
-                                    <div class="poster-inputs">
-                                        <div class="premium-file-input compact" id="seriesImageContainer">
-                                            <input type="file" id="seriesImage" accept="image/*"
-                                                onchange="handleFileSelect(this)">
-                                            <label for="seriesImage" class="file-label">
-                                                <i class="fas fa-image"></i>
-                                                <span class="file-text">Görsel Seç</span>
-                                                <span class="file-name">Dosya seçilmedi</span>
-                                            </label>
-                                            <div class="file-info">* Yeni dizi için yükleyin veya mevcut olanı kalsın.
-                                            </div>
+                                <!-- Common Poster Field -->
+                                <div class="form-group full-width" id="seriesPosterGroup">
+                                    <label>Dizi / Sezon Afişi</label>
+                                    <div class="poster-control-container">
+                                        <div class="poster-preview" id="seriesPosterPreview">
+                                            <i class="fas fa-image"></i>
                                         </div>
-                                        <div class="url-input-wrapper">
-                                            <div class="input-with-icon">
-                                                <i class="fas fa-link"></i>
-                                                <input type="text" id="seriesImageUrl"
-                                                    placeholder="Resim URL'si yapıştırın...">
+                                        <div class="poster-inputs">
+                                            <div class="premium-file-input compact" id="seriesImageContainer">
+                                                <input type="file" id="seriesImage" accept="image/*"
+                                                    onchange="handleFileSelect(this)">
+                                                <label for="seriesImage" class="file-label">
+                                                    <i class="fas fa-image"></i>
+                                                    <span class="file-text">Görsel Seç</span>
+                                                    <span class="file-name">Dosya seçilmedi</span>
+                                                </label>
+                                                <div class="file-info">* Yeni dizi için yükleyin veya kalsın.</div>
+                                            </div>
+                                            <div class="url-input-wrapper">
+                                                <div class="input-with-icon">
+                                                    <i class="fas fa-link"></i>
+                                                    <input type="text" id="seriesImageUrl"
+                                                        placeholder="Resim URL'si yapıştırın...">
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="form-group">
-                                <label for="seasonNum">Sezon No</label>
-                                <input type="number" id="seasonNum" value="1" min="1" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="episodeNum">Bölüm No</label>
-                                <input type="number" id="episodeNum" value="1" min="1" required>
-                            </div>
 
-                            <!-- Bölüm Dosyası (Her iki durumda da gerekli) -->
-                            <div class="form-group full-width">
-                                <label for="seriesFile">Bölüm Videosu</label>
-                                <div class="premium-file-input" id="seriesFileContainer">
-                                    <input type="file" id="seriesFile" accept="video/*" required
-                                        onchange="handleFileSelect(this)">
-                                    <label for="seriesFile" class="file-label">
-                                        <i class="fas fa-cloud-upload-alt"></i>
-                                        <span class="file-text">Bölüm Dosyasını Seç veya Sürükle</span>
-                                        <span class="file-name">Dosya seçilmedi</span>
-                                    </label>
-                                    <div class="file-info">* Düzenleme modunda boş bırakılabilir.</div>
+                            <div id="episodeFields" class="full-width">
+                                <div class="form-group">
+                                    <label for="seasonNum">Sezon No</label>
+                                    <input type="number" id="seasonNum" value="1" min="1" required>
                                 </div>
-                            </div>
-                            <div class="form-group full-width">
-                                <label><i class="fas fa-external-link-alt"></i> Dış Kaynaklar (Iframe Linkleri)</label>
-                                <div id="seriesSourcesList" class="external-sources-container">
-                                    <!-- Dinamik olarak eklenecek -->
+                                <div class="form-group">
+                                    <label for="episodeNum">Bölüm No</label>
+                                    <input type="number" id="episodeNum" value="1" min="1" required>
                                 </div>
-                                <button type="button" class="btn btn-sm btn-secondary btn-add-source"
-                                    onclick="addSourceField('series')">
-                                    <i class="fas fa-plus"></i> Kaynak Ekle
-                                </button>
+
+                                <!-- Bölüm Dosyası (Her iki durumda da gerekli) -->
+                                <div class="form-group full-width" id="episodeVideoGroup">
+                                    <label for="seriesFile">Bölüm Videosu</label>
+                                    <div class="premium-file-input" id="seriesFileContainer">
+                                        <input type="file" id="seriesFile" accept="video/*" required
+                                            onchange="handleFileSelect(this)">
+                                        <label for="seriesFile" class="file-label">
+                                            <i class="fas fa-cloud-upload-alt"></i>
+                                            <span class="file-text">Bölüm Dosyasını Seç veya Sürükle</span>
+                                            <span class="file-name">Dosya seçilmedi</span>
+                                        </label>
+                                        <div class="file-info">* Düzenleme modunda boş bırakılabilir.</div>
+                                    </div>
+                                </div>
+                                <div class="form-group full-width" id="episodeSourcesGroup">
+                                    <label><i class="fas fa-external-link-alt"></i> Dış Kaynaklar (Iframe
+                                        Linkleri)</label>
+                                    <div id="seriesSourcesList" class="external-sources-container">
+                                        <!-- Dinamik olarak eklenecek -->
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-secondary btn-add-source"
+                                        onclick="addSourceField('series')">
+                                        <i class="fas fa-plus"></i> Kaynak Ekle
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -654,6 +672,93 @@
                     </div>
                 </div>
             </section>
+            <!-- VIEW MANAGEMENT SECTION -->
+            <section id="view-management-section" class="admin-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-eye"></i> İzlenme Yönetimi</h2>
+                        <div class="search-archive-wrapper">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="viewStatsSearch" placeholder="İçerik ara...">
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table" id="viewStatsTable">
+                            <thead>
+                                <tr>
+                                    <th>İçerik Adı</th>
+                                    <th>Tip</th>
+                                    <th>İzlenme Sayısı</th>
+                                    <th>İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- View stats will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- COMMENTS SECTION -->
+            <section id="comments-section" class="admin-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-comments"></i> Yorum Yönetimi (Onay Bekleyenler)</h2>
+                        <button id="refreshCommentsBtn" class="btn btn-sm btn-secondary" style="margin-left: auto;">
+                            <i class="fas fa-sync-alt"></i> Yenile
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table" id="commentsTable">
+                            <thead>
+                                <tr>
+                                    <th>Kullanıcı</th>
+                                    <th>Yorum</th>
+                                    <th>İçerik</th>
+                                    <th>Tarih</th>
+                                    <th>Durum</th>
+                                    <th>İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Pending comments will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- USER MANAGEMENT SECTION -->
+            <section id="user-section" class="admin-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-users"></i> Kullanıcı Yönetimi</h2>
+                        <div class="search-archive-wrapper">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="userSearch" placeholder="Kullanıcı ara (Nickname veya Email)...">
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table" id="userTable">
+                            <thead>
+                                <tr>
+                                    <th>Nickname</th>
+                                    <th>Email</th>
+                                    <th>İsim Soyisim</th>
+                                    <th>Rol</th>
+                                    <th>Durum</th>
+                                    <th>Ban Nedeni</th>
+                                    <th>İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Users will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
@@ -666,6 +771,30 @@
             </div>
             <div id="tmdbResults" class="tmdb-results-grid">
                 <!-- Sonuçlar buraya gelecek -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Ban Reason Modal -->
+    <div id="banModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Kullanıcıyı Yasakla</h2>
+                <button type="button" class="close-ban-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="banUserPlaceholder"><strong>-</strong> kullanıcısını yasaklamak üzeresiniz.</p>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="banReason">Yasaklama Nedeni</label>
+                    <textarea id="banReason" rows="3" placeholder="Yasaklama nedenini giriniz..." class="form-control"
+                        style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); font-family: inherit; font-size: 14px; outline: none; transition: all 0.3s ease;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn btn-secondary close-ban-modal"
+                    style="padding: 8px 20px; border-radius: 6px; border: none; cursor: pointer; background: rgba(255,255,255,0.1); color: #fff;">İptal</button>
+                <button type="button" id="confirmBanBtn" class="btn btn-danger"
+                    style="padding: 8px 20px; border-radius: 6px; border: none; cursor: pointer; background: #dc3545; color: #fff;">Yasakla</button>
             </div>
         </div>
     </div>
