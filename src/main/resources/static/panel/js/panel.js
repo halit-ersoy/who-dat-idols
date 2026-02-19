@@ -1395,6 +1395,42 @@
     let currentFetchType = 'Movie';
     let lastFetchedPosterUrl = "";
 
+    window.translateText = function (elementId) {
+        const textarea = document.getElementById(elementId);
+        const text = textarea.value.trim();
+        const btn = textarea.parentElement.querySelector('.btn-translate') || document.querySelector(`button[onclick="translateText('${elementId}')"]`);
+
+        if (!text) {
+            alert("Lütfen önce çevrilecek bir metin girin veya TVMaze'den getirin.");
+            return;
+        }
+
+        const originalBtnHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Çevriliyor...';
+
+        fetch('/admin/translate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `text=${encodeURIComponent(text)}`
+        })
+            .then(res => res.text())
+            .then(translatedText => {
+                if (translatedText.startsWith("Çeviri hatası:")) {
+                    alert(translatedText);
+                } else {
+                    textarea.value = translatedText;
+                }
+            })
+            .catch(err => alert("Hata: " + err))
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = originalBtnHtml;
+            });
+    };
+
     document.getElementById('fetchMovieBtn').addEventListener('click', () => {
         const query = document.getElementById('movieName').value.trim();
         if (!query) return alert("Lütfen aramak için bir film adı girin!");

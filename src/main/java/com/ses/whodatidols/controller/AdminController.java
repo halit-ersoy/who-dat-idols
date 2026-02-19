@@ -11,6 +11,7 @@ import com.ses.whodatidols.viewmodel.CommentViewModel;
 import com.ses.whodatidols.service.MovieService;
 import com.ses.whodatidols.service.SeriesService;
 import com.ses.whodatidols.service.TvMazeService;
+import com.ses.whodatidols.service.TranslationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -46,6 +47,7 @@ public class AdminController {
     private final PersonRepository personRepository;
     private final CommentRepository commentRepository;
     private final com.ses.whodatidols.repository.HeroRepository heroRepository;
+    private final TranslationService translationService;
 
     @Value("${media.source.trailers.path}")
     private String trailersPath;
@@ -66,7 +68,8 @@ public class AdminController {
     public AdminController(MovieService movieService, SeriesService seriesService,
             TvMazeService tvMazeService, JdbcTemplate jdbcTemplate,
             VideoSourceRepository videoSourceRepository, PersonRepository personRepository,
-            CommentRepository commentRepository, com.ses.whodatidols.repository.HeroRepository heroRepository) {
+            CommentRepository commentRepository, com.ses.whodatidols.repository.HeroRepository heroRepository,
+            TranslationService translationService) {
         this.movieService = movieService;
         this.seriesService = seriesService;
         this.tvMazeService = tvMazeService;
@@ -75,6 +78,7 @@ public class AdminController {
         this.personRepository = personRepository;
         this.commentRepository = commentRepository;
         this.heroRepository = heroRepository;
+        this.translationService = translationService;
     }
 
     @GetMapping("/panel")
@@ -624,6 +628,15 @@ public class AdminController {
             return ResponseEntity.ok("Yorum onaylandı.");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/translate")
+    public ResponseEntity<String> translate(@RequestParam("text") String text) {
+        try {
+            return ResponseEntity.ok(translationService.translateToTurkish(text));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Çeviri hatası: " + e.getMessage());
         }
     }
 

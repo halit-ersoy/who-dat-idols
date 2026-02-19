@@ -236,6 +236,47 @@ body {
     margin-left: 5px;
 }
 
+.label-with-action {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.label-with-action label {
+    margin-bottom: 0 !important;
+}
+
+.btn-translate {
+    background: rgba(30, 215, 96, 0.1);
+    color: var(--primary);
+    border: 1px solid rgba(30, 215, 96, 0.3);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-translate:hover {
+    background: var(--primary);
+    color: #000;
+    box-shadow: 0 0 10px rgba(30, 215, 96, 0.4);
+}
+
+.btn-translate:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-translate i {
+    font-size: 0.85rem;
+}
+
 .form-group input,
 .form-group select,
 .form-group textarea {
