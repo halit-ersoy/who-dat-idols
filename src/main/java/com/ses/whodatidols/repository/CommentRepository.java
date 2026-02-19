@@ -89,14 +89,18 @@ public class CommentRepository {
         String sql = """
                     INSERT INTO Comments (ContentId, UserId, Text, Spoiler, Nickname, ParentId, IsApproved)
                     SELECT ?, ID, ?, ?, Nickname, ?, 0
-                    FROM Person WHERE cookie = ?
+                    FROM Person WHERE cookie = ? AND isBanned = 0
                 """;
-        jdbcTemplate.update(sql,
+        int affected = jdbcTemplate.update(sql,
                 contentId.toString(),
                 text,
                 spoiler,
                 parentId != null ? parentId.toString() : null,
                 cookie);
+
+        if (affected == 0) {
+            throw new RuntimeException("Unauthorized or Banned");
+        }
     }
 
     public List<CommentViewModel> getPendingComments() {
@@ -153,12 +157,12 @@ public class CommentRepository {
     }
 
     public void likeComment(UUID commentId, String cookie) {
-        String userIdSql = "SELECT ID FROM Person WHERE cookie = ?";
+        String userSql = "SELECT ID FROM Person WHERE cookie = ? AND isBanned = 0";
         try {
-            UUID userId = jdbcTemplate.queryForObject(userIdSql, UUID.class, cookie);
+            UUID userId = jdbcTemplate.queryForObject(userSql, UUID.class, cookie);
 
             if (userId == null)
-                return;
+                throw new RuntimeException("Unauthorized or Banned");
 
             String checkSql = "SELECT COUNT(*) FROM CommentLikes WHERE CommentId = ? AND UserId = ?";
             Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, commentId.toString(),
@@ -177,11 +181,46 @@ public class CommentRepository {
         }
     }
 
+    public String getUserRoleByCookie(String cookie) {
+        try {
+            return jdbcTemplate.queryForObject("SELECT Role FROM Person WHERE cookie = ?", String.class, cookie);
+        } catch (Exception e) {
+            return "USER";
+        }
+    }
+
     @org.springframework.transaction.annotation.Transactional
-    public void deleteComment(UUID commentId, String cookie) {
+    public boolean deleteComment(UUID commentId, String cookie) {
+        String role = getUserRoleByCookie(cookie);
+        boolean isAdmin = "ADMIN".equalsIgnoreCase(role) || "SUPER_ADMIN".equalsIgnoreCase(role);
+
+        // Find comment owner
+        String ownerSql = "SELECT UserId FROM Comments WHERE ID = ?";
+        UUID ownerId;
+        try {
+            ownerId = UUID.fromString(jdbcTemplate.queryForObject(ownerSql, String.class, commentId.toString()));
+        } catch (Exception e) {
+            return false; // Comment not found
+        }
+
+        // Check ownership if not admin
+        if (!isAdmin) {
+            String requesterIdSql = "SELECT ID FROM Person WHERE cookie = ?";
+            UUID requesterId;
+            try {
+                requesterId = UUID.fromString(jdbcTemplate.queryForObject(requesterIdSql, String.class, cookie));
+            } catch (Exception e) {
+                return false; // Requester not found or invalid cookie
+            }
+
+            if (!ownerId.equals(requesterId)) {
+                return false; // Not the owner
+            }
+        }
+
         String deleteLikesSql = """
                     WITH CommentTree AS (
-                        SELECT ID FROM Comments WHERE ID = ? AND UserId = (SELECT ID FROM Person WHERE cookie = ?)
+                        SELECT ID FROM Comments WHERE ID = ?
                         UNION ALL
                         SELECT c.ID FROM Comments c
                         INNER JOIN CommentTree ct ON c.ParentId = ct.ID
@@ -191,7 +230,7 @@ public class CommentRepository {
 
         String deleteCommentsSql = """
                     WITH CommentTree AS (
-                        SELECT ID FROM Comments WHERE ID = ? AND UserId = (SELECT ID FROM Person WHERE cookie = ?)
+                        SELECT ID FROM Comments WHERE ID = ?
                         UNION ALL
                         SELECT c.ID FROM Comments c
                         INNER JOIN CommentTree ct ON c.ParentId = ct.ID
@@ -199,8 +238,9 @@ public class CommentRepository {
                     DELETE FROM Comments WHERE ID IN (SELECT ID FROM CommentTree)
                 """;
 
-        jdbcTemplate.update(deleteLikesSql, commentId.toString(), cookie);
-        jdbcTemplate.update(deleteCommentsSql, commentId.toString(), cookie);
+        jdbcTemplate.update(deleteLikesSql, commentId.toString());
+        int affectedRows = jdbcTemplate.update(deleteCommentsSql, commentId.toString());
+        return affectedRows > 0;
     }
 
     private static class CommentRowMapper implements RowMapper<CommentViewModel> {

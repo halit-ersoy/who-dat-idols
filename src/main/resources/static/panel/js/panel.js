@@ -2089,7 +2089,7 @@
 
         commentsTableBody.innerHTML = '<tr><td colspan="6" class="text-center">Yükleniyor...</td></tr>';
 
-        fetch('/admin/comments/pending')
+        fetch('/admin/comment-moderation/pending')
             .then(res => res.json())
             .then(comments => {
                 commentsTableBody.innerHTML = '';
@@ -2138,7 +2138,7 @@
     window.approveComment = function (id) {
         if (!confirm("Bu yorumu onaylamak istiyor musunuz?")) return;
 
-        fetch(`/admin/comments/approve?commentId=${id}`, { method: 'POST' })
+        fetch(`/admin/comment-moderation/approve?commentId=${id}`, { method: 'POST' })
             .then(res => {
                 if (res.ok) {
                     // Remove row or refresh
@@ -2153,7 +2153,7 @@
     window.rejectComment = function (id) {
         if (!confirm("Bu yorumu reddetmek (silmek) istediğinize emin misiniz?")) return;
 
-        fetch(`/admin/comments/reject?commentId=${id}`, { method: 'DELETE' })
+        fetch(`/admin/comment-moderation/reject?commentId=${id}`, { method: 'DELETE' })
             .then(res => {
                 if (res.ok) {
                     fetchPendingComments();

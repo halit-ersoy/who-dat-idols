@@ -520,3 +520,35 @@
 .btn-reveal:hover {
     background: #ff4d6d;
 }
+
+/* Login Warning for unauthenticated users */
+.login-warning {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    margin-bottom: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    animation: fadeIn 0.8s ease;
+}
+
+.login-warning i {
+    font-size: 40px;
+    color: #1ed760;
+    opacity: 0.8;
+}
+
+.login-warning p {
+    color: #ccc;
+    font-size: 16px;
+    margin: 0;
+}
+
+.comment-form.hidden {
+    display: none;
+}

@@ -1,5 +1,6 @@
 // comments.js
-// comments.js
+import { isUserLoggedIn } from '../../elements/userLogged.js';
+
 export function initCommentsSection(videoId) {
     const commentForm = document.getElementById('commentForm');
     const commentsList = document.getElementById('comments-list');
@@ -7,9 +8,29 @@ export function initCommentsSection(videoId) {
 
     if (!commentsList) return;
 
+    checkAuthentication();
     setupCharCounter();
     commentForm?.addEventListener('submit', (e) => onSubmitComment(e));
     loadComments();
+
+    function checkAuthentication() {
+        if (!isUserLoggedIn()) {
+            const formContainer = document.querySelector('.comment-form');
+            if (formContainer) {
+                formContainer.classList.add('hidden');
+
+                const warning = document.createElement('div');
+                warning.className = 'login-warning';
+                warning.innerHTML = `
+                    <i class="fas fa-lock"></i>
+                    <p>Yorum yapabilmek için giriş yapmanız gerekmektedir.</p>
+                `;
+
+                formContainer.parentNode.insertBefore(warning, formContainer);
+            }
+        }
+    }
+
 
     function setupCharCounter() {
         if (!commentText) return;
@@ -170,6 +191,8 @@ export function initCommentsSection(videoId) {
             contentHtml = `<div class="comment-content">${c.comment}</div>`;
         }
 
+        const isLoggedIn = isUserLoggedIn();
+
         card.innerHTML = `
           <div class="comment-header">
             ${profileImg}
@@ -178,11 +201,11 @@ export function initCommentsSection(videoId) {
           </div>
           ${contentHtml}
           <div class="comment-actions">
-            <button class="action-button like-btn ${c.likedByCurrentUser ? 'liked' : ''}" data-id="${c.id}">
+            <button class="action-button like-btn ${c.likedByCurrentUser ? 'liked' : ''}" data-id="${c.id}" ${!isLoggedIn ? 'title="Giriş yapmalısınız"' : ''}>
                 <i class="${c.likedByCurrentUser ? 'fas' : 'far'} fa-heart"></i> 
                 <span>${c.likeCount}</span>
             </button>
-            <button class="action-button reply-btn" data-id="${c.id}"><i class="far fa-comment"></i> Yanıtla</button>
+            ${isLoggedIn ? `<button class="action-button reply-btn" data-id="${c.id}"><i class="far fa-comment"></i> Yanıtla</button>` : ''}
             ${c.author ? `<button class="action-button delete-btn" data-id="${c.id}"><i class="far fa-trash-alt"></i> Sil</button>` : ''}
           </div>
           <div class="reply-form-container" id="reply-form-${c.id}" style="display:none; margin-top:10px;">
@@ -199,13 +222,24 @@ export function initCommentsSection(videoId) {
 
         // Event Listeners
         const likeBtn = card.querySelector('.like-btn');
-        likeBtn.onclick = () => toggleLike(c.id, likeBtn);
+        likeBtn.onclick = () => {
+            if (!isLoggedIn) {
+                const loginBtn = document.getElementById('comment-login-btn');
+                loginBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                loginBtn?.classList.add('error-shake');
+                setTimeout(() => loginBtn?.classList.remove('error-shake'), 500);
+                return;
+            }
+            toggleLike(c.id, likeBtn);
+        };
 
         const replyBtn = card.querySelector('.reply-btn');
-        replyBtn.onclick = () => {
-            const form = card.querySelector(`#reply-form-${c.id}`);
-            form.style.display = form.style.display === 'none' ? 'block' : 'none';
-        };
+        if (replyBtn) {
+            replyBtn.onclick = () => {
+                const form = card.querySelector(`#reply-form-${c.id}`);
+                form.style.display = form.style.display === 'none' ? 'block' : 'none';
+            };
+        }
 
         const deleteBtn = card.querySelector('.delete-btn');
         if (deleteBtn) {

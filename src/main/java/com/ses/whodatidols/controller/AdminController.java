@@ -93,7 +93,7 @@ public class AdminController {
         }
     }
 
-    @GetMapping
+    @GetMapping({ "", "/" })
     public ResponseEntity<Void> redirectToPanel() {
         return ResponseEntity.status(HttpStatus.FOUND)
                 .header(HttpHeaders.LOCATION, "/admin/panel")
@@ -595,7 +595,7 @@ public class AdminController {
 
     // Comment Moderation Endpoints
 
-    @GetMapping("/comments/pending")
+    @GetMapping("/comment-moderation/pending")
     public ResponseEntity<List<CommentViewModel>> getPendingComments() {
         try {
             return ResponseEntity.ok(commentRepository.getPendingComments());
@@ -604,7 +604,7 @@ public class AdminController {
         }
     }
 
-    @PostMapping("/comments/approve")
+    @PostMapping("/comment-moderation/approve")
     public ResponseEntity<String> approveComment(@RequestParam("commentId") UUID commentId) {
         try {
             commentRepository.approveComment(commentId);
@@ -614,7 +614,7 @@ public class AdminController {
         }
     }
 
-    @DeleteMapping("/comments/reject")
+    @DeleteMapping("/comment-moderation/reject")
     public ResponseEntity<String> rejectComment(@RequestParam("commentId") UUID commentId) {
         try {
             commentRepository.rejectComment(commentId);

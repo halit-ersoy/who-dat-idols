@@ -1,6 +1,6 @@
 .featured-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    grid-template-columns: repeat(5, 1fr);
     grid-gap: 20px;
     margin-bottom: 40px;
     width: 100%;
@@ -187,13 +187,19 @@
     top: -2px;
 }
 
+@media (max-width: 1550px) {
+    .featured-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
 @media (max-width: 1200px) {
     .featured-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 600px) {
     .featured-grid {
         grid-template-columns: 1fr;
         grid-gap: 16px;
@@ -242,7 +248,7 @@
     position: relative;
     background-size: cover;
     background-position: center;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     border-radius: 1px;
     vertical-align: middle;
     transform: translateY(-1px);
@@ -257,34 +263,42 @@
     height: 0;
     border-left: 3px solid transparent;
     border-right: 0;
-    border-top: 3px solid rgba(0,0,0,0.4);
+    border-top: 3px solid rgba(0, 0, 0, 0.4);
     z-index: 1;
 }
 
 .kr {
     background-image: url('https://flagcdn.com/h240/kr.webp');
 }
+
 .jp {
     background-image: url('https://flagcdn.com/h240/jp.webp');
 }
+
 .th {
     background-image: url('https://flagcdn.com/h240/th.webp');
 }
+
 .cn {
     background-image: url('https://flagcdn.com/h240/cn.webp');
 }
+
 .tw {
     background-image: url('https://flagcdn.com/h240/tw.webp');
 }
+
 .ph {
     background-image: url('https://flagcdn.com/h240/ph.webp');
 }
+
 .id {
     background-image: url('https://flagcdn.com/h240/id.webp');
 }
+
 .my {
     background-image: url('https://flagcdn.com/h240/my.webp');
 }
+
 .sg {
     background-image: url('https://flagcdn.com/h240/sg.webp');
 }
