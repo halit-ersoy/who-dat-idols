@@ -797,6 +797,7 @@
             formData.append('summary', document.getElementById('seriesSummary').value);
             formData.append('language', document.getElementById('seriesLanguage').value);
             formData.append('country', document.getElementById('seriesCountry').value);
+            formData.append('seriesType', document.getElementById('seriesType').value);
 
             if (seriesImageInput.files.length > 0) {
                 formData.append('image', seriesImageInput.files[0]);
@@ -872,6 +873,7 @@
             formData.append('year', document.getElementById('seriesYear').value);
             formData.append('language', document.getElementById('seriesLanguage').value);
             formData.append('country', document.getElementById('seriesCountry').value);
+            formData.append('seriesType', document.getElementById('seriesType').value);
             if (seriesImageInput.files.length > 0) formData.append('image', seriesImageInput.files[0]);
             if (lastFetchedPosterUrl) formData.append('imageUrl', lastFetchedPosterUrl);
         }
@@ -1085,6 +1087,9 @@
         // Country population
         document.getElementById('seriesCountry').value = series.country || 'kr';
 
+        // Series Type population
+        document.getElementById('seriesType').value = series.seriesType || 'Dizi';
+
         // Language matching
         const languageSelect = document.getElementById('seriesLanguage');
         const incomingLang = series.language ? series.language.trim() : "";
@@ -1240,6 +1245,7 @@
         if (seriesImageInput) seriesImageInput.value = "";
         if (seriesPosterUrlInput) seriesPosterUrlInput.value = "";
         document.getElementById('seriesCountry').value = 'kr';
+        document.getElementById('seriesType').value = 'Dizi';
         lastFetchedPosterUrl = "";
         updatePosterPreview('series', null);
 
@@ -1453,6 +1459,7 @@
             document.getElementById('seriesSummary').value = cleanSummary;
             document.getElementById('seriesCategory').value = data.genres ? data.genres.join(', ') : "";
             document.getElementById('seriesImageUrl').value = lastFetchedPosterUrl;
+            document.getElementById('seriesType').value = 'Dizi'; // Default
             updatePosterPreview('series', lastFetchedPosterUrl);
 
             const langMap = { 'Korean': 'Korece', 'Turkish': 'Türkçe', 'English': 'İngilizce', 'Japanese': 'Japonca' };

@@ -29,6 +29,12 @@ public class SeriesRepository {
                             "BEGIN " +
                             "    ALTER TABLE Series ADD Country NVARCHAR(50); " +
                             "END");
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Series' AND COLUMN_NAME = 'SeriesType') "
+                            +
+                            "BEGIN " +
+                            "    ALTER TABLE Series ADD SeriesType NVARCHAR(50); " +
+                            "END");
         } catch (Exception e) {
             System.err.println("Schema update failed: " + e.getMessage());
         }
@@ -47,6 +53,13 @@ public class SeriesRepository {
             s.setCountry(rs.getString("Country"));
         } catch (Exception e) {
             // Column might not exist in some projections or failures
+        }
+
+        // Handle nullable SeriesType
+        try {
+            s.setSeriesType(rs.getString("SeriesType"));
+        } catch (Exception e) {
+            // Column might not exist
         }
 
         // Handle nullable finalStatus
@@ -101,7 +114,7 @@ public class SeriesRepository {
         // Also assuming Series table is just 'Series' now.
         // We use LEFT JOIN or Correlated Subquery. Subquery is safer for 1:N count.
         String sql = """
-                SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
                        (SELECT COUNT(*) FROM Episode E WHERE E.SeriesId = S.ID) as episodeCount,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN SeriesCategories SC ON SC.CategoryID = C.ID
@@ -115,7 +128,7 @@ public class SeriesRepository {
     public Series findSeriesByName(String name) {
         try {
             String sql = """
-                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                             WHERE SC.SeriesID = S.ID) as category
@@ -131,7 +144,7 @@ public class SeriesRepository {
     public Series findSeriesById(UUID id) {
         try {
             String sql = """
-                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                             WHERE SC.SeriesID = S.ID) as category
@@ -154,12 +167,13 @@ public class SeriesRepository {
 
     public void createSeries(Series series) {
         jdbcTemplate.update(
-                "INSERT INTO Series (ID, name, Summary, Language, Country, finalStatus, EpisodeMetadataXml, uploadDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO Series (ID, name, Summary, Language, Country, SeriesType, finalStatus, EpisodeMetadataXml, uploadDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 series.getId().toString(),
                 series.getName(),
                 series.getSummary(),
                 series.getLanguage(),
                 series.getCountry(),
+                series.getSeriesType(),
                 series.getFinalStatus(),
                 series.getEpisodeMetadataXml(),
                 series.getUploadDate());
@@ -169,11 +183,12 @@ public class SeriesRepository {
 
     public void updateSeriesMetadata(Series series) {
         jdbcTemplate.update(
-                "UPDATE Series SET name=?, Summary=?, Language=?, Country=?, finalStatus=? WHERE ID=?",
+                "UPDATE Series SET name=?, Summary=?, Language=?, Country=?, SeriesType=?, finalStatus=? WHERE ID=?",
                 series.getName(),
                 series.getSummary(),
                 series.getLanguage(),
                 series.getCountry(),
+                series.getSeriesType(),
                 series.getFinalStatus(),
                 series.getId().toString());
 
@@ -250,7 +265,7 @@ public class SeriesRepository {
         try {
             // Priority 1: Use FK JOIN (New optimized schema)
             String sql = """
-                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                             WHERE SC.SeriesID = S.ID) as category
@@ -268,7 +283,7 @@ public class SeriesRepository {
     public Series findSeriesByEpisodeIdInsideXML(String episodeId) {
         try {
             String sql = """
-                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                             WHERE SC.SeriesID = S.ID) as category
@@ -292,32 +307,8 @@ public class SeriesRepository {
     }
 
     public List<Series> findRecentSeries(int limit) {
-        // Assuming recently updated series? Or just all series limited?
-        // original SoapOperaRepository probably had logic. Assuming 'uploadDate' or
-        // just ID?
-        // Wait, Series table doesn't have 'uploadDate', Episode does.
-        // But maybe we want series that have recent episodes?
-        // Or maybe Series table DOES have uploadDate? Let's check original SoapOpera
-        // model.
-        // Original SoapOpera had uploadDate.
-        // My Series model DOES NOT have uploadDate visible in RowMapper?
-        // RowMapper: "s.setEpisodeMetadataXml(rs.getString("EpisodeMetadataXml"));"
-        // Let's check if I kept 'uploadDate' in Series table rename script.
-        // Table 'SoapOperas' had 'uploadDate'. Rename script: "EXEC sp_rename
-        // 'SoapOperas', 'Series';"
-        // So 'Series' table HAS 'uploadDate'.
-        // I should update Series RowMapper to include 'uploadDate' if needed for
-        // sorting?
-        // Or just trust the DB sort.
-        // Let's check Series.java model again.
-        // Series.java has no uploadDate field!
-        // I need to add uploadDate to Series.java model if I want to map it, or just
-        // return list.
-        // But RowMapper doesn't map it, so it naturally won't be in the object.
-        // This might be fine if we just want the list sorted by DB.
-
         String sql = """
-                SELECT TOP (?) S.ID, S.name, S.Summary, S.Language, S.Country, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                SELECT TOP (?) S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                         WHERE SC.SeriesID = S.ID) as category
@@ -334,7 +325,7 @@ public class SeriesRepository {
 
     public List<Series> findTop6SeriesByCount() {
         String sql = """
-                SELECT TOP 6 S.ID, S.name, S.Summary, S.Language, S.Country, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                SELECT TOP 6 S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
                        (SELECT COUNT(*) FROM Episode E WHERE E.SeriesId = S.ID) as episodeCount,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN SeriesCategories SC ON SC.CategoryID = C.ID

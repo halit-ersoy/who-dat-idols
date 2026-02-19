@@ -15,6 +15,8 @@ public class Series {
     private int episodeCount;
     private LocalDateTime uploadDate;
 
+    private String seriesType;
+
     // Getter and Setters
     public UUID getId() {
         return id;
@@ -62,6 +64,14 @@ public class Series {
 
     public void setCountry(String country) {
         this.country = country;
+    }
+
+    public String getSeriesType() {
+        return seriesType;
+    }
+
+    public void setSeriesType(String seriesType) {
+        this.seriesType = seriesType;
     }
 
     public int getFinalStatus() {

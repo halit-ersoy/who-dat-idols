@@ -29,7 +29,7 @@
     align-items: center;
     margin-top: 0;
     padding-top: 70px;
-    background-image: url('/media/static/image/background-2.png');
+    background-image: url('/media/static/image/background-2.jpg');
     background-size: cover;
     background-position: center;
     animation: fadeIn 1s ease-out;
@@ -311,12 +311,14 @@
     animation: ripple 0.6s linear;
     z-index: 0;
 }
+
 @keyframes ripple {
     to {
         transform: scale(2);
         opacity: 0;
     }
 }
+
 .faq-item.in-view {
     opacity: 1;
     transform: translateY(0);
@@ -327,6 +329,7 @@
     from {
         opacity: 0;
     }
+
     to {
         opacity: 1;
     }
@@ -337,6 +340,7 @@
         opacity: 0;
         transform: translateY(30px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -348,9 +352,11 @@
         opacity: 0;
         transform: translateY(20px);
     }
+
     60% {
         transform: translateY(-5px);
     }
+
     100% {
         opacity: 1;
         transform: translateY(0);

@@ -12,7 +12,7 @@
     align-items: center;
     justify-content: center;
     position: relative;
-    background-image: url('/media/static/image/background-2.png');
+    background-image: url('/media/static/image/background-2.jpg');
     background-size: cover;
     background-position: center;
     color: white;
@@ -28,7 +28,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(to right, rgba(0,0,0,0.95) 20%, rgba(0,0,0,0.8) 40%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0.4) 80%);
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.95) 20%, rgba(0, 0, 0, 0.8) 40%, rgba(0, 0, 0, 0.6) 60%, rgba(0, 0, 0, 0.4) 80%);
     z-index: 0;
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
@@ -49,7 +49,7 @@
     font-family: 'Montserrat', sans-serif;
     letter-spacing: -0.5px;
     line-height: 1.2;
-    text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
     color: #ffffff;
     opacity: 0;
     animation: slideInUp 0.8s ease-out forwards;
@@ -59,7 +59,7 @@
     font-size: 18px;
     margin-bottom: 32px;
     line-height: 1.7;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     color: #f0f0f0;
     font-weight: 300;
     opacity: 0;
@@ -167,7 +167,7 @@
     flex: 1;
     border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     transform: translateX(20px);
     opacity: 0;
     transition: transform 0.6s ease, opacity 0.6s ease;
@@ -214,7 +214,7 @@
 .team-member {
     text-align: center;
     padding: 20px;
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 10px;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     opacity: 0;
@@ -223,7 +223,7 @@
 
 .team-member:hover {
     transform: translateY(-10px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
 .team-member.in-view {
@@ -275,7 +275,7 @@
 
 .feature-card {
     padding: 30px;
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 10px;
     text-align: center;
     transition: transform 0.3s ease;
@@ -380,7 +380,7 @@
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -414,6 +414,7 @@
     from {
         opacity: 0;
     }
+
     to {
         opacity: 1;
     }
@@ -424,6 +425,7 @@
         opacity: 0;
         transform: translateY(30px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -435,9 +437,11 @@
         opacity: 0;
         transform: translateY(20px);
     }
+
     60% {
         transform: translateY(-5px);
     }
+
     100% {
         opacity: 1;
         transform: translateY(0);
@@ -456,15 +460,19 @@
     .about-content {
         flex-direction: column;
     }
+
     .about-hero h1 {
         font-size: 36px;
     }
+
     .team-subgrid.team-top {
         grid-template-columns: repeat(2, 1fr);
     }
+
     .team-subgrid.team-bottom {
         grid-template-columns: repeat(3, 1fr);
     }
+
     .member-avatar {
         width: 120px;
         height: 120px;
@@ -475,19 +483,24 @@
     .about-section {
         padding: 40px 0;
     }
+
     .section-title {
         font-size: 28px;
     }
+
     .features-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 20px;
     }
+
     .about-hero-content h1 {
         font-size: 32px;
     }
+
     .about-hero-content p {
         font-size: 16px;
     }
+
     .team-subgrid.team-bottom {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -497,26 +510,33 @@
     .about-hero-content h1 {
         font-size: 28px;
     }
+
     .about-hero {
         height: 40vh;
     }
+
     .section-title {
         font-size: 24px;
     }
+
     .team-subgrid.team-top,
     .team-subgrid.team-bottom {
         grid-template-columns: 1fr;
     }
+
     .features-grid {
         grid-template-columns: 1fr;
     }
+
     .member-avatar {
         width: 100px;
         height: 100px;
     }
+
     .contact-item {
         font-size: 16px;
     }
+
     .social-link {
         width: 40px;
         height: 40px;
