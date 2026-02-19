@@ -367,7 +367,7 @@ export function initVideoControls(videoId) {
         }
 
         titleEl.innerText = `İçerik Yükleniyor...`;
-        infoEl.innerText = `ID: ${id}`;
+        infoEl.innerText = '';
     }
 
     function fallbackToMp4(url) {

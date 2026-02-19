@@ -48,6 +48,9 @@
                 <a href="#user-section" class="nav-link" data-section="user-section">
                     <i class="fas fa-users"></i> Kullanıcılar
                 </a>
+                <a href="#announcement-section" class="nav-link" data-section="announcement-section">
+                    <i class="fas fa-bullhorn"></i> Duyuru Ayarları
+                </a>
             </nav>
         </aside>
 
@@ -785,6 +788,39 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </section>
+
+            <!-- ANNOUNCEMENT SECTION -->
+            <section id="announcement-section" class="admin-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-bullhorn"></i> Duyuru Ayarları</h2>
+                    </div>
+                    <form id="announcementForm" class="admin-form">
+                        <div class="form-grid">
+                            <div class="form-group full-width">
+                                <label for="announcementText">Duyuru Metni</label>
+                                <textarea id="announcementText" rows="4" required
+                                    placeholder="Duyuru metnini giriniz..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="announcementActive">Duyuru Durumu</label>
+                                <div class="toggle-switch-wrapper">
+                                    <label class="switch">
+                                        <input type="checkbox" id="announcementActive">
+                                        <span class="slider round"></span>
+                                    </label>
+                                    <span id="announcementStatusText">Pasif</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> DUYURUYU GÜNCELLE
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </section>
         </main>

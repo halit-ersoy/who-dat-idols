@@ -1502,5 +1502,79 @@ input[type='checkbox']:hover {
     color: var(--text-main);
     width: 24px;
     height: 32px;
+
     /* Match button height for vertical alignment */
+}
+
+/* ===========================================================
+   PREMIUM VIEW COUNT INPUT
+   =========================================================== */
+.premium-counter {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 4px;
+    width: fit-content;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.premium-counter .view-input {
+    width: 80px;
+    background: transparent;
+    border: none;
+    color: white;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 5px;
+    appearance: textfield;
+    -moz-appearance: textfield;
+    /* Firefox */
+}
+
+.premium-counter .view-input::-webkit-outer-spin-button,
+.premium-counter .view-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.premium-counter .view-input:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.premium-counter .spin-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-dim);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.premium-counter .spin-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.premium-counter .spin-btn:active {
+    transform: translateY(1px);
+}
+
+.premium-counter .spin-btn.minus:hover {
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.1);
+}
+
+.premium-counter .spin-btn.plus:hover {
+    color: var(--primary);
+    background: rgba(30, 215, 96, 0.1);
 }

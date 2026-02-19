@@ -1819,7 +1819,11 @@
                         <td style="font-weight: 600;">${item.Name}</td>
                         <td><span class="item-type">${isMovie ? 'Film' : 'Dizi'}</span></td>
                         <td>
-                            <input type="number" class="view-count-input" value="${item.viewCount}" id="view_input_${item.ID}">
+                            <div class="premium-counter">
+                                <button class="spin-btn minus" onclick="stepViewCount('${item.ID}', -1)"><i class="fas fa-minus"></i></button>
+                                <input type="number" class="view-input" value="${item.viewCount}" id="view_input_${item.ID}">
+                                <button class="spin-btn plus" onclick="stepViewCount('${item.ID}', 1)"><i class="fas fa-plus"></i></button>
+                            </div>
                         </td>
                         <td>
                             <button class="btn btn-sm btn-primary" onclick="updateViewCount('${item.ID}', '${item.Type}')">
@@ -1832,6 +1836,15 @@
             })
             .catch(err => console.error("View stats error:", err));
     }
+
+    window.stepViewCount = function (id, step) {
+        const input = document.getElementById(`view_input_${id}`);
+        if (!input) return;
+        let val = parseInt(input.value) || 0;
+        val += step;
+        if (val < 0) val = 0;
+        input.value = val;
+    };
 
     window.updateViewCount = function (id, type) {
         const input = document.getElementById(`view_input_${id}`);
@@ -2100,4 +2113,73 @@
             })
             .catch(err => alert("Hata: " + err));
     };
+
+    /* ===========================================================
+       DUYURU YÖNETİMİ
+       =========================================================== */
+    const announcementForm = document.getElementById('announcementForm');
+
+    if (announcementForm) {
+        // Load initial settings
+        function loadAnnouncementSettings() {
+            fetch('/api/settings/announcement')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('announcementText').value = data.text || '';
+                    const isActive = data.active === true;
+                    document.getElementById('announcementActive').checked = isActive;
+                    updateAnnouncementStatusText(isActive);
+                })
+                .catch(err => console.error("Duyuru ayarları yüklenemedi:", err));
+        }
+
+        // Toggle text update
+        document.getElementById('announcementActive').addEventListener('change', function () {
+            updateAnnouncementStatusText(this.checked);
+        });
+
+        function updateAnnouncementStatusText(isActive) {
+            const statusSpan = document.getElementById('announcementStatusText');
+            if (statusSpan) {
+                statusSpan.textContent = isActive ? 'Aktif' : 'Pasif';
+                statusSpan.style.color = isActive ? 'var(--primary)' : 'var(--text-dim)';
+            }
+        }
+
+        // Handle Form Submit
+        announcementForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const text = document.getElementById('announcementText').value;
+            const active = document.getElementById('announcementActive').checked;
+            const btn = this.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> GÜNCELLENİYOR...';
+            btn.disabled = true;
+
+            fetch('/admin/settings/announcement', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text, active })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    alert("Duyuru ayarları başarıyla güncellendi!");
+                })
+                .catch(err => {
+                    alert("Hata oluştu: " + err);
+                })
+                .finally(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                });
+        });
+
+        // Load on init
+        loadAnnouncementSettings();
+    }
+
 });

@@ -42,20 +42,6 @@ export function initHeaderInteractions() {
         });
     }
 
-    // Mobile dropdown toggles
-    const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(item => {
-        const link = item.querySelector('.nav-link');
-        if (link) {
-            link.addEventListener('click', (e) => {
-                if (window.innerWidth <= 992) {
-                    e.preventDefault();
-                    item.classList.toggle('active');
-                }
-            });
-        }
-    });
-
     // Search results display
     const searchInput = document.getElementById('search-input');
     const searchResults = document.getElementById('search-results');

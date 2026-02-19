@@ -40,5 +40,26 @@ document.addEventListener('DOMContentLoaded', () => {
     initRegister();
     initForgotPass();
     initCalendar();
+    initCalendar();
     initNotifications();
+    initAnnouncement();
 });
+
+function initAnnouncement() {
+    const bar = document.getElementById('announcement-bar');
+    const textSpan = document.getElementById('announcement-text');
+
+    if (!bar || !textSpan) return;
+
+    fetch('/api/settings/announcement')
+        .then(res => res.json())
+        .then(data => {
+            if (data.active && data.text) {
+                textSpan.textContent = data.text;
+                bar.style.display = 'block';
+            } else {
+                bar.style.display = 'none';
+            }
+        })
+        .catch(err => console.error('Failed to load announcement:', err));
+}
