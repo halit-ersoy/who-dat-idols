@@ -53,6 +53,7 @@ public class TranslationService {
             Map<String, Object> response = restTemplate.getForObject(uri, Map.class);
 
             if (response != null && response.containsKey("responseData")) {
+                @SuppressWarnings("unchecked")
                 Map<String, Object> responseData = (Map<String, Object>) response.get("responseData");
                 if (responseData != null && responseData.containsKey("translatedText")) {
                     return (String) responseData.get("translatedText");

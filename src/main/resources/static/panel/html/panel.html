@@ -158,9 +158,16 @@
                                 <label for="movieName">Film Adı</label>
                                 <div class="input-with-action">
                                     <input type="text" id="movieName" required placeholder="Film ismini giriniz">
-                                    <button type="button" class="btn-fetch" id="fetchMovieBtn" title="TVMaze'den Getir">
+                                    <button type="button" class="btn-fetch" id="fetchMovieBtn" title="Getir">
                                         <i class="fas fa-search"></i>
                                     </button>
+                                    <div class="meta-source-selector">
+                                        <input type="radio" name="movieSource" id="movieTvMaze" value="tvmaze" checked>
+                                        <label for="movieTvMaze" title="TVMaze">TV</label>
+                                        <input type="radio" name="movieSource" id="movieTmdb" value="tmdb">
+                                        <label for="movieTmdb" title="TMDB">TM</label>
+                                        <div class="source-slider"></div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="form-group">
@@ -190,6 +197,7 @@
                                     <option value="Tayca">Tayca</option>
                                     <option value="Çince">Çince</option>
                                     <option value="Türkçe">Türkçe</option>
+                                    <option value="Endonezce">Endonezce</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -333,10 +341,17 @@
                                     <label for="seriesName">Dizi Adı</label>
                                     <div class="input-with-action">
                                         <input type="text" id="seriesName" placeholder="Dizi ismini giriniz">
-                                        <button type="button" class="btn-fetch" id="fetchSeriesBtn"
-                                            title="TVMaze'den Getir">
+                                        <button type="button" class="btn-fetch" id="fetchSeriesBtn" title="Getir">
                                             <i class="fas fa-search"></i>
                                         </button>
+                                        <div class="meta-source-selector">
+                                            <input type="radio" name="seriesSource" id="seriesTvMaze" value="tvmaze"
+                                                checked>
+                                            <label for="seriesTvMaze" title="TVMaze">TV</label>
+                                            <input type="radio" name="seriesSource" id="seriesTmdb" value="tmdb">
+                                            <label for="seriesTmdb" title="TMDB">TM</label>
+                                            <div class="source-slider"></div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -367,6 +382,7 @@
                                         <option value="Japonca">Japonca</option>
                                         <option value="Tayca">Tayca</option>
                                         <option value="Çince">Çince</option>
+                                        <option value="Endonezce">Endonezce</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
@@ -565,11 +581,18 @@
                             <div class="form-group">
                                 <label for="upcomingName">Görünecek İsim / Başlık</label>
                                 <div class="input-with-action">
-                                    <input type="text" id="upcomingName" required placeholder="Örn: My Demon 11. Bölüm">
-                                    <button type="button" class="btn-fetch" id="fetchUpcomingTvMazeBtn"
-                                        title="TVMaze'den Getir">
+                                    <input type="text" id="upcomingName" required placeholder="Show ismini giriniz">
+                                    <button type="button" class="btn-fetch" id="fetchUpcomingTvMazeBtn" title="Getir">
                                         <i class="fas fa-search"></i>
                                     </button>
+                                    <div class="meta-source-selector">
+                                        <input type="radio" name="upcomingSource" id="upcomingTvMaze" value="tvmaze"
+                                            checked>
+                                        <label for="upcomingTvMaze" title="TVMaze">TV</label>
+                                        <input type="radio" name="upcomingSource" id="upcomingTmdb" value="tmdb">
+                                        <label for="upcomingTmdb" title="TMDB">TM</label>
+                                        <div class="source-slider"></div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="form-group">

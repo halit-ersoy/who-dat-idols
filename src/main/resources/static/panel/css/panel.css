@@ -1297,7 +1297,57 @@ input[type='checkbox']:hover {
     transform: translateX(100%);
 }
 
-/* Premium File Input */
+/* Meta Source Selector Toggle */
+.meta-source-selector {
+    display: flex;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 4px;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    min-width: 90px;
+    height: 48px;
+    align-items: center;
+}
+
+.meta-source-selector input[type="radio"] {
+    display: none;
+}
+
+.meta-source-selector label {
+    flex: 1;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+    transition: color 0.3s;
+    color: var(--text-dim);
+    margin: 0 !important;
+}
+
+.meta-source-selector input[type="radio"]:checked+label {
+    color: #fff;
+}
+
+.source-slider {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    bottom: 4px;
+    width: calc(50% - 4px);
+    background: var(--primary);
+    border-radius: 9px;
+    z-index: 1;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 2px 8px rgba(30, 215, 96, 0.4);
+}
+
+.meta-source-selector input[id$="Tmdb"]:checked~.source-slider {
+    transform: translateX(100%);
+}
+
 .premium-file-input {
     position: relative;
     width: 100%;

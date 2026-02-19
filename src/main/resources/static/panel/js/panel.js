@@ -1448,14 +1448,16 @@
         const query = document.getElementById('movieName').value.trim();
         if (!query) return alert("Lütfen aramak için bir film adı girin!");
         currentFetchType = 'Movie';
-        searchTvMaze(query, 'Movie');
+        const source = document.querySelector('input[name="movieSource"]:checked').value;
+        searchMetadata(query, 'movie', source);
     });
 
     document.getElementById('fetchSeriesBtn').addEventListener('click', () => {
         const query = document.getElementById('seriesName').value.trim();
         if (!query) return alert("Lütfen aramak için bir dizi adı girin!");
         currentFetchType = 'Series';
-        searchTvMaze(query, 'Series');
+        const source = document.querySelector('input[name="seriesSource"]:checked').value;
+        searchMetadata(query, 'series', source);
     });
 
     const fetchUpcomingTvMazeBtn = document.getElementById('fetchUpcomingTvMazeBtn');
@@ -1464,108 +1466,144 @@
             const query = document.getElementById('upcomingName').value.trim();
             if (!query) return alert("Lütfen aramak için bir show adı girin!");
             currentFetchType = 'Upcoming';
-            searchTvMaze(query, 'Upcoming');
+            const upcomingType = document.getElementById('upcomingType').value;
+            const type = upcomingType === 'Movie' ? 'movie' : 'series';
+            const source = document.querySelector('input[name="upcomingSource"]:checked').value;
+            searchMetadata(query, type, source);
         });
     }
 
-    async function searchTvMaze(query, type) {
-        console.log("Fetching TVMaze for:", query, "at URL:", `/public/api/tvmaze/search?query=${encodeURIComponent(query)}`);
-        tmdbResultsGrid.innerHTML = '<div class="loading-state">TVMaze taranıyor...</div>';
+    async function searchMetadata(query, type, source) {
+        console.log(`Fetching ${source} (${type}) for:`, query);
+        const modalTitle = tmdbModal.querySelector('.modal-header h2');
+        if (modalTitle) {
+            modalTitle.innerText = source === 'tmdb' ? 'TMDB Arama Sonuçları' : 'TVMaze Arama Sonuçları';
+        }
+        tmdbResultsGrid.innerHTML = `<div class="loading-state">${source.toUpperCase()} taranıyor...</div>`;
         tmdbModal.style.display = 'block';
 
         try {
-            const fetchUrl = `/public/api/tvmaze/search?query=${encodeURIComponent(query)}`;
+            const fetchUrl = `/public/api/metadata/search?query=${encodeURIComponent(query)}&type=${type}&source=${source}`;
             const response = await fetch(fetchUrl);
-            console.log("TVMaze Response Status:", response.status);
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error("TVMaze Response Error Body:", errorText);
-                throw new Error(errorText || "Sunucu hatası: " + response.status);
-            }
+            if (!response.ok) throw new Error("Arama hatası");
             const data = await response.json();
-            console.log("TVMaze Data Received:", data);
-
-            renderTvMazeResults(data, type);
+            renderMetadataResults(data, type, source);
         } catch (error) {
-            console.error("TVMaze Search Fetch Exception:", error);
-            tmdbResultsGrid.innerHTML = `<div class="loading-state" style="color:var(--danger);">Hata: Veri alınamadı (${error.message})</div>`;
+            console.error("Metadata Search Fetch Error:", error);
+            tmdbResultsGrid.innerHTML = '<div class="error-state">Bilgi getirilemedi.</div>';
         }
     }
 
-    function renderTvMazeResults(results, type) {
+    function renderMetadataResults(results, type, source) {
         tmdbResultsGrid.innerHTML = '';
         if (!results || results.length === 0) {
             tmdbResultsGrid.innerHTML = '<div class="loading-state">Sonuç bulunamadı.</div>';
             return;
         }
 
-        results.slice(0, 12).forEach(result => {
-            const item = result.show;
+        results.slice(0, 12).forEach(item => {
+            let name, image, id, year;
+
+            if (source === 'tvmaze') {
+                const show = item.show || item;
+                name = show.name;
+                image = show.image ? show.image.medium : 'https://via.placeholder.com/210x295?text=No+Poster';
+                id = show.id;
+                year = show.premiered ? show.premiered.substring(0, 4) : "-";
+            } else {
+                name = item.title || item.name;
+                image = item.poster_path ? `https://image.tmdb.org/t/p/w200${item.poster_path}` : 'https://via.placeholder.com/210x295?text=No+Poster';
+                id = item.id;
+                year = (item.release_date || item.first_air_date || "").substring(0, 4) || "-";
+            }
+
             const div = document.createElement('div');
             div.className = 'tmdb-item';
-            const title = item.name;
-            const year = item.premiered ? item.premiered.substring(0, 4) : "-";
-            const poster = item.image ? item.image.medium : 'https://via.placeholder.com/210x295?text=No+Poster';
-
             div.innerHTML = `
-                <img src="${poster}" class="tmdb-poster" alt="${title}">
+                <img src="${image}" class="tmdb-poster" alt="${name}">
                 <div class="tmdb-info">
-                    <div class="tmdb-title">${title}</div>
+                    <div class="tmdb-title">${name}</div>
                     <div class="tmdb-meta">${year}</div>
                 </div>
             `;
-            div.onclick = () => fetchTvMazeDetails(item.id, type);
+            div.onclick = () => fetchMetadataDetails(id, type, source);
             tmdbResultsGrid.appendChild(div);
         });
     }
 
-    async function fetchTvMazeDetails(id, type) {
+    async function fetchMetadataDetails(id, type, source) {
         tmdbResultsGrid.innerHTML = '<div class="loading-state">Detaylar getiriliyor...</div>';
         try {
-            const response = await fetch(`/public/api/tvmaze/details?id=${id}`);
+            const response = await fetch(`/public/api/metadata/details?id=${id}&type=${type}&source=${source}`);
             const data = await response.json();
-            populateFormWithTvMazeData(data, type);
+            populateFormWithMetadataData(data, type, source);
             tmdbModal.style.display = 'none';
         } catch (error) {
             alert("Detaylar alınırken hata oluştu.");
         }
     }
 
-    function populateFormWithTvMazeData(data, type) {
-        // Store poster URL for submission
-        lastFetchedPosterUrl = data.image ? data.image.original : "";
+    function populateFormWithMetadataData(data, type, source) {
+        let name, summary, category, image, year, countryCode, language;
 
-        // TVMaze summary comes with HTML tags, let's strip them
-        const tempDiv = document.createElement("div");
-        tempDiv.innerHTML = data.summary || "";
-        const cleanSummary = tempDiv.textContent || tempDiv.innerText || "";
+        if (source === 'tvmaze') {
+            name = data.name;
+            summary = data.summary ? data.summary.replace(/<[^>]*>/g, '') : '';
+            category = data.genres ? data.genres.join(', ') : '';
+            image = data.image ? data.image.original : '';
+            year = data.premiered ? data.premiered.substring(0, 4) : '2025';
+            language = data.language;
+            countryCode = data.network && data.network.country ? data.network.country.code :
+                (data.webChannel && data.webChannel.country ? data.webChannel.country.code : '');
+        } else {
+            name = data.title || data.name;
+            summary = data.overview || '';
+            category = data.genres ? data.genres.map(g => g.name).join(', ') : '';
+            image = data.poster_path ? `https://image.tmdb.org/t/p/original${data.poster_path}` : '';
+            year = (data.release_date || data.first_air_date || '2025').substring(0, 4);
+            language = data.original_language;
+            countryCode = data.origin_country && data.origin_country.length > 0 ? data.origin_country[0] :
+                (data.production_countries && data.production_countries.length > 0 ? data.production_countries[0].iso_3166_1 : '');
+        }
 
-        if (type === 'Movie') {
-            document.getElementById('movieName').value = data.name;
-            document.getElementById('movieYear').value = data.premiered ? data.premiered.substring(0, 4) : "2025";
-            document.getElementById('movieSummary').value = cleanSummary;
-            document.getElementById('movieCategory').value = data.genres ? data.genres.join(', ') : "";
-            document.getElementById('movieImageUrl').value = lastFetchedPosterUrl;
-            updatePosterPreview('movie', lastFetchedPosterUrl);
+        lastFetchedPosterUrl = image;
 
-            // Language matching
-            const langMap = { 'Korean': 'Korece', 'English': 'İngilizce', 'Japanese': 'Japonca', 'Turkish': 'Türkçe' };
-            document.getElementById('movieLanguage').value = langMap[data.language] || 'İngilizce';
-        } else if (type === 'Series') {
-            document.getElementById('seriesName').value = data.name;
-            document.getElementById('seriesYear').value = data.premiered ? data.premiered.substring(0, 4) : "2025";
-            document.getElementById('seriesSummary').value = cleanSummary;
-            document.getElementById('seriesCategory').value = data.genres ? data.genres.join(', ') : "";
-            document.getElementById('seriesImageUrl').value = lastFetchedPosterUrl;
-            document.getElementById('seriesType').value = 'Dizi'; // Default
-            updatePosterPreview('series', lastFetchedPosterUrl);
+        const countryMap = { 'KR': 'Korea', 'TH': 'Thailand', 'CN': 'China', 'JP': 'Japan', 'TR': 'Turkey', 'US': 'USA' };
+        const mappedCountry = countryMap[countryCode] || countryCode;
+        const langMap = { 'Korean': 'Korece', 'ko': 'Korece', 'English': 'İngilizce', 'en': 'İngilizce', 'Japanese': 'Japonca', 'ja': 'Japonca', 'Turkish': 'Türkçe', 'tr': 'Türkçe', 'th': 'Tayca', 'Indonesian': 'Endonezce', 'id': 'Endonezce' };
+        const mappedLang = langMap[language] || 'Korece';
 
-            const langMap = { 'Korean': 'Korece', 'Turkish': 'Türkçe', 'English': 'İngilizce', 'Japanese': 'Japonca' };
-            document.getElementById('seriesLanguage').value = langMap[data.language] || 'Korece';
-        } else if (type === 'Upcoming') {
-            document.getElementById('upcomingName').value = data.name;
-            document.getElementById('upcomingImageUrl').value = lastFetchedPosterUrl;
-            updatePosterPreview('upcoming', lastFetchedPosterUrl);
+        if (type === 'movie' || type === 'Movie') {
+            document.getElementById('movieName').value = name;
+            document.getElementById('movieYear').value = year;
+            document.getElementById('movieSummary').value = summary;
+            document.getElementById('movieCategory').value = category;
+            document.getElementById('movieImageUrl').value = image;
+            document.getElementById('movieLanguage').value = mappedLang;
+            if (document.getElementById('movieCountry')) {
+                const countryOption = Array.from(document.getElementById('movieCountry').options)
+                    .find(o => o.value === mappedCountry || o.text === mappedCountry);
+                if (countryOption) document.getElementById('movieCountry').value = countryOption.value;
+            }
+            updatePosterPreview('movie', image);
+        } else if (type === 'series' || type === 'Series') {
+            document.getElementById('seriesName').value = name;
+            document.getElementById('seriesYear').value = year;
+            document.getElementById('seriesSummary').value = summary;
+            document.getElementById('seriesCategory').value = category;
+            document.getElementById('seriesImageUrl').value = image;
+            document.getElementById('seriesLanguage').value = mappedLang;
+            document.getElementById('seriesType').value = 'Dizi';
+            if (document.getElementById('seriesCountry')) {
+                const countryOption = Array.from(document.getElementById('seriesCountry').options)
+                    .find(o => o.value === mappedCountry || o.text === mappedCountry);
+                if (countryOption) document.getElementById('seriesCountry').value = countryOption.value;
+            }
+            updatePosterPreview('series', image);
+        } else if (type === 'Upcoming' || type === 'upcoming') {
+            document.getElementById('upcomingName').value = name;
+            document.getElementById('upcomingImageUrl').value = image;
+            updatePosterPreview('upcoming', image);
         }
     }
 
