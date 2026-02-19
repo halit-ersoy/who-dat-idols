@@ -610,6 +610,9 @@
             if (movieImageInput.files.length > 0) {
                 formData.append('image', movieImageInput.files[0]);
             }
+            if (lastFetchedPosterUrl) {
+                formData.append('imageUrl', lastFetchedPosterUrl);
+            }
             if (movieFileInput.files.length > 0) {
                 formData.append('file', movieFileInput.files[0]);
             }
@@ -844,6 +847,9 @@
 
             if (seriesImageInput.files.length > 0) {
                 formData.append('image', seriesImageInput.files[0]);
+            }
+            if (lastFetchedPosterUrl) {
+                formData.append('imageUrl', lastFetchedPosterUrl);
             }
 
             seriesSubmitBtn.innerText = "GÜNCELLENİYOR...";

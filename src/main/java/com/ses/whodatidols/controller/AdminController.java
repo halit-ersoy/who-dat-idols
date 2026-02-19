@@ -147,6 +147,7 @@ public class AdminController {
             @ModelAttribute Movie movie,
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam(value = "image", required = false) MultipartFile image,
+            @RequestParam(value = "imageUrl", required = false) String imageUrl,
             @RequestParam(value = "country", required = false) String country) {
         try {
             if (movie.getId() == null) {
@@ -154,6 +155,12 @@ public class AdminController {
             }
             movie.setCountry(country);
             movieService.updateMovie(movie, file, image);
+
+            // Handle URL image after service update (which might have its own logic)
+            if ((image == null || image.isEmpty()) && imageUrl != null && !imageUrl.isEmpty()) {
+                movieService.saveImageFromUrl(movie.getId(), imageUrl);
+            }
+
             return ResponseEntity.ok("{\"id\": \"" + movie.getId() + "\", \"message\": \"Film güncellendi.\"}");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Güncelleme hatası: " + e.getMessage());
@@ -165,12 +172,18 @@ public class AdminController {
             @ModelAttribute Series s,
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam(value = "image", required = false) MultipartFile image,
+            @RequestParam(value = "imageUrl", required = false) String imageUrl,
             @RequestParam(value = "country", required = false) String country) {
         try {
             if (s.getId() == null)
                 return ResponseEntity.badRequest().body("Dizi ID yok.");
             s.setCountry(country);
             seriesService.updateSeriesMetadata(s, file, image);
+
+            if ((image == null || image.isEmpty()) && imageUrl != null && !imageUrl.isEmpty()) {
+                seriesService.saveImageFromUrl(s.getId(), imageUrl);
+            }
+
             return ResponseEntity.ok("{\"id\": \"" + s.getId() + "\", \"message\": \"Dizi güncellendi.\"}");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
