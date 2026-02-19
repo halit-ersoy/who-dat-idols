@@ -1293,6 +1293,10 @@ input[type='checkbox']:hover {
     transform: translateX(100%);
 }
 
+.mode-toggle input[id="catUpcoming"]:checked~.upcoming-slider {
+    transform: translateX(100%);
+}
+
 /* Premium File Input */
 .premium-file-input {
     position: relative;

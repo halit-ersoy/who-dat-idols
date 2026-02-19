@@ -147,40 +147,47 @@ public class AdminController {
     }
 
     @PostMapping("/update-movie")
-    public ResponseEntity<String> updateMovie(
+    public ResponseEntity<Map<String, String>> updateMovie(
             @ModelAttribute Movie movie,
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam(value = "image", required = false) MultipartFile image,
             @RequestParam(value = "imageUrl", required = false) String imageUrl,
             @RequestParam(value = "country", required = false) String country) {
+        Map<String, String> response = new HashMap<>();
         try {
             if (movie.getId() == null) {
-                return ResponseEntity.badRequest().body("Film ID bulunamadı.");
+                response.put("error", "Film ID bulunamadı.");
+                return ResponseEntity.badRequest().body(response);
             }
             movie.setCountry(country);
             movieService.updateMovie(movie, file, image);
 
-            // Handle URL image after service update (which might have its own logic)
             if ((image == null || image.isEmpty()) && imageUrl != null && !imageUrl.isEmpty()) {
                 movieService.saveImageFromUrl(movie.getId(), imageUrl);
             }
 
-            return ResponseEntity.ok("{\"id\": \"" + movie.getId() + "\", \"message\": \"Film güncellendi.\"}");
+            response.put("id", movie.getId().toString());
+            response.put("message", "Film güncellendi.");
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Güncelleme hatası: " + e.getMessage());
+            response.put("error", e.getMessage());
+            return ResponseEntity.status(500).body(response);
         }
     }
 
     @PostMapping("/update-series")
-    public ResponseEntity<String> updateSeries(
+    public ResponseEntity<Map<String, String>> updateSeries(
             @ModelAttribute Series s,
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam(value = "image", required = false) MultipartFile image,
             @RequestParam(value = "imageUrl", required = false) String imageUrl,
             @RequestParam(value = "country", required = false) String country) {
+        Map<String, String> response = new HashMap<>();
         try {
-            if (s.getId() == null)
-                return ResponseEntity.badRequest().body("Dizi ID yok.");
+            if (s.getId() == null) {
+                response.put("error", "Dizi ID yok.");
+                return ResponseEntity.badRequest().body(response);
+            }
             s.setCountry(country);
             seriesService.updateSeriesMetadata(s, file, image);
 
@@ -188,9 +195,12 @@ public class AdminController {
                 seriesService.saveImageFromUrl(s.getId(), imageUrl);
             }
 
-            return ResponseEntity.ok("{\"id\": \"" + s.getId() + "\", \"message\": \"Dizi güncellendi.\"}");
+            response.put("id", s.getId().toString());
+            response.put("message", "Dizi güncellendi.");
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+            response.put("error", e.getMessage());
+            return ResponseEntity.status(500).body(response);
         }
     }
 

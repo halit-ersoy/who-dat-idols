@@ -579,16 +579,29 @@
                                     <option value="Movie">Film</option>
                                 </select>
                             </div>
-                            <div class="form-group">
-                                <label for="upcomingCategory">Bölüm Kategorisi</label>
-                                <select id="upcomingCategory">
-                                    <option value="Translated">Çevrilenler (Cevrilenler)</option>
-                                    <option value="Upcoming">Beklenenler (Beklenenler)</option>
-                                </select>
+                            <div class="form-group full-width">
+                                <label>Bölüm Kategorisi</label>
+                                <div class="mode-toggle-container">
+                                    <div class="mode-toggle">
+                                        <input type="radio" name="upcomingCategory" id="catTranslated"
+                                            value="Translated" checked onchange="toggleUpcomingCategory()">
+                                        <label for="catTranslated">
+                                            <i class="fas fa-language"></i> Çevrilenler
+                                        </label>
+
+                                        <input type="radio" name="upcomingCategory" id="catUpcoming" value="Upcoming"
+                                            onchange="toggleUpcomingCategory()">
+                                        <label for="catUpcoming">
+                                            <i class="fas fa-calendar-alt"></i> Beklenenler
+                                        </label>
+
+                                        <div class="mode-slider upcoming-slider"></div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group" id="upcomingStatusGroup">
                                 <label for="upcomingStatus">Durum / Yüzde</label>
-                                <input type="text" id="upcomingStatus" placeholder="Örn: 75% veya Çevriliyor" required>
+                                <input type="text" id="upcomingStatus" placeholder="Örn: 75% veya Çevriliyor">
                             </div>
                             <div class="form-group">
                                 <label for="upcomingDatetime">Tahmini Yayın Tarihi</label>

@@ -858,12 +858,22 @@
             fetch('/admin/update-series', {
                 method: 'POST',
                 body: formData
-            }).then(res => res.json()).then(data => {
+            }).then(res => {
+                if (!res.ok) {
+                    if (res.status === 302 || res.status === 0) {
+                        throw new Error("Oturum süresi dolmuş olabilir veya yetki hatası (302). Lütfen sayfayı yenileyip tekrar giriş yapın.");
+                    }
+                    return res.text().then(text => { throw new Error(`Sunucu Hatası (${res.status}): ${text}`); });
+                }
+                return res.json();
+            }).then(data => {
                 alert(data.message || "Dizi bilgileri güncellendi.");
                 resetSeriesForm();
                 fetchSeries();
-            }).catch(err => alert("Hata: " + err))
-                .finally(() => { seriesSubmitBtn.disabled = false; });
+            }).catch(err => {
+                console.error("Update Series Error:", err);
+                alert("Hata: " + err.message);
+            }).finally(() => { seriesSubmitBtn.disabled = false; });
             return;
         }
 
@@ -1075,6 +1085,21 @@
         }
     };
 
+    window.toggleUpcomingCategory = function () {
+        const category = document.querySelector('input[name="upcomingCategory"]:checked').value;
+        const statusGroup = document.getElementById('upcomingStatusGroup');
+        const statusInput = document.getElementById('upcomingStatus');
+
+        if (category === 'Upcoming') {
+            statusGroup.style.display = 'none';
+            statusInput.required = false;
+            statusInput.value = ""; // Clear if hidden
+        } else {
+            statusGroup.style.display = 'block';
+            statusInput.required = true;
+        }
+    };
+
     function parseEpisodesFromXML(xmlString, seriesName, cat, summ, lang, year) {
         if (!xmlString) return [];
         try {
@@ -1253,18 +1278,6 @@
             });
     };
 
-    function updateSeries(data) {
-        seriesSubmitBtn.innerText = "GÜNCELLENİYOR...";
-        seriesSubmitBtn.disabled = true;
-        fetch('/admin/update-series', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        }).then(res => res.text()).then(msg => {
-            alert(msg); resetSeriesForm(); fetchSeries();
-        }).catch(err => alert("Hata: " + err))
-            .finally(() => { seriesSubmitBtn.disabled = false; });
-    }
 
     seriesCancelBtn.addEventListener('click', resetSeriesForm);
     function resetSeriesForm() {
@@ -1662,6 +1675,7 @@
 
     if (upcomingForm) {
         fetchUpcoming();
+        toggleUpcomingCategory();
 
         // Search logic for upcoming reference
         upcomingSearchInput.addEventListener('input', function () {
@@ -1746,7 +1760,7 @@
             const formData = new FormData();
             formData.append('name', document.getElementById('upcomingName').value);
             formData.append('type', document.getElementById('upcomingType').value);
-            formData.append('category', document.getElementById('upcomingCategory').value);
+            formData.append('category', document.querySelector('input[name="upcomingCategory"]:checked').value);
             formData.append('status', document.getElementById('upcomingStatus').value);
             formData.append('datetime', document.getElementById('upcomingDatetime').value);
 
@@ -1770,6 +1784,10 @@
             }).then(res => {
                 if (res.ok) {
                     upcomingForm.reset();
+                    // Reset toggle to default (Translated)
+                    document.getElementById('catTranslated').checked = true;
+                    toggleUpcomingCategory();
+
                     upcomingRefDisplay.style.display = 'none';
                     upcomingRefIdInput.value = '';
                     if (document.getElementById('upcomingImageUrl')) document.getElementById('upcomingImageUrl').value = '';
