@@ -37,7 +37,9 @@ public class VideoSourceRepository {
     public List<VideoSource> findByContentId(UUID contentId) {
         String sql = "EXEC dbo.GetVideoSources ?";
         logger.info("Fetching sources for contentId: {}", contentId);
-        return jdbcTemplate.query(sql, rowMapper, contentId.toString());
+        @SuppressWarnings("null")
+        List<VideoSource> results = jdbcTemplate.query(sql, rowMapper, contentId.toString());
+        return results;
     }
 
     public void save(VideoSource source) {

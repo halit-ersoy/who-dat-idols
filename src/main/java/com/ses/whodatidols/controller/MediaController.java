@@ -1,11 +1,11 @@
 package com.ses.whodatidols.controller;
 
 import com.ses.whodatidols.model.VideoSource;
-import com.ses.whodatidols.repository.ContentRepository;
+
 import com.ses.whodatidols.repository.VideoSourceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -51,16 +51,14 @@ public class MediaController {
     private String upcomingPath;
 
     private final JdbcTemplate jdbcTemplate;
-    private final ContentRepository contentRepository;
+
     private final VideoSourceRepository videoSourceRepository;
 
     // Cache to avoid repeated content type probing
     private final Map<String, MediaType> mediaTypeCache = new ConcurrentHashMap<>();
 
-    public MediaController(JdbcTemplate jdbcTemplate, ContentRepository contentRepository,
-            VideoSourceRepository videoSourceRepository) {
+    public MediaController(JdbcTemplate jdbcTemplate, VideoSourceRepository videoSourceRepository) {
         this.jdbcTemplate = jdbcTemplate;
-        this.contentRepository = contentRepository;
         this.videoSourceRepository = videoSourceRepository;
     }
 
@@ -157,6 +155,7 @@ public class MediaController {
         }
     }
 
+    @SuppressWarnings("null")
     @GetMapping("/video/{id}/playlist.m3u8")
     public ResponseEntity<Resource> getHlsPlaylist(@PathVariable("id") UUID id) {
         try {
@@ -181,6 +180,7 @@ public class MediaController {
         }
     }
 
+    @SuppressWarnings("null")
     @GetMapping("/video/{id}/{segment}.ts")
     public ResponseEntity<Resource> getHlsSegment(
             @PathVariable("id") UUID id,

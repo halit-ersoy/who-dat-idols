@@ -43,7 +43,7 @@ public class PersonRepository {
                 callableStatement.setString(3, null);
                 callableStatement.setString(4, code);
                 return callableStatement;
-            }, Collections.<SqlParameter>emptyList());
+            }, new ArrayList<SqlParameter>());
 
             if (result.containsKey("#result-set-1")) {
                 List<Map<String, Object>> resultSet = (List<Map<String, Object>>) result.get("#result-set-1");
@@ -103,7 +103,7 @@ public class PersonRepository {
                 callableStatement.setString(3, null);
                 callableStatement.setString(4, null);
                 return callableStatement;
-            }, Collections.<SqlParameter>emptyList());
+            }, new ArrayList<SqlParameter>());
 
             if (result.containsKey("#result-set-1")) {
                 List<Map<String, Object>> resultSet = (List<Map<String, Object>>) result.get("#result-set-1");
@@ -138,7 +138,7 @@ public class PersonRepository {
                 callableStatement.setString(3, newPassword);
                 callableStatement.setString(4, null);
                 return callableStatement;
-            }, Collections.<SqlParameter>emptyList());
+            }, new ArrayList<SqlParameter>());
 
             if (result.containsKey("#result-set-1")) {
                 List<Map<String, Object>> resultSet = (List<Map<String, Object>>) result.get("#result-set-1");
@@ -182,7 +182,7 @@ public class PersonRepository {
             callableStatement.setString(1, usernameOrEmail);
             callableStatement.setString(2, password);
             return callableStatement;
-        }, Collections.<SqlParameter>emptyList());
+        }, new ArrayList<SqlParameter>());
 
         Map<String, Object> response = new HashMap<>();
         if (result.containsKey("#result-set-1")) {
@@ -242,7 +242,7 @@ public class PersonRepository {
             callableStatement.setString(4, person.getEmail());
             callableStatement.setString(5, person.getPassword());
             return callableStatement;
-        }, Collections.<SqlParameter>emptyList());
+        }, new ArrayList<SqlParameter>());
 
         Map<String, Object> response = new HashMap<>();
         if (result.containsKey("#result-set-1")) {

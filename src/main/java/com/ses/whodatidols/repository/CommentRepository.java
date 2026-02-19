@@ -7,7 +7,6 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -157,6 +156,9 @@ public class CommentRepository {
         String userIdSql = "SELECT ID FROM Person WHERE cookie = ?";
         try {
             UUID userId = jdbcTemplate.queryForObject(userIdSql, UUID.class, cookie);
+
+            if (userId == null)
+                return;
 
             String checkSql = "SELECT COUNT(*) FROM CommentLikes WHERE CommentId = ? AND UserId = ?";
             Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, commentId.toString(),
