@@ -1578,3 +1578,87 @@ input[type='checkbox']:hover {
     color: var(--primary);
     background: rgba(30, 215, 96, 0.1);
 }
+
+/* ===========================================================
+   CONTENT FILTER SWITCH (ARCHIVE)
+   =========================================================== */
+.filter-switch-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 25px;
+}
+
+.filter-switch {
+    display: inline-flex;
+    background: #0f0f0f;
+    border-radius: 50px;
+    padding: 4px;
+    /* Inner padding for the "track" */
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.filter-switch input[type="radio"] {
+    display: none;
+}
+
+.filter-switch label {
+    width: 90px;
+    padding: 8px 0;
+    text-align: center;
+    border-radius: 40px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-dim);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    z-index: 2;
+    margin: 0;
+    user-select: none;
+}
+
+.filter-switch label:hover {
+    color: var(--text-main);
+}
+
+.filter-switch .filter-slider {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    height: calc(100% - 8px);
+    width: 90px;
+    background: var(--primary);
+    border-radius: 40px;
+    transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    z-index: 1;
+    box-shadow: 0 2px 8px rgba(30, 215, 96, 0.3);
+}
+
+/* Adjust slider position based on checked radio */
+/* Since all labels are 90px wide, we just translate by 90px steps */
+#filterHero:checked~.filter-slider {
+    transform: translateX(0);
+}
+
+#filterMovies:checked~.filter-slider {
+    transform: translateX(90px);
+}
+
+#filterSeries:checked~.filter-slider {
+    transform: translateX(180px);
+}
+
+/* Selected label style */
+.filter-switch input:checked+label {
+    color: #000;
+    font-weight: 700;
+}
+
+/* Responsive adjust */
+@media (max-width: 768px) {
+    .filter-switch-container {
+        justify-content: center;
+    }
+}

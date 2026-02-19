@@ -58,7 +58,6 @@
             <header class="main-header">
                 <div class="welcome">
                     <h1>Hoş Geldin, Admin 👋</h1>
-                    <p>İçerik havuzunu yönetmeye hazır mısın?</p>
                 </div>
                 <div class="user-profile">
                     <!-- Gelecekte eklenebilir: Profil/Çıkış -->
@@ -641,8 +640,24 @@
 
             <!-- ARCHIVE SECTION -->
             <section id="archive-section" class="admin-section" style="display: none;">
+                <!-- Content Filter Switch -->
+                <div class="filter-switch-container">
+                    <div class="filter-switch">
+                        <input type="radio" id="filterHero" name="archiveFilter" value="hero" checked>
+                        <label for="filterHero">Hero</label>
+
+                        <input type="radio" id="filterMovies" name="archiveFilter" value="movies">
+                        <label for="filterMovies">Filmler</label>
+
+                        <input type="radio" id="filterSeries" name="archiveFilter" value="series">
+                        <label for="filterSeries">Diziler</label>
+
+                        <div class="filter-slider"></div>
+                    </div>
+                </div>
+
                 <div class="archive-grid">
-                    <div class="card">
+                    <div class="card" id="heroArchiveCard">
                         <div class="card-header">
                             <h2><i class="fas fa-star"></i> Hero Arşivi</h2>
                         </div>
@@ -662,7 +677,7 @@
                         </div>
                     </div>
 
-                    <div class="card">
+                    <div class="card" id="movieArchiveCard" style="display: none;">
                         <div class="card-header">
                             <h2><i class="fas fa-film"></i> Film Arşivi</h2>
                             <div class="search-archive-wrapper">
@@ -690,7 +705,7 @@
                         </div>
                     </div>
 
-                    <div class="card">
+                    <div class="card" id="seriesArchiveCard" style="display: none;">
                         <div class="card-header">
                             <div style="display: flex; align-items: center; gap: 15px;">
                                 <input type="checkbox" id="selectAllSeries" title="Tüm Dizileri Seç">

@@ -98,6 +98,49 @@
     }
 
     /* ===========================================================
+       CONTENT FILTER SWITCH (ARCHIVE)
+       =========================================================== */
+    const filterRadios = document.querySelectorAll('input[name="archiveFilter"]');
+    const heroCard = document.getElementById('heroArchiveCard');
+    const movieCard = document.getElementById('movieArchiveCard');
+    const seriesCard = document.getElementById('seriesArchiveCard');
+
+    if (filterRadios.length > 0 && heroCard && movieCard && seriesCard) {
+        // Function to update visibility
+        function updateArchiveView(selectedVal) {
+            // Hide all
+            heroCard.style.display = 'none';
+            movieCard.style.display = 'none';
+            seriesCard.style.display = 'none';
+
+            // Show selected
+            if (selectedVal === 'hero') {
+                heroCard.style.display = 'block';
+                // Trigger slider animation adjustment if needed
+            } else if (selectedVal === 'movies') {
+                movieCard.style.display = 'block';
+            } else if (selectedVal === 'series') {
+                seriesCard.style.display = 'block';
+            }
+        }
+
+        // Add event listeners
+        filterRadios.forEach(radio => {
+            radio.addEventListener('change', function () {
+                if (this.checked) {
+                    updateArchiveView(this.value);
+                }
+            });
+        });
+
+        // Initialize view based on checked input
+        const checkedRadio = document.querySelector('input[name="archiveFilter"]:checked');
+        if (checkedRadio) {
+            updateArchiveView(checkedRadio.value);
+        }
+    }
+
+    /* ===========================================================
        TOPLU SİLME (BULK DELETE) YÖNETİMİ
        =========================================================== */
     let selectedMovieIds = new Set();
