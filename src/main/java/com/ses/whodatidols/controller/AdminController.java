@@ -129,9 +129,7 @@ public class AdminController {
             @RequestParam("summary") String summary,
             @RequestParam(value = "country", required = false) String country) {
         try {
-            if (file == null || file.isEmpty()) {
-                return ResponseEntity.badRequest().body("Film dosyası seçilmelidir.");
-            }
+            // Video file is optional if external sources are used
             movie.setCountry(country);
             movieService.saveMovieWithFile(movie, file, image, summary);
 
@@ -216,9 +214,7 @@ public class AdminController {
             @RequestParam("season") int season,
             @RequestParam("episode") int episode) {
         try {
-            if (file == null || file.isEmpty()) {
-                return ResponseEntity.badRequest().body("Bölüm dosyası seçilmelidir.");
-            }
+            // Video file is optional if external sources are used
 
             if (existingSeriesId != null) {
                 seriesInfo.setId(existingSeriesId);

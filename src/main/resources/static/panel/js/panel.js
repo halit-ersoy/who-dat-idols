@@ -742,9 +742,8 @@
         movieSubmitBtn.style.backgroundColor = "";
         movieSubmitBtn.style.color = "";
         movieCancelBtn.style.display = "none";
-        movieFileInput.setAttribute('required', 'required');
+        updateVideoRequirement('movie');
 
-        if (movieImageInput) movieImageInput.value = "";
         if (movieImageInput) movieImageInput.value = "";
         if (moviePosterUrlInput) moviePosterUrlInput.value = "";
         document.getElementById('movieCountry').value = 'kr';
@@ -1312,7 +1311,7 @@
         seriesSubmitBtn.style.backgroundColor = "";
         seriesSubmitBtn.style.color = "";
         seriesCancelBtn.style.display = "none";
-        seriesFileInput.setAttribute('required', 'required');
+        updateVideoRequirement('series');
 
         // Reset visibility to default (New mode)
         document.getElementById('seriesModeGroup').style.display = 'block';
@@ -1322,7 +1321,6 @@
         document.getElementById('existingSeriesSelectWrapper').style.display = 'none';
         document.getElementById('modeNew').checked = true;
 
-        if (seriesImageInput) seriesImageInput.value = "";
         if (seriesImageInput) seriesImageInput.value = "";
         if (seriesPosterUrlInput) seriesPosterUrlInput.value = "";
         document.getElementById('seriesCountry').value = 'kr';
@@ -1924,15 +1922,50 @@
                 </div>
                 <div class="input-with-icon">
                     <i class="fas fa-link"></i>
-                    <input type="text" class="source-url" placeholder="Iframe URL veya Link" value="${url}">
+                    <input type="text" class="source-url" placeholder="Iframe URL veya Link" value="${url}" oninput="updateVideoRequirement('${type}')">
                 </div>
             </div>
-            <button type="button" class="btn-remove-source" onclick="this.parentElement.remove()" title="Kaynağı Kaldır">
+            <button type="button" class="btn-remove-source" onclick="removeSourceField(this, '${type}')" title="Kaynağı Kaldır">
                 <i class="fas fa-times"></i>
             </button>
         `;
         container.appendChild(row);
+        updateVideoRequirement(type);
     };
+
+    window.removeSourceField = function (btn, type) {
+        btn.parentElement.remove();
+        updateVideoRequirement(type);
+    };
+
+    window.updateVideoRequirement = function (type) {
+        const listDiv = document.getElementById(`${type}SourcesList`);
+        const fileInput = type === 'movie' ? document.getElementById('movieFile') : document.getElementById('seriesFile');
+        if (!listDiv || !fileInput) return;
+
+        const isEditMode = type === 'movie'
+            ? document.getElementById('movieId').value !== ""
+            : (document.getElementById('seriesId').value !== "" || document.getElementById('episodeId').value !== "");
+
+        // If in edit mode, it's already NOT required (backend handles partial updates)
+        if (isEditMode) {
+            fileInput.removeAttribute('required');
+            return;
+        }
+
+        const sources = listDiv.querySelectorAll('.source-row');
+        let hasValidSource = false;
+        sources.forEach(row => {
+            const url = row.querySelector('.source-url').value.trim();
+            if (url) hasValidSource = true;
+        });
+
+        if (hasValidSource) {
+            fileInput.removeAttribute('required');
+        } else {
+            fileInput.setAttribute('required', 'required');
+        }
+    }
 
     async function saveExternalSources(contentId, type) {
         try {
