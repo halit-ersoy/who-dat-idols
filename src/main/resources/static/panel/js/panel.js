@@ -668,7 +668,7 @@
                         <td>${movie.releaseYear}</td>
                         <td style="color: var(--text-dim);">${movie.category}</td>
                         <td>
-                            <button class="btn btn-sm btn-edit" onclick='editMovie(${JSON.stringify(movie).replace(/'/g, "&#39;")})'><i class="fas fa-edit"></i> DÜZENLE</button>
+                            <button class="btn btn-sm btn-edit" onclick='editMovie(${JSON.stringify(movie).replace(/'/g, "&#39;")}, event)'><i class="fas fa-edit"></i> DÜZENLE</button>
                             <button class="btn btn-sm btn-danger" onclick='deleteMovie("${movie.id}", "${movie.name.replace(/'/g, "\\'")}")'><i class="fas fa-trash"></i> SİL</button>
                         </td>
                     `;
@@ -678,7 +678,13 @@
             .catch(err => console.error("Film listesi hatası:", err));
     }
 
-    window.editMovie = function (movie) {
+    window.editMovie = function (movie, event) {
+        if (event && (event.shiftKey || event.ctrlKey || event.metaKey)) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('editMovie', movie.id);
+            window.open(url.toString(), '_blank');
+            return;
+        }
         movieIdInput.value = movie.id;
         document.getElementById('movieName').value = movie.name;
         document.getElementById('movieCategory').value = movie.category;
@@ -1022,7 +1028,7 @@
                                 </div>
                             </div>
                             <div class="series-actions" onclick="event.stopPropagation()">
-                                <button class="btn btn-sm btn-edit" onclick='editSeriesMetadata(${JSON.stringify(series).replace(/'/g, "&#39;")})'><i class="fas fa-edit"></i> DÜZENLE</button>
+                                <button class="btn btn-sm btn-edit" onclick='editSeriesMetadata(${JSON.stringify(series).replace(/'/g, "&#39;")}, event)'><i class="fas fa-edit"></i> DÜZENLE</button>
                                 <button class="btn btn-sm btn-danger" onclick='deleteSeriesByName("${series.name}")'><i class="fas fa-trash"></i> SİL</button>
                             </div>
                         </div>
@@ -1033,7 +1039,7 @@
                                         <strong>Sezon ${ep.season} - Bölüm ${ep.episode}</strong>
                                     </div>
                                     <div class="episode-actions">
-                                        <button class="btn btn-sm btn-edit" onclick='editEpisode(${JSON.stringify(ep).replace(/'/g, "&#39;")})'><i class="fas fa-edit"></i> DÜZENLE</button>
+                                         <button class="btn btn-sm btn-edit" onclick='editEpisode(${JSON.stringify(ep).replace(/'/g, "&#39;")}, event)'><i class="fas fa-edit"></i> DÜZENLE</button>
                                         <button class="btn btn-sm btn-edit" style="background:#6c757d;" onclick='preloadEpisodeForm(${JSON.stringify(ep).replace(/'/g, "&#39;")})'><i class="fas fa-copy"></i> KOPYALA</button>
                                         <button class="btn btn-sm btn-danger" onclick='deleteEpisode("${ep.id}")'><i class="fas fa-trash"></i> SİL</button>
                                     </div>
@@ -1151,7 +1157,13 @@
         }
     };
 
-    window.editSeriesMetadata = function (series) {
+    window.editSeriesMetadata = function (series, event) {
+        if (event && (event.shiftKey || event.ctrlKey || event.metaKey)) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('editSeries', series.id);
+            window.open(url.toString(), '_blank');
+            return;
+        }
         resetSeriesForm();
         seriesIdInput.value = series.id;
         document.getElementById('seriesName').value = series.name;
@@ -1195,7 +1207,14 @@
         if (seriesLink) seriesLink.click();
     };
 
-    window.editEpisode = function (ep) {
+    window.editEpisode = function (ep, event) {
+        if (event && (event.shiftKey || event.ctrlKey || event.metaKey)) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('editEpisode', ep.id);
+            // We need parent info to fully preload it in a new tab, but for now we'll fetch it on load if possible
+            window.open(url.toString(), '_blank');
+            return;
+        }
         resetSeriesForm();
         episodeIdInput.value = ep.id;
         document.getElementById('seasonNum').value = ep.season;
@@ -2339,6 +2358,59 @@
 
         // Load on init
         loadAnnouncementSettings();
+    }
+
+    // ===========================================================
+    // DIRECT EDIT FROM URL PARAMETERS (Shift+Click support)
+    // ===========================================================
+    const urlParams = new URLSearchParams(window.location.search);
+    const movieEditId = urlParams.get('editMovie');
+    const seriesEditId = urlParams.get('editSeries');
+    const episodeEditId = urlParams.get('editEpisode');
+
+    if (movieEditId) {
+        let attempts = 0;
+        const checkMovies = setInterval(() => {
+            if (window.currentMovies && window.currentMovies.length > 0) {
+                const movie = window.currentMovies.find(m => m.id === movieEditId);
+                if (movie) {
+                    clearInterval(checkMovies);
+                    window.editMovie(movie);
+                }
+            }
+            if (attempts++ > 20) clearInterval(checkMovies);
+        }, 500);
+    }
+
+    if (seriesEditId) {
+        let attempts = 0;
+        const checkSeries = setInterval(() => {
+            if (window.currentSeries && window.currentSeries.length > 0) {
+                const series = window.currentSeries.find(s => s.id === seriesEditId);
+                if (series) {
+                    clearInterval(checkSeries);
+                    window.editSeriesMetadata(series);
+                }
+            }
+            if (attempts++ > 20) clearInterval(checkSeries);
+        }, 500);
+    }
+
+    if (episodeEditId) {
+        fetch(`/api/video/details?id=${episodeEditId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.type === 'episode' || data.type === 'SoapOpera') {
+                    const epObj = {
+                        id: episodeEditId,
+                        season: data.season,
+                        episode: data.episode,
+                        name: data.title
+                    };
+                    window.editEpisode(epObj);
+                }
+            })
+            .catch(err => console.error("Direct episode edit error:", err));
     }
 
 });
