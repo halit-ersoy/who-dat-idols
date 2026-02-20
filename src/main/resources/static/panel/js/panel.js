@@ -1973,14 +1973,7 @@
        =========================================================== */
     const viewStatsSearchInput = document.getElementById('viewStatsSearch');
     if (viewStatsSearchInput) {
-        viewStatsSearchInput.addEventListener('input', function () {
-            const query = this.value.toLowerCase().trim();
-            const rows = document.querySelectorAll('#viewStatsTable tbody tr');
-            rows.forEach(row => {
-                const name = row.cells[0].innerText.toLowerCase();
-                row.style.display = name.includes(query) ? '' : 'none';
-            });
-        });
+        viewStatsSearchInput.addEventListener('input', updateViewStatsVisibility);
     }
 
     function fetchViewStats() {
@@ -1993,6 +1986,7 @@
                 stats.forEach(item => {
                     const tr = document.createElement('tr');
                     const isMovie = item.Type === 'Movie';
+                    tr.setAttribute('data-type', isMovie ? 'movies' : 'series');
                     tr.innerHTML = `
                         <td style="font-weight: 600;">${item.Name}</td>
                         <td><span class="item-type">${isMovie ? 'Film' : 'Dizi'}</span></td>
@@ -2011,8 +2005,36 @@
                     `;
                     tbody.appendChild(tr);
                 });
+
+                // Apply initial filter/search if any
+                updateViewStatsVisibility();
             })
             .catch(err => console.error("View stats error:", err));
+    }
+
+    // Filter Logic for View Management
+    const vsFilterRadios = document.querySelectorAll('input[name="viewStatsFilter"]');
+    if (vsFilterRadios.length > 0) {
+        vsFilterRadios.forEach(radio => {
+            radio.addEventListener('change', updateViewStatsVisibility);
+        });
+    }
+
+    function updateViewStatsVisibility() {
+        const selectedType = document.querySelector('input[name="viewStatsFilter"]:checked').value;
+        const query = (document.getElementById('viewStatsSearch')?.value || '').toLowerCase().trim();
+        const rows = document.querySelectorAll('#viewStatsTable tbody tr');
+
+        rows.forEach(row => {
+            const typeMatch = (selectedType === 'all' || row.getAttribute('data-type') === selectedType);
+            const nameMatch = row.cells[0].innerText.toLowerCase().includes(query);
+
+            if (typeMatch && nameMatch) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
     }
 
     window.stepViewCount = function (id, step) {

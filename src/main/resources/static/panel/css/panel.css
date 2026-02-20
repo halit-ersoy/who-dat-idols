@@ -1764,6 +1764,18 @@ input[type='checkbox']:hover {
     transform: translateX(180px);
 }
 
+#vsFilterAll:checked~.filter-slider {
+    transform: translateX(0);
+}
+
+#vsFilterMovies:checked~.filter-slider {
+    transform: translateX(90px);
+}
+
+#vsFilterSeries:checked~.filter-slider {
+    transform: translateX(180px);
+}
+
 /* Selected label style */
 .filter-switch input:checked+label {
     color: #000;
