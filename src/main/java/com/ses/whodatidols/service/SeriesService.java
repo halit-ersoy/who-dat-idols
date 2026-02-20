@@ -9,6 +9,7 @@ import com.ses.whodatidols.util.FFmpegUtils;
 import com.ses.whodatidols.util.ImageUtils;
 import com.ses.whodatidols.viewmodel.EpisodeViewModel;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -129,6 +130,7 @@ public class SeriesService {
         return episodes;
     }
 
+    @CacheEvict(value = "featuredContent", allEntries = true)
     public void updateSeriesMetadata(Series s, MultipartFile file, MultipartFile image) throws IOException {
         if (file != null && !file.isEmpty()) {
             Path uploadPath = Paths.get(soapOperasPath).toAbsolutePath().normalize();
@@ -159,6 +161,7 @@ public class SeriesService {
     }
 
     @Transactional
+    @CacheEvict(value = "featuredContent", allEntries = true)
     public UUID saveEpisodeWithFile(Series seriesInfo, int seasonNumber, int episodeNumber, MultipartFile file,
             MultipartFile image, UUID existingSeriesId)
             throws IOException {
@@ -259,6 +262,7 @@ public class SeriesService {
     }
 
     @Transactional
+    @CacheEvict(value = "featuredContent", allEntries = true)
     public void updateEpisode(UUID episodeId, int seasonNumber, int episodeNumber, MultipartFile file)
             throws IOException {
         Episode ep = repository.findEpisodeById(episodeId);
@@ -339,6 +343,7 @@ public class SeriesService {
     }
 
     @Transactional
+    @CacheEvict(value = "featuredContent", allEntries = true)
     public void deleteEpisodeById(UUID id) {
         Series parentSeries = repository.findSeriesByEpisodeIdInsideXML(id.toString());
         if (parentSeries != null) {
@@ -360,6 +365,7 @@ public class SeriesService {
     }
 
     @Transactional
+    @CacheEvict(value = "featuredContent", allEntries = true)
     public void deleteSeriesById(UUID id) {
         Series series = repository.findSeriesById(id);
         if (series == null)

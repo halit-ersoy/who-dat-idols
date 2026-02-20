@@ -14,6 +14,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -50,6 +51,7 @@ public class HomeController {
         }
     }
 
+    @Cacheable("featuredContent")
     @GetMapping("/api/featured-content")
     @ResponseBody
     public ResponseEntity<FeaturedContentResponse> getFeaturedContent() {
@@ -85,10 +87,17 @@ public class HomeController {
         }
         response.movies = movieItems;
 
-        // 2. Series (20 adet - Bölüm bazlı)
-        List<Episode> episodes = seriesService.getRecentEpisodesWithMetadata(20);
+        // 2. Series (Bölüm bazlı - Condensing applied)
+        // Fetch more to ensure diversity after condensing
+        List<Episode> rawEpisodes = seriesService.getRecentEpisodesWithMetadata(1000);
+        List<Episode> condensedEpisodes = condenseConsecutiveEpisodes(rawEpisodes);
+
         List<FeaturedItem> tvItems = new java.util.ArrayList<>();
-        for (Episode ep : episodes) {
+        int tvCount = 0;
+        for (Episode ep : condensedEpisodes) {
+            if (tvCount >= 20)
+                break;
+
             FeaturedItem item = new FeaturedItem();
             item.id = ep.getId().toString(); // Item ID is Episode ID
 
@@ -102,16 +111,10 @@ public class HomeController {
             if (ep.getSeriesId() != null) {
                 Series series = seriesService.getSeriesById(ep.getSeriesId());
                 if (series != null) {
-                    // Usually we show Series Name for featured item, or "Series - Episode"
-                    // If Episode Name equals Series Name (common in single file uploads without
-                    // specific ep title), use Series Name.
-                    // If different, maybe combine? But frontend logic usually expects Series Title.
-                    // Let's use Series Name preferred.
                     title = series.getName();
                     language = series.getLanguage();
                     country = series.getCountry();
                     isFinal = series.getFinalStatus() == 1;
-                    // Use series image
                     imageId = series.getId().toString();
                 }
             }
@@ -132,10 +135,57 @@ public class HomeController {
             item.episode = ep.getEpisodeNumber();
 
             tvItems.add(item);
+            tvCount++;
         }
         response.tv = tvItems;
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Condenses contiguous blocks of episodes from the same series.
+     * Only the first (most recent) and last (oldest in the run) are kept.
+     */
+    private List<Episode> condenseConsecutiveEpisodes(List<Episode> episodes) {
+        if (episodes == null || episodes.isEmpty())
+            return episodes;
+
+        List<Episode> result = new java.util.ArrayList<>();
+        int i = 0;
+        int n = episodes.size();
+
+        while (i < n) {
+            Episode current = episodes.get(i);
+            UUID seriesId = current.getSeriesId();
+
+            if (seriesId == null) {
+                result.add(current);
+                i++;
+                continue;
+            }
+
+            // Find contiguous block end
+            int j = i + 1;
+            while (j < n) {
+                Episode next = episodes.get(j);
+                if (seriesId.equals(next.getSeriesId())) {
+                    j++;
+                } else {
+                    break;
+                }
+            }
+
+            // Kepp first of run
+            result.add(episodes.get(i));
+
+            // If block has more than 1, keep last of run too
+            if (j - i > 1) {
+                result.add(episodes.get(j - 1));
+            }
+
+            i = j;
+        }
+        return result;
     }
 
     private String mapLanguageToCode(String lang) {
@@ -502,6 +552,21 @@ public class HomeController {
     public ResponseEntity<Resource> getProfilePage() {
         try {
             Resource htmlPage = new ClassPathResource("static/profile/html/profile.html");
+            if (!htmlPage.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
+                    .body(htmlPage);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @GetMapping({ "/coming-soon", "/programlar", "/diziler", "/bl-dizileri" })
+    public ResponseEntity<Resource> getComingSoonPage() {
+        try {
+            Resource htmlPage = new ClassPathResource("static/coming-soon/html/coming-soon.html");
             if (!htmlPage.exists()) {
                 return ResponseEntity.notFound().build();
             }

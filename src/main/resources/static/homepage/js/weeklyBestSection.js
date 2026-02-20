@@ -12,7 +12,7 @@ export function initWeeklyBestSection() {
     }
 
     // Hem filmler hem de diziler verisini cache'lemek için nesne oluşturuluyor.
-    let weeklyData = {movies: null, tv: null};
+    let weeklyData = { movies: null, tv: null };
     let currentMode = 'tv'; // Diziler seçili başlangıç durumu
     let isLoading = false;
 
@@ -79,8 +79,7 @@ export function initWeeklyBestSection() {
     function renderWeeklyBest(type) {
         const data = weeklyData[type];
         if (!data) {
-            // Veri cache'de yoksa loading spinner gösterip tekrar fetch yapıyoruz.
-            weeklyBestContainer.innerHTML = '<div class="loading-spinner"></div>';
+            // Veri cache'de yoksa fetch yapıyoruz (spinner kaldırıldı).
             fetchAndCache(type).then(() => {
                 renderCards(weeklyData[type]);
             });

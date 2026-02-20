@@ -105,7 +105,7 @@ export function initLoadedEpisodesSection() {
         if (mode === 'translated') {
             const data = episodesData.translated;
             if (!data) {
-                carousel.innerHTML = '<div class="upcoming-loading-spinner"></div>';
+                // carousel.innerHTML removed to avoid internal spinners
                 fetchTranslatedData().then(() => {
                     populateCarousel(episodesData.translated);
                 });
@@ -113,8 +113,8 @@ export function initLoadedEpisodesSection() {
                 populateCarousel(data);
             }
         } else {
-            // Upcoming episodes section
-            carousel.innerHTML = '<div class="upcoming-loading-spinner"></div>';
+            // upcoming episodes section
+            // carousel.innerHTML removed to avoid internal spinners
             if (episodesData.upcoming) {
                 populateUpcomingCarousel(episodesData.upcoming);
             } else {

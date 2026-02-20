@@ -40,7 +40,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initRegister();
     initForgotPass();
     initCalendar();
-    initCalendar();
     initNotifications();
     initAnnouncement();
 });

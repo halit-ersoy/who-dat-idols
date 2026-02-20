@@ -3,6 +3,7 @@ package com.ses.whodatidols.service;
 import com.ses.whodatidols.model.Movie;
 import com.ses.whodatidols.repository.MovieRepository;
 import com.ses.whodatidols.repository.VideoSourceRepository;
+import org.springframework.cache.annotation.CacheEvict;
 import com.ses.whodatidols.util.FFmpegUtils;
 import com.ses.whodatidols.controller.MediaController;
 import com.ses.whodatidols.util.ImageUtils;
@@ -47,6 +48,7 @@ public class MovieService {
     }
 
     // Güncelleme Operasyonu
+    @CacheEvict(value = "featuredContent", allEntries = true)
     public void updateMovie(Movie movie, MultipartFile file, MultipartFile image) throws IOException {
         if (file != null && !file.isEmpty()) {
             Path uploadPath = Paths.get(moviesPath).toAbsolutePath().normalize();
@@ -86,6 +88,7 @@ public class MovieService {
         }
     }
 
+    @CacheEvict(value = "featuredContent", allEntries = true)
     public void saveMovieWithFile(Movie movie, MultipartFile file, MultipartFile image, String summary)
             throws IOException {
         UUID uuid = UUID.randomUUID();
@@ -145,6 +148,7 @@ public class MovieService {
     }
 
     @org.springframework.transaction.annotation.Transactional
+    @CacheEvict(value = "featuredContent", allEntries = true)
     public void deleteMovieById(UUID id) {
         // 1. Veritabanından kaynakları ve filmi sil
         videoSourceRepository.deleteAllForContent(id);

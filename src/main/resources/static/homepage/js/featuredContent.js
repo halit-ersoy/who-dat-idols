@@ -51,7 +51,7 @@ export function initFeaturedContent() {
     updateToggleState();
 
     // API'den veri çek
-    featuredGrid.innerHTML = '<div class="loading-spinner">Yükleniyor...</div>';
+    // featuredGrid.innerHTML removed to avoid internal spinners
 
     fetch('/api/featured-content')
         .then(response => response.json())
