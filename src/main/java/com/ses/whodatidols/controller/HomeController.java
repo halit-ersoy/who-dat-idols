@@ -210,6 +210,8 @@ public class HomeController {
             return "my";
         if (lang.contains("singa"))
             return "sg";
+        if (lang.contains("lehçe") || lang.contains("polon") || lang.contains("poland"))
+            return "pl";
         return "kr"; // Bilinmiyorsa Kore varsay
     }
 

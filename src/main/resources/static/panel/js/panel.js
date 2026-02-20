@@ -1590,7 +1590,7 @@
             'US': 'USA', 'BE': 'Belgium', 'CH': 'Switzerland', 'HK': 'Hong Kong',
             'CA': 'Canada', 'ES': 'Spain', 'IN': 'India', 'VN': 'Vietnam',
             'KH': 'Cambodia', 'EE': 'Estonia', 'DE': 'Germany', 'FR': 'France',
-            'HR': 'Croatia', 'NL': 'Netherlands', 'GB': 'UK', 'AT': 'Austria', 'IT': 'Italy'
+            'HR': 'Croatia', 'NL': 'Netherlands', 'GB': 'UK', 'AT': 'Austria', 'IT': 'Italy', 'PL': 'pl'
         };
         const mappedCountry = countryMap[countryCode] || countryCode;
         const langMap = {
@@ -1609,7 +1609,8 @@
             'Vietnamese': 'Vietnamca', 'vi': 'Vietnamca',
             'Khmer': 'Kmerce', 'km': 'Kmerce',
             'Croatian': 'Hırvatça', 'hr': 'Hırvatça',
-            'Italian': 'İtalyanca', 'it': 'İtalyanca'
+            'Italian': 'İtalyanca', 'it': 'İtalyanca',
+            'Polish': 'Lehçe', 'pl': 'Lehçe'
         };
         const mappedLang = langMap[language] || 'Korece';
 
