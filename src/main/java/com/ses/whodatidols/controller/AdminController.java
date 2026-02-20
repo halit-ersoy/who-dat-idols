@@ -547,7 +547,7 @@ public class AdminController {
                 SELECT ID, Name, 'Movie' as Type, viewCount FROM Movie
                 UNION ALL
                 SELECT ID, Name, 'SoapOpera' as Type, viewCount FROM Series
-                ORDER BY viewCount DESC, Name ASC
+                ORDER BY Name ASC
                 """;
         return ResponseEntity.ok(jdbcTemplate.queryForList(sql));
     }

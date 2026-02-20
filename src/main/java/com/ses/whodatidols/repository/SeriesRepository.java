@@ -120,7 +120,7 @@ public class SeriesRepository {
                         JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                         WHERE SC.SeriesID = S.ID) as category
                 FROM Series S
-                ORDER BY S.viewCount DESC, S.name ASC
+                ORDER BY S.name ASC
                 """;
         return jdbcTemplate.query(sql, seriesRowMapper);
     }
