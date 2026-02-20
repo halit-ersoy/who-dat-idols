@@ -335,6 +335,42 @@
     background-image: url('https://flagcdn.com/h240/vn.webp');
 }
 
+.kh {
+    background-image: url('https://flagcdn.com/h240/kh.webp');
+}
+
+.ee {
+    background-image: url('https://flagcdn.com/h240/ee.webp');
+}
+
+.de {
+    background-image: url('https://flagcdn.com/h240/de.webp');
+}
+
+.fr {
+    background-image: url('https://flagcdn.com/h240/fr.webp');
+}
+
+.hr {
+    background-image: url('https://flagcdn.com/h240/hr.webp');
+}
+
+.nl {
+    background-image: url('https://flagcdn.com/h240/nl.webp');
+}
+
+.gb {
+    background-image: url('https://flagcdn.com/h240/gb.webp');
+}
+
+.at {
+    background-image: url('https://flagcdn.com/h240/at.webp');
+}
+
+.it {
+    background-image: url('https://flagcdn.com/h240/it.webp');
+}
+
 .title-container {
     display: flex;
     align-items: center;

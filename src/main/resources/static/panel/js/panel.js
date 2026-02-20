@@ -1587,7 +1587,13 @@
 
         lastFetchedPosterUrl = image;
 
-        const countryMap = { 'KR': 'Korea', 'TH': 'Thailand', 'CN': 'China', 'JP': 'Japan', 'TR': 'Turkey', 'US': 'USA', 'BE': 'Belgium', 'CH': 'Switzerland', 'HK': 'Hong Kong', 'CA': 'Canada', 'ES': 'Spain', 'IN': 'India', 'VN': 'Vietnam' };
+        const countryMap = {
+            'KR': 'Korea', 'TH': 'Thailand', 'CN': 'China', 'JP': 'Japan', 'TR': 'Turkey',
+            'US': 'USA', 'BE': 'Belgium', 'CH': 'Switzerland', 'HK': 'Hong Kong',
+            'CA': 'Canada', 'ES': 'Spain', 'IN': 'India', 'VN': 'Vietnam',
+            'KH': 'Cambodia', 'EE': 'Estonia', 'DE': 'Germany', 'FR': 'France',
+            'HR': 'Croatia', 'NL': 'Netherlands', 'GB': 'UK', 'AT': 'Austria', 'IT': 'Italy'
+        };
         const mappedCountry = countryMap[countryCode] || countryCode;
         const langMap = {
             'Korean': 'Korece', 'ko': 'Korece',
@@ -1602,7 +1608,10 @@
             'Filipino': 'Filipince', 'tl': 'Filipince', 'fil': 'Filipince',
             'Spanish': 'İspanyolca', 'es': 'İspanyolca',
             'Hindi': 'Hintçe', 'hi': 'Hintçe',
-            'Vietnamese': 'Vietnamca', 'vi': 'Vietnamca'
+            'Vietnamese': 'Vietnamca', 'vi': 'Vietnamca',
+            'Khmer': 'Kmerce', 'km': 'Kmerce',
+            'Croatian': 'Hırvatça', 'hr': 'Hırvatça',
+            'Italian': 'İtalyanca', 'it': 'İtalyanca'
         };
         const mappedLang = langMap[language] || 'Korece';
 

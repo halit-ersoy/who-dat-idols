@@ -35,7 +35,16 @@ export function initFeaturedContent() {
         ca: 'Kanada',
         es: 'İspanya',
         in: 'Hindistan',
-        vn: 'Vietnam'
+        vn: 'Vietnam',
+        kh: 'Kamboçya',
+        ee: 'Estonya',
+        de: 'Almanya',
+        fr: 'Fransa',
+        hr: 'Hırvatistan',
+        nl: 'Hollanda',
+        gb: 'UK',
+        at: 'Avusturya',
+        it: 'İtalya'
     };
 
     // Set initial toggle state
