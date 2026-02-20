@@ -1568,7 +1568,7 @@
 
         lastFetchedPosterUrl = image;
 
-        const countryMap = { 'KR': 'Korea', 'TH': 'Thailand', 'CN': 'China', 'JP': 'Japan', 'TR': 'Turkey', 'US': 'USA', 'BE': 'Belgium' };
+        const countryMap = { 'KR': 'Korea', 'TH': 'Thailand', 'CN': 'China', 'JP': 'Japan', 'TR': 'Turkey', 'US': 'USA', 'BE': 'Belgium', 'CH': 'Switzerland', 'HK': 'Hong Kong' };
         const mappedCountry = countryMap[countryCode] || countryCode;
         const langMap = {
             'Korean': 'Korece', 'ko': 'Korece',
@@ -1579,7 +1579,8 @@
             'Indonesian': 'Endonezce', 'id': 'Endonezce',
             'French': 'Fransızca', 'fr': 'Fransızca',
             'Dutch': 'Flemenkçe', 'nl': 'Flemenkçe',
-            'German': 'Almanca', 'de': 'Almanca'
+            'German': 'Almanca', 'de': 'Almanca',
+            'Filipino': 'Filipince', 'tl': 'Filipince', 'fil': 'Filipince'
         };
         const mappedLang = langMap[language] || 'Korece';
 

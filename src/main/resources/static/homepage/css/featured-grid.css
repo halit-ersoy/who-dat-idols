@@ -307,6 +307,18 @@
     background-image: url('https://flagcdn.com/h240/be.webp');
 }
 
+.us {
+    background-image: url('https://flagcdn.com/h240/us.webp');
+}
+
+.ch {
+    background-image: url('https://flagcdn.com/h240/ch.webp');
+}
+
+.hk {
+    background-image: url('https://flagcdn.com/h240/hk.webp');
+}
+
 .title-container {
     display: flex;
     align-items: center;

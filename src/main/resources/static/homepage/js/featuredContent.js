@@ -28,7 +28,10 @@ export function initFeaturedContent() {
         id: 'Endonezya',
         my: 'Malezya',
         sg: 'Singapur',
-        be: 'Belçika'
+        be: 'Belçika',
+        us: 'USA',
+        ch: 'İsviçre',
+        hk: 'Hong Kong'
     };
 
     // Set initial toggle state
