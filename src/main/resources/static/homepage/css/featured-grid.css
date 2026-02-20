@@ -323,6 +323,18 @@
     background-image: url('https://flagcdn.com/h240/ca.webp');
 }
 
+.es {
+    background-image: url('https://flagcdn.com/h240/es.webp');
+}
+
+.in {
+    background-image: url('https://flagcdn.com/h240/in.webp');
+}
+
+.vn {
+    background-image: url('https://flagcdn.com/h240/vn.webp');
+}
+
 .title-container {
     display: flex;
     align-items: center;

@@ -32,7 +32,10 @@ export function initFeaturedContent() {
         us: 'USA',
         ch: 'İsviçre',
         hk: 'Hong Kong',
-        ca: 'Kanada'
+        ca: 'Kanada',
+        es: 'İspanya',
+        in: 'Hindistan',
+        vn: 'Vietnam'
     };
 
     // Set initial toggle state
