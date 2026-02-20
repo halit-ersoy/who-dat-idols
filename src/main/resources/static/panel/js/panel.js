@@ -1568,9 +1568,19 @@
 
         lastFetchedPosterUrl = image;
 
-        const countryMap = { 'KR': 'Korea', 'TH': 'Thailand', 'CN': 'China', 'JP': 'Japan', 'TR': 'Turkey', 'US': 'USA' };
+        const countryMap = { 'KR': 'Korea', 'TH': 'Thailand', 'CN': 'China', 'JP': 'Japan', 'TR': 'Turkey', 'US': 'USA', 'BE': 'Belgium' };
         const mappedCountry = countryMap[countryCode] || countryCode;
-        const langMap = { 'Korean': 'Korece', 'ko': 'Korece', 'English': 'İngilizce', 'en': 'İngilizce', 'Japanese': 'Japonca', 'ja': 'Japonca', 'Turkish': 'Türkçe', 'tr': 'Türkçe', 'th': 'Tayca', 'Indonesian': 'Endonezce', 'id': 'Endonezce' };
+        const langMap = {
+            'Korean': 'Korece', 'ko': 'Korece',
+            'English': 'İngilizce', 'en': 'İngilizce',
+            'Japanese': 'Japonca', 'ja': 'Japonca',
+            'Turkish': 'Türkçe', 'tr': 'Türkçe',
+            'th': 'Tayca',
+            'Indonesian': 'Endonezce', 'id': 'Endonezce',
+            'French': 'Fransızca', 'fr': 'Fransızca',
+            'Dutch': 'Flemenkçe', 'nl': 'Flemenkçe',
+            'German': 'Almanca', 'de': 'Almanca'
+        };
         const mappedLang = langMap[language] || 'Korece';
 
         if (type === 'movie' || type === 'Movie') {

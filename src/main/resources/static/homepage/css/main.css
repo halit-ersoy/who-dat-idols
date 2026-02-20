@@ -12,29 +12,29 @@
 /* 4) Weekly Best */
 @import url('weekly-best.css');
 
-/* 5) Trending (new soap opera) */
-@import url('new-soap-operas.css');
-
-/* 6) Cards */
+/* 5) Cards */
 @import url('cards.css');
 
-/* 7) Footer */
+/* 6) Footer */
 @import url('/elements/footer.css');
 
-/* 8) Carousel */
+/* 7) Carousel */
 @import url('carousel.css');
 
-/* 9) Animations */
+/* 8) Animations */
 @import url('/elements/animations.css');
 
-/* 10) Sections */
+/* 9) Sections */
 @import url('sections.css');
 
-/* 11) Responsive */
+/* 10) Responsive */
 @import url('responsive.css');
 
-/* 12) New Content (new movies) */
+/* 11) New Content (new movies) */
 @import url('new-movies.css');
+
+/* 12) New Soap Operas (series) */
+@import url('new-soap-operas.css');
 
 /* 13) Login */
 @import url('login.css');

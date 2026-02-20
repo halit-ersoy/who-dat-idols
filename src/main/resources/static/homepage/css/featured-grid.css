@@ -303,6 +303,10 @@
     background-image: url('https://flagcdn.com/h240/sg.webp');
 }
 
+.be {
+    background-image: url('https://flagcdn.com/h240/be.webp');
+}
+
 .title-container {
     display: flex;
     align-items: center;

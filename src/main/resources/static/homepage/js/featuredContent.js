@@ -27,7 +27,8 @@ export function initFeaturedContent() {
         ph: 'Filipinler',
         id: 'Endonezya',
         my: 'Malezya',
-        sg: 'Singapur'
+        sg: 'Singapur',
+        be: 'Belçika'
     };
 
     // Set initial toggle state
