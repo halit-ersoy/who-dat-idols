@@ -31,7 +31,8 @@ export function initFeaturedContent() {
         be: 'Belçika',
         us: 'USA',
         ch: 'İsviçre',
-        hk: 'Hong Kong'
+        hk: 'Hong Kong',
+        ca: 'Kanada'
     };
 
     // Set initial toggle state

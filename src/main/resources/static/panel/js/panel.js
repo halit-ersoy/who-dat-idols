@@ -1587,7 +1587,7 @@
 
         lastFetchedPosterUrl = image;
 
-        const countryMap = { 'KR': 'Korea', 'TH': 'Thailand', 'CN': 'China', 'JP': 'Japan', 'TR': 'Turkey', 'US': 'USA', 'BE': 'Belgium', 'CH': 'Switzerland', 'HK': 'Hong Kong' };
+        const countryMap = { 'KR': 'Korea', 'TH': 'Thailand', 'CN': 'China', 'JP': 'Japan', 'TR': 'Turkey', 'US': 'USA', 'BE': 'Belgium', 'CH': 'Switzerland', 'HK': 'Hong Kong', 'CA': 'Canada' };
         const mappedCountry = countryMap[countryCode] || countryCode;
         const langMap = {
             'Korean': 'Korece', 'ko': 'Korece',

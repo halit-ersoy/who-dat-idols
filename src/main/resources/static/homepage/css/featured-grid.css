@@ -319,6 +319,10 @@
     background-image: url('https://flagcdn.com/h240/hk.webp');
 }
 
+.ca {
+    background-image: url('https://flagcdn.com/h240/ca.webp');
+}
+
 .title-container {
     display: flex;
     align-items: center;
