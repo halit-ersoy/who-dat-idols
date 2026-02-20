@@ -26,7 +26,7 @@ export async function initEpisodeSelection(videoId) {
         }
     });
 
-    // Auto-open if it's a series ID
+    // Auto-open if it's a series ID or fetch episodes for navigation
     await checkAutoOpen();
 
     async function checkAutoOpen() {
@@ -53,7 +53,11 @@ export async function initEpisodeSelection(videoId) {
                 console.log('DEBUG: Parent series found:', parent);
                 if (parent) {
                     section.style.display = 'block';
-                    section.style.opacity = '1'; // Force opacity if animation is delayed
+                    section.style.opacity = '1';
+
+                    // NEW: Fetch and render for navigation even if drawer is closed
+                    await fetchAndRenderEpisodes();
+                    isLoaded = true;
                     return;
                 }
             }
@@ -93,6 +97,7 @@ export async function initEpisodeSelection(videoId) {
             if (data.length === 0) {
                 episodesGrid.innerHTML = '<div class="no-episodes">Bu içerik için bölüm listesi bulunamadı.</div>';
                 section.style.display = 'none';
+                updateNavigationButtons([]);
                 return;
             }
 
@@ -111,9 +116,48 @@ export async function initEpisodeSelection(videoId) {
             });
 
             renderEpisodes(currentSeason);
+            updateNavigationButtons(allEpisodes);
         } catch (error) {
             console.error('Episode Selection Error:', error);
             episodesGrid.innerHTML = `<div class="error-message">Hata: Bölümler yüklenemedi.</div>`;
+        }
+    }
+
+    function updateNavigationButtons(episodes) {
+        const prevBtn = document.getElementById('prevEpisode');
+        const nextBtn = document.getElementById('nextEpisode');
+        if (!prevBtn || !nextBtn) return;
+
+        if (!episodes || episodes.length === 0) {
+            prevBtn.disabled = true;
+            nextBtn.disabled = true;
+            return;
+        }
+
+        const currentIndex = episodes.findIndex(ep => ep.id.toLowerCase() === videoId.toLowerCase());
+
+        if (currentIndex === -1) {
+            prevBtn.disabled = true;
+            nextBtn.disabled = true;
+            return;
+        }
+
+        // Previous Episode
+        if (currentIndex > 0) {
+            const prevEp = episodes[currentIndex - 1];
+            prevBtn.disabled = false;
+            prevBtn.onclick = () => window.location.href = `/watch?id=${prevEp.id}`;
+        } else {
+            prevBtn.disabled = true;
+        }
+
+        // Next Episode
+        if (currentIndex < episodes.length - 1) {
+            const nextEp = episodes[currentIndex + 1];
+            nextBtn.disabled = false;
+            nextBtn.onclick = () => window.location.href = `/watch?id=${nextEp.id}`;
+        } else {
+            nextBtn.disabled = true;
         }
     }
 

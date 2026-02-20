@@ -16,9 +16,6 @@ import java.util.UUID;
 public class MovieRepository {
     private final JdbcTemplate jdbcTemplate;
 
-    // Stored Procedure çağrısı (Okuma işlemleri için mevcut yapıyı koruyoruz)
-    private static final String GET_RECENT_MOVIES = "EXEC GetMoviesByUploadDateOffset @dayOffset = ?";
-
     public MovieRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
         ensureSchema();
@@ -118,8 +115,16 @@ public class MovieRepository {
     }
 
     // --- OKUMA İŞLEMLERİ ---
-    public List<Movie> findRecentMovies(int day) {
-        return jdbcTemplate.query(GET_RECENT_MOVIES, new MovieRowMapper(), day);
+    public List<Movie> findRecentMovies(int limit) {
+        String sql = """
+                SELECT TOP (?) M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate,
+                       (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                        JOIN MovieCategories MC ON MC.CategoryID = C.ID
+                        WHERE MC.MovieID = M.ID) as category
+                FROM [WhoDatIdols].[dbo].[Movie] M
+                ORDER BY M.uploadDate DESC, M.name ASC
+                """;
+        return jdbcTemplate.query(sql, new MovieRowMapper(), limit);
     }
 
     public List<Movie> findTop6MoviesByCount() {

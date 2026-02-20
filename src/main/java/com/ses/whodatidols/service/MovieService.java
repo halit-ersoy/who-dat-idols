@@ -47,6 +47,10 @@ public class MovieService {
         return movieRepository.findAll();
     }
 
+    public List<Movie> getRecentMovies(int limit) {
+        return movieRepository.findRecentMovies(limit);
+    }
+
     // Güncelleme Operasyonu
     @CacheEvict(value = "featuredContent", allEntries = true)
     public void updateMovie(Movie movie, MultipartFile file, MultipartFile image) throws IOException {

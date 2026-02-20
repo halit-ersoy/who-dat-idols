@@ -303,7 +303,8 @@ public class SeriesRepository {
     }
 
     public List<Episode> findRecentEpisodes(int limit) {
-        return jdbcTemplate.query("SELECT TOP (?) * FROM Episode ORDER BY uploadDate DESC", episodeRowMapper, limit);
+        return jdbcTemplate.query("SELECT TOP (?) * FROM Episode ORDER BY uploadDate DESC, name ASC", episodeRowMapper,
+                limit);
     }
 
     public List<Series> findRecentSeries(int limit) {
@@ -313,7 +314,7 @@ public class SeriesRepository {
                         JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                         WHERE SC.SeriesID = S.ID) as category
                 FROM Series S
-                ORDER BY S.uploadDate DESC
+                ORDER BY S.uploadDate DESC, S.name ASC
                 """;
         return jdbcTemplate.query(sql, seriesRowMapper, limit);
     }

@@ -57,14 +57,10 @@ public class HomeController {
     public ResponseEntity<FeaturedContentResponse> getFeaturedContent() {
         FeaturedContentResponse response = new FeaturedContentResponse();
 
-        // 1. Movies (20 adet)
-        List<Movie> movies = movieService.getAllMovies();
+        // 1. Movies (20 adet - Recently Added)
+        List<Movie> movies = movieService.getRecentMovies(20);
         List<FeaturedItem> movieItems = new java.util.ArrayList<>();
-        int count = 0;
         for (Movie m : movies) {
-            if (count >= 20)
-                break;
-
             FeaturedItem item = new FeaturedItem();
             item.id = m.getId().toString();
             item.title = m.getName();
@@ -83,7 +79,6 @@ public class HomeController {
             item.episode = null;
 
             movieItems.add(item);
-            count++;
         }
         response.movies = movieItems;
 
