@@ -24,7 +24,7 @@ public class MovieController {
     // In MovieController, modify the getRecentMovies method:
     @GetMapping("/recent")
     public ResponseEntity<List<VideoViewModel>> getRecentMovies(
-            @RequestParam(value = "limit", defaultValue = "20") int limit) {
+            @RequestParam(value = "limit", defaultValue = "0") int limit) {
         List<Movie> recentMovies = movieRepository.findRecentMovies(limit);
 
         List<VideoViewModel> viewModels = recentMovies.stream()

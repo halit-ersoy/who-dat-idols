@@ -194,9 +194,8 @@ export function initNewSoapOperasSection() {
         });
     }
 
-    // Başlangıçta carousel dolduruluyor
     (async () => {
-        allSoapOperas = await fetchSoapOperas();
+        allSoapOperas = await fetchSoapOperas(0);
         populateCarousel(allSoapOperas);
     })();
 
@@ -210,7 +209,7 @@ export function initNewSoapOperasSection() {
         if (allSoapOperas.length > 0) {
             renderPage(currentPage);
         } else {
-            allSoapOperas = await fetchSoapOperas();
+            allSoapOperas = await fetchSoapOperas(0);
             renderPage(currentPage);
         }
     });

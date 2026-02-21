@@ -116,15 +116,28 @@ public class MovieRepository {
 
     // --- OKUMA İŞLEMLERİ ---
     public List<Movie> findRecentMovies(int limit) {
-        String sql = """
-                SELECT TOP (?) M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate,
-                       (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
-                        JOIN MovieCategories MC ON MC.CategoryID = C.ID
-                        WHERE MC.MovieID = M.ID) as category
-                FROM [WhoDatIdols].[dbo].[Movie] M
-                ORDER BY M.uploadDate DESC, M.name ASC
-                """;
-        return jdbcTemplate.query(sql, new MovieRowMapper(), limit);
+        String sql;
+        if (limit > 0) {
+            sql = """
+                    SELECT TOP (?) M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate,
+                           (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                            JOIN MovieCategories MC ON MC.CategoryID = C.ID
+                            WHERE MC.MovieID = M.ID) as category
+                    FROM [WhoDatIdols].[dbo].[Movie] M
+                    ORDER BY M.uploadDate DESC, M.name ASC
+                    """;
+            return jdbcTemplate.query(sql, new MovieRowMapper(), limit);
+        } else {
+            sql = """
+                    SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate,
+                           (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                            JOIN MovieCategories MC ON MC.CategoryID = C.ID
+                            WHERE MC.MovieID = M.ID) as category
+                    FROM [WhoDatIdols].[dbo].[Movie] M
+                    ORDER BY M.uploadDate DESC, M.name ASC
+                    """;
+            return jdbcTemplate.query(sql, new MovieRowMapper());
+        }
     }
 
     public List<Movie> findTop6MoviesByCount() {

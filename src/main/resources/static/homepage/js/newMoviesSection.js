@@ -189,7 +189,7 @@ export function initNewMoviesSection() {
     }
 
     (async () => {
-        allMovies = await fetchMovies(50);
+        allMovies = await fetchMovies(0);
         populateCarousel(allMovies);
     })();
 
@@ -203,7 +203,7 @@ export function initNewMoviesSection() {
         if (allMovies.length > 0) {
             renderPage(currentPage);
         } else {
-            allMovies = await fetchMovies(50);
+            allMovies = await fetchMovies(0);
             renderPage(currentPage);
         }
     });

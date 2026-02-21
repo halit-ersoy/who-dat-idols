@@ -308,15 +308,28 @@ public class SeriesRepository {
     }
 
     public List<Series> findRecentSeries(int limit) {
-        String sql = """
-                SELECT TOP (?) S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
-                       (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
-                        JOIN SeriesCategories SC ON SC.CategoryID = C.ID
-                        WHERE SC.SeriesID = S.ID) as category
-                FROM Series S
-                ORDER BY S.uploadDate DESC, S.name ASC
-                """;
-        return jdbcTemplate.query(sql, seriesRowMapper, limit);
+        String sql;
+        if (limit > 0) {
+            sql = """
+                    SELECT TOP (?) S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                           (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                            JOIN SeriesCategories SC ON SC.CategoryID = C.ID
+                            WHERE SC.SeriesID = S.ID) as category
+                    FROM Series S
+                    ORDER BY S.uploadDate DESC, S.name ASC
+                    """;
+            return jdbcTemplate.query(sql, seriesRowMapper, limit);
+        } else {
+            sql = """
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                           (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                            JOIN SeriesCategories SC ON SC.CategoryID = C.ID
+                            WHERE SC.SeriesID = S.ID) as category
+                    FROM Series S
+                    ORDER BY S.uploadDate DESC, S.name ASC
+                    """;
+            return jdbcTemplate.query(sql, seriesRowMapper);
+        }
     }
 
     public List<Episode> findTop6EpisodesByCount() {

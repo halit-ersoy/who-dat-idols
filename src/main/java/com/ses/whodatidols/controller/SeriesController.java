@@ -25,7 +25,7 @@ public class SeriesController {
 
     @GetMapping("/recent")
     public ResponseEntity<List<VideoViewModel>> getRecentSeries(
-            @RequestParam(value = "day", defaultValue = "20") int day) {
+            @RequestParam(value = "day", defaultValue = "0") int day) {
         // limit logic reusing 'day' param as count/limit
         List<Series> recentSeries = seriesRepository.findRecentSeries(day);
 
