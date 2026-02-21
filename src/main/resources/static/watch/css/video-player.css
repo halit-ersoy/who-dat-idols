@@ -363,8 +363,14 @@ video {
 }
 
 /* Hide controls when inactive in fullscreen */
-.fullscreen-mode.hide-controls .video-controls {
-    opacity: 0;
+.fullscreen-mode.hide-controls .video-controls,
+.fullscreen-mode.hide-controls .play-pause-button {
+    opacity: 0 !important;
+    pointer-events: none;
+}
+
+.fullscreen-mode.hide-controls {
+    cursor: none !important;
 }
 
 .fullscreen-mode .video-controls:hover {

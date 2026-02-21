@@ -31,6 +31,7 @@ export function initVideoControls(videoId) {
     setupViewCount();
     setupPlaybackEvents();
     setupErrorHandling();
+    setupInactivityTimer();
     // loadVideo(videoId); // Moved to initializeContent
     // loadSources(videoId); // Moved to initializeContent
     setupEpisodeNavigation(videoId);
@@ -531,5 +532,42 @@ export function initVideoControls(videoId) {
 
         document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
+    }
+
+    function setupInactivityTimer() {
+        let timer;
+        const INACTIVITY_DELAY = 3000; // 3 seconds
+
+        const showControls = () => {
+            playerContainer.classList.remove('hide-controls');
+            clearTimeout(timer);
+            if (!videoPlayer.paused) {
+                timer = setTimeout(() => {
+                    playerContainer.classList.add('hide-controls');
+                }, INACTIVITY_DELAY);
+            }
+        };
+
+        const resetTimer = () => {
+            showControls();
+        };
+
+        // UI events that should show controls
+        playerContainer.addEventListener('mousemove', resetTimer);
+        playerContainer.addEventListener('mousedown', resetTimer);
+        playerContainer.addEventListener('touchstart', resetTimer);
+
+        // Video state events
+        videoPlayer.addEventListener('play', showControls);
+        videoPlayer.addEventListener('playing', showControls);
+        videoPlayer.addEventListener('pause', () => {
+            playerContainer.classList.remove('hide-controls');
+            clearTimeout(timer);
+        });
+
+        // Start timer if already playing
+        if (!videoPlayer.paused) {
+            showControls();
+        }
     }
 }
