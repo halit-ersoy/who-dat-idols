@@ -1930,6 +1930,25 @@
                 <i class="fas fa-times"></i>
             </button>
         `;
+
+        // Extract URL from iframe on paste
+        const urlInput = row.querySelector('.source-url');
+        urlInput.addEventListener('paste', function (e) {
+            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+            if (pastedText.includes('<iframe') && pastedText.includes('src=')) {
+                e.preventDefault();
+                const match = pastedText.match(/src=["']([^"']+)["']/);
+                if (match && match[1]) {
+                    let extractedUrl = match[1];
+                    if (extractedUrl.startsWith('//')) {
+                        extractedUrl = 'https:' + extractedUrl;
+                    }
+                    this.value = extractedUrl;
+                    updateVideoRequirement(type);
+                }
+            }
+        });
+
         container.appendChild(row);
         updateVideoRequirement(type);
     };
