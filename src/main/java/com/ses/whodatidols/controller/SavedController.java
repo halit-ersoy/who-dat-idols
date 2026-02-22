@@ -48,8 +48,39 @@ public class SavedController {
                             );
                         END
                     """);
+            // Migration: Convert existing cookie-based UserIDs to permanent Person IDs
+            jdbcTemplate.execute("""
+                        UPDATE UserLists
+                        SET UserID = P.ID
+                        FROM UserLists L
+                        JOIN Person P ON L.UserID = P.cookie
+                        WHERE L.UserID NOT IN (SELECT ID FROM Person)
+                    """);
         } catch (Exception e) {
             System.err.println("Error initializing Favorites schema: " + e.getMessage());
+        }
+    }
+
+    private UUID resolveUserId(String cookie) {
+        try {
+            if (cookie == null || cookie.isEmpty())
+                return null;
+            // First check if it's already a valid User ID (for robustness)
+            try {
+                UUID possibleId = UUID.fromString(cookie);
+                Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM Person WHERE ID = ?", Integer.class,
+                        possibleId.toString());
+                if (count != null && count > 0)
+                    return possibleId;
+            } catch (Exception e) {
+            }
+
+            // Otherwise resolve from cookie
+            String sql = "SELECT ID FROM Person WHERE cookie = ?";
+            String idStr = jdbcTemplate.queryForObject(sql, String.class, cookie);
+            return idStr != null ? UUID.fromString(idStr) : null;
+        } catch (Exception e) {
+            return null;
         }
     }
 
@@ -83,12 +114,12 @@ public class SavedController {
     public ResponseEntity<?> getLists(
             @CookieValue(value = "wdiAuth", required = false) String cookie) {
 
-        if (cookie == null || cookie.isEmpty()) {
-            return ResponseEntity.status(401).body(Map.of("Result", 0, "Message", "Authentication required"));
-        }
-
         try {
-            UUID userId = UUID.fromString(cookie);
+            UUID userId = resolveUserId(cookie);
+            if (userId == null) {
+                return ResponseEntity.status(401)
+                        .body(Map.of("Result", 0, "Message", "User not found or session expired"));
+            }
             // Single query to fetch lists with items (Movie or Series)
             String sql = """
                     SELECT
@@ -133,10 +164,11 @@ public class SavedController {
             @RequestParam("title") String title,
             @CookieValue(value = "wdiAuth", required = false) String cookie) {
 
-        if (cookie == null || cookie.isEmpty())
-            return ResponseEntity.status(401).build();
         try {
-            UUID userId = UUID.fromString(cookie);
+            UUID userId = resolveUserId(cookie);
+            if (userId == null)
+                return ResponseEntity.status(401).build();
+
             if (title == null || title.isBlank())
                 return ResponseEntity.badRequest().body(Map.of("Result", 0, "Message", "Title cannot be empty"));
 
@@ -162,10 +194,10 @@ public class SavedController {
             @RequestParam("videoId") String videoIdStr,
             @CookieValue(value = "wdiAuth", required = false) String cookie) {
 
-        if (cookie == null || cookie.isEmpty())
-            return ResponseEntity.status(401).build();
         try {
-            UUID userId = UUID.fromString(cookie);
+            UUID userId = resolveUserId(cookie);
+            if (userId == null)
+                return ResponseEntity.status(401).build();
             UUID videoId;
             try {
                 videoId = UUID.fromString(videoIdStr);
@@ -243,10 +275,10 @@ public class SavedController {
             @RequestParam("videoId") String videoIdStr,
             @CookieValue(value = "wdiAuth", required = false) String cookie) {
 
-        if (cookie == null || cookie.isEmpty())
-            return ResponseEntity.status(401).build();
         try {
-            UUID userId = UUID.fromString(cookie);
+            UUID userId = resolveUserId(cookie);
+            if (userId == null)
+                return ResponseEntity.status(401).build();
             UUID videoId;
             try {
                 videoId = UUID.fromString(videoIdStr);
@@ -294,10 +326,11 @@ public class SavedController {
     public ResponseEntity<?> deleteList(
             @RequestParam("title") String title,
             @CookieValue(value = "wdiAuth", required = false) String cookie) {
-        if (cookie == null || cookie.isEmpty())
-            return ResponseEntity.status(401).build();
         try {
-            UUID userId = UUID.fromString(cookie);
+            UUID userId = resolveUserId(cookie);
+            if (userId == null)
+                return ResponseEntity.status(401).build();
+
             jdbcTemplate.update("DELETE FROM UserLists WHERE UserID = ? AND Name = ?", userId.toString(), title);
             return ResponseEntity.ok(Map.of("Result", 1, "Message", "List deleted"));
         } catch (Exception e) {
@@ -310,10 +343,11 @@ public class SavedController {
             @RequestParam("title") String title,
             @RequestParam("newTitle") String newTitle,
             @CookieValue(value = "wdiAuth", required = false) String cookie) {
-        if (cookie == null || cookie.isEmpty())
-            return ResponseEntity.status(401).build();
         try {
-            UUID userId = UUID.fromString(cookie);
+            UUID userId = resolveUserId(cookie);
+            if (userId == null)
+                return ResponseEntity.status(401).build();
+
             jdbcTemplate.update("UPDATE UserLists SET Name = ? WHERE UserID = ? AND Name = ?", newTitle,
                     userId.toString(), title);
             return ResponseEntity.ok(Map.of("Result", 1, "Message", "List renamed"));
