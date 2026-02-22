@@ -2440,9 +2440,27 @@
        =========================================================== */
     const commentsTableBody = document.querySelector('#commentsTable tbody');
     const refreshCommentsBtn = document.getElementById('refreshCommentsBtn');
+    let currentCommentTab = 'pending';
+
+    const commentFilterRadios = document.querySelectorAll('input[name="commentModerationFilter"]');
+    if (commentFilterRadios) {
+        commentFilterRadios.forEach(radio => {
+            radio.addEventListener('change', function () {
+                currentCommentTab = this.value;
+                if (currentCommentTab === 'pending') {
+                    fetchPendingComments();
+                } else {
+                    fetchApprovedComments();
+                }
+            });
+        });
+    }
 
     if (refreshCommentsBtn) {
-        refreshCommentsBtn.addEventListener('click', fetchPendingComments);
+        refreshCommentsBtn.addEventListener('click', () => {
+            if (currentCommentTab === 'pending') fetchPendingComments();
+            else fetchApprovedComments();
+        });
     }
 
     // Navigasyon değiştiğinde Comments sekmesine tıklanırsa verileri çek
@@ -2450,13 +2468,50 @@
         link.addEventListener('click', function () {
             if (this.getAttribute('data-section') === 'comments-section') {
                 fetchPendingComments();
+                currentCommentTab = 'pending';
+                // Reset toggle to pending
+                const pendingRadio = document.getElementById('commentFilterPending');
+                if (pendingRadio) pendingRadio.checked = true;
             }
         });
     });
 
+    function buildCommentRow(comment, mode) {
+        const tr = document.createElement('tr');
+        const dateStr = new Date(comment.date).toLocaleString('tr-TR');
+        const contentName = comment.contentName || comment.contentId || 'İçerik';
+        const targetLink = comment.contentSlug || comment.contentId;
+        const contentLink = targetLink ? `<a href="/${targetLink}" target="_blank" style="color: var(--primary); font-weight: 500;">${contentName}</a>` : '-';
+
+        const actionBtns = mode === 'pending'
+            ? `<button class="btn btn-sm btn-success" onclick="approveComment('${comment.id}')" title="Onayla"><i class="fas fa-check"></i></button>
+               <button class="btn btn-sm btn-danger" onclick="rejectComment('${comment.id}')" title="Reddet/Sil"><i class="fas fa-times"></i></button>`
+            : `<button class="btn btn-sm btn-danger" onclick="rejectComment('${comment.id}')" title="Sil"><i class="fas fa-trash-alt"></i> Sil</button>`;
+
+        const statusBadge = mode === 'pending'
+            ? `<span class="badge badge-warning">Onay Bekliyor</span>`
+            : `<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(30,215,96,0.12);color:#1ed760;border:1px solid rgba(30,215,96,0.3);"><i class="fas fa-check-circle" style="font-size:10px;"></i> Onaylı</span>`;
+
+        tr.innerHTML = `
+            <td>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-weight: 600;">${comment.nickname}</span>
+                </div>
+            </td>
+            <td>
+                <div style="max-width: 300px; white-space: pre-wrap;">${comment.comment}</div>
+                ${comment.spoiler ? '<span class="badge badge-warning" style="font-size: 0.7em;">SPOILER</span>' : ''}
+            </td>
+            <td>${contentLink}</td>
+            <td>${dateStr}</td>
+            <td>${statusBadge}</td>
+            <td>${actionBtns}</td>
+        `;
+        return tr;
+    }
+
     function fetchPendingComments() {
         if (!commentsTableBody) return;
-
         commentsTableBody.innerHTML = '<tr><td colspan="6" class="text-center">Yükleniyor...</td></tr>';
 
         fetch('/admin/comment-moderation/pending')
@@ -2467,41 +2522,30 @@
                     commentsTableBody.innerHTML = '<tr><td colspan="6" class="text-center">Onay bekleyen yorum yok.</td></tr>';
                     return;
                 }
-
-                comments.forEach(comment => {
-                    const tr = document.createElement('tr');
-                    const dateStr = new Date(comment.date).toLocaleString('tr-TR');
-                    // Kullanıcı resmi istenmediği için kaldırıldı.
-                    // const profilePhoto = comment.profilePhoto || '/images/default-avatar.png';
-
-                    // Content Name ve Link
-                    const contentName = comment.contentName || comment.contentId || 'İçerik';
-                    const targetLink = comment.contentSlug || comment.contentId;
-                    const contentLink = targetLink ? `<a href="/${targetLink}" target="_blank" style="color: var(--primary-color); font-weight: 500;">${contentName}</a>` : '-';
-
-                    tr.innerHTML = `
-                        <td>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <span style="font-weight: 600;">${comment.nickname}</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div style="max-width: 300px; white-space: pre-wrap;">${comment.comment}</div>
-                            ${comment.spoiler ? '<span class="badge badge-warning" style="font-size: 0.7em;">SPOILER</span>' : ''}
-                        </td>
-                        <td>${contentLink}</td>
-                        <td>${dateStr}</td>
-                        <td><span class="badge badge-warning">Onay Bekliyor</span></td>
-                        <td>
-                            <button class="btn btn-sm btn-success" onclick="approveComment('${comment.id}')" title="Onayla"><i class="fas fa-check"></i></button>
-                            <button class="btn btn-sm btn-danger" onclick="rejectComment('${comment.id}')" title="Reddet/Sil"><i class="fas fa-times"></i></button>
-                        </td>
-                    `;
-                    commentsTableBody.appendChild(tr);
-                });
+                comments.forEach(comment => commentsTableBody.appendChild(buildCommentRow(comment, 'pending')));
             })
             .catch(err => {
                 console.error("Comments fetch error:", err);
+                commentsTableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Yorumlar yüklenirken hata oluştu.</td></tr>';
+            });
+    }
+
+    function fetchApprovedComments() {
+        if (!commentsTableBody) return;
+        commentsTableBody.innerHTML = '<tr><td colspan="6" class="text-center">Yükleniyor...</td></tr>';
+
+        fetch('/admin/comment-moderation/approved')
+            .then(res => res.json())
+            .then(comments => {
+                commentsTableBody.innerHTML = '';
+                if (comments.length === 0) {
+                    commentsTableBody.innerHTML = '<tr><td colspan="6" class="text-center">Henüz onaylanmış yorum yok.</td></tr>';
+                    return;
+                }
+                comments.forEach(comment => commentsTableBody.appendChild(buildCommentRow(comment, 'approved')));
+            })
+            .catch(err => {
+                console.error("Approved comments fetch error:", err);
                 commentsTableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Yorumlar yüklenirken hata oluştu.</td></tr>';
             });
     }
@@ -2512,7 +2556,6 @@
         fetch(`/admin/comment-moderation/approve?commentId=${id}`, { method: 'POST' })
             .then(res => {
                 if (res.ok) {
-                    // Remove row or refresh
                     fetchPendingComments();
                 } else {
                     res.text().then(msg => alert("Hata: " + msg));
@@ -2522,12 +2565,13 @@
     };
 
     window.rejectComment = function (id) {
-        if (!confirm("Bu yorumu reddetmek (silmek) istediğinize emin misiniz?")) return;
+        if (!confirm("Bu yorumu silmek istediğinize emin misiniz?")) return;
 
         fetch(`/admin/comment-moderation/reject?commentId=${id}`, { method: 'DELETE' })
             .then(res => {
                 if (res.ok) {
-                    fetchPendingComments();
+                    if (currentCommentTab === 'pending') fetchPendingComments();
+                    else fetchApprovedComments();
                 } else {
                     res.text().then(msg => alert("Hata: " + msg));
                 }

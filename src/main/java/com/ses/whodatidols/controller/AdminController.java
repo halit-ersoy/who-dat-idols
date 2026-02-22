@@ -663,6 +663,15 @@ public class AdminController {
         }
     }
 
+    @GetMapping("/comment-moderation/approved")
+    public ResponseEntity<List<CommentViewModel>> getApprovedComments() {
+        try {
+            return ResponseEntity.ok(commentRepository.getApprovedComments());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
     @PostMapping("/comment-moderation/approve")
     public ResponseEntity<String> approveComment(@RequestParam("commentId") UUID commentId) {
         try {

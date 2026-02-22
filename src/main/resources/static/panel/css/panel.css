@@ -1787,6 +1787,24 @@ input[type='checkbox']:hover {
     transform: translateX(180px);
 }
 
+#commentFilterPending:checked~.filter-slider {
+    transform: translateX(0);
+}
+
+#commentFilterApproved:checked~.filter-slider {
+    transform: translateX(90px);
+}
+
+/* Wide variant for longer labels (e.g. Comments section) */
+.filter-switch.wide label,
+.filter-switch.wide .filter-slider {
+    width: 120px;
+}
+
+.filter-switch.wide #commentFilterApproved:checked~.filter-slider {
+    transform: translateX(120px);
+}
+
 /* Selected label style */
 .filter-switch input:checked+label {
     color: #000;

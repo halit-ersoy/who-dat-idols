@@ -893,10 +893,26 @@
             <section id="comments-section" class="admin-section" style="display: none;">
                 <div class="card">
                     <div class="card-header">
-                        <h2><i class="fas fa-comments"></i> Yorum Yönetimi (Onay Bekleyenler)</h2>
-                        <button id="refreshCommentsBtn" class="btn btn-sm btn-secondary" style="margin-left: auto;">
-                            <i class="fas fa-sync-alt"></i> Yenile
-                        </button>
+                        <h2><i class="fas fa-comments"></i> Yorum Yönetimi</h2>
+                        <div style="display: flex; align-items: center; gap: 16px; margin-left: auto;">
+                            <!-- Premium Filter Switch -->
+                            <div class="filter-switch-container" style="margin-bottom: 0;">
+                                <div class="filter-switch wide">
+                                    <input type="radio" id="commentFilterPending" name="commentModerationFilter"
+                                        value="pending" checked>
+                                    <label for="commentFilterPending">İstekler</label>
+
+                                    <input type="radio" id="commentFilterApproved" name="commentModerationFilter"
+                                        value="approved">
+                                    <label for="commentFilterApproved">Onaylananlar</label>
+
+                                    <div class="filter-slider"></div>
+                                </div>
+                            </div>
+                            <button id="refreshCommentsBtn" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-sync-alt"></i> Yenile
+                            </button>
+                        </div>
                     </div>
                     <div class="table-container">
                         <table class="admin-table" id="commentsTable">
@@ -911,7 +927,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <!-- Pending comments will be loaded here -->
+                                <!-- Comments will be loaded here -->
                             </tbody>
                         </table>
                     </div>

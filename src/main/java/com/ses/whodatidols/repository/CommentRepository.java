@@ -128,6 +128,31 @@ public class CommentRepository {
         return jdbcTemplate.query(sql, new CommentRowMapper());
     }
 
+    public List<CommentViewModel> getApprovedComments() {
+        String sql = """
+                    SELECT
+                        c.ID, c.Text as comment, c.CreatedAt as date, c.Spoiler,
+                        COALESCE(p.Nickname, c.Nickname) as nickname,
+                        p.profilePhoto,
+                        c.LikeCount,
+                        c.ParentId,
+                        c.ContentId,
+                        0 as isLiked,
+                        0 as isAuthor,
+                        c.IsApproved,
+                        COALESCE(m.Name, s.Name, (e.name + ' S' + CAST(e.SeasonNumber AS VARCHAR) + 'E' + CAST(e.EpisodeNumber AS VARCHAR))) as ContentName,
+                        COALESCE(m.Slug, e.Slug, CAST(c.ContentId AS VARCHAR(36))) as ContentSlug
+                    FROM Comments c
+                    LEFT JOIN Person p ON c.UserId = p.ID
+                    LEFT JOIN Movie m ON c.ContentId = m.ID
+                    LEFT JOIN Series s ON c.ContentId = s.ID
+                    LEFT JOIN Episode e ON c.ContentId = e.ID
+                    WHERE c.IsApproved = 1
+                    ORDER BY c.CreatedAt DESC
+                """;
+        return jdbcTemplate.query(sql, new CommentRowMapper());
+    }
+
     public void approveComment(UUID commentId) {
         jdbcTemplate.update("UPDATE Comments SET IsApproved = 1 WHERE ID = ?", commentId.toString());
     }
