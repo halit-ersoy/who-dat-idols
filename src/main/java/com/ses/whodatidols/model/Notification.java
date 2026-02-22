@@ -11,6 +11,7 @@ public class Notification {
     private String type; // 'Movie' or 'SoapOpera'
     private LocalDateTime createdAt;
     private boolean isRead;
+    private String slug; // Used for UI routing
 
     public Notification() {
     }
@@ -80,5 +81,13 @@ public class Notification {
 
     public void setRead(boolean read) {
         isRead = read;
+    }
+
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
     }
 }

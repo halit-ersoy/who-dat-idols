@@ -12,6 +12,7 @@ public class Episode {
     private LocalDateTime uploadDate;
     private int seasonNumber;
     private int episodeNumber;
+    private String slug;
 
     // Getters and Setters
     public UUID getId() {
@@ -76,5 +77,13 @@ public class Episode {
 
     public void setEpisodeNumber(int episodeNumber) {
         this.episodeNumber = episodeNumber;
+    }
+
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
     }
 }

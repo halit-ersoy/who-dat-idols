@@ -246,7 +246,10 @@ export function initLoadedEpisodesSection() {
 
                 const card = document.createElement('div');
                 card.className = 'upcoming-card';
-                card.onclick = () => window.location.href = `/watch?id=${episode.ID}`;
+                card.onclick = () => {
+                    const path = `/${episode.slug || episode.ID}`;
+                    window.location.href = path;
+                };
                 card.innerHTML = `
                 <div class="upcoming-card-image img-skeleton">
                     <img src="/media/image/${episode.ID}" alt="${episode.name}" onerror="this.style.display='none'; this.parentElement.classList.add('no-image');">
@@ -317,7 +320,10 @@ export function initLoadedEpisodesSection() {
 
                 const card = document.createElement('div');
                 card.className = 'upcoming-card';
-                card.onclick = () => window.location.href = `/watch?id=${episode.ID}`;
+                card.onclick = () => {
+                    const path = `/${episode.slug || episode.ID}`;
+                    window.location.href = path;
+                };
                 card.innerHTML = `
                     <div class="upcoming-card-image img-skeleton">
                         <img src="/media/image/${episode.ID}" alt="${episode.name}" onerror="this.style.display='none'; this.parentElement.classList.add('no-image');">

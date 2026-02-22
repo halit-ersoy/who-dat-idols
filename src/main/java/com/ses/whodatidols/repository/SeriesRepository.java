@@ -35,6 +35,12 @@ public class SeriesRepository {
                             "BEGIN " +
                             "    ALTER TABLE Series ADD SeriesType NVARCHAR(50); " +
                             "END");
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Episode' AND COLUMN_NAME = 'slug') "
+                            +
+                            "BEGIN " +
+                            "    ALTER TABLE Episode ADD slug NVARCHAR(255); " +
+                            "END");
         } catch (Exception e) {
             System.err.println("Schema update failed: " + e.getMessage());
         }
@@ -105,6 +111,12 @@ public class SeriesRepository {
 
         e.setSeasonNumber(rs.getInt("SeasonNumber"));
         e.setEpisodeNumber(rs.getInt("EpisodeNumber"));
+
+        try {
+            e.setSlug(rs.getString("slug"));
+        } catch (Exception ex) {
+            // Column might not exist
+        }
 
         return e;
     };
@@ -222,7 +234,7 @@ public class SeriesRepository {
 
     public void saveEpisode(Episode episode) {
         jdbcTemplate.update(
-                "INSERT INTO Episode (ID, name, DurationMinutes, ReleaseYear, uploadDate, SeriesId, SeasonNumber, EpisodeNumber) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO Episode (ID, name, DurationMinutes, ReleaseYear, uploadDate, SeriesId, SeasonNumber, EpisodeNumber, slug) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 episode.getId().toString(),
                 episode.getName(),
                 episode.getDurationMinutes(),
@@ -230,16 +242,18 @@ public class SeriesRepository {
                 episode.getUploadDate(),
                 episode.getSeriesId(),
                 episode.getSeasonNumber(),
-                episode.getEpisodeNumber());
+                episode.getEpisodeNumber(),
+                episode.getSlug());
     }
 
     public void updateEpisode(Episode episode) {
         jdbcTemplate.update(
-                "UPDATE Episode SET DurationMinutes = ?, ReleaseYear = ?, SeasonNumber = ?, EpisodeNumber = ? WHERE ID = ?",
+                "UPDATE Episode SET DurationMinutes = ?, ReleaseYear = ?, SeasonNumber = ?, EpisodeNumber = ?, slug = ? WHERE ID = ?",
                 episode.getDurationMinutes(),
                 episode.getReleaseYear(),
                 episode.getSeasonNumber(),
                 episode.getEpisodeNumber(),
+                episode.getSlug(),
                 episode.getId().toString());
     }
 

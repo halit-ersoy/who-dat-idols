@@ -29,6 +29,12 @@ public class MovieRepository {
                             "BEGIN " +
                             "    ALTER TABLE Movie ADD Country NVARCHAR(50); " +
                             "END");
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Movie' AND COLUMN_NAME = 'slug') "
+                            +
+                            "BEGIN " +
+                            "    ALTER TABLE Movie ADD slug NVARCHAR(255); " +
+                            "END");
         } catch (Exception e) {
             System.err.println("Schema update failed: " + e.getMessage());
         }
@@ -37,8 +43,8 @@ public class MovieRepository {
     // --- KAYIT (INSERT) İŞLEMİ ---
     public void save(Movie movie) {
         String sql = "INSERT INTO [WhoDatIdols].[dbo].[Movie] " +
-                "(ID, name, Summary, DurationMinutes, language, Country, ReleaseYear, uploadDate) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                "(ID, name, Summary, DurationMinutes, language, Country, ReleaseYear, uploadDate, slug) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         jdbcTemplate.update(sql,
                 movie.getId().toString(),
@@ -48,7 +54,8 @@ public class MovieRepository {
                 movie.getLanguage(),
                 movie.getCountry(),
                 movie.getReleaseYear(),
-                java.sql.Timestamp.valueOf(movie.getUploadDate()));
+                java.sql.Timestamp.valueOf(movie.getUploadDate()),
+                movie.getSlug());
 
         // Update categories in junction table
         updateMovieCategories(movie.getId(), movie.getCategory());
@@ -57,7 +64,7 @@ public class MovieRepository {
     // --- LİSTELEME (TÜM FİLMLER) ---
     public List<Movie> findAll() {
         String sql = """
-                SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate,
+                SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN MovieCategories MC ON MC.CategoryID = C.ID
                         WHERE MC.MovieID = M.ID) as category
@@ -70,7 +77,7 @@ public class MovieRepository {
     // --- GÜNCELLEME (UPDATE) ---
     public void update(Movie movie) {
         String sql = "UPDATE [WhoDatIdols].[dbo].[Movie] SET " +
-                "name = ?, Summary = ?, ReleaseYear = ?, language = ?, Country = ? " +
+                "name = ?, Summary = ?, ReleaseYear = ?, language = ?, Country = ?, slug = ? " +
                 "WHERE ID = ?";
 
         jdbcTemplate.update(sql,
@@ -79,6 +86,7 @@ public class MovieRepository {
                 movie.getReleaseYear(),
                 movie.getLanguage(),
                 movie.getCountry(),
+                movie.getSlug(),
                 movie.getId().toString());
 
         // Update categories in junction table
@@ -119,7 +127,7 @@ public class MovieRepository {
         String sql;
         if (limit > 0) {
             sql = """
-                    SELECT TOP (?) M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate,
+                    SELECT TOP (?) M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN MovieCategories MC ON MC.CategoryID = C.ID
                             WHERE MC.MovieID = M.ID) as category
@@ -129,7 +137,7 @@ public class MovieRepository {
             return jdbcTemplate.query(sql, new MovieRowMapper(), limit);
         } else {
             sql = """
-                    SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate,
+                    SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN MovieCategories MC ON MC.CategoryID = C.ID
                             WHERE MC.MovieID = M.ID) as category
@@ -147,7 +155,7 @@ public class MovieRepository {
     public Movie findMovieById(UUID id) {
         try {
             String sql = """
-                    SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate,
+                    SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN MovieCategories MC ON MC.CategoryID = C.ID
                             WHERE MC.MovieID = M.ID) as category
@@ -195,6 +203,13 @@ public class MovieRepository {
             if (rs.getTimestamp("uploadDate") != null) {
                 movie.setUploadDate(rs.getTimestamp("uploadDate").toLocalDateTime());
             }
+
+            try {
+                movie.setSlug(rs.getString("slug"));
+            } catch (SQLException e) {
+                // Column might not exist
+            }
+
             return movie;
         }
     }

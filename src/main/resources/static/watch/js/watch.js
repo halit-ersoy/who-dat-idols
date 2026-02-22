@@ -6,9 +6,31 @@ import { initEpisodeSelection } from './episodeSelection.js';
 import { initSimilarContent } from './similarContent.js';
 import { handleImageSkeleton } from '../../elements/userLogged.js';
 
-document.addEventListener('DOMContentLoaded', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const videoId = urlParams.get('id');
+document.addEventListener('DOMContentLoaded', async () => {
+    const pathSegments = window.location.pathname.split('/').filter(Boolean);
+    let videoId = null;
+
+    if (pathSegments.length === 1) {
+        const slug = pathSegments[0];
+        try {
+            const res = await fetch(`/api/video/resolve-slug?slug=${slug}`);
+            if (res.ok) {
+                const data = await res.json();
+                videoId = data.id;
+            } else {
+                console.error("Slug not found:", slug);
+                document.querySelector('.watch-container').innerHTML = '<h2>İçerik bulunamadı.</h2>';
+                return;
+            }
+        } catch (e) {
+            console.error("Error resolving slug:", e);
+        }
+    }
+
+    if (!videoId) {
+        document.querySelector('.watch-container').innerHTML = '<h2>Geçersiz bağlantı.</h2>';
+        return;
+    }
 
     initVideoControls(videoId);
     initListModal();

@@ -62,7 +62,7 @@ function renderRecommendations(items, container) {
         const card = document.createElement('div');
         card.className = 'rec-card';
         card.innerHTML = `
-            <a href="/watch?id=${item.ID}" class="rec-link">
+            <a href="/${item.slug || item.ID}" class="rec-link">
                 <div class="rec-image img-skeleton">
                     <img src="/media/image/${item.ID}" alt="${item.Name}" onerror="this.src='https://picsum.photos/300/170?blur=10'">
                 </div>

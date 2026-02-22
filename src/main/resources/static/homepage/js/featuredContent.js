@@ -128,7 +128,8 @@ export function initFeaturedContent() {
                 `;
                 handleImageSkeleton(el.querySelector('img'));
                 el.addEventListener('click', () => {
-                    window.location.href = `/watch?id=${item.id}`;
+                    const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(item.id);
+                    window.location.href = `/${item.id}`;
                 });
                 featuredGrid.appendChild(el);
             });

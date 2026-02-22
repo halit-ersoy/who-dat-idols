@@ -8,8 +8,17 @@ public class EpisodeViewModel {
     private int seasonNumber;
     private int episodeNumber;
     private int duration;
+    private String slug;
 
     // Getters and Setters
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
+    }
+
     public UUID getId() {
         return id;
     }

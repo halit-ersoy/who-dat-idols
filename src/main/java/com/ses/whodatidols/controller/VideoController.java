@@ -4,6 +4,7 @@ import com.ses.whodatidols.service.TranscodingService;
 import com.ses.whodatidols.service.VideoService;
 import com.ses.whodatidols.model.Episode;
 import com.ses.whodatidols.model.Movie;
+import com.ses.whodatidols.model.Series;
 import com.ses.whodatidols.repository.MovieRepository;
 import com.ses.whodatidols.repository.SeriesRepository;
 import com.ses.whodatidols.repository.ContentRepository;
@@ -72,6 +73,7 @@ public class VideoController {
             response.put("episode", episode.getEpisodeNumber());
             response.put("type", "episode");
             response.put("seriesId", episode.getSeriesId()); // Added for frontend list check
+            response.put("slug", episode.getSlug());
             return ResponseEntity.ok(response);
         }
 
@@ -87,7 +89,40 @@ public class VideoController {
             response.put("language", movie.getLanguage());
             response.put("country", movie.getCountry());
             response.put("type", "movie");
+            response.put("slug", movie.getSlug());
             return ResponseEntity.ok(response);
+        }
+
+        return ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/resolve-slug")
+    public ResponseEntity<Map<String, String>> resolveSlug(@RequestParam("slug") String slug) {
+        // Try finding an episode with this slug or ID
+        boolean isUuid = false;
+        try {
+            UUID.fromString(slug);
+            isUuid = true;
+        } catch (IllegalArgumentException e) {
+            // Not a UUID
+        }
+
+        List<Series> allSeries = seriesRepository.findAllSeries();
+        for (Series s : allSeries) {
+            List<Episode> episodes = seriesRepository.findEpisodesBySeriesId(s.getId());
+            for (Episode e : episodes) {
+                if (slug.equalsIgnoreCase(e.getSlug()) || (isUuid && e.getId().toString().equalsIgnoreCase(slug))) {
+                    return ResponseEntity.ok(Map.of("id", e.getId().toString(), "type", "episode"));
+                }
+            }
+        }
+
+        // Try finding a movie with this slug or ID
+        List<Movie> allMovies = movieRepository.findAll();
+        for (Movie m : allMovies) {
+            if (slug.equalsIgnoreCase(m.getSlug()) || (isUuid && m.getId().toString().equalsIgnoreCase(slug))) {
+                return ResponseEntity.ok(Map.of("id", m.getId().toString(), "type", "movie"));
+            }
         }
 
         return ResponseEntity.notFound().build();

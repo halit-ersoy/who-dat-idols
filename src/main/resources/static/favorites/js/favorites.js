@@ -52,11 +52,12 @@
 
     // --- Event Delegation Handler ---
     function handleContainerClick(e) {
-        // İzle butonu (overlay içindeki play butonu veya kart tıklaması)
         if (e.target.closest('.watch-btn') || e.target.closest('.play-overlay')) {
             const item = e.target.closest('.content-item');
             if (item) {
-                window.location.href = `/watch?id=${item.dataset.id}`;
+                // Check if we stored slug in dataset, otherwise fallback to id
+                const path = `/${item.dataset.slug || item.dataset.id}`;
+                window.location.href = path;
             }
             return;
         }
@@ -77,7 +78,8 @@
         // Video öğesinin kendisine tıklandığında (genel kart tıklaması)
         if (e.target.closest('.content-item') && !e.target.closest('.remove-btn')) {
             const item = e.target.closest('.content-item');
-            window.location.href = `/watch?id=${item.dataset.id}`;
+            const path = `/${item.dataset.slug || item.dataset.id}`;
+            window.location.href = path;
             return;
         }
         // Liste başlığına tıklayıp aç/kapa
@@ -323,7 +325,8 @@
                     title: item.VideoName || 'Başlıksız Video',
                     image: '/media/image/' + item.VideoID, // Düzeltildi: absolute path
                     year: item.Year || '',
-                    type: (item.Category || '').split(',')[0] || ''
+                    type: (item.Category || '').split(',')[0] || '',
+                    slug: item.slug || ''
                 });
             }
         });
@@ -404,7 +407,7 @@
             return `<div class="empty-list" style="padding: 20px;"><p style="color:var(--text-muted)">Henüz video eklenmemiş.</p></div>`;
         }
         return videos.map(v => `
-      <div class="content-item" data-id="${v.id}">
+      <div class="content-item" data-id="${v.id}" data-slug="${v.slug}">
         <img src="${v.image}" loading="lazy" alt="${escapeHtml(v.title)}" onerror="this.src='/elements/img/default_movie.jpg'">
         
         <div class="play-overlay"><i class="fas fa-play"></i></div>

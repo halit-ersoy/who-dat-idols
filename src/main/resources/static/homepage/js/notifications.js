@@ -61,7 +61,7 @@ export function initNotifications() {
 
             const timeStr = formatTime(new Date(notification.createdAt));
             const icon = notification.type === 'Movie' ? 'fas fa-film' : 'fas fa-tv';
-            const link = `/watch?id=${notification.contentId}`;
+            const link = `/${notification.slug || notification.contentId}`;
 
             item.innerHTML = `
                 <div class="notification-icon">

@@ -46,7 +46,15 @@ public class NotificationRepository {
     }
 
     public List<Notification> findRecent(int limit) {
-        String sql = "SELECT TOP (?) * FROM Notifications ORDER BY CreatedAt DESC";
+        String sql = """
+                    SELECT TOP (?) N.*,
+                           CASE
+                               WHEN N.Type = 'Movie' THEN (SELECT M.slug FROM Movie M WHERE M.ID = CAST(N.ContentID AS VARCHAR(36)))
+                               ELSE (SELECT E.slug FROM Episode E WHERE E.ID = CAST(N.ContentID AS VARCHAR(36)))
+                           END as slug
+                    FROM Notifications N
+                    ORDER BY N.CreatedAt DESC
+                """;
         return jdbcTemplate.query(sql, new NotificationRowMapper(), limit);
     }
 
@@ -72,6 +80,13 @@ public class NotificationRepository {
             n.setType(rs.getString("Type"));
             n.setCreatedAt(rs.getTimestamp("CreatedAt").toLocalDateTime());
             n.setRead(rs.getBoolean("IsRead"));
+
+            try {
+                n.setSlug(rs.getString("slug"));
+            } catch (SQLException e) {
+                // Ignore if not present
+            }
+
             return n;
         }
     }

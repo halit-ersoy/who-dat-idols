@@ -62,7 +62,7 @@ public class HomeController {
         List<FeaturedItem> movieItems = new java.util.ArrayList<>();
         for (Movie m : movies) {
             FeaturedItem item = new FeaturedItem();
-            item.id = m.getId().toString();
+            item.id = m.getSlug() != null ? m.getSlug() : m.getId().toString();
             item.title = m.getName();
             item.image = "/media/image/" + m.getId();
 
@@ -94,7 +94,7 @@ public class HomeController {
                 break;
 
             FeaturedItem item = new FeaturedItem();
-            item.id = ep.getId().toString(); // Item ID is Episode ID
+            item.id = ep.getSlug() != null ? ep.getSlug() : ep.getId().toString(); // Item ID is slug or Episode ID
 
             String title = ep.getName();
             String language = "kr";
@@ -294,8 +294,17 @@ public class HomeController {
         }
     }
 
-    @GetMapping("/watch")
-    public ResponseEntity<Resource> watchPage(@RequestParam("id") UUID id) {
+    @GetMapping("/{slug:[a-zA-Z0-9-]+}")
+    public ResponseEntity<Resource> watchPageBySlug(@PathVariable("slug") String slug) {
+        // Exclude static paths from matching here, though Spring usually handles static
+        // prior to @PathVariable
+        if (slug.equals("about") || slug.equals("privacy_policy") || slug.equals("terms_of_use") || slug.equals("sss")
+                || slug.equals("favorites") || slug.equals("profile") || slug.equals("login-admin")
+                || slug.equals("settings") || slug.equals("coming-soon") || slug.equals("programlar")
+                || slug.equals("diziler") || slug.equals("bl-dizileri") || slug.equals("watch")) {
+            return ResponseEntity.notFound().build();
+        }
+
         try {
             ClassPathResource htmlPage = new ClassPathResource("static/watch/html/watch.html");
             if (!htmlPage.exists()) {

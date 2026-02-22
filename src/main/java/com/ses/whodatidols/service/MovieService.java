@@ -85,6 +85,21 @@ public class MovieService {
         }
 
         // Burada sadece metadata (isim, yıl vb.) güncellenir.
+        Movie existingMovie = movieRepository.findMovieById(movie.getId());
+        if (existingMovie != null) {
+            if (movie.getSlug() == null || movie.getSlug().isEmpty()) {
+                if (existingMovie.getSlug() != null && !existingMovie.getSlug().isEmpty()) {
+                    movie.setSlug(existingMovie.getSlug());
+                } else {
+                    movie.setSlug(com.ses.whodatidols.util.SlugUtil.toSlug(movie.getName()));
+                }
+            }
+        } else {
+            if (movie.getSlug() == null || movie.getSlug().isEmpty()) {
+                movie.setSlug(com.ses.whodatidols.util.SlugUtil.toSlug(movie.getName()));
+            }
+        }
+
         movieRepository.update(movie);
 
         if (image != null && !image.isEmpty()) {
@@ -99,6 +114,7 @@ public class MovieService {
         movie.setId(uuid);
         movie.setUploadDate(LocalDateTime.now());
         movie.setSummary(summary); // Özet summary'e gidiyor
+        movie.setSlug(com.ses.whodatidols.util.SlugUtil.toSlug(movie.getName()));
 
         if (file != null && !file.isEmpty()) {
             Path uploadPath = Paths.get(moviesPath).toAbsolutePath().normalize();

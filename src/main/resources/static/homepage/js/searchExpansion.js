@@ -119,7 +119,8 @@ export function initHeaderInteractions() {
 
             if (id) {
                 resultItem.addEventListener('click', () => {
-                    window.location.href = `/watch?id=${id}`;
+                    const path = `/${item.slug || id}`;
+                    window.location.href = path;
                 });
             }
 

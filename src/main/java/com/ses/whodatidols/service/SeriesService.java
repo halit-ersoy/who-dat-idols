@@ -75,6 +75,7 @@ public class SeriesService {
                 vm.setSeasonNumber(ep.getSeasonNumber());
                 vm.setEpisodeNumber(ep.getEpisodeNumber());
                 vm.setDuration(ep.getDurationMinutes());
+                vm.setSlug(ep.getSlug());
                 viewModels.add(vm);
             }
             viewModels.sort(Comparator.comparingInt(EpisodeViewModel::getSeasonNumber)
@@ -116,6 +117,7 @@ public class SeriesService {
                         vm.setSeasonNumber(seasonNum);
                         vm.setEpisodeNumber(epNum);
                         vm.setDuration(epDetails.getDurationMinutes());
+                        vm.setSlug(epDetails.getSlug());
                         episodes.add(vm);
                     }
                 } catch (IllegalArgumentException e) {
@@ -238,6 +240,8 @@ public class SeriesService {
         episodeData.setSeriesId(seriesId); // OPTIMIZATION: Set FK!
         episodeData.setSeasonNumber(seasonNumber);
         episodeData.setEpisodeNumber(episodeNumber);
+        episodeData.setSlug(com.ses.whodatidols.util.SlugUtil
+                .toSlug(seriesName + "-" + seasonNumber + "-sezon-" + episodeNumber + "-bolum"));
 
         repository.saveEpisode(episodeData);
 
@@ -277,6 +281,13 @@ public class SeriesService {
                 String removedXml = removeEpisodeFromXML(currentXml, episodeId.toString());
                 String updatedXml = injectEpisodeToXML(removedXml, seasonNumber, episodeNumber, episodeId.toString());
                 repository.updateSeriesXML(parent.getId(), updatedXml);
+            }
+
+            // Update slug if it's missing or if season/episode numbers have changed
+            if (ep.getSlug() == null || ep.getSlug().isEmpty() || ep.getSeasonNumber() != seasonNumber
+                    || ep.getEpisodeNumber() != episodeNumber) {
+                ep.setSlug(com.ses.whodatidols.util.SlugUtil
+                        .toSlug(parent.getName() + "-" + seasonNumber + "-sezon-" + episodeNumber + "-bolum"));
             }
         }
 

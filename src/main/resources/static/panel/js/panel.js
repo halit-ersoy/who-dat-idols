@@ -2321,7 +2321,7 @@
 
                     // Content Name ve Link
                     const contentName = comment.contentName || comment.contentId || 'İçerik';
-                    const contentLink = comment.contentId ? `<a href="/watch?id=${comment.contentId}" target="_blank" style="color: var(--primary-color); font-weight: 500;">${contentName}</a>` : '-';
+                    const contentLink = comment.contentId ? `<a href="/${comment.contentId}" target="_blank" style="color: var(--primary-color); font-weight: 500;">${contentName}</a>` : '-';
 
                     tr.innerHTML = `
                         <td>

@@ -44,9 +44,14 @@ public class SeriesController {
                     // Video URL points to last episode if available
                     List<EpisodeViewModel> episodes = seriesService.getEpisodesForSeries(series.getId());
                     if (!episodes.isEmpty()) {
-                        vm.setVideoUrl("/watch?id=" + episodes.get(episodes.size() - 1).getId());
+                        EpisodeViewModel lastEp = episodes.get(episodes.size() - 1);
+                        if (lastEp.getSlug() != null && !lastEp.getSlug().isEmpty()) {
+                            vm.setVideoUrl("/" + lastEp.getSlug());
+                        } else {
+                            vm.setVideoUrl("/" + lastEp.getId());
+                        }
                     } else {
-                        vm.setVideoUrl("/watch?id=" + series.getId());
+                        vm.setVideoUrl("/" + series.getId());
                     }
 
                     return vm;

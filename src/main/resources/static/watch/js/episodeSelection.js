@@ -40,7 +40,8 @@ export async function initEpisodeSelection(videoId) {
                 if (eps && eps.length > 0) {
                     const lastEp = eps[eps.length - 1];
                     console.log('DEBUG: Redirecting to last episode:', lastEp.id);
-                    window.location.href = `/watch?id=${lastEp.id}`;
+                    const path = `/${lastEp.slug || lastEp.id}`;
+                    window.location.href = path;
                     return;
                 }
             }
@@ -146,7 +147,10 @@ export async function initEpisodeSelection(videoId) {
         if (currentIndex > 0) {
             const prevEp = episodes[currentIndex - 1];
             prevBtn.disabled = false;
-            prevBtn.onclick = () => window.location.href = `/watch?id=${prevEp.id}`;
+            prevBtn.onclick = () => {
+                const path = `/${prevEp.slug || prevEp.id}`;
+                window.location.href = path;
+            };
         } else {
             prevBtn.disabled = true;
         }
@@ -155,7 +159,10 @@ export async function initEpisodeSelection(videoId) {
         if (currentIndex < episodes.length - 1) {
             const nextEp = episodes[currentIndex + 1];
             nextBtn.disabled = false;
-            nextBtn.onclick = () => window.location.href = `/watch?id=${nextEp.id}`;
+            nextBtn.onclick = () => {
+                const path = `/${nextEp.slug || nextEp.id}`;
+                window.location.href = path;
+            };
         } else {
             nextBtn.disabled = true;
         }
@@ -207,7 +214,8 @@ export async function initEpisodeSelection(videoId) {
             `;
 
             card.onclick = () => {
-                window.location.href = `/watch?id=${ep.id}`;
+                const path = `/${ep.slug || ep.id}`;
+                window.location.href = path;
             };
 
             const img = card.querySelector('img');

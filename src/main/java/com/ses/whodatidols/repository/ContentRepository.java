@@ -67,7 +67,8 @@ public class ContentRepository {
                 SimilarSeries AS (
                     SELECT S.ID, S.Name, 'soap_opera' as Type, S.viewCount,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C JOIN SeriesCategories SC2 ON SC2.CategoryID = C.ID WHERE SC2.SeriesID = S.ID) as Category,
-                           COUNT(SC.CategoryID) as MatchCount
+                           COUNT(SC.CategoryID) as MatchCount,
+                           (SELECT TOP 1 E.slug FROM Episode E WHERE E.SeriesId = S.ID ORDER BY SeasonNumber ASC, EpisodeNumber ASC) as slug
                     FROM Series S
                     JOIN SeriesCategories SC ON S.ID = SC.SeriesID
                     WHERE SC.CategoryID IN (SELECT CategoryID FROM TargetCategories)
@@ -77,14 +78,15 @@ public class ContentRepository {
                 SimilarMovies AS (
                     SELECT M.ID, M.Name, 'movie' as Type, M.viewCount,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C JOIN MovieCategories MC2 ON MC2.CategoryID = C.ID WHERE MC2.MovieID = M.ID) as Category,
-                           COUNT(MC.CategoryID) as MatchCount
+                           COUNT(MC.CategoryID) as MatchCount,
+                           M.slug as slug
                     FROM Movie M
                     JOIN MovieCategories MC ON M.ID = MC.MovieID
                     WHERE MC.CategoryID IN (SELECT CategoryID FROM TargetCategories)
                       AND M.ID <> ?
-                    GROUP BY M.ID, M.Name, M.viewCount
+                    GROUP BY M.ID, M.Name, M.viewCount, M.slug
                 )
-                SELECT TOP (?) ID, Name, Type, Category, viewCount FROM (
+                SELECT TOP (?) ID, Name, Type, Category, viewCount, slug FROM (
                     SELECT * FROM SimilarSeries
                     UNION ALL
                     SELECT * FROM SimilarMovies
@@ -100,6 +102,10 @@ public class ContentRepository {
                 map.put("Category", rs.getString("Category"));
                 map.put("Type", rs.getString("Type"));
                 map.put("viewCount", rs.getInt("viewCount"));
+                try {
+                    map.put("slug", rs.getString("slug"));
+                } catch (Exception e) {
+                }
                 return map;
             }, contentId.toString(), contentId.toString(), contentId.toString(), contentId.toString(), limit);
         } catch (Exception e) {

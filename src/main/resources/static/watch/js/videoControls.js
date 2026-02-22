@@ -34,7 +34,7 @@ export function initVideoControls(videoId) {
     setupInactivityTimer();
     // loadVideo(videoId); // Moved to initializeContent
     // loadSources(videoId); // Moved to initializeContent
-    setupEpisodeNavigation(videoId);
+    // setupEpisodeNavigation(videoId); // Handled by episodeSelection.js
     disableNativeShortcutsOnVideo();
 
     initializeContent(videoId);
@@ -376,16 +376,7 @@ export function initVideoControls(videoId) {
         videoPlayer.load();
     }
 
-    function setupEpisodeNavigation(id) {
-        prevEpisodeBtn?.addEventListener('click', () => {
-            if (+id > 1) window.location.search = `?id=${+id - 1}`;
-        });
-        if (prevEpisodeBtn) prevEpisodeBtn.disabled = +id <= 1;
 
-        nextEpisodeBtn?.addEventListener('click', () => {
-            window.location.search = `?id=${+id + 1}`;
-        });
-    }
 
     function disableNativeShortcutsOnVideo() {
         videoPlayer.addEventListener('keydown', e => {

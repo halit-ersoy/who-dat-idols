@@ -15,38 +15,41 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/movies")
 public class MovieController {
-    private final MovieRepository movieRepository;
+        private final MovieRepository movieRepository;
 
-    public MovieController(MovieRepository movieRepository) {
-        this.movieRepository = movieRepository;
-    }
+        public MovieController(MovieRepository movieRepository) {
+                this.movieRepository = movieRepository;
+        }
 
-    // In MovieController, modify the getRecentMovies method:
-    @GetMapping("/recent")
-    public ResponseEntity<List<VideoViewModel>> getRecentMovies(
-            @RequestParam(value = "limit", defaultValue = "0") int limit) {
-        List<Movie> recentMovies = movieRepository.findRecentMovies(limit);
+        // In MovieController, modify the getRecentMovies method:
+        @GetMapping("/recent")
+        public ResponseEntity<List<VideoViewModel>> getRecentMovies(
+                        @RequestParam(value = "limit", defaultValue = "0") int limit) {
+                List<Movie> recentMovies = movieRepository.findRecentMovies(limit);
 
-        List<VideoViewModel> viewModels = recentMovies.stream()
-                .map(movie -> {
-                    VideoViewModel vm = new VideoViewModel();
-                    String mainCategory = movie.getCategory().split(",")[0];
+                List<VideoViewModel> viewModels = recentMovies.stream()
+                                .map(movie -> {
+                                        VideoViewModel vm = new VideoViewModel();
+                                        String mainCategory = movie.getCategory().split(",")[0];
 
-                    vm.setId(movie.getId().toString());
-                    vm.setTitle(movie.getName());
-                    String durationText = movie.getDurationMinutes() > 0 ? " • " + movie.getDurationMinutes() + " dk"
-                            : "";
-                    vm.setInfo(
-                            movie.getReleaseYear() + " • " + mainCategory + durationText);
+                                        vm.setId(movie.getId().toString());
+                                        vm.setTitle(movie.getName());
+                                        String durationText = movie.getDurationMinutes() > 0
+                                                        ? " • " + movie.getDurationMinutes() + " dk"
+                                                        : "";
+                                        vm.setInfo(
+                                                        movie.getReleaseYear() + " • " + mainCategory + durationText);
 
-                    // Updated to use the new media endpoint
-                    vm.setThumbnailUrl("/media/image/" + movie.getId());
-                    vm.setVideoUrl("/watch?id=" + movie.getId());
+                                        // Updated to use the new media endpoint
+                                        vm.setThumbnailUrl("/media/image/" + movie.getId());
+                                        vm.setVideoUrl(movie.getSlug() != null && !movie.getSlug().isEmpty()
+                                                        ? "/" + movie.getSlug()
+                                                        : "/" + movie.getId());
 
-                    return vm;
-                })
-                .collect(Collectors.toList());
+                                        return vm;
+                                })
+                                .collect(Collectors.toList());
 
-        return ResponseEntity.ok(viewModels);
-    }
+                return ResponseEntity.ok(viewModels);
+        }
 }

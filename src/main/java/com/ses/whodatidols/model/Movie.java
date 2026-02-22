@@ -13,6 +13,7 @@ public class Movie {
     private String country;
     private int releaseYear;
     private LocalDateTime uploadDate;
+    private String slug;
 
     // Constructors
     public Movie() {
@@ -101,5 +102,13 @@ public class Movie {
 
     public void setUploadDate(LocalDateTime uploadDate) {
         this.uploadDate = uploadDate;
+    }
+
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
     }
 }

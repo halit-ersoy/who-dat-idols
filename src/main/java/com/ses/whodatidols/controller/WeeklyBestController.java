@@ -44,7 +44,8 @@ public class WeeklyBestController {
 
                     // Set the thumbnail URL to use the image API endpoint
                     vm.setThumbnailUrl("/media/image/" + movie.getId());
-                    vm.setVideoUrl("/watch?id=" + movie.getId());
+                    vm.setVideoUrl(movie.getSlug() != null && !movie.getSlug().isEmpty() ? "/" + movie.getSlug()
+                            : "/" + movie.getId());
 
                     return vm;
                 })
@@ -70,7 +71,19 @@ public class WeeklyBestController {
 
                     // For series, we need a way to watch it. Usually, we go to the watch page
                     // with the series ID, and it auto-opens the last episode.
-                    vm.setVideoUrl("/watch?id=" + series.getId());
+                    List<com.ses.whodatidols.viewmodel.EpisodeViewModel> episodes = seriesService
+                            .getEpisodesForSeries(series.getId());
+                    if (!episodes.isEmpty()) {
+                        com.ses.whodatidols.viewmodel.EpisodeViewModel lastEp = episodes.get(episodes.size() - 1);
+                        if (lastEp.getSlug() != null && !lastEp.getSlug().isEmpty()) {
+                            vm.setVideoUrl("/" + lastEp.getSlug());
+                        } else {
+                            vm.setVideoUrl("/" + lastEp.getId());
+                        }
+                    } else {
+                        // If no episodes, point to the ID
+                        vm.setVideoUrl("/" + series.getId());
+                    }
 
                     return vm;
                 })
