@@ -28,6 +28,40 @@ async function loadContentDetails(id) {
         // Update document title
         document.title = `${data.title} - Who Dat Idols?`;
 
+        // SEO: Update Meta Description and Canonical
+        if (data.plot) {
+            const metaDescription = document.querySelector('meta[name="description"]');
+            if (metaDescription) metaDescription.setAttribute('content', data.plot.substring(0, 160));
+        }
+        
+        const canonicalLink = document.getElementById('canonicalLink');
+        if (canonicalLink && data.slug) {
+            canonicalLink.setAttribute('href', `https://whodatidols.com/watch/${data.slug}`);
+        }
+
+        // SEO: Structured Data (JSON-LD)
+        const structuredDataEl = document.getElementById('structuredData');
+        if (structuredDataEl) {
+            const schema = {
+                "@context": "https://schema.org",
+                "@type": data.type === 'movie' ? "Movie" : "Episode",
+                "name": data.title,
+                "description": data.plot,
+                "image": `https://whodatidols.com/media/image/${id}`,
+                "datePublished": data.year,
+                "duration": data.duration ? "PT" + data.duration.replace(" dk", "M") : undefined
+            };
+            
+            if (data.type === 'episode' && data.season) {
+                schema.partOfSeason = {
+                    "@type": "CreativeWorkSeason",
+                    "seasonNumber": data.season
+                };
+            }
+            
+            structuredDataEl.textContent = JSON.stringify(schema);
+        }
+
         const posterImg = document.getElementById('contentPoster');
         // Use the generic image endpoint we know works
         posterImg.src = `/media/image/${id}`;
