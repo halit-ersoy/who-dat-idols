@@ -45,6 +45,22 @@
     fetchMovies();
     fetchSeries();
     fetchViewStats();
+    fetchLiveActiveUsers();
+
+    // Poll live users every 30 seconds
+    setInterval(fetchLiveActiveUsers, 30000);
+
+    function fetchLiveActiveUsers() {
+        const activeUsersEl = document.getElementById('statActiveUsers');
+        if (!activeUsersEl) return;
+
+        fetch('/api/stats/active-users')
+            .then(res => res.json())
+            .then(data => {
+                activeUsersEl.innerText = data.activeUsers || 0;
+            })
+            .catch(err => console.error("Live stats error:", err));
+    }
 
     // Role-based UI initialization
     window.currentAdmin = null;
