@@ -22,6 +22,7 @@ public class SecurityConfig {
                 http
                                 .csrf(csrf -> csrf.disable())
                                 .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers("/sitemap.xml", "/robots.txt").permitAll()
                                                 .requestMatchers("/admin/users", "/admin/ban-user",
                                                                 "/admin/update-role", "/admin/delete-user")
                                                 .hasRole("SUPER_ADMIN")
