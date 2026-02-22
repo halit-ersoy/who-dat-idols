@@ -41,6 +41,14 @@ public class SeriesRepository {
                             "BEGIN " +
                             "    ALTER TABLE Episode ADD slug NVARCHAR(255); " +
                             "END");
+
+            // Add Index for Performance
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_episode_slug' AND object_id = OBJECT_ID('Episode')) "
+                            +
+                            "BEGIN " +
+                            "    CREATE NONCLUSTERED INDEX idx_episode_slug ON Episode(slug); " +
+                            "END");
         } catch (Exception e) {
             System.err.println("Schema update failed: " + e.getMessage());
         }

@@ -35,6 +35,14 @@ public class MovieRepository {
                             "BEGIN " +
                             "    ALTER TABLE Movie ADD slug NVARCHAR(255); " +
                             "END");
+
+            // Add Index for Performance
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_movie_slug' AND object_id = OBJECT_ID('Movie')) "
+                            +
+                            "BEGIN " +
+                            "    CREATE NONCLUSTERED INDEX idx_movie_slug ON Movie(slug); " +
+                            "END");
         } catch (Exception e) {
             System.err.println("Schema update failed: " + e.getMessage());
         }

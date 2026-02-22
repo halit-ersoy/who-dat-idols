@@ -11,7 +11,7 @@ import com.ses.whodatidols.repository.ContentRepository;
 import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.cache.annotation.Cacheable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +37,7 @@ public class VideoController {
     }
 
     @GetMapping("/details")
+    @Cacheable("videoDetails")
     public ResponseEntity<Map<String, Object>> getDetails(@RequestParam("id") UUID id) {
         Map<String, Object> response = new HashMap<>();
 
@@ -97,6 +98,7 @@ public class VideoController {
     }
 
     @GetMapping("/resolve-slug")
+    @Cacheable("resolvedSlugs")
     public ResponseEntity<Map<String, String>> resolveSlug(@RequestParam("slug") String slug) {
         // Try finding an episode with this slug or ID
         boolean isUuid = false;
@@ -148,6 +150,7 @@ public class VideoController {
     }
 
     @GetMapping("/similar")
+    @Cacheable("similarContent")
     public ResponseEntity<List<Map<String, Object>>> getSimilarContent(@RequestParam("id") UUID id) {
         // If the ID is an episode, we should find recommendations based on the series
         UUID contentIdForSearch = id;
