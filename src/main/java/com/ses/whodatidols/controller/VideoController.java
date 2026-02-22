@@ -111,6 +111,15 @@ public class VideoController {
 
         List<Series> allSeries = seriesRepository.findAllSeries();
         for (Series s : allSeries) {
+            // 1. Check if slug matches Series directly
+            if (slug.equalsIgnoreCase(s.getSlug()) || (isUuid && s.getId().toString().equalsIgnoreCase(slug))) {
+                UUID firstEpId = seriesRepository.findFirstEpisodeIdBySeriesId(s.getId());
+                if (firstEpId != null) {
+                    return ResponseEntity.ok(Map.of("id", firstEpId.toString(), "type", "episode"));
+                }
+            }
+
+            // 2. Check if slug matches Episode
             List<Episode> episodes = seriesRepository.findEpisodesBySeriesId(s.getId());
             for (Episode e : episodes) {
                 if (slug.equalsIgnoreCase(e.getSlug()) || (isUuid && e.getId().toString().equalsIgnoreCase(slug))) {

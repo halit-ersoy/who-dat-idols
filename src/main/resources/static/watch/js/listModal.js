@@ -1,5 +1,9 @@
-// listModal.js
-export function initListModal() {
+let modal, selectedName, currentVideoId;
+
+export function initListModal(videoId) {
+    if (!videoId) return;
+    currentVideoId = videoId;
+
     const glowButton = document.querySelector('.glow-button');
     if (!glowButton) return;
 
@@ -35,11 +39,9 @@ export function initListModal() {
     });
 }
 
-let modal, selectedName;
-
 // Improved checkVideoInLists function
 async function checkVideoInLists() {
-    const videoId = new URLSearchParams(window.location.search).get('id');
+    const videoId = currentVideoId;
     if (!videoId) return false;
 
     // Get seriesId if available (from contentDetails)
@@ -91,7 +93,7 @@ function updateButtonState(button, isInList) {
 }
 
 async function removeVideoDirectly() {
-    const videoId = new URLSearchParams(window.location.search).get('id');
+    const videoId = currentVideoId;
     if (!videoId) return;
 
     try {
@@ -193,7 +195,7 @@ function renderUserLists(listData, container) {
         if (!acc[name]) acc[name] = { name, videos: [], has: false };
         if (item.VideoID) {
             acc[name].videos.push(item);
-            if (String(item.VideoID) === new URLSearchParams(window.location.search).get('id'))
+            if (String(item.VideoID) === String(currentVideoId))
                 acc[name].has = true;
         }
         return acc;
@@ -242,7 +244,7 @@ function showListActions(isInList) {
 
 async function addToList() {
     if (!selectedName) return showMessage('error', 'Liste seçilmedi.');
-    const videoId = new URLSearchParams(window.location.search).get('id');
+    const videoId = currentVideoId;
     try {
         const res = await fetch(
             `/api/saved/add?title=${encodeURIComponent(selectedName)}&videoId=${videoId}`,
@@ -273,7 +275,7 @@ async function addToList() {
 }
 
 async function removeFromList() {
-    const videoId = new URLSearchParams(window.location.search).get('id');
+    const videoId = currentVideoId;
     try {
         const res = await fetch(`/api/saved/remove?videoId=${videoId}`, {
             method: 'POST', credentials: 'include'

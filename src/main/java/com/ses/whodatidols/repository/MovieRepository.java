@@ -36,13 +36,16 @@ public class MovieRepository {
                             "    ALTER TABLE Movie ADD slug NVARCHAR(255); " +
                             "END");
 
-            // Add Index for Performance
             jdbcTemplate.execute(
                     "IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_movie_slug' AND object_id = OBJECT_ID('Movie')) "
                             +
                             "BEGIN " +
                             "    CREATE NONCLUSTERED INDEX idx_movie_slug ON Movie(slug); " +
                             "END");
+
+            // One-time populate missing slugs
+            jdbcTemplate.execute(
+                    "UPDATE Movie SET slug = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(name, ' ', '-'), 'ı', 'i'), 'ğ', 'g'), 'ü', 'u'), 'ş', 's')) WHERE slug IS NULL OR slug = ''");
         } catch (Exception e) {
             System.err.println("Schema update failed: " + e.getMessage());
         }

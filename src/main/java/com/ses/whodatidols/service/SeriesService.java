@@ -185,6 +185,8 @@ public class SeriesService {
             if (existingSeries == null) {
                 seriesId = UUID.randomUUID();
                 seriesInfo.setId(seriesId);
+                // Generate series slug
+                seriesInfo.setSlug(com.ses.whodatidols.util.SlugUtil.toSlug(seriesInfo.getName()));
                 // Assume empty XML first
                 seriesInfo.setEpisodeMetadataXml("<Seasons></Seasons>");
                 seriesInfo.setUploadDate(LocalDateTime.now());
@@ -195,6 +197,12 @@ public class SeriesService {
                 seriesId = existingSeries.getId();
                 currentXML = existingSeries.getEpisodeMetadataXml();
                 seriesName = existingSeries.getName();
+
+                // Ensure existing series has a slug
+                if (existingSeries.getSlug() == null || existingSeries.getSlug().isEmpty()) {
+                    String newSlug = com.ses.whodatidols.util.SlugUtil.toSlug(seriesName);
+                    repository.updateSeriesSlug(seriesId, newSlug);
+                }
             }
         }
 

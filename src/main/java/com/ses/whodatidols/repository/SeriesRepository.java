@@ -42,13 +42,35 @@ public class SeriesRepository {
                             "    ALTER TABLE Episode ADD slug NVARCHAR(255); " +
                             "END");
 
-            // Add Index for Performance
             jdbcTemplate.execute(
                     "IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_episode_slug' AND object_id = OBJECT_ID('Episode')) "
                             +
                             "BEGIN " +
                             "    CREATE NONCLUSTERED INDEX idx_episode_slug ON Episode(slug); " +
                             "END");
+
+            // One-time populate missing slugs for episodes (crude name-based fallback if
+            // SlugUtil wasn't used)
+            jdbcTemplate.execute(
+                    "UPDATE Episode SET slug = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(name, ' ', '-'), 'ı', 'i'), 'ğ', 'g'), 'ü', 'u'), 'ş', 's')) WHERE slug IS NULL OR slug = ''");
+
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Series' AND COLUMN_NAME = 'slug') "
+                            +
+                            "BEGIN " +
+                            "    ALTER TABLE Series ADD slug NVARCHAR(255); " +
+                            "END");
+
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_series_slug' AND object_id = OBJECT_ID('Series')) "
+                            +
+                            "BEGIN " +
+                            "    CREATE NONCLUSTERED INDEX idx_series_slug ON Series(slug); " +
+                            "END");
+
+            // One-time populate missing slugs (Simple SQL version for existing data)
+            jdbcTemplate.execute(
+                    "UPDATE Series SET slug = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(name, ' ', '-'), 'ı', 'i'), 'ğ', 'g'), 'ü', 'u'), 'ş', 's')) WHERE slug IS NULL OR slug = ''");
         } catch (Exception e) {
             System.err.println("Schema update failed: " + e.getMessage());
         }
@@ -72,6 +94,12 @@ public class SeriesRepository {
         // Handle nullable SeriesType
         try {
             s.setSeriesType(rs.getString("SeriesType"));
+        } catch (Exception e) {
+            // Column might not exist
+        }
+
+        try {
+            s.setSlug(rs.getString("slug"));
         } catch (Exception e) {
             // Column might not exist
         }
@@ -134,7 +162,7 @@ public class SeriesRepository {
         // Also assuming Series table is just 'Series' now.
         // We use LEFT JOIN or Correlated Subquery. Subquery is safer for 1:N count.
         String sql = """
-                SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
                        (SELECT COUNT(*) FROM Episode E WHERE E.SeriesId = S.ID) as episodeCount,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN SeriesCategories SC ON SC.CategoryID = C.ID
@@ -148,7 +176,7 @@ public class SeriesRepository {
     public Series findSeriesByName(String name) {
         try {
             String sql = """
-                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                             WHERE SC.SeriesID = S.ID) as category
@@ -164,7 +192,7 @@ public class SeriesRepository {
     public Series findSeriesById(UUID id) {
         try {
             String sql = """
-                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                             WHERE SC.SeriesID = S.ID) as category
@@ -187,7 +215,7 @@ public class SeriesRepository {
 
     public void createSeries(Series series) {
         jdbcTemplate.update(
-                "INSERT INTO Series (ID, name, Summary, Language, Country, SeriesType, finalStatus, EpisodeMetadataXml, uploadDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO Series (ID, name, Summary, Language, Country, SeriesType, finalStatus, EpisodeMetadataXml, uploadDate, slug) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 series.getId().toString(),
                 series.getName(),
                 series.getSummary(),
@@ -196,9 +224,24 @@ public class SeriesRepository {
                 series.getSeriesType(),
                 series.getFinalStatus(),
                 series.getEpisodeMetadataXml(),
-                series.getUploadDate());
+                series.getUploadDate(),
+                series.getSlug());
 
         updateSeriesCategories(series.getId(), series.getCategory());
+    }
+
+    public void updateSeriesSlug(UUID id, String slug) {
+        jdbcTemplate.update("UPDATE Series SET slug = ? WHERE ID = ?", slug, id.toString());
+    }
+
+    public UUID findFirstEpisodeIdBySeriesId(UUID seriesId) {
+        try {
+            String sql = "SELECT TOP 1 ID FROM Episode WHERE SeriesId = ? ORDER BY SeasonNumber ASC, EpisodeNumber ASC";
+            String idStr = jdbcTemplate.queryForObject(sql, String.class, seriesId.toString());
+            return idStr != null ? UUID.fromString(idStr) : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public void updateSeriesMetadata(Series series) {

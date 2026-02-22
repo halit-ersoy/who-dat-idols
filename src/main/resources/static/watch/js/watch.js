@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     initVideoControls(videoId);
-    initListModal();
+    initListModal(videoId);
     initCommentsSection(videoId);
     initContentDetails(videoId);
     initEpisodeSelection(videoId);

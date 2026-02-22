@@ -111,6 +111,7 @@ public class SavedController {
                                 WHERE SC.SeriesID = S.ID
                             )
                         END as Category,
+                        COALESCE(M.slug, S.slug) as slug,
                         I.VideoType as Type
                     FROM UserLists L
                     LEFT JOIN UserListItems I ON I.ListID = L.ID
@@ -158,13 +159,19 @@ public class SavedController {
     @PostMapping("/add")
     public ResponseEntity<?> addToList(
             @RequestParam("title") String title,
-            @RequestParam("videoId") UUID videoId,
+            @RequestParam("videoId") String videoIdStr,
             @CookieValue(value = "wdiAuth", required = false) String cookie) {
 
         if (cookie == null || cookie.isEmpty())
             return ResponseEntity.status(401).build();
         try {
             UUID userId = UUID.fromString(cookie);
+            UUID videoId;
+            try {
+                videoId = UUID.fromString(videoIdStr);
+            } catch (Exception e) {
+                return ResponseEntity.ok(Map.of("Result", 0, "Message", "Geçersiz Video ID."));
+            }
 
             // Get List ID
             List<Map<String, Object>> listRows = jdbcTemplate.queryForList(
@@ -233,13 +240,19 @@ public class SavedController {
 
     @PostMapping("/remove")
     public ResponseEntity<?> removeFromList(
-            @RequestParam("videoId") UUID videoId,
+            @RequestParam("videoId") String videoIdStr,
             @CookieValue(value = "wdiAuth", required = false) String cookie) {
 
         if (cookie == null || cookie.isEmpty())
             return ResponseEntity.status(401).build();
         try {
             UUID userId = UUID.fromString(cookie);
+            UUID videoId;
+            try {
+                videoId = UUID.fromString(videoIdStr);
+            } catch (Exception e) {
+                return ResponseEntity.ok(Map.of("Result", 0, "Message", "Geçersiz Video ID."));
+            }
             UUID targetId = videoId;
 
             // Check if it's an episode -> resolve to series

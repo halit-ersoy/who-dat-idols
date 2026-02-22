@@ -16,6 +16,7 @@ public class Series {
     private LocalDateTime uploadDate;
 
     private String seriesType;
+    private String slug;
 
     // Getter and Setters
     public UUID getId() {
@@ -104,5 +105,13 @@ public class Series {
 
     public void setUploadDate(LocalDateTime uploadDate) {
         this.uploadDate = uploadDate;
+    }
+
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
     }
 }
