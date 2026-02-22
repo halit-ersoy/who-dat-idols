@@ -267,7 +267,8 @@ public class SeriesService {
 
     @Transactional
     @CacheEvict(value = "featuredContent", allEntries = true)
-    public void updateEpisode(UUID episodeId, int seasonNumber, int episodeNumber, MultipartFile file)
+    public void updateEpisode(UUID episodeId, int seasonNumber, int episodeNumber, MultipartFile file,
+            boolean overwrite)
             throws IOException {
         Episode ep = repository.findEpisodeById(episodeId);
         if (ep == null)
@@ -277,6 +278,24 @@ public class SeriesService {
         if (parent != null) {
             // Check if season or episode number changed to update XML
             if (ep.getSeasonNumber() != seasonNumber || ep.getEpisodeNumber() != episodeNumber) {
+                // Duplicate Check: Find ALL episodes in the target slot
+                List<Episode> collisions = repository.findEpisodesBySeriesIdAndSeasonAndEpisodeNumber(parent.getId(),
+                        seasonNumber, episodeNumber);
+                if (!collisions.isEmpty() && collisions.stream().anyMatch(e -> !e.getId().equals(episodeId))) {
+                    if (!overwrite) {
+                        throw new com.ses.whodatidols.exception.DuplicateConflictException(
+                                "Bu dizi için " + seasonNumber + ". Sezon " + episodeNumber
+                                        + ". Bölüm zaten mevcut. Üzerine yazıp eski videoyu silmek istediğinize emin misiniz?");
+                    } else {
+                        for (Episode collision : collisions) {
+                            if (!collision.getId().equals(episodeId)) {
+                                deleteEpisodeById(collision.getId());
+                            }
+                        }
+                        parent = repository.findSeriesById(parent.getId()); // Refresh parent XML after deletions
+                    }
+                }
+
                 String currentXml = parent.getEpisodeMetadataXml();
                 String removedXml = removeEpisodeFromXML(currentXml, episodeId.toString());
                 String updatedXml = injectEpisodeToXML(removedXml, seasonNumber, episodeNumber, episodeId.toString());
@@ -356,14 +375,16 @@ public class SeriesService {
     @Transactional
     @CacheEvict(value = "featuredContent", allEntries = true)
     public void deleteEpisodeById(UUID id) {
-        Series parentSeries = repository.findSeriesByEpisodeIdInsideXML(id.toString());
+        Series parentSeries = repository.findSeriesByEpisodeId(id);
         if (parentSeries != null) {
             String currentXml = parentSeries.getEpisodeMetadataXml();
-            String cleanXml = removeEpisodeFromXML(currentXml, id.toString());
-            repository.updateSeriesXML(parentSeries.getId(), cleanXml);
+            if (currentXml != null) {
+                String cleanXml = removeEpisodeFromXML(currentXml, id.toString());
+                repository.updateSeriesXML(parentSeries.getId(), cleanXml);
+            }
         }
-        repository.deleteEpisodeById(id);
         videoSourceRepository.deleteAllForContent(id);
+        repository.deleteEpisodeById(id);
         deletePhysicalFile(id.toString());
     }
 
@@ -437,6 +458,16 @@ public class SeriesService {
         String seasonTag = "<Season number=\"" + seasonNum + "\">";
         String episodeTag = "<Episode number=\"" + episodeNum + "\">" + episodeUUID + "</Episode>";
 
+        if (xml == null || xml.isBlank()) {
+            return "<Seasons>" + seasonTag + episodeTag + "</Season></Seasons>";
+        }
+
+        // First, ensure any existing episode with the same number in the same season is
+        // removed to prevent duplicates
+        // This is a safety measure in case deleteEpisodeById missed something or XML is
+        // inconsistent
+        xml = removeEpisodeNumberFromSeason(xml, seasonNum, episodeNum);
+
         if (xml.contains(seasonTag)) {
             int seasonIndex = xml.indexOf(seasonTag);
             int closingSeasonIndex = xml.indexOf("</Season>", seasonIndex);
@@ -451,15 +482,40 @@ public class SeriesService {
             String newSeason = seasonTag + episodeTag + "</Season>";
             if (xml.contains("<Seasons>")) {
                 return xml.replace("</Seasons>", newSeason + "</Seasons>");
+            } else if (xml.contains("</Seasons>")) {
+                return xml.replace("</Seasons>", newSeason + "</Seasons>");
             } else {
                 return "<Seasons>" + newSeason + "</Seasons>";
             }
         }
     }
 
+    private String removeEpisodeNumberFromSeason(String xml, int seasonNum, int episodeNum) {
+        // Find the specific season block
+        String seasonStartTag = "<Season number=\"" + seasonNum + "\">";
+        int start = xml.indexOf(seasonStartTag);
+        if (start == -1)
+            return xml;
+
+        int end = xml.indexOf("</Season>", start);
+        if (end == -1)
+            return xml;
+
+        String seasonContent = xml.substring(start, end);
+        // Regex to find any Episode tag with the same number within this season
+        // Added (?s) for multi-line support
+        String pattern = "(?s)<Episode\\s+number=\"" + episodeNum + "\"[^>]*>.*?</Episode>";
+        String newSeasonContent = seasonContent.replaceAll(pattern, "");
+
+        return xml.substring(0, start) + newSeasonContent + xml.substring(end);
+    }
+
     private String removeEpisodeFromXML(String xml, String episodeUUID) {
-        String patternString = "<Episode[^>]*>" + Pattern.quote(episodeUUID) + "<\\/Episode>";
-        return xml.replaceAll(patternString, "");
+        if (xml == null)
+            return null;
+        // Use (?s) to match newlines if they exist within the tag
+        String patternString = "(?s)<Episode[^>]*>" + Pattern.quote(episodeUUID) + "</Episode>";
+        return xml.replaceAll(patternString, "").trim();
     }
 
     public List<Episode> getRecentEpisodesWithMetadata(int limit) {

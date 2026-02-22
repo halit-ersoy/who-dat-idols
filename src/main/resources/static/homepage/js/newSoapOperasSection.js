@@ -12,20 +12,26 @@ export function initNewSoapOperasSection() {
         return;
     }
 
-    let allSoapOperas = [];
-    let currentItemsLoaded = 0;
-    const itemsPerLoad = 20;
+    let isSearchActive = false;
+    let currentSearchTerm = "";
+    let currentPage = 1;
+    const itemsPerPage = 18;
 
-    async function fetchSoapOperas(day = 20) {
+    async function fetchSoapOperas(page = 1, size = 18, query = "") {
         try {
-            const response = await fetch(`/api/series/recent?day=${day}`);
+            let url = `/api/soapoperas/recent?page=${page}&size=${size}`;
+            if (query && query.trim() !== '') {
+                url = `/api/soapoperas/search?query=${encodeURIComponent(query)}&page=${page}&size=${size}`;
+            }
+
+            const response = await fetch(url);
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
-            return await response.json();
+            return await response.json(); // { content: [...], totalPages: X }
         } catch (error) {
             console.error('Soap Operas Section - Hata:', error);
-            return [];
+            return { content: [], totalPages: 0 };
         }
     }
 
@@ -44,40 +50,31 @@ export function initNewSoapOperasSection() {
     `;
     }
 
-    let filteredSoapOperas = [];
-    let isSearchActive = false;
-    let currentPage = 1;
-    const itemsPerPage = 18;
-
-    function renderPage(page) {
-        const dataToUse = isSearchActive ? filteredSoapOperas : allSoapOperas;
-        const totalItems = dataToUse.length;
-        const totalPages = Math.ceil(totalItems / itemsPerPage);
-
-        // Ensure page is within bounds
-        if (page < 1) page = 1;
-        if (page > totalPages && totalPages > 0) page = totalPages;
-
+    async function loadPage(page) {
         currentPage = page;
+        newSoapOperasAllGrid.innerHTML = '<div style="text-align: center; color: white; width: 100%;">Yükleniyor...</div>';
 
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+        const data = await fetchSoapOperas(currentPage, itemsPerPage, isSearchActive ? currentSearchTerm : "");
+        const soapOperas = data.content || [];
+        const totalPages = data.totalPages || 1;
 
         newSoapOperasAllGrid.innerHTML = '';
-        const fragment = document.createDocumentFragment();
-
-        for (let i = startIndex; i < endIndex; i++) {
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = createSoapOperaItemHTML(dataToUse[i], i);
-            const card = tempDiv.firstElementChild;
-            handleImageSkeleton(card.querySelector('img'));
-            fragment.appendChild(card);
+        if (soapOperas.length === 0) {
+            newSoapOperasAllGrid.innerHTML = '<div style="text-align: center; color: white; width: 100%;">İçerik bulunamadı.</div>';
+        } else {
+            const fragment = document.createDocumentFragment();
+            soapOperas.forEach((soapOpera, i) => {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = createSoapOperaItemHTML(soapOpera, i);
+                const card = tempDiv.firstElementChild;
+                handleImageSkeleton(card.querySelector('img'));
+                fragment.appendChild(card);
+            });
+            newSoapOperasAllGrid.appendChild(fragment);
         }
-        newSoapOperasAllGrid.appendChild(fragment);
 
         setupPagination(totalPages);
 
-        // Scroll to top of section when changing pages
         if (newSoapOperasAllSection.classList.contains('hidden') === false) {
             const headerOffset = 100;
             const elementPosition = newSoapOperasAllSection.getBoundingClientRect().top;
@@ -90,7 +87,6 @@ export function initNewSoapOperasSection() {
     }
 
     function setupPagination(totalPages) {
-        // Remove existing pagination if any
         const existingPag = document.querySelector('.new-soap-operas-pagination');
         if (existingPag) existingPag.remove();
 
@@ -104,7 +100,7 @@ export function initNewSoapOperasSection() {
             btn.className = `pagination-btn ${isActive ? 'active' : ''}`;
             btn.innerText = page;
             btn.addEventListener('click', () => {
-                if (page !== currentPage) renderPage(page);
+                if (page !== currentPage) loadPage(page);
             });
             return btn;
         };
@@ -118,29 +114,21 @@ export function initNewSoapOperasSection() {
             return span;
         };
 
-        // Logic for smart pagination
-        // Always show first, last, current, and neighbors
-        const range = 2; // how many pages before/after current
+        const range = 2;
         let pagesToShow = [];
 
-        // Always add 1
         pagesToShow.push(1);
-
         for (let i = currentPage - range; i <= currentPage + range; i++) {
             if (i > 1 && i < totalPages) {
                 pagesToShow.push(i);
             }
         }
-
-        // Always add last page
         if (totalPages > 1) {
             pagesToShow.push(totalPages);
         }
 
-        // Sort and remove duplicates just in case
         pagesToShow = [...new Set(pagesToShow)].sort((a, b) => a - b);
 
-        // Build UI with ellipses
         let lastPageAdded = 0;
         for (const page of pagesToShow) {
             if (lastPageAdded > 0 && page - lastPageAdded > 1) {
@@ -154,27 +142,28 @@ export function initNewSoapOperasSection() {
     }
 
     const searchInput = document.getElementById('search-soap-operas-all');
+    let searchTimeout = null;
+
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase().trim();
-            if (term === '') {
-                isSearchActive = false;
-                filteredSoapOperas = [];
-            } else {
-                isSearchActive = true;
-                filteredSoapOperas = allSoapOperas.filter(item =>
-                    item.title.toLowerCase().includes(term) ||
-                    (item.info && item.info.toLowerCase().includes(term))
-                );
-            }
-            currentPage = 1;
-            renderPage(currentPage);
+            const term = e.target.value.trim();
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (term === '') {
+                    isSearchActive = false;
+                    currentSearchTerm = "";
+                } else {
+                    isSearchActive = true;
+                    currentSearchTerm = term;
+                }
+                loadPage(1);
+            }, 400);
         });
     }
 
     function populateCarousel(soapOperas) {
         newSoapOperasCarousel.innerHTML = '';
-        soapOperas.slice(0, 14).forEach(soapOpera => {
+        soapOperas.forEach(soapOpera => {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = `
                 <a href="${soapOpera.videoUrl}" class="card">
@@ -195,28 +184,27 @@ export function initNewSoapOperasSection() {
     }
 
     (async () => {
-        allSoapOperas = await fetchSoapOperas(0);
-        populateCarousel(allSoapOperas);
+        const initialData = await fetchSoapOperas(1, 14, "");
+        if (initialData && initialData.content) {
+            populateCarousel(initialData.content);
+        }
     })();
 
     viewAllBtn.addEventListener('click', async (e) => {
         e.preventDefault();
-        newSoapOperasAllGrid.innerHTML = '';
-        currentPage = 1;
         newSoapOperasAllSection.classList.remove('hidden');
         newSoapOperasAllSection.scrollIntoView({ behavior: 'smooth' });
-
-        if (allSoapOperas.length > 0) {
-            renderPage(currentPage);
-        } else {
-            allSoapOperas = await fetchSoapOperas(0);
-            renderPage(currentPage);
-        }
+        loadPage(1);
     });
 
     closeAllBtn.addEventListener('click', () => {
         newSoapOperasAllSection.classList.add('hidden');
         const existingPag = document.querySelector('.new-soap-operas-pagination');
         if (existingPag) existingPag.remove();
+        if (searchInput) {
+            searchInput.value = '';
+            isSearchActive = false;
+            currentSearchTerm = '';
+        }
     });
 }

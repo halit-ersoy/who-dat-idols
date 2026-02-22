@@ -622,13 +622,33 @@
 
             fetch('/admin/update-movie', {
                 method: 'POST',
-                // Remove Content-Type header to allow browser to set boundary for FormData
                 body: formData
-            }).then(res => res.json()).then(async data => {
+            }).then(async res => {
+                if (res.status === 409) {
+                    const errorData = await res.json();
+                    if (confirm(errorData.error || "Çakışma mevcut! Üzerine yazmak ister misiniz?")) {
+                        formData.delete('overwrite');
+                        formData.append('overwrite', 'true');
+                        // Resubmit
+                        const overwriteRes = await fetch('/admin/update-movie', { method: 'POST', body: formData });
+                        if (overwriteRes.ok) {
+                            return overwriteRes.json();
+                        } else {
+                            throw new Error("Üzerine yazma işleminde hata oluştu: " + await overwriteRes.text());
+                        }
+                    } else {
+                        throw new Error("İşlem kullanıcı tarafından iptal edildi.");
+                    }
+                }
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            }).then(async data => {
                 const id = data.id || movieId;
                 await saveExternalSources(id, 'movie');
                 alert(data.message || "Film güncellendi.");
                 resetMovieForm(); fetchMovies();
+            }).catch(error => {
+                alert(error.message || error);
             }).finally(() => { movieSubmitBtn.disabled = false; });
         } else {
             const formData = new FormData();
@@ -1399,6 +1419,22 @@
 
                 document.getElementById(formId).reset();
                 wrapper.style.display = "none";
+            } else if (xhr.status === 409) {
+                let msg = "Çakışma Mümkün!";
+                try {
+                    const parsed = JSON.parse(xhr.responseText);
+                    msg = parsed.error || xhr.responseText;
+                } catch (e) { msg = xhr.responseText; }
+
+                if (confirm(msg)) {
+                    // Resubmit with overwrite tag
+                    formData.delete('overwrite');
+                    formData.append('overwrite', 'true');
+                    uploadDataWithProgress(url, formData, formId, wrapperId, barId, percentId, successCallback);
+                    return; // exit current completion cycle
+                } else {
+                    wrapper.style.display = "none";
+                }
             } else {
                 alert("Hata Oluştu: " + xhr.statusText + "\n" + xhr.responseText);
             }
@@ -2321,7 +2357,8 @@
 
                     // Content Name ve Link
                     const contentName = comment.contentName || comment.contentId || 'İçerik';
-                    const contentLink = comment.contentId ? `<a href="/${comment.contentId}" target="_blank" style="color: var(--primary-color); font-weight: 500;">${contentName}</a>` : '-';
+                    const targetLink = comment.contentSlug || comment.contentId;
+                    const contentLink = targetLink ? `<a href="/${targetLink}" target="_blank" style="color: var(--primary-color); font-weight: 500;">${contentName}</a>` : '-';
 
                     tr.innerHTML = `
                         <td>

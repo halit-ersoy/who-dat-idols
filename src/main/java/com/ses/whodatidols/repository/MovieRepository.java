@@ -131,6 +131,22 @@ public class MovieRepository {
     }
 
     // --- OKUMA İŞLEMLERİ ---
+    public Movie findMovieByName(String name) {
+        String sql = """
+                SELECT TOP 1 M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug,
+                       (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                        JOIN MovieCategories MC ON MC.CategoryID = C.ID
+                        WHERE MC.MovieID = M.ID) as category
+                FROM [WhoDatIdols].[dbo].[Movie] M
+                WHERE M.name = ?
+                """;
+        try {
+            return jdbcTemplate.queryForObject(sql, new MovieRowMapper(), name);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public List<Movie> findRecentMovies(int limit) {
         String sql;
         if (limit > 0) {
@@ -154,6 +170,47 @@ public class MovieRepository {
                     """;
             return jdbcTemplate.query(sql, new MovieRowMapper());
         }
+    }
+
+    // --- PAGINATION OKUMA İŞLEMLERİ ---
+    public int countAllMovies() {
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Movie]", Integer.class);
+        return count != null ? count : 0;
+    }
+
+    public int countMoviesBySearch(String query) {
+        String likeQuery = "%" + query.trim().toLowerCase() + "%";
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Movie] WHERE LOWER(name) LIKE ?", Integer.class, likeQuery);
+        return count != null ? count : 0;
+    }
+
+    public List<Movie> findRecentMoviesPaged(int offset, int limit) {
+        String sql = """
+                SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug,
+                       (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                        JOIN MovieCategories MC ON MC.CategoryID = C.ID
+                        WHERE MC.MovieID = M.ID) as category
+                FROM [WhoDatIdols].[dbo].[Movie] M
+                ORDER BY M.uploadDate DESC, M.name ASC
+                OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+                """;
+        return jdbcTemplate.query(sql, new MovieRowMapper(), offset, limit);
+    }
+
+    public List<Movie> searchMoviesPaged(String query, int offset, int limit) {
+        String likeQuery = "%" + query.trim().toLowerCase() + "%";
+        String sql = """
+                SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug,
+                       (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                        JOIN MovieCategories MC ON MC.CategoryID = C.ID
+                        WHERE MC.MovieID = M.ID) as category
+                FROM [WhoDatIdols].[dbo].[Movie] M
+                WHERE LOWER(M.name) LIKE ?
+                ORDER BY M.uploadDate DESC, M.name ASC
+                OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+                """;
+        return jdbcTemplate.query(sql, new MovieRowMapper(), likeQuery, offset, limit);
     }
 
     public List<Movie> findTop6MoviesByCount() {

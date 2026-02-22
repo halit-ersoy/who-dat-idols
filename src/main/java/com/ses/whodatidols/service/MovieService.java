@@ -53,7 +53,19 @@ public class MovieService {
 
     // Güncelleme Operasyonu
     @CacheEvict(value = "featuredContent", allEntries = true)
-    public void updateMovie(Movie movie, MultipartFile file, MultipartFile image) throws IOException {
+    public void updateMovie(Movie movie, MultipartFile file, MultipartFile image, boolean overwrite)
+            throws IOException {
+        Movie existingCollision = movieRepository.findMovieByName(movie.getName());
+        if (existingCollision != null && !existingCollision.getId().equals(movie.getId())) {
+            if (!overwrite) {
+                throw new com.ses.whodatidols.exception.DuplicateConflictException(
+                        "'" + movie.getName()
+                                + "' adında bir film zaten mevcut. Üzerine yazıp eski filmi silmek istediğinize emin misiniz?");
+            } else {
+                deleteMovieById(existingCollision.getId());
+            }
+        }
+
         if (file != null && !file.isEmpty()) {
             Path uploadPath = Paths.get(moviesPath).toAbsolutePath().normalize();
             if (!Files.exists(uploadPath))

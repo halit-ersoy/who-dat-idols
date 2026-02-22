@@ -13,20 +13,20 @@ export function initNewSeriesSection() {
         return;
     }
 
-    let allSeries = [];
-    let currentItemsLoaded = 0;
-    const itemsPerLoad = 20;
+    let currentPage = 1;
+    let currentTotalPages = 1;
+    const itemsPerPage = 20;
 
-    async function fetchSeries(day = 20) {
+    async function fetchSeries(page = 1, size = 20) {
         try {
-            const response = await fetch(`/api/series/recent?day=${day}`);
+            const response = await fetch(`/api/series/recent?page=${page}&size=${size}`);
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
-            return await response.json();
+            return await response.json(); // Beklenen format: { content: [...], totalPages: X }
         } catch (error) {
             console.error('Series Section - Hata:', error);
-            return [];
+            return { content: [], totalPages: 0 };
         }
     }
 
@@ -45,24 +45,33 @@ export function initNewSeriesSection() {
     `;
     }
 
-    function loadItems(startIndex, count) {
+    async function loadMoreItems() {
+        const data = await fetchSeries(currentPage, itemsPerPage);
+        const seriesItems = data.content || [];
+        currentTotalPages = data.totalPages || 1;
+
         const fragment = document.createDocumentFragment();
-        const endIndex = Math.min(startIndex + count, allSeries.length);
-        for (let i = startIndex; i < endIndex; i++) {
+        seriesItems.forEach((item, index) => {
             const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = createSeriesItemHTML(allSeries[i], i - startIndex);
+            tempDiv.innerHTML = createSeriesItemHTML(item, index);
             const card = tempDiv.firstElementChild;
             handleImageSkeleton(card.querySelector('img'));
             fragment.appendChild(card);
-        }
+        });
+
         newSeriesAllGrid.appendChild(fragment);
-        currentItemsLoaded = endIndex;
-        loadMoreBtn.classList.toggle('hidden', currentItemsLoaded >= allSeries.length);
+
+        if (currentPage >= currentTotalPages) {
+            loadMoreBtn.classList.add('hidden');
+        } else {
+            loadMoreBtn.classList.remove('hidden');
+        }
+        currentPage++;
     }
 
     function populateCarousel(seriesList) {
         newSeriesCarousel.innerHTML = '';
-        seriesList.slice(0, 14).forEach(seriesItem => {
+        seriesList.forEach(seriesItem => {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = `
                 <a href="${seriesItem.videoUrl}" class="card">
@@ -84,27 +93,25 @@ export function initNewSeriesSection() {
 
     // Başlangıçta carousel dolduruluyor
     (async () => {
-        allSeries = await fetchSeries();
-        populateCarousel(allSeries);
+        const initialData = await fetchSeries(1, 14);
+        if (initialData && initialData.content) {
+            populateCarousel(initialData.content);
+        }
     })();
 
     viewAllBtn.addEventListener('click', async (e) => {
         e.preventDefault();
         newSeriesAllGrid.innerHTML = '';
-        currentItemsLoaded = 0;
+        currentPage = 1;
         newSeriesAllSection.classList.remove('hidden');
         newSeriesAllSection.scrollIntoView({ behavior: 'smooth' });
 
-        if (allSeries.length > 0) {
-            loadItems(0, itemsPerLoad);
-        } else {
-            allSeries = await fetchSeries();
-            loadItems(0, itemsPerLoad);
-        }
+        // İlk sayfayı yükle
+        await loadMoreItems();
     });
 
-    loadMoreBtn.addEventListener('click', () => {
-        loadItems(currentItemsLoaded, itemsPerLoad);
+    loadMoreBtn.addEventListener('click', async () => {
+        await loadMoreItems();
     });
 
     closeAllBtn.addEventListener('click', () => {

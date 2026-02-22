@@ -324,9 +324,25 @@ public class SeriesRepository {
                 episodeRowMapper, seriesId.toString());
     }
 
+    public Episode findEpisodeBySeriesIdAndSeasonAndEpisodeNumber(UUID seriesId, int season, int episodeNumber) {
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT TOP 1 * FROM Episode WHERE SeriesId = ? AND SeasonNumber = ? AND EpisodeNumber = ?",
+                    episodeRowMapper, seriesId.toString(), season, episodeNumber);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public List<Episode> findRecentEpisodes(int limit) {
         return jdbcTemplate.query("SELECT TOP (?) * FROM Episode ORDER BY uploadDate DESC, name ASC", episodeRowMapper,
                 limit);
+    }
+
+    public List<Episode> findEpisodesBySeriesIdAndSeasonAndEpisodeNumber(UUID seriesId, int season, int episodeNumber) {
+        return jdbcTemplate.query(
+                "SELECT * FROM Episode WHERE SeriesId = ? AND SeasonNumber = ? AND EpisodeNumber = ?",
+                episodeRowMapper, seriesId.toString(), season, episodeNumber);
     }
 
     public List<Series> findRecentSeries(int limit) {
@@ -352,6 +368,47 @@ public class SeriesRepository {
                     """;
             return jdbcTemplate.query(sql, seriesRowMapper);
         }
+    }
+
+    // --- PAGINATION OKUMA İŞLEMLERİ ---
+    public int countAllSeries() {
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM Series", Integer.class);
+        return count != null ? count : 0;
+    }
+
+    public int countSeriesBySearch(String query) {
+        String likeQuery = "%" + query.trim().toLowerCase() + "%";
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM Series WHERE LOWER(name) LIKE ?",
+                Integer.class, likeQuery);
+        return count != null ? count : 0;
+    }
+
+    public List<Series> findRecentSeriesPaged(int offset, int limit) {
+        String sql = """
+                SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                       (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                        JOIN SeriesCategories SC ON SC.CategoryID = C.ID
+                        WHERE SC.SeriesID = S.ID) as category
+                FROM Series S
+                ORDER BY S.uploadDate DESC, S.name ASC
+                OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+                """;
+        return jdbcTemplate.query(sql, seriesRowMapper, offset, limit);
+    }
+
+    public List<Series> searchSeriesPaged(String query, int offset, int limit) {
+        String likeQuery = "%" + query.trim().toLowerCase() + "%";
+        String sql = """
+                SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                       (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                        JOIN SeriesCategories SC ON SC.CategoryID = C.ID
+                        WHERE SC.SeriesID = S.ID) as category
+                FROM Series S
+                WHERE LOWER(S.name) LIKE ?
+                ORDER BY S.uploadDate DESC, S.name ASC
+                OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+                """;
+        return jdbcTemplate.query(sql, seriesRowMapper, likeQuery, offset, limit);
     }
 
     public List<Episode> findTop6EpisodesByCount() {

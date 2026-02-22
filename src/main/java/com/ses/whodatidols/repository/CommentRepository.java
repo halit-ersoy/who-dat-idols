@@ -115,7 +115,8 @@ public class CommentRepository {
                         0 as isLiked,
                         0 as isAuthor,
                         c.IsApproved,
-                        COALESCE(m.Name, s.Name, (e.name + ' S' + CAST(e.SeasonNumber AS VARCHAR) + 'E' + CAST(e.EpisodeNumber AS VARCHAR))) as ContentName
+                        COALESCE(m.Name, s.Name, (e.name + ' S' + CAST(e.SeasonNumber AS VARCHAR) + 'E' + CAST(e.EpisodeNumber AS VARCHAR))) as ContentName,
+                        COALESCE(m.Slug, e.Slug, CAST(c.ContentId AS VARCHAR(36))) as ContentSlug
                     FROM Comments c
                     LEFT JOIN Person p ON c.UserId = p.ID
                     LEFT JOIN Movie m ON c.ContentId = m.ID
@@ -276,6 +277,12 @@ public class CommentRepository {
             String contentIdStr = rs.getString("ContentId");
             if (contentIdStr != null) {
                 vm.setContentId(UUID.fromString(contentIdStr));
+            }
+
+            try {
+                vm.setContentSlug(rs.getString("ContentSlug"));
+            } catch (SQLException e) {
+                vm.setContentSlug(null);
             }
 
             java.sql.Timestamp ts = rs.getTimestamp("date");

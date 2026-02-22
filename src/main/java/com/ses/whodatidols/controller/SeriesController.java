@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.ses.whodatidols.viewmodel.PageResponse;
+
 @RestController
 @RequestMapping({ "/api/series", "/api/soapoperas" }) // Added alias for compatibility
 public class SeriesController {
@@ -24,10 +26,14 @@ public class SeriesController {
     }
 
     @GetMapping("/recent")
-    public ResponseEntity<List<VideoViewModel>> getRecentSeries(
-            @RequestParam(value = "day", defaultValue = "0") int day) {
-        // limit logic reusing 'day' param as count/limit
-        List<Series> recentSeries = seriesRepository.findRecentSeries(day);
+    public ResponseEntity<PageResponse<VideoViewModel>> getRecentSeriesPaged(
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "18") int size) {
+
+        int offset = (page - 1) * size;
+        List<Series> recentSeries = seriesRepository.findRecentSeriesPaged(offset, size);
+        int totalElements = seriesRepository.countAllSeries();
+        int totalPages = (int) Math.ceil((double) totalElements / size);
 
         List<VideoViewModel> viewModels = recentSeries.stream()
                 .map(series -> {
@@ -39,9 +45,7 @@ public class SeriesController {
                     vm.setTitle(series.getName());
                     vm.setInfo(mainCategory);
 
-                    // Thumbnail URL for the parent series
                     vm.setThumbnailUrl("/media/image/" + series.getId());
-                    // Video URL points to last episode if available
                     List<EpisodeViewModel> episodes = seriesService.getEpisodesForSeries(series.getId());
                     if (!episodes.isEmpty()) {
                         EpisodeViewModel lastEp = episodes.get(episodes.size() - 1);
@@ -58,7 +62,54 @@ public class SeriesController {
                 })
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(viewModels);
+        PageResponse<VideoViewModel> response = new PageResponse<>(viewModels, totalPages, page, totalElements);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<PageResponse<VideoViewModel>> searchSeriesPaged(
+            @RequestParam(value = "query", defaultValue = "") String query,
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "18") int size) {
+
+        if (query.trim().isEmpty()) {
+            return getRecentSeriesPaged(page, size);
+        }
+
+        int offset = (page - 1) * size;
+        List<Series> recentSeries = seriesRepository.searchSeriesPaged(query, offset, size);
+        int totalElements = seriesRepository.countSeriesBySearch(query);
+        int totalPages = (int) Math.ceil((double) totalElements / size);
+
+        List<VideoViewModel> viewModels = recentSeries.stream()
+                .map(series -> {
+                    VideoViewModel vm = new VideoViewModel();
+                    String category = series.getCategory() != null ? series.getCategory() : "";
+                    String mainCategory = category.contains(",") ? category.split(",")[0] : category;
+
+                    vm.setId(series.getId().toString());
+                    vm.setTitle(series.getName());
+                    vm.setInfo(mainCategory);
+
+                    vm.setThumbnailUrl("/media/image/" + series.getId());
+                    List<EpisodeViewModel> episodes = seriesService.getEpisodesForSeries(series.getId());
+                    if (!episodes.isEmpty()) {
+                        EpisodeViewModel lastEp = episodes.get(episodes.size() - 1);
+                        if (lastEp.getSlug() != null && !lastEp.getSlug().isEmpty()) {
+                            vm.setVideoUrl("/" + lastEp.getSlug());
+                        } else {
+                            vm.setVideoUrl("/" + lastEp.getId());
+                        }
+                    } else {
+                        vm.setVideoUrl("/" + series.getId());
+                    }
+
+                    return vm;
+                })
+                .collect(Collectors.toList());
+
+        PageResponse<VideoViewModel> response = new PageResponse<>(viewModels, totalPages, page, totalElements);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}/episodes")

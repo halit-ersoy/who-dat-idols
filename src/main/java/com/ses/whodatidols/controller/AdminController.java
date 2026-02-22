@@ -150,7 +150,8 @@ public class AdminController {
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam(value = "image", required = false) MultipartFile image,
             @RequestParam(value = "imageUrl", required = false) String imageUrl,
-            @RequestParam(value = "country", required = false) String country) {
+            @RequestParam(value = "country", required = false) String country,
+            @RequestParam(value = "overwrite", defaultValue = "false") boolean overwrite) {
         Map<String, String> response = new HashMap<>();
         try {
             if (movie.getId() == null) {
@@ -158,7 +159,7 @@ public class AdminController {
                 return ResponseEntity.badRequest().body(response);
             }
             movie.setCountry(country);
-            movieService.updateMovie(movie, file, image);
+            movieService.updateMovie(movie, file, image, overwrite);
 
             if ((image == null || image.isEmpty()) && imageUrl != null && !imageUrl.isEmpty()) {
                 movieService.saveImageFromUrl(movie.getId(), imageUrl);
@@ -167,6 +168,9 @@ public class AdminController {
             response.put("id", movie.getId().toString());
             response.put("message", "Film güncellendi.");
             return ResponseEntity.ok(response);
+        } catch (com.ses.whodatidols.exception.DuplicateConflictException e) {
+            response.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
         } catch (Exception e) {
             response.put("error", e.getMessage());
             return ResponseEntity.status(500).body(response);
@@ -256,10 +260,13 @@ public class AdminController {
             @RequestParam("episodeId") UUID episodeId,
             @RequestParam("season") int season,
             @RequestParam("episodeNum") int episodeNum,
-            @RequestParam(value = "file", required = false) MultipartFile file) {
+            @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestParam(value = "overwrite", defaultValue = "false") boolean overwrite) {
         try {
-            seriesService.updateEpisode(episodeId, season, episodeNum, file);
+            seriesService.updateEpisode(episodeId, season, episodeNum, file, overwrite);
             return ResponseEntity.ok("{\"id\": \"" + episodeId + "\", \"message\": \"Bölüm güncellendi.\"}");
+        } catch (com.ses.whodatidols.exception.DuplicateConflictException e) {
+            return ResponseEntity.status(409).body("{\"error\": \"" + e.getMessage() + "\"}");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Bölüm güncelleme hatası: " + e.getMessage());
         }

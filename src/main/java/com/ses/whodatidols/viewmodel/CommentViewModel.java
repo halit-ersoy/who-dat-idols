@@ -132,4 +132,14 @@ public class CommentViewModel {
     public void setContentName(String contentName) {
         this.contentName = contentName;
     }
+
+    private String contentSlug;
+
+    public String getContentSlug() {
+        return contentSlug;
+    }
+
+    public void setContentSlug(String contentSlug) {
+        this.contentSlug = contentSlug;
+    }
 }
