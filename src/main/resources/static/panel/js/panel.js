@@ -2324,6 +2324,13 @@
         fetch('/admin/users')
             .then(res => res.json())
             .then(users => {
+                const totalUsers = users.length;
+                const totalUsersEl = document.getElementById('statTotalUsers');
+                if (totalUsersEl) totalUsersEl.innerText = totalUsers;
+
+                const badgeEl = document.getElementById('userCountBadge');
+                if (badgeEl) badgeEl.innerText = totalUsers;
+
                 const tbody = document.querySelector('#userTable tbody');
                 if (!tbody) return;
                 tbody.innerHTML = '';

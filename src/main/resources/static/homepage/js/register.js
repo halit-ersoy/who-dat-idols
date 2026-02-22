@@ -67,14 +67,21 @@ export function initRegister() {
 
     // Registration submission
     registerSubmit.addEventListener('click', async function () {
-        const firstName = document.getElementById('first-name').value;
-        const lastName = document.getElementById('last-name').value;
-        const nickname = document.getElementById('nickname').value;
-        const email = document.getElementById('register-email').value;
-        const password = document.getElementById('register-password').value;
+        const firstName = document.getElementById('first-name').value.trim();
+        const lastName = document.getElementById('last-name').value.trim();
+        const nickname = document.getElementById('nickname').value.trim();
+        const email = document.getElementById('register-email').value.trim();
+        const password = document.getElementById('register-password').value.trim();
 
         if (!firstName || !lastName || !nickname || !email || !password) {
-            this.innerHTML = '<i class="fas fa-times"></i> Tüm alanları doldurun';
+            let missingField = "";
+            if (!firstName) missingField = "Ad";
+            else if (!lastName) missingField = "Soyad";
+            else if (!nickname) missingField = "Kullanıcı Adı";
+            else if (!email) missingField = "E-posta";
+            else if (!password) missingField = "Şifre";
+
+            this.innerHTML = `<i class="fas fa-times"></i> ${missingField} eksik!`;
             this.style.backgroundColor = '#e74c3c';
             setTimeout(() => {
                 this.innerHTML = 'Kayıt Ol';
@@ -96,7 +103,7 @@ export function initRegister() {
         try {
             const response = await fetch('/register', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(registerData)
             });
             const data = await response.json();
@@ -121,7 +128,7 @@ export function initRegister() {
                 }, 1500);
             } else {
                 this.classList.remove('loading');
-                this.innerHTML = '<i class="fas fa-times"></i> ' + (data.error || 'Kayıt başarısız');
+                this.innerHTML = '<i class="fas fa-times"></i> ' + (data.message || data.error || 'Kayıt başarısız');
                 this.style.backgroundColor = '#e74c3c';
                 setTimeout(() => {
                     this.innerHTML = 'Kayıt Ol';

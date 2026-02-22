@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Controller
@@ -322,6 +323,37 @@ public class HomeController {
     @ResponseBody
     public ResponseEntity<?> registerUser(@RequestBody Person person) {
         try {
+            // 1. Mandatory Fields Validation
+            if (person.getName() == null || person.getName().trim().isEmpty() ||
+                    person.getSurname() == null || person.getSurname().trim().isEmpty() ||
+                    person.getNickname() == null || person.getNickname().trim().isEmpty() ||
+                    person.getEmail() == null || person.getEmail().trim().isEmpty() ||
+                    person.getPassword() == null || person.getPassword().trim().isEmpty()) {
+
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "Lütfen tüm zorunlu alanları doldurunuz.");
+                return ResponseEntity.badRequest().body(error);
+            }
+
+            // 2. Duplicate Check (Nickname & Email)
+            Optional<Person> existingUser = personRepository.findByNicknameOrEmail(person.getNickname());
+            if (existingUser.isPresent()) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "Bu kullanıcı adı zaten kullanımda.");
+                return ResponseEntity.badRequest().body(error);
+            }
+
+            existingUser = personRepository.findByNicknameOrEmail(person.getEmail());
+            if (existingUser.isPresent()) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "Bu e-posta adresi zaten kullanımda.");
+                return ResponseEntity.badRequest().body(error);
+            }
+
+            // 3. Proceed to Register
             Map<String, Object> result = personRepository.registerUser(person);
 
             if ((Boolean) result.get("success")) {
@@ -527,12 +559,49 @@ public class HomeController {
         }
 
         try {
+            String newNickname = request.get("nickname");
+            String newName = request.get("name");
+            String newSurname = request.get("surname");
+            String newEmail = request.get("email");
+
+            // 1. Mandatory Fields Validation
+            if (newNickname == null || newNickname.trim().isEmpty() ||
+                    newName == null || newName.trim().isEmpty() ||
+                    newSurname == null || newSurname.trim().isEmpty() ||
+                    newEmail == null || newEmail.trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "message", "Lütfen tüm zorunlu alanları doldurunuz."));
+            }
+
+            newNickname = newNickname.trim();
+            newName = newName.trim();
+            newSurname = newSurname.trim();
+            newEmail = newEmail.trim();
+
+            // 2. Fetch current user info to check for changes
+            Map<String, Object> currentInfo = personRepository.getUserInfoByCookie(cookie);
+            String currentNickname = (String) currentInfo.get("nickname");
+            String currentEmail = (String) currentInfo.get("email");
+
+            // 3. Duplicate Checks (only if changed)
+            if (currentNickname != null && !newNickname.equalsIgnoreCase(currentNickname)) {
+                Optional<Person> existing = personRepository.findByNicknameOrEmail(newNickname);
+                if (existing.isPresent()) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("success", false, "message", "Bu kullanıcı adı zaten kullanımda."));
+                }
+            }
+
+            if (currentEmail != null && !newEmail.equalsIgnoreCase(currentEmail)) {
+                Optional<Person> existing = personRepository.findByNicknameOrEmail(newEmail);
+                if (existing.isPresent()) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("success", false, "message", "Bu e-posta adresi zaten kullanımda."));
+                }
+            }
+
             Map<String, Object> result = personRepository.updateProfileByCookie(
-                    cookie,
-                    request.get("nickname"),
-                    request.get("name"),
-                    request.get("surname"),
-                    request.get("email"));
+                    cookie, newNickname, newName, newSurname, newEmail);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));

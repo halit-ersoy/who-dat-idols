@@ -61,17 +61,27 @@ async function handleProfileUpdate(e) {
     const updateBtn = document.getElementById('update-profile-btn');
     const messageDiv = document.getElementById('profile-message');
 
-    const payload = {
-        name: document.getElementById('input-name').value.trim(),
-        surname: document.getElementById('input-surname').value.trim(),
-        nickname: document.getElementById('input-nickname').value.trim(),
-        email: document.getElementById('input-email').value.trim()
-    };
+    const name = document.getElementById('input-name').value.trim();
+    const surname = document.getElementById('input-surname').value.trim();
+    const nickname = document.getElementById('input-nickname').value.trim();
+    const email = document.getElementById('input-email').value.trim();
+
+    if (!name || !surname || !nickname || !email) {
+        let missingField = "";
+        if (!name) missingField = "Ad";
+        else if (!surname) missingField = "Soyad";
+        else if (!nickname) missingField = "Kullanıcı Adı";
+        else if (!email) missingField = "E-posta";
+
+        showButtonError(updateBtn, `${missingField} eksik!`);
+        return;
+    }
+
+    const payload = { name, surname, nickname, email };
 
     try {
         updateBtn.disabled = true;
         updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Güncelleniyor...';
-
         const response = await fetch('/api/user/update-profile', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -84,17 +94,18 @@ async function handleProfileUpdate(e) {
             // Update sidebar info
             document.getElementById('user-fullname').innerText = `${payload.name} ${payload.surname}`;
             document.getElementById('user-nickname').innerText = `@${payload.nickname}`;
+
+            setTimeout(() => {
+                updateBtn.disabled = false;
+                updateBtn.innerHTML = 'Profil Bilgilerini Güncelle';
+                updateBtn.style.backgroundColor = '';
+            }, 3000);
         } else {
-            showButtonError(updateBtn, 'Başarısız');
+            showButtonError(updateBtn, data.message || 'Başarısız', 'Profil Bilgilerini Güncelle');
         }
     } catch (error) {
         console.error('Error updating profile:', error);
-        showButtonError(updateBtn, 'Hata');
-    } finally {
-        setTimeout(() => {
-            updateBtn.disabled = false;
-            updateBtn.innerHTML = 'Profil Bilgilerini Güncelle';
-        }, 3000);
+        showButtonError(updateBtn, 'Hata', 'Profil Bilgilerini Güncelle');
     }
 }
 
@@ -144,11 +155,11 @@ async function handlePasswordUpdate(e) {
         return;
     }
     if (newPassword !== confirmPassword) {
-        showButtonError(updateBtn, 'Şifreler eşleşmiyor');
+        showButtonError(updateBtn, 'Şifreler eşleşmiyor', 'Şifreyi Güncelle');
         return;
     }
     if (newPassword.length < 6) {
-        showButtonError(updateBtn, 'Şifre çok kısa');
+        showButtonError(updateBtn, 'Şifre çok kısa', 'Şifreyi Güncelle');
         return;
     }
 
@@ -167,20 +178,21 @@ async function handlePasswordUpdate(e) {
             updateBtn.innerHTML = '<i class="fas fa-check"></i> Başarılı';
             resetPasswordInputs(newPasswordInput, confirmPasswordInput);
         } else {
-            showButtonError(updateBtn, 'Başarısız');
+            showButtonError(updateBtn, 'Başarısız', 'Şifreyi Güncelle');
         }
     } catch (error) {
         console.error('Error updating password:', error);
-        showButtonError(updateBtn, 'Hata');
+        showButtonError(updateBtn, 'Hata', 'Şifreyi Güncelle');
     }
 }
 
-function showButtonError(button, message) {
-    const original = button.innerHTML;
+function showButtonError(button, message, revertText) {
+    const original = revertText || button.innerHTML;
+    button.disabled = true;
     button.innerHTML = `<i class="fas fa-times"></i> ${message}`;
     button.style.backgroundColor = '#e74c3c';
     setTimeout(() => {
-        button.innerHTML = original || 'Şifreyi Güncelle';
+        button.innerHTML = original;
         button.style.backgroundColor = '';
         button.disabled = false;
     }, 3000);

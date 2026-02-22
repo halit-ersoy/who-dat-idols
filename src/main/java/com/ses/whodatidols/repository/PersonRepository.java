@@ -282,7 +282,7 @@ public class PersonRepository {
         } catch (Exception e) {
         }
 
-        String sql = "SELECT ID, nickname, name, surname, email, isBanned, banReason, role FROM [WhoDatIdols].[dbo].[Person]";
+        String sql = "SELECT ID, nickname, name, surname, email, isBanned, banReason, role FROM [WhoDatIdols].[dbo].[Person] ORDER BY nickname ASC";
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
             Person p = new Person();
             p.setId(UUID.fromString(rs.getString("ID")));
