@@ -46,6 +46,7 @@
     fetchSeries();
     fetchViewStats();
     fetchLiveActiveUsers();
+    fetchUpdateNotes();
 
     // Poll live users every 30 seconds
     setInterval(fetchLiveActiveUsers, 30000);
@@ -2654,5 +2655,167 @@
             })
             .catch(err => console.error("Direct episode edit error:", err));
     }
+
+    // --- UPDATE NOTES LOGIC ---
+    const updateNoteForm = document.getElementById('updateNoteForm');
+    if (updateNoteForm) {
+        updateNoteForm.addEventListener('submit', handleUpdateNoteSubmit);
+    }
+
+    function fetchUpdateNotes() {
+        fetch('/api/updates/all')
+            .then(res => res.json())
+            .then(notes => {
+                const tbody = document.querySelector('#updateNotesTable tbody');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+
+                if (notes.length === 0) {
+                    tbody.innerHTML = `
+                        <tr><td colspan="5" style="text-align: center; padding: 30px; color: rgba(255,255,255,0.4);">
+                            Henüz güncelleme notu yok.
+                        </td></tr>
+                    `;
+                    return;
+                }
+
+                notes.forEach(note => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="font-weight: 600; color: #fff;">${note.title}</td>
+                        <td style="max-width: 260px; font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.5;">${note.message.length > 80 ? note.message.substring(0, 80) + '…' : note.message}</td>
+                        <td style="font-size: 12px; color: rgba(255,255,255,0.4);">${new Date(note.createdAt).toLocaleString('tr-TR')}</td>
+                        <td>
+                            <span style="
+                                display: inline-flex;
+                                align-items: center;
+                                gap: 6px;
+                                padding: 5px 12px;
+                                border-radius: 20px;
+                                font-size: 12px;
+                                font-weight: 600;
+                                background: ${note.active ? 'rgba(30, 215, 96, 0.12)' : 'rgba(255,255,255,0.05)'};
+                                color: ${note.active ? '#1ed760' : 'rgba(255,255,255,0.4)'};
+                                border: 1px solid ${note.active ? 'rgba(30, 215, 96, 0.3)' : 'rgba(255,255,255,0.1)'};
+                            ">
+                                <i class="fas ${note.active ? 'fa-circle-check' : 'fa-circle-xmark'}" style="font-size: 10px;"></i>
+                                ${note.active ? 'Aktif' : 'Pasif'}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <button onclick="window.toggleUpdateNote('${note.id}', ${!note.active})" style="
+                                    display: inline-flex;
+                                    align-items: center;
+                                    gap: 7px;
+                                    padding: 7px 14px;
+                                    border-radius: 10px;
+                                    border: 1px solid ${note.active ? 'rgba(255, 180, 0, 0.3)' : 'rgba(30, 215, 96, 0.3)'};
+                                    background: ${note.active ? 'rgba(255, 180, 0, 0.08)' : 'rgba(30, 215, 96, 0.08)'};
+                                    color: ${note.active ? '#f5a623' : '#1ed760'};
+                                    cursor: pointer;
+                                    font-size: 12px;
+                                    font-weight: 600;
+                                    font-family: inherit;
+                                    transition: all 0.2s ease;
+                                " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px ${note.active ? 'rgba(255,180,0,0.2)' : 'rgba(30,215,96,0.2)'}'"
+                                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                                    <i class="fas ${note.active ? 'fa-eye-slash' : 'fa-eye'}" style="font-size: 11px;"></i>
+                                    ${note.active ? 'Pasif Yap' : 'Aktif Yap'}
+                                </button>
+                                <button onclick="window.deleteUpdateNote('${note.id}')" style="
+                                    display: inline-flex;
+                                    align-items: center;
+                                    gap: 7px;
+                                    padding: 7px 14px;
+                                    border-radius: 10px;
+                                    border: 1px solid rgba(233, 30, 99, 0.3);
+                                    background: rgba(233, 30, 99, 0.08);
+                                    color: #e91e63;
+                                    cursor: pointer;
+                                    font-size: 12px;
+                                    font-weight: 600;
+                                    font-family: inherit;
+                                    transition: all 0.2s ease;
+                                " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(233,30,99,0.2)'"
+                                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                                    <i class="fas fa-trash-alt" style="font-size: 11px;"></i>
+                                    Sil
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(err => console.error("Update notes fetch error:", err));
+    }
+
+    function handleUpdateNoteSubmit(e) {
+        e.preventDefault();
+        const title = document.getElementById('updateNoteTitle').value;
+        const message = document.getElementById('updateNoteMessage').value;
+        const btn = e.target.querySelector('button[type="submit"]');
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> EKLEYİOR...';
+
+        fetch('/api/updates/admin/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, message })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('updateNoteTitle').value = '';
+                    document.getElementById('updateNoteMessage').value = '';
+                    fetchUpdateNotes();
+                    btn.innerHTML = '<i class="fas fa-check"></i> BAŞARILI';
+                    setTimeout(() => {
+                        btn.innerHTML = '<i class="fas fa-plus"></i> GÜNCELLEME EKLE';
+                        btn.disabled = false;
+                    }, 2000);
+                } else {
+                    alert(data.message || "Hata oluştu.");
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-plus"></i> GÜNCELLEME EKLE';
+                }
+            })
+            .catch(err => {
+                console.error("Add update note error:", err);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-plus"></i> GÜNCELLEME EKLE';
+            });
+    }
+
+    window.toggleUpdateNote = function (id, active) {
+        fetch('/api/updates/admin/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, active })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) fetchUpdateNotes();
+            })
+            .catch(err => console.error("Toggle update note error:", err));
+    };
+
+    window.deleteUpdateNote = function (id) {
+        if (!confirm('Bu güncelleme notunu silmek istediğinize emin misiniz?')) return;
+
+        fetch('/api/updates/admin/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) fetchUpdateNotes();
+                else alert(data.message || 'Silme işlemi başarısız.');
+            })
+            .catch(err => console.error("Delete update note error:", err));
+    };
 
 });

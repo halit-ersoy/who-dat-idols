@@ -85,6 +85,22 @@ public class MovieRepository {
         return jdbcTemplate.query(sql, new MovieRowMapper());
     }
 
+    public Movie findMovieBySlug(String slug) {
+        try {
+            String sql = """
+                    SELECT TOP 1 M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug,
+                           (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                            JOIN MovieCategories MC ON MC.CategoryID = C.ID
+                            WHERE MC.MovieID = M.ID) as category
+                    FROM [WhoDatIdols].[dbo].[Movie] M
+                    WHERE M.slug = ?
+                    """;
+            return jdbcTemplate.queryForObject(sql, new MovieRowMapper(), slug);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     // --- GÜNCELLEME (UPDATE) ---
     public void update(Movie movie) {
         String sql = "UPDATE [WhoDatIdols].[dbo].[Movie] SET " +

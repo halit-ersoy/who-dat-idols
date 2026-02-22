@@ -67,6 +67,12 @@
             </div>
 
             <div class="user-controls">
+                <div class="update-notes-wrapper" id="update-notes-wrapper">
+                    <button class="update-notes-btn" aria-label="Güncelleme Notları" id="update-notes-btn">
+                        <i class="fas fa-rocket"></i>
+                        <span class="update-badge" id="update-badge" style="display: none;">!</span>
+                    </button>
+                </div>
                 <div class="notifications-wrapper" id="notifications-wrapper">
                     <button class="notifications-btn" aria-label="Bildirimler" id="notifications-btn">
                         <i class="fas fa-bell"></i>
@@ -401,8 +407,37 @@
         &copy;
         <script>document.write(new Date().getFullYear())</script> Who Dat Idols? Tüm hakları saklıdır.
     </footer>
+
+    <!-- Update Notes Modal -->
+    <div id="update-notes-modal" class="update-modal-overlay" style="display: none;">
+        <div class="update-modal">
+            <div class="update-modal-header">
+                <h2>Güncelleme Notları</h2>
+                <button class="close-update-modal" id="close-update-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="update-modal-body" id="update-notes-list">
+                <!-- Notes will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Mini Update Popup (Toaster) -->
+    <div id="mini-update-popup" class="mini-update-popup" style="display: none;">
+        <div class="mini-popup-content">
+            <div class="mini-popup-icon"><i class="fas fa-rocket"></i></div>
+            <div class="mini-popup-text">
+                <h4 id="mini-popup-title">Yeni Güncelleme!</h4>
+                <p id="mini-popup-message">Neler yeni olduğunu görmek için tıkla.</p>
+            </div>
+            <button class="close-mini-popup" id="close-mini-popup">&times;</button>
+        </div>
+    </div>
+
     <script src="/elements/heartbeat.js"></script>
     <script type="module" src="/homepage/js/main.js?v=2"></script>
+    <script src="/homepage/js/updateNotes.js?v=1"></script>
 </body>
 
 </html>

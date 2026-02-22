@@ -367,6 +367,32 @@ public class SeriesRepository {
                 episodeRowMapper, seriesId.toString());
     }
 
+    public Episode findEpisodeBySlug(String slug) {
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT TOP 1 * FROM Episode WHERE slug = ?",
+                    episodeRowMapper, slug);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public Series findSeriesBySlug(String slug) {
+        try {
+            String sql = """
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
+                           (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                            JOIN SeriesCategories SC ON SC.CategoryID = C.ID
+                            WHERE SC.SeriesID = S.ID) as category
+                    FROM Series S
+                    WHERE S.slug = ?
+                    """;
+            return jdbcTemplate.queryForObject(sql, seriesRowMapper, slug);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public Episode findEpisodeBySeriesIdAndSeasonAndEpisodeNumber(UUID seriesId, int season, int episodeNumber) {
         try {
             return jdbcTemplate.queryForObject(

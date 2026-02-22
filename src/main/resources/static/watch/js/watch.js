@@ -32,6 +32,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    // Increment view count on page open (works for both native player and external sources)
+    incrementViewCount(videoId);
+
     initVideoControls(videoId);
     initListModal(videoId);
     initCommentsSection(videoId);
@@ -44,3 +47,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         handleImageSkeleton(img);
     });
 });
+
+async function incrementViewCount(id) {
+    try {
+        const res = await fetch(`/api/video/increment-view?id=${id}`, { method: 'POST' });
+        if (!res.ok) console.error('View count artırılamadı');
+    } catch (err) {
+        console.error('View count hatası:', err);
+    }
+}

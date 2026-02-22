@@ -100,7 +100,6 @@ public class VideoController {
     @GetMapping("/resolve-slug")
     @Cacheable("resolvedSlugs")
     public ResponseEntity<Map<String, String>> resolveSlug(@RequestParam("slug") String slug) {
-        // Try finding an episode with this slug or ID
         boolean isUuid = false;
         try {
             UUID.fromString(slug);
@@ -109,30 +108,55 @@ public class VideoController {
             // Not a UUID
         }
 
-        List<Series> allSeries = seriesRepository.findAllSeries();
-        for (Series s : allSeries) {
-            // 1. Check if slug matches Series directly
-            if (slug.equalsIgnoreCase(s.getSlug()) || (isUuid && s.getId().toString().equalsIgnoreCase(slug))) {
+        // If it's a UUID, do ID-based lookup
+        if (isUuid) {
+            UUID id = UUID.fromString(slug);
+
+            // Check episode by ID
+            Episode ep = seriesRepository.findEpisodeById(id);
+            if (ep != null) {
+                return ResponseEntity.ok(Map.of("id", ep.getId().toString(), "type", "episode"));
+            }
+
+            // Check series by ID → return first episode
+            Series s = seriesRepository.findSeriesById(id);
+            if (s != null) {
                 UUID firstEpId = seriesRepository.findFirstEpisodeIdBySeriesId(s.getId());
                 if (firstEpId != null) {
                     return ResponseEntity.ok(Map.of("id", firstEpId.toString(), "type", "episode"));
                 }
             }
 
-            // 2. Check if slug matches Episode
-            List<Episode> episodes = seriesRepository.findEpisodesBySeriesId(s.getId());
-            for (Episode e : episodes) {
-                if (slug.equalsIgnoreCase(e.getSlug()) || (isUuid && e.getId().toString().equalsIgnoreCase(slug))) {
-                    return ResponseEntity.ok(Map.of("id", e.getId().toString(), "type", "episode"));
-                }
+            // Check movie by ID
+            Movie m = movieRepository.findMovieById(id);
+            if (m != null) {
+                return ResponseEntity.ok(Map.of("id", m.getId().toString(), "type", "movie"));
             }
+
+            return ResponseEntity.notFound().build();
         }
 
-        // Try finding a movie with this slug or ID
-        List<Movie> allMovies = movieRepository.findAll();
-        for (Movie m : allMovies) {
-            if (slug.equalsIgnoreCase(m.getSlug()) || (isUuid && m.getId().toString().equalsIgnoreCase(slug))) {
-                return ResponseEntity.ok(Map.of("id", m.getId().toString(), "type", "movie"));
+        // --- Slug-based lookup (exact match, no iteration) ---
+
+        // 1. Check if it's an episode slug (most specific — includes season/episode
+        // info)
+        Episode episode = seriesRepository.findEpisodeBySlug(slug);
+        if (episode != null) {
+            return ResponseEntity.ok(Map.of("id", episode.getId().toString(), "type", "episode"));
+        }
+
+        // 2. Check if it's a movie slug (movies before series to avoid slug collision)
+        Movie movie = movieRepository.findMovieBySlug(slug);
+        if (movie != null) {
+            return ResponseEntity.ok(Map.of("id", movie.getId().toString(), "type", "movie"));
+        }
+
+        // 3. Check if it's a series slug → return first episode
+        Series series = seriesRepository.findSeriesBySlug(slug);
+        if (series != null) {
+            UUID firstEpId = seriesRepository.findFirstEpisodeIdBySeriesId(series.getId());
+            if (firstEpId != null) {
+                return ResponseEntity.ok(Map.of("id", firstEpId.toString(), "type", "episode"));
             }
         }
 

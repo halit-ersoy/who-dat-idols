@@ -53,6 +53,9 @@
                 <a href="#announcement-section" class="nav-link" data-section="announcement-section">
                     <i class="fas fa-bullhorn"></i> Duyuru Ayarları
                 </a>
+                <a href="#update-notes-section" class="nav-link" data-section="update-notes-section">
+                    <i class="fas fa-clipboard-list"></i> Güncelleme Notları
+                </a>
             </nav>
         </aside>
 
@@ -977,6 +980,51 @@
                             </button>
                         </div>
                     </form>
+                </div>
+            </section>
+
+            <!-- UPDATE NOTES SECTION -->
+            <section id="update-notes-section" class="admin-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-clipboard-list"></i> Güncelleme Notları Yönetimi</h2>
+                    </div>
+                    <form id="updateNoteForm" class="admin-form">
+                        <div class="form-grid">
+                            <div class="form-group full-width">
+                                <label for="updateNoteTitle">Başlık</label>
+                                <input type="text" id="updateNoteTitle" placeholder="Güncelleme başlığı..." required>
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="updateNoteMessage">Mesaj</label>
+                                <textarea id="updateNoteMessage" rows="4" placeholder="Güncelleme detayları..."
+                                    required></textarea>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> GÜNCELLEME EKLE
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="table-container" style="margin-top: 30px;">
+                        <h3>Mevcut Güncelleme Notları</h3>
+                        <table class="admin-table" id="updateNotesTable">
+                            <thead>
+                                <tr>
+                                    <th>Başlık</th>
+                                    <th>Mesaj</th>
+                                    <th>Tarih</th>
+                                    <th>Durum</th>
+                                    <th>İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Update notes will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
         </main>

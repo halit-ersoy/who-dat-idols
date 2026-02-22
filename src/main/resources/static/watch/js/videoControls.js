@@ -284,23 +284,10 @@ export function initVideoControls(videoId) {
     }
 
     function setupViewCount() {
-        let firstPlay = true;
+        // Update play icon when video starts playing
         videoPlayer.addEventListener('play', () => {
-            if (firstPlay && videoId) {
-                incrementViewCount(videoId);
-                firstPlay = false;
-            }
             updatePlayIcon();
         });
-    }
-
-    async function incrementViewCount(id) {
-        try {
-            const res = await fetch(`/api/video/increment-view?id=${id}`, { method: 'POST' });
-            if (!res.ok) console.error('View count arttırılamadı');
-        } catch (err) {
-            console.error('View count hatası:', err);
-        }
     }
 
     function setupPlaybackEvents() {
