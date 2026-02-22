@@ -165,7 +165,7 @@ public class SeriesService {
     @Transactional
     @CacheEvict(value = "featuredContent", allEntries = true)
     public UUID saveEpisodeWithFile(Series seriesInfo, int seasonNumber, int episodeNumber, MultipartFile file,
-            MultipartFile image, UUID existingSeriesId)
+            MultipartFile image, UUID existingSeriesId, boolean overwrite)
             throws IOException {
         // 1. DİZİ KONTROLÜ (Parent)
         UUID seriesId;
@@ -200,6 +200,25 @@ public class SeriesService {
 
         if (image != null && !image.isEmpty()) {
             saveImage(seriesId, image);
+        }
+
+        // Duplicate Check: Find ALL episodes in the target slot
+        List<Episode> collisions = repository.findEpisodesBySeriesIdAndSeasonAndEpisodeNumber(seriesId, seasonNumber,
+                episodeNumber);
+        if (!collisions.isEmpty()) {
+            if (!overwrite) {
+                throw new com.ses.whodatidols.exception.DuplicateConflictException(
+                        "Bu dizi için " + seasonNumber + ". Sezon " + episodeNumber
+                                + ". Bölüm zaten mevcut. Üzerine yazıp eski videoyu silmek istediğinize emin misiniz?");
+            } else {
+                for (Episode collision : collisions) {
+                    deleteEpisodeById(collision.getId());
+                }
+                // Refresh XML after deletions
+                Series updatedSeries = repository.findSeriesById(seriesId);
+                if (updatedSeries != null)
+                    currentXML = updatedSeries.getEpisodeMetadataXml();
+            }
         }
 
         // 2. DOSYA VE BÖLÜM İŞLEMLERİ (Child)
@@ -521,6 +540,15 @@ public class SeriesService {
     public List<Episode> getRecentEpisodesWithMetadata(int limit) {
         List<Episode> episodes = repository.findRecentEpisodes(limit);
         return episodes;
+    }
+
+    public boolean hasEpisodeCollision(UUID seriesId, int season, int episodeNum, UUID excludeId) {
+        List<Episode> collisions = repository.findEpisodesBySeriesIdAndSeasonAndEpisodeNumber(seriesId, season,
+                episodeNum);
+        if (excludeId == null) {
+            return !collisions.isEmpty();
+        }
+        return collisions.stream().anyMatch(e -> !e.getId().equals(excludeId));
     }
 
     public List<Episode> getTop6EpisodesByCount() {

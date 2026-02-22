@@ -120,6 +120,32 @@ public class AdminController {
         return ResponseEntity.ok(Map.of("exists", exists));
     }
 
+    @GetMapping("/check-episode-collision")
+    public ResponseEntity<Map<String, Object>> checkEpisodeCollision(
+            @RequestParam("seriesId") UUID seriesId,
+            @RequestParam("season") int season,
+            @RequestParam("episodeNum") int episodeNum,
+            @RequestParam(value = "excludeId", required = false) UUID excludeId) {
+        boolean collision = seriesService.hasEpisodeCollision(seriesId, season, episodeNum, excludeId);
+        String message = collision
+                ? "Bu dizi için " + season + ". Sezon " + episodeNum
+                        + ". Bölüm zaten mevcut. Üzerine yazıp eski videoyu silmek istediğinize emin misiniz?"
+                : "";
+        return ResponseEntity.ok(Map.of("collision", collision, "message", message));
+    }
+
+    @GetMapping("/check-movie-collision")
+    public ResponseEntity<Map<String, Object>> checkMovieCollision(
+            @RequestParam("name") String name,
+            @RequestParam(value = "excludeId", required = false) UUID excludeId) {
+        boolean collision = movieService.hasMovieCollision(name, excludeId);
+        String message = collision
+                ? "Bu isimde bir film zaten mevcut: '" + name
+                        + "'. Üzerine yazıp eski videoyu silmek istediğinize emin misiniz?"
+                : "";
+        return ResponseEntity.ok(Map.of("collision", collision, "message", message));
+    }
+
     @PostMapping("/add-movie")
     public ResponseEntity<String> addMovie(
             @ModelAttribute Movie movie,
@@ -216,7 +242,8 @@ public class AdminController {
             @RequestParam(value = "summary", required = false) String summary,
             @RequestParam(value = "country", required = false) String country,
             @RequestParam("season") int season,
-            @RequestParam("episode") int episode) {
+            @RequestParam("episode") int episode,
+            @RequestParam(value = "overwrite", defaultValue = "false") boolean overwrite) {
         try {
             // Video file is optional if external sources are used
 
@@ -227,7 +254,7 @@ public class AdminController {
             seriesInfo.setSummary(summary);
             seriesInfo.setCountry(country);
             UUID episodeId = seriesService.saveEpisodeWithFile(seriesInfo, season, episode, file, image,
-                    existingSeriesId);
+                    existingSeriesId, overwrite);
 
             if (existingSeriesId == null && (image == null || image.isEmpty()) && imageUrl != null
                     && !imageUrl.isEmpty()) {
@@ -239,6 +266,8 @@ public class AdminController {
 
             return ResponseEntity.ok("{\"id\": \"" + episodeId + "\", \"message\": \"Bölüm başarıyla işlendi (S"
                     + season + "E" + episode + ").\"}");
+        } catch (com.ses.whodatidols.exception.DuplicateConflictException e) {
+            return ResponseEntity.status(409).body("{\"error\": \"" + e.getMessage() + "\"}");
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());

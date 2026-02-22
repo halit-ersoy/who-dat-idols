@@ -51,6 +51,15 @@ public class MovieService {
         return movieRepository.findRecentMovies(limit);
     }
 
+    public boolean hasMovieCollision(String name, UUID excludeId) {
+        Movie existing = movieRepository.findMovieByName(name);
+        if (existing == null)
+            return false;
+        if (excludeId == null)
+            return true;
+        return !existing.getId().equals(excludeId);
+    }
+
     // Güncelleme Operasyonu
     @CacheEvict(value = "featuredContent", allEntries = true)
     public void updateMovie(Movie movie, MultipartFile file, MultipartFile image, boolean overwrite)

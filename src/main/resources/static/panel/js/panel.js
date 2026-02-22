@@ -597,7 +597,6 @@
         const isEditMode = movieId !== "";
 
         if (isEditMode) {
-
             const formData = new FormData();
             formData.append('id', movieId);
             formData.append('name', document.getElementById('movieName').value);
@@ -617,39 +616,60 @@
                 formData.append('file', movieFileInput.files[0]);
             }
 
-            movieSubmitBtn.innerText = "GÜNCELLENİYOR...";
+            movieSubmitBtn.innerText = "KONTROL EDİLİYOR...";
             movieSubmitBtn.disabled = true;
 
-            fetch('/admin/update-movie', {
-                method: 'POST',
-                body: formData
-            }).then(async res => {
-                if (res.status === 409) {
-                    const errorData = await res.json();
-                    if (confirm(errorData.error || "Çakışma mevcut! Üzerine yazmak ister misiniz?")) {
-                        formData.delete('overwrite');
-                        formData.append('overwrite', 'true');
-                        // Resubmit
-                        const overwriteRes = await fetch('/admin/update-movie', { method: 'POST', body: formData });
-                        if (overwriteRes.ok) {
-                            return overwriteRes.json();
-                        } else {
-                            throw new Error("Üzerine yazma işleminde hata oluştu: " + await overwriteRes.text());
+            const name = document.getElementById('movieName').value;
+            fetch(`/admin/check-movie-collision?name=${encodeURIComponent(name)}&excludeId=${movieId}`)
+                .then(r => r.json())
+                .then(async check => {
+                    if (check.collision) {
+                        if (!confirm(check.message)) {
+                            movieSubmitBtn.innerText = "DEĞİŞİKLİKLERİ KAYDET"; // Reset to original text
+                            movieSubmitBtn.disabled = false;
+                            return;
                         }
-                    } else {
-                        throw new Error("İşlem kullanıcı tarafından iptal edildi.");
+                        formData.append('overwrite', 'true');
                     }
-                }
-                if (!res.ok) throw new Error(await res.text());
-                return res.json();
-            }).then(async data => {
-                const id = data.id || movieId;
-                await saveExternalSources(id, 'movie');
-                alert(data.message || "Film güncellendi.");
-                resetMovieForm(); fetchMovies();
-            }).catch(error => {
-                alert(error.message || error);
-            }).finally(() => { movieSubmitBtn.disabled = false; });
+
+                    movieSubmitBtn.innerText = "GÜNCELLENİYOR...";
+                    // movieSubmitBtn.disabled = true; // Already disabled
+
+                    fetch('/admin/update-movie', {
+                        method: 'POST',
+                        body: formData
+                    }).then(async res => {
+                        if (res.status === 409) {
+                            const errorData = await res.json();
+                            if (confirm(errorData.error || "Çakışma mevcut! Üzerine yazmak ister misiniz?")) {
+                                formData.delete('overwrite');
+                                formData.append('overwrite', 'true');
+                                // Resubmit
+                                const overwriteRes = await fetch('/admin/update-movie', { method: 'POST', body: formData });
+                                if (overwriteRes.ok) {
+                                    return overwriteRes.json();
+                                } else {
+                                    throw new Error("Üzerine yazma işleminde hata oluştu: " + await overwriteRes.text());
+                                }
+                            } else {
+                                throw new Error("İşlem kullanıcı tarafından iptal edildi.");
+                            }
+                        }
+                        if (!res.ok) throw new Error(await res.text());
+                        return res.json();
+                    }).then(async data => {
+                        const id = data.id || movieId;
+                        await saveExternalSources(id, 'movie');
+                        alert(data.message || "Film güncellendi.");
+                        resetMovieForm(); fetchMovies();
+                    }).catch(error => {
+                        alert(error.message || error);
+                    }).finally(() => { movieSubmitBtn.disabled = false; });
+                }).catch(err => {
+                    alert("Hata: " + err.message);
+                    movieSubmitBtn.innerText = "DEĞİŞİKLİKLERİ KAYDET"; // Reset to original text
+                    movieSubmitBtn.disabled = false;
+                });
         } else {
             const formData = new FormData();
             formData.append('name', document.getElementById('movieName').value);
@@ -662,13 +682,34 @@
             if (movieImageInput.files.length > 0) formData.append('image', movieImageInput.files[0]);
             if (lastFetchedPosterUrl) formData.append('imageUrl', lastFetchedPosterUrl);
 
-            uploadDataWithProgress('/admin/add-movie', formData, 'movieForm', 'progressWrapperMovie', 'progressBarMovie', 'percentMovie', async (res) => {
-                try {
-                    const data = JSON.parse(res);
-                    if (data.id) await saveExternalSources(data.id, 'movie');
-                } catch (e) { console.error("Source save error:", e); }
-                fetchMovies();
-            });
+            movieSubmitBtn.innerText = "KONTROL EDİLİYOR...";
+            movieSubmitBtn.disabled = true;
+
+            const name = document.getElementById('movieName').value;
+            fetch(`/admin/check-movie-collision?name=${encodeURIComponent(name)}`)
+                .then(r => r.json())
+                .then(async check => {
+                    if (check.collision) {
+                        if (!confirm(check.message)) {
+                            movieSubmitBtn.innerText = "FİLMİ KAYDET"; // Reset to original text
+                            movieSubmitBtn.disabled = false;
+                            return;
+                        }
+                        formData.append('overwrite', 'true');
+                    }
+                    movieSubmitBtn.innerText = "YÜKLENİYOR...";
+                    uploadDataWithProgress('/admin/add-movie', formData, 'movieForm', 'progressWrapperMovie', 'progressBarMovie', 'percentMovie', async (res) => {
+                        try {
+                            const data = JSON.parse(res);
+                            if (data.id) await saveExternalSources(data.id, 'movie');
+                        } catch (e) { console.error("Source save error:", e); } // Keep original error logging
+                        resetMovieForm(); fetchMovies();
+                    });
+                }).catch(err => {
+                    alert("Hata: " + err.message);
+                    movieSubmitBtn.innerText = "FİLMİ KAYDET"; // Reset to original text
+                    movieSubmitBtn.disabled = false;
+                });
         }
     });
 
@@ -913,14 +954,33 @@
                 formData.append('file', seriesFileInput.files[0]);
             }
 
-            seriesSubmitBtn.innerText = "BÖLÜM GÜNCELLENİYOR...";
+            seriesSubmitBtn.innerText = "KONTROL EDİLİYOR...";
             seriesSubmitBtn.disabled = true;
 
-            uploadDataWithProgress('/admin/update-episode', formData, 'seriesForm', 'progressWrapperSeries', 'progressBarSeries', 'percentSeries', async (res) => {
-                await saveExternalSources(epId, 'series');
-                resetSeriesForm();
-                fetchSeries();
-            });
+            const season = document.getElementById('seasonNum').value;
+            const episodeNum = document.getElementById('episodeNum').value;
+
+            fetch(`/admin/check-episode-collision?seriesId=${sId}&season=${season}&episodeNum=${episodeNum}&excludeId=${epId}`)
+                .then(r => r.json())
+                .then(check => {
+                    if (check.collision) {
+                        if (!confirm(check.message)) {
+                            seriesSubmitBtn.innerText = "BÖLÜMÜ GÜNCELLE";
+                            seriesSubmitBtn.disabled = false;
+                            return;
+                        }
+                        formData.append('overwrite', 'true');
+                    }
+                    seriesSubmitBtn.innerText = "BÖLÜM GÜNCELLENİYOR...";
+                    uploadDataWithProgress('/admin/update-episode', formData, 'seriesForm', 'progressWrapperSeries', 'progressBarSeries', 'percentSeries', async (res) => {
+                        await saveExternalSources(epId, 'series');
+                        resetSeriesForm();
+                        fetchSeries();
+                    });
+                }).catch(err => {
+                    alert("Hata: " + err.message);
+                    seriesSubmitBtn.disabled = false;
+                });
             return;
         }
 
@@ -962,13 +1022,48 @@
             if (lastFetchedPosterUrl) formData.append('imageUrl', lastFetchedPosterUrl);
         }
 
-        uploadDataWithProgress('/admin/add-series', formData, 'seriesForm', 'progressWrapperSeries', 'progressBarSeries', 'percentSeries', async (res) => {
-            try {
-                const data = JSON.parse(res);
-                if (data.id) await saveExternalSources(data.id, 'series');
-            } catch (e) { console.error("Source save error:", e); }
-            fetchSeries();
-        });
+        seriesSubmitBtn.innerText = "KONTROL EDİLİYOR...";
+        seriesSubmitBtn.disabled = true;
+
+        const seriesIdToCheck = mode === 'existing' ? existingId : null;
+        // If it's a new series, there's no collision with existing episodes yet because the series record is created during add-series
+        // However, if the series name already exists (handled above), it might have episodes.
+        // But the user is prompted to use 'Existing' mode if it exists.
+        // Let's check collision if existingId is present.
+
+        if (existingId) {
+            const season = document.getElementById('seasonNum').value;
+            const episodeNum = document.getElementById('episodeNum').value;
+            fetch(`/admin/check-episode-collision?seriesId=${existingId}&season=${season}&episodeNum=${episodeNum}`)
+                .then(r => r.json())
+                .then(check => {
+                    if (check.collision) {
+                        if (!confirm(check.message)) {
+                            seriesSubmitBtn.innerText = "BÖLÜMÜ KAYDET";
+                            seriesSubmitBtn.disabled = false;
+                            return;
+                        }
+                        formData.append('overwrite', 'true');
+                    }
+                    startSeriesUpload(formData);
+                }).catch(err => {
+                    alert("Hata: " + err.message);
+                    seriesSubmitBtn.disabled = false;
+                });
+        } else {
+            startSeriesUpload(formData);
+        }
+
+        function startSeriesUpload(fd) {
+            seriesSubmitBtn.innerText = "YÜKLENİYOR...";
+            uploadDataWithProgress('/admin/add-series', fd, 'seriesForm', 'progressWrapperSeries', 'progressBarSeries', 'percentSeries', async (res) => {
+                try {
+                    const data = JSON.parse(res);
+                    if (data.id) await saveExternalSources(data.id, 'series');
+                } catch (e) { console.error("Source save error:", e); }
+                fetchSeries();
+            });
+        }
     });
 
     function fetchSeries() {
