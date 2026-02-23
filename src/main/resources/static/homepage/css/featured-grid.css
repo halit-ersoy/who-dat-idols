@@ -151,7 +151,8 @@
 }
 
 .final-badge {
-    background: linear-gradient(135deg, #ff3a3a, #c10a0a);
+    background: linear-gradient(135deg, #a80000, #5a0000);
+    box-shadow: 0 2px 5px rgba(168, 0, 0, 0.4);
 }
 
 .item-info {

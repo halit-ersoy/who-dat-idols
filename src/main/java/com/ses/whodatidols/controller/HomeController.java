@@ -125,7 +125,7 @@ public class HomeController {
                 item.country = mapLanguageToCode(language);
             }
 
-            item.isNew = true; // Zaten son eklenenler listesi
+            item.isNew = isRecent(ep.getUploadDate()); // Dinamik kontrol (24 saat)
             item.isFinal = isFinal;
             item.season = ep.getSeasonNumber();
             item.episode = ep.getEpisodeNumber();
@@ -214,8 +214,8 @@ public class HomeController {
     private boolean isRecent(java.time.LocalDateTime date) {
         if (date == null)
             return false;
-        // 7 günden yeni mi?
-        return date.isAfter(java.time.LocalDateTime.now().minusDays(7));
+        // 24 saatten yeni mi? (1 gün)
+        return date.isAfter(java.time.LocalDateTime.now().minusHours(24));
     }
 
     // DTO Classes

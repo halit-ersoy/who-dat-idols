@@ -68,6 +68,13 @@ public class SeriesRepository {
                             "    CREATE NONCLUSTERED INDEX idx_series_slug ON Series(slug); " +
                             "END");
 
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Series' AND COLUMN_NAME = 'finalStatus') "
+                            +
+                            "BEGIN " +
+                            "    ALTER TABLE Series ADD finalStatus INT DEFAULT 0; " +
+                            "END");
+
             // One-time populate missing slugs (Simple SQL version for existing data)
             jdbcTemplate.execute(
                     "UPDATE Series SET slug = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(name, ' ', '-'), 'ı', 'i'), 'ğ', 'g'), 'ü', 'u'), 'ş', 's')) WHERE slug IS NULL OR slug = ''");
@@ -158,9 +165,6 @@ public class SeriesRepository {
     };
 
     public List<Series> findAllSeries() {
-        // Optimized query with subquery for count.
-        // Also assuming Series table is just 'Series' now.
-        // We use LEFT JOIN or Correlated Subquery. Subquery is safer for 1:N count.
         String sql = """
                 SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
                        (SELECT COUNT(*) FROM Episode E WHERE E.SeriesId = S.ID) as episodeCount,
@@ -234,16 +238,6 @@ public class SeriesRepository {
         jdbcTemplate.update("UPDATE Series SET slug = ? WHERE ID = ?", slug, id.toString());
     }
 
-    public UUID findFirstEpisodeIdBySeriesId(UUID seriesId) {
-        try {
-            String sql = "SELECT TOP 1 ID FROM Episode WHERE SeriesId = ? ORDER BY SeasonNumber ASC, EpisodeNumber ASC";
-            String idStr = jdbcTemplate.queryForObject(sql, String.class, seriesId.toString());
-            return idStr != null ? UUID.fromString(idStr) : null;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
     public void updateSeriesMetadata(Series series) {
         jdbcTemplate.update(
                 "UPDATE Series SET name=?, Summary=?, Language=?, Country=?, SeriesType=?, finalStatus=? WHERE ID=?",
@@ -256,6 +250,16 @@ public class SeriesRepository {
                 series.getId().toString());
 
         updateSeriesCategories(series.getId(), series.getCategory());
+    }
+
+    public UUID findFirstEpisodeIdBySeriesId(UUID seriesId) {
+        try {
+            String sql = "SELECT TOP 1 ID FROM Episode WHERE SeriesId = ? ORDER BY SeasonNumber ASC, EpisodeNumber ASC";
+            String idStr = jdbcTemplate.queryForObject(sql, String.class, seriesId.toString());
+            return idStr != null ? UUID.fromString(idStr) : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private void updateSeriesCategories(UUID seriesId, String categoriesStr) {
@@ -316,21 +320,10 @@ public class SeriesRepository {
         jdbcTemplate.update("DELETE FROM Series WHERE ID = ?", id.toString());
     }
 
-    // This method queried Series based on XML content.
-    // New optimization: We can query Episode -> SeriesId directly if migrated!
-    // But for now, to support legacy/transition, we keep looking at XML referencing
-    // this episode ID relative to a Series?
-    // Actually, findSeriesByEpisodeIdInsideXML was used to update parent XML when
-    // deleting an episode.
-    // If we migrate fully to FK, we don't need XML anymore!
-    // But let's keep it compatible with the previous
-    // 'findSeriesByEpisodeIdInsideXML' logic for now using the old column
-    // (renamed).
     public Series findSeriesByEpisodeId(UUID episodeId) {
         try {
-            // Priority 1: Use FK JOIN (New optimized schema)
             String sql = """
-                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                             WHERE SC.SeriesID = S.ID) as category
@@ -340,7 +333,6 @@ public class SeriesRepository {
                     """;
             return jdbcTemplate.queryForObject(sql, seriesRowMapper, episodeId.toString());
         } catch (Exception e) {
-            // Priority 2: Fallback to XML (Legacy/Transition support)
             return findSeriesByEpisodeIdInsideXML(episodeId.toString());
         }
     }
@@ -348,7 +340,7 @@ public class SeriesRepository {
     public Series findSeriesByEpisodeIdInsideXML(String episodeId) {
         try {
             String sql = """
-                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                             WHERE SC.SeriesID = S.ID) as category
@@ -361,7 +353,6 @@ public class SeriesRepository {
         }
     }
 
-    // New method for Optimized schema
     public List<Episode> findEpisodesBySeriesId(UUID seriesId) {
         return jdbcTemplate.query("SELECT * FROM Episode WHERE SeriesId = ? ORDER BY SeasonNumber, EpisodeNumber",
                 episodeRowMapper, seriesId.toString());
@@ -418,7 +409,7 @@ public class SeriesRepository {
         String sql;
         if (limit > 0) {
             sql = """
-                    SELECT TOP (?) S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                    SELECT TOP (?) S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                             WHERE SC.SeriesID = S.ID) as category
@@ -428,7 +419,7 @@ public class SeriesRepository {
             return jdbcTemplate.query(sql, seriesRowMapper, limit);
         } else {
             sql = """
-                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                             WHERE SC.SeriesID = S.ID) as category
@@ -439,7 +430,6 @@ public class SeriesRepository {
         }
     }
 
-    // --- PAGINATION OKUMA İŞLEMLERİ ---
     public int countAllSeries() {
         Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM Series", Integer.class);
         return count != null ? count : 0;
@@ -454,7 +444,7 @@ public class SeriesRepository {
 
     public List<Series> findRecentSeriesPaged(int offset, int limit) {
         String sql = """
-                SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                         WHERE SC.SeriesID = S.ID) as category
@@ -468,7 +458,7 @@ public class SeriesRepository {
     public List<Series> searchSeriesPaged(String query, int offset, int limit) {
         String likeQuery = "%" + query.trim().toLowerCase() + "%";
         String sql = """
-                SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                         WHERE SC.SeriesID = S.ID) as category
@@ -487,7 +477,7 @@ public class SeriesRepository {
 
     public List<Series> findTop6SeriesByCount() {
         String sql = """
-                SELECT TOP 6 S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate,
+                SELECT TOP 6 S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
                        (SELECT COUNT(*) FROM Episode E WHERE E.SeriesId = S.ID) as episodeCount,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN SeriesCategories SC ON SC.CategoryID = C.ID

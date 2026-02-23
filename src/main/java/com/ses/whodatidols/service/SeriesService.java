@@ -180,6 +180,12 @@ public class SeriesService {
             seriesId = existingSeriesId;
             currentXML = found.getEpisodeMetadataXml();
             seriesName = found.getName();
+
+            // Update finalStatus if provided in seriesInfo
+            if (seriesInfo.getFinalStatus() != found.getFinalStatus()) {
+                found.setFinalStatus(seriesInfo.getFinalStatus());
+                repository.updateSeriesMetadata(found);
+            }
         } else {
             Series existingSeries = repository.findSeriesByName(seriesInfo.getName());
             if (existingSeries == null) {
@@ -190,13 +196,19 @@ public class SeriesService {
                 // Assume empty XML first
                 seriesInfo.setEpisodeMetadataXml("<Seasons></Seasons>");
                 seriesInfo.setUploadDate(LocalDateTime.now());
-                repository.createSeries(seriesInfo);
+                repository.createSeries(seriesInfo); // finalStatus is included in seriesInfo
                 currentXML = "<Seasons></Seasons>";
                 seriesName = seriesInfo.getName();
             } else {
                 seriesId = existingSeries.getId();
                 currentXML = existingSeries.getEpisodeMetadataXml();
                 seriesName = existingSeries.getName();
+
+                // Update finalStatus if provided in seriesInfo
+                if (seriesInfo.getFinalStatus() != existingSeries.getFinalStatus()) {
+                    existingSeries.setFinalStatus(seriesInfo.getFinalStatus());
+                    repository.updateSeriesMetadata(existingSeries);
+                }
 
                 // Ensure existing series has a slug
                 if (existingSeries.getSlug() == null || existingSeries.getSlug().isEmpty()) {

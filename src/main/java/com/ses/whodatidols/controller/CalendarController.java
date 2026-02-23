@@ -46,7 +46,7 @@ public class CalendarController {
         String sql = "SELECT * FROM CalendarEvent ORDER BY sortOrder ASC, showTime ASC";
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql);
 
-        Map<String, List<Map<String, Object>>> calendarData = new HashMap<>();
+        Map<String, List<Map<String, Object>>> calendarData = new LinkedHashMap<>();
         // Initialize days
         String[] days = { "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday" };
         for (String day : days) {

@@ -72,11 +72,13 @@ export function initCalendar() {
             'sunday': 'Pazar'
         };
 
+        const daysOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
         const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         const today = days[new Date().getDay()];
 
-        // Create drawer for each day
-        Object.entries(calendarData).forEach(([day, shows]) => {
+        // Create drawer for each day in specific order
+        daysOrder.forEach(day => {
+            const shows = calendarData[day] || [];
             const dayEl = document.createElement('div');
             dayEl.className = 'calendar-day';
             dayEl.dataset.day = day;

@@ -932,7 +932,7 @@
             formData.append('language', document.getElementById('seriesLanguage').value);
             formData.append('country', document.getElementById('seriesCountry').value);
             formData.append('seriesType', document.getElementById('seriesType').value);
-
+            formData.append('finalStatus', document.getElementById('seriesIsFinal').checked ? 1 : 0);
             if (seriesImageInput.files.length > 0) {
                 formData.append('image', seriesImageInput.files[0]);
             }
@@ -1005,7 +1005,6 @@
                 });
             return;
         }
-
         // ADD NEW SERIES or ADD TO EXISTING SERIES MODE
         if (sId === "" && mode === 'new') {
             const name = seriesNameInput.value.trim();
@@ -1028,6 +1027,10 @@
         formData.append('episode', document.getElementById('episodeNum').value);
         if (seriesFileInput.files.length > 0) formData.append('file', seriesFileInput.files[0]);
 
+        // UNIFIED finalStatus: Check both checkboxes based on existence
+        const isFinal = document.getElementById('episodeIsFinal').checked || document.getElementById('seriesIsFinal').checked;
+        formData.append('finalStatus', isFinal ? 1 : 0);
+
         if (mode === 'existing') {
             if (!existingId) return alert("Lütfen bir dizi seçin!");
             formData.append('existingSeriesId', existingId);
@@ -1046,12 +1049,6 @@
 
         seriesSubmitBtn.innerText = "KONTROL EDİLİYOR...";
         seriesSubmitBtn.disabled = true;
-
-        const seriesIdToCheck = mode === 'existing' ? existingId : null;
-        // If it's a new series, there's no collision with existing episodes yet because the series record is created during add-series
-        // However, if the series name already exists (handled above), it might have episodes.
-        // But the user is prompted to use 'Existing' mode if it exists.
-        // Let's check collision if existingId is present.
 
         if (existingId) {
             const season = document.getElementById('seasonNum').value;
@@ -1087,6 +1084,7 @@
             });
         }
     });
+
 
     function fetchSeries() {
         fetch('/admin/series')
@@ -1311,6 +1309,9 @@
 
         // Series Type population
         document.getElementById('seriesType').value = series.seriesType || 'Dizi';
+
+        // Final Status population
+        document.getElementById('seriesIsFinal').checked = series.finalStatus === 1;
 
         // Language matching
         const languageSelect = document.getElementById('seriesLanguage');
