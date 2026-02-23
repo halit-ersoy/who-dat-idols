@@ -12,6 +12,60 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="stylesheet" href="/panel/css/panel.css">
+    <style>
+        .storage-container {
+            width: 100%;
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .storage-item {
+            text-align: left;
+        }
+
+        .storage-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            margin-bottom: 4px;
+            color: #aaa;
+        }
+
+        .storage-name {
+            font-weight: 600;
+            color: #eee;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1s ease-in-out;
+            background: linear-gradient(90deg, #ff9800, #ff5722);
+        }
+
+        .progress-bar-fill.warning {
+            background: linear-gradient(90deg, #f44336, #d32f2f);
+        }
+
+        .card-stat.storage-card {
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
 </head>
 
 <body>
@@ -99,6 +153,13 @@
                         <i class="fas fa-user-friends" style="color: #3f51b5;"></i>
                         <h3 id="statTotalUsers">-</h3>
                         <p>Kayıtlı Kullanıcı</p>
+                    </div>
+                    <div class="card card-stat storage-card">
+                        <i class="fas fa-hdd" style="color: #ff9800; margin-bottom: 5px;"></i>
+                        <h4 style="margin:0; font-size:14px; color:#aaa;">Sunucu Depolama</h4>
+                        <div id="storageBarsContainer" class="storage-container">
+                            <div class="loading-state" style="font-size: 12px;">Yükleniyor...</div>
+                        </div>
                     </div>
                 </div>
                 <!-- Quick Actions or Recent Activity could go here -->

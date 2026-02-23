@@ -52,6 +52,7 @@
     fetchViewStats();
     fetchLiveActiveUsers();
     fetchUpdateNotes();
+    fetchStorageStats();
 
     // Poll live users every 30 seconds
     setInterval(fetchLiveActiveUsers, 30000);
@@ -66,6 +67,41 @@
                 activeUsersEl.innerText = data.activeUsers || 0;
             })
             .catch(err => console.error("Live stats error:", err));
+    }
+
+    function fetchStorageStats() {
+        const container = document.getElementById('storageBarsContainer');
+        if (!container) return;
+
+        fetch('/admin/stats/storage')
+            .then(res => res.json())
+            .then(data => {
+                container.innerHTML = '';
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div style="font-size:12px; color:#666;">Bilgi yok</div>';
+                    return;
+                }
+
+                data.forEach(stat => {
+                    const isWarning = stat.percentUsed > 90;
+                    const item = document.createElement('div');
+                    item.className = 'storage-item';
+                    item.innerHTML = `
+                        <div class="storage-info">
+                            <span class="storage-name">${stat.name || 'Disk'}</span>
+                            <span>${stat.used} / ${stat.total}</span>
+                        </div>
+                        <div class="progress-bar-container" title="%${stat.percentUsed} dolu">
+                            <div class="progress-bar-fill ${isWarning ? 'warning' : ''}" style="width: ${stat.percentUsed}%"></div>
+                        </div>
+                    `;
+                    container.appendChild(item);
+                });
+            })
+            .catch(err => {
+                console.error("Storage stats error:", err);
+                container.innerHTML = '<div style="font-size:12px; color:var(--danger);">Hata</div>';
+            });
     }
 
     // Role-based UI initialization

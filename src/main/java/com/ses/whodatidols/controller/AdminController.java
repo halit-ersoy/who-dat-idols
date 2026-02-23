@@ -643,16 +643,6 @@ public class AdminController {
         }
     }
 
-    @DeleteMapping("/delete-user")
-    public ResponseEntity<String> deleteUser(@RequestParam("userId") UUID userId) {
-        try {
-            personRepository.deleteUser(userId);
-            return ResponseEntity.ok("Kullanıcı başarıyla silindi.");
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
-        }
-    }
-
     @GetMapping("/comment-moderation/pending")
     public ResponseEntity<List<CommentViewModel>> getPendingComments() {
         try {
@@ -717,5 +707,41 @@ public class AdminController {
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/stats/storage")
+    public ResponseEntity<List<Map<String, Object>>> getStorageStats() {
+        try {
+            List<Map<String, Object>> storageList = new java.util.ArrayList<>();
+            for (java.nio.file.FileStore store : java.nio.file.FileSystems.getDefault().getFileStores()) {
+                long totalSpace = store.getTotalSpace();
+                if (totalSpace <= 0)
+                    continue; // Skip empty or inaccessible stores
+
+                long unallocatedSpace = store.getUnallocatedSpace();
+                long usedSpace = totalSpace - unallocatedSpace;
+
+                Map<String, Object> stats = new HashMap<>();
+                stats.put("name", store.name());
+                stats.put("description", store.toString());
+                stats.put("total", formatBytes(totalSpace));
+                stats.put("used", formatBytes(usedSpace));
+                stats.put("free", formatBytes(unallocatedSpace));
+                stats.put("percentUsed", (int) ((double) usedSpace / totalSpace * 100));
+
+                storageList.add(stats);
+            }
+            return ResponseEntity.ok(storageList);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    private String formatBytes(long bytes) {
+        if (bytes < 1024)
+            return bytes + " B";
+        int exp = (int) (Math.log(bytes) / Math.log(1024));
+        char pre = "KMGTPE".charAt(exp - 1);
+        return String.format("%.1f %sB", bytes / Math.pow(1024, exp), pre);
     }
 }
