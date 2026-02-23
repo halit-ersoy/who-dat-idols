@@ -12,6 +12,7 @@ import { initLoadedEpisodesSection } from "./loadedEpisodesSection.js?v=2";
 import { initHeaderInteractions, initSearchExpansion } from "./searchExpansion.js?v=2";
 import { initCalendar } from "./calendar.js?v=2";
 import { initNotifications } from "./notifications.js?v=2";
+import { initFeedback } from "./feedback.js?v=2";
 
 window.addEventListener('load', () => {
     const loadingScreen = document.getElementById('loading-screen');
@@ -41,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initForgotPass();
     initCalendar();
     initNotifications();
+    initFeedback();
     initAnnouncement();
 });
 

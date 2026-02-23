@@ -22,6 +22,11 @@
                 }
             });
 
+            // Section-specific on-show hooks
+            if (targetId === 'feedback-section') {
+                fetchFeedbacks();
+            }
+
             // Scroll to top of main content
             document.querySelector('.main-content').scrollTop = 0;
         });
@@ -2861,5 +2866,109 @@
             })
             .catch(err => console.error("Delete update note error:", err));
     };
+
+    /* ===========================================================
+       GERİ BİLDİRİMLER (FEEDBACK)
+       =========================================================== */
+
+    let allFeedbacks = [];
+
+    function fetchFeedbacks() {
+        const tbody = document.getElementById('feedbackTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:rgba(255,255,255,0.4);">Yükleniyor...</td></tr>';
+
+        fetch('/admin/feedbacks')
+            .then(res => res.json())
+            .then(feedbacks => {
+                allFeedbacks = feedbacks;
+                const countEl = document.getElementById('feedbackCount');
+                if (countEl) countEl.textContent = `Toplam: ${feedbacks.length} geri bildirim`;
+                renderFeedbacks(feedbacks);
+            })
+            .catch(err => {
+                console.error('Feedback fetch error:', err);
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#e74c3c;">Yüklenirken hata oluştu.</td></tr>';
+            });
+    }
+
+    function renderFeedbacks(feedbacks) {
+        const tbody = document.getElementById('feedbackTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (feedbacks.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:rgba(255,255,255,0.35);">Henüz geri bildirim yok.</td></tr>';
+            return;
+        }
+
+        feedbacks.forEach(fb => {
+            const tr = document.createElement('tr');
+            const date = fb.CreatedAt ? new Date(fb.CreatedAt).toLocaleString('tr-TR') : '-';
+            const fullMessage = (fb.Message || '');
+
+            tr.innerHTML = `
+                <td>
+                    <div style="font-weight:600; color:#fff;">${fb.nickname || '-'}</div>
+                    <div style="font-size:0.78rem; color:rgba(255,255,255,0.4); margin-top:2px;">${fb.email || ''}</div>
+                </td>
+                <td style="font-weight:500; color:rgba(255,255,255,0.85);">${fb.Subject || '-'}</td>
+                <td style="font-size:0.88rem; color:rgba(255,255,255,0.65); max-width:320px; line-height:1.5; white-space:pre-wrap; word-break: break-all; word-wrap: break-word;">${fullMessage}</td>
+                <td style="font-size:0.82rem; color:rgba(255,255,255,0.4); white-space:nowrap;">${date}</td>
+                <td>
+                    <button class="btn btn-sm btn-danger" onclick="window.deleteFeedback('${fb.ID}')" title="Sil"
+                        style="padding:6px 12px; border-radius:8px; font-size:12px;">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    window.deleteFeedback = function (id) {
+        if (!confirm('Bu geri bildirimi silmek istediğinize emin misiniz?')) return;
+        fetch(`/admin/delete-feedback?id=${id}`, { method: 'DELETE' })
+            .then(res => {
+                if (res.ok) fetchFeedbacks();
+                else res.text().then(msg => alert('Hata: ' + msg));
+            })
+            .catch(err => alert('Hata: ' + err));
+    };
+
+    // Live search on feedback table
+    const feedbackSearchInput = document.getElementById('feedbackSearch');
+    if (feedbackSearchInput) {
+        feedbackSearchInput.addEventListener('input', function () {
+            const q = this.value.toLowerCase().trim();
+            if (!q) {
+                renderFeedbacks(allFeedbacks);
+                return;
+            }
+            const filtered = allFeedbacks.filter(fb =>
+                (fb.nickname || '').toLowerCase().includes(q) ||
+                (fb.Subject || '').toLowerCase().includes(q) ||
+                (fb.Message || '').toLowerCase().includes(q)
+            );
+            renderFeedbacks(filtered);
+        });
+    }
+
+    const refreshFeedbackBtn = document.getElementById('refreshFeedbackBtn');
+    if (refreshFeedbackBtn) {
+        refreshFeedbackBtn.addEventListener('click', fetchFeedbacks);
+    }
+
+    // Load feedbacks when nav link is clicked
+    document.querySelectorAll('.nav-link').forEach(link => {
+        if (link.getAttribute('data-section') === 'feedback-section') {
+            link.addEventListener('click', fetchFeedbacks);
+        }
+    });
+
+    // Also load on init if already on that section from URL hash
+    if (window.location.hash === '#feedback-section') {
+        fetchFeedbacks();
+    }
 
 });

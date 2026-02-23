@@ -56,6 +56,9 @@
                 <a href="#update-notes-section" class="nav-link" data-section="update-notes-section">
                     <i class="fas fa-clipboard-list"></i> Güncelleme Notları
                 </a>
+                <a href="#feedback-section" class="nav-link" data-section="feedback-section">
+                    <i class="fas fa-comment-dots"></i> Geri Bildirimler
+                </a>
             </nav>
         </aside>
 
@@ -1043,6 +1046,47 @@
                     </div>
                 </div>
             </section>
+
+            <!-- FEEDBACK SECTION -->
+            <section id="feedback-section" class="admin-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header"
+                        style="display: flex; align-items: center; justify-content: space-between;">
+                        <h2><i class="fas fa-comment-dots"></i> Geri Bildirimler</h2>
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span id="feedbackCount" style="font-size: 0.85rem; color: rgba(255,255,255,0.5);"></span>
+                            <button id="refreshFeedbackBtn" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-sync-alt"></i> Yenile
+                            </button>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <input type="text" id="feedbackSearch" placeholder="Konu, kullanıcı veya mesajda ara..." style="flex: 1; min-width: 220px; padding: 9px 14px; border-radius: 8px;
+                               background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+                               color: #fff; font-size: 0.9rem; outline: none;">
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table" id="feedbackTable">
+                            <thead>
+                                <tr>
+                                    <th>Kullanıcı</th>
+                                    <th>Konu</th>
+                                    <th>Mesaj</th>
+                                    <th>Tarih</th>
+                                    <th>İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody id="feedbackTableBody">
+                                <tr>
+                                    <td colspan="5" style="text-align:center; color:rgba(255,255,255,0.4);">
+                                        Yükleniyor...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
         </main>
     </div>
 

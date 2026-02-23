@@ -39,6 +39,7 @@ export function initLogin() {
                             <a href="/profile"><i class="fas fa-user"></i> Profilim</a>
                             <a href="/favorites"><i class="fas fa-heart"></i> Favorilerim</a>
                             <a href="/settings"><i class="fas fa-cog"></i> Ayarlar</a>
+                            <a href="#" id="feedback-open-btn"><i class="fas fa-comment-dots"></i> Geri Bildirim</a>
                             <a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</a>
                         </div>
                     `;

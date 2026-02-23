@@ -7,6 +7,7 @@ import com.ses.whodatidols.model.VideoSource;
 import com.ses.whodatidols.repository.PersonRepository;
 import com.ses.whodatidols.repository.VideoSourceRepository;
 import com.ses.whodatidols.repository.CommentRepository;
+import com.ses.whodatidols.repository.FeedbackRepository;
 import com.ses.whodatidols.viewmodel.CommentViewModel;
 import com.ses.whodatidols.service.MovieService;
 import com.ses.whodatidols.service.SeriesService;
@@ -48,6 +49,7 @@ public class AdminController {
     private final CommentRepository commentRepository;
     private final com.ses.whodatidols.repository.HeroRepository heroRepository;
     private final TranslationService translationService;
+    private final FeedbackRepository feedbackRepository;
 
     @Value("${media.source.trailers.path}")
     private String trailersPath;
@@ -69,7 +71,7 @@ public class AdminController {
             TvMazeService tvMazeService, JdbcTemplate jdbcTemplate,
             VideoSourceRepository videoSourceRepository, PersonRepository personRepository,
             CommentRepository commentRepository, com.ses.whodatidols.repository.HeroRepository heroRepository,
-            TranslationService translationService) {
+            TranslationService translationService, FeedbackRepository feedbackRepository) {
         this.movieService = movieService;
         this.seriesService = seriesService;
         this.tvMazeService = tvMazeService;
@@ -79,6 +81,7 @@ public class AdminController {
         this.commentRepository = commentRepository;
         this.heroRepository = heroRepository;
         this.translationService = translationService;
+        this.feedbackRepository = feedbackRepository;
     }
 
     @GetMapping("/panel")
@@ -696,6 +699,27 @@ public class AdminController {
         try {
             commentRepository.rejectComment(commentId);
             return ResponseEntity.ok("Yorum reddedildi/silindi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+        }
+    }
+
+    // FEEDBACK MANAGEMENT
+
+    @GetMapping("/feedbacks")
+    public ResponseEntity<List<Map<String, Object>>> getAllFeedbacks() {
+        try {
+            return ResponseEntity.ok(feedbackRepository.getAllFeedbacks());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @DeleteMapping("/delete-feedback")
+    public ResponseEntity<String> deleteFeedback(@RequestParam("id") UUID id) {
+        try {
+            feedbackRepository.deleteFeedback(id);
+            return ResponseEntity.ok("Geri bildirim silindi.");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
         }

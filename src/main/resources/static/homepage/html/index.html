@@ -423,6 +423,39 @@
         </div>
     </div>
 
+    <!-- Feedback Modal -->
+    <div class="login-modal-overlay" id="feedback-modal">
+        <div class="login-modal feedback-modal-box">
+            <button class="close-modal" id="close-feedback-modal">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="login-header">
+                <div class="login-logo">Who Dat Idols?</div>
+                <h2 class="login-title">Geri Bildirim</h2>
+                <p class="login-subtitle">Görüş ve önerilerinizi bizimle paylaşın</p>
+            </div>
+            <div class="login-form" id="feedback-form">
+                <div class="form-group">
+                    <label for="feedback-subject">Konu</label>
+                    <input type="text" class="form-control" id="feedback-subject"
+                        placeholder="Geri bildiriminizin konusu" maxlength="255">
+                </div>
+                <div class="form-group">
+                    <label for="feedback-message">Mesaj</label>
+                    <textarea class="form-control feedback-textarea" id="feedback-message"
+                        placeholder="Mesajınızı buraya yazın..." maxlength="400" rows="5"></textarea>
+                    <div id="feedback-char-counter"
+                        style="text-align: right; font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-top: 4px;">0
+                        / 400</div>
+                </div>
+
+                <button class="login-btn-page" id="feedback-submit">
+                    <i class="fas fa-paper-plane"></i> Gönder
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Mini Update Popup (Toaster) -->
     <div id="mini-update-popup" class="mini-update-popup" style="display: none;">
         <div class="mini-popup-content">
