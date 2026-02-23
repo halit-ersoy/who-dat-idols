@@ -33,7 +33,7 @@ async function loadContentDetails(id) {
             const metaDescription = document.querySelector('meta[name="description"]');
             if (metaDescription) metaDescription.setAttribute('content', data.plot.substring(0, 160));
         }
-        
+
         const canonicalLink = document.getElementById('canonicalLink');
         if (canonicalLink && data.slug) {
             canonicalLink.setAttribute('href', `https://whodatidols.com/watch/${data.slug}`);
@@ -42,24 +42,61 @@ async function loadContentDetails(id) {
         // SEO: Structured Data (JSON-LD)
         const structuredDataEl = document.getElementById('structuredData');
         if (structuredDataEl) {
-            const schema = {
+            // Sanitize description: strip control characters and trim to 500 chars for JSON-LD safety
+            const sanitizeText = (text) => {
+                if (!text) return undefined;
+                return text
+                    .replace(/[\u0000-\u001F\u007F]/g, ' ')  // strip control chars (newlines, tabs, etc.)
+                    .replace(/\s+/g, ' ')                      // collapse whitespace
+                    .trim()
+                    .substring(0, 500);
+            };
+
+            // Convert "120 dk" → "PT120M" (ISO 8601 duration)
+            const formatDuration = (dur) => {
+                if (!dur) return undefined;
+                const match = dur.match(/(\d+)/);
+                return match ? `PT${match[1]}M` : undefined;
+            };
+
+            const baseUrl = 'https://whodatidols.com';
+            const slug = data.slug || id;
+            const contentUrl = `${baseUrl}/${slug}`;
+
+            // Main content schema (Movie or Episode)
+            const contentSchema = {
                 "@context": "https://schema.org",
                 "@type": data.type === 'movie' ? "Movie" : "Episode",
                 "name": data.title,
-                "description": data.plot,
-                "image": `https://whodatidols.com/media/image/${id}`,
-                "datePublished": data.year,
-                "duration": data.duration ? "PT" + data.duration.replace(" dk", "M") : undefined
+                "url": contentUrl,
+                "description": sanitizeText(data.plot),
+                "image": `${baseUrl}/media/image/${id}`,
+                "datePublished": data.year ? String(data.year) : undefined,
+                "duration": formatDuration(data.duration)
             };
-            
+
             if (data.type === 'episode' && data.season) {
-                schema.partOfSeason = {
+                contentSchema.partOfSeason = {
                     "@type": "CreativeWorkSeason",
                     "seasonNumber": data.season
                 };
             }
-            
-            structuredDataEl.textContent = JSON.stringify(schema);
+
+            // BreadcrumbList schema — 2 levels: Ana Sayfa → İçerik
+            // All content lives at /{slug}, no category pages exist
+            const breadcrumbItems = [
+                { "@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": baseUrl },
+                { "@type": "ListItem", "position": 2, "name": data.title, "item": contentUrl }
+            ];
+
+            const breadcrumbSchema = {
+                "@context": "https://schema.org",
+                "@type": "BreadcrumbList",
+                "itemListElement": breadcrumbItems
+            };
+
+            // Emit both schemas as a JSON-LD array
+            structuredDataEl.textContent = JSON.stringify([contentSchema, breadcrumbSchema]);
         }
 
         const posterImg = document.getElementById('contentPoster');

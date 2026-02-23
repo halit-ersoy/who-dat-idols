@@ -11,5 +11,4 @@ public class WhoDatIdolsApplication {
     public static void main(String[] args) {
         SpringApplication.run(WhoDatIdolsApplication.class, args);
     }
-
 }
