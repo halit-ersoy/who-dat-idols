@@ -2732,7 +2732,7 @@
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td style="font-weight: 600; color: #fff;">${note.title}</td>
-                        <td style="max-width: 260px; font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.5;">${note.message.length > 80 ? note.message.substring(0, 80) + '…' : note.message}</td>
+                        <td style="max-width: 260px; font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.5; word-break: break-all; word-wrap: break-word; white-space: pre-wrap;">${note.message || ''}</td>
                         <td style="font-size: 12px; color: rgba(255,255,255,0.4);">${new Date(note.createdAt).toLocaleString('tr-TR')}</td>
                         <td>
                             <span style="
