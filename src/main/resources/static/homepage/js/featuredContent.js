@@ -51,8 +51,6 @@ export function initFeaturedContent() {
     updateToggleState();
 
     // API'den veri çek
-    // featuredGrid.innerHTML removed to avoid internal spinners
-
     fetch('/api/featured-content')
         .then(response => response.json())
         .then(data => {
@@ -105,13 +103,13 @@ export function initFeaturedContent() {
                 el.innerHTML = `
                     <div class="item-thumb img-skeleton">
                         <img src="${item.image}" alt="${item.title}">
+                        ${item.isFinal ? '<span class="badge final-badge">Final</span>' : ''}
                     </div>
                     <div class="item-details">
                         <div class="item-header">
                             <div class="title-container">
                                 <span class="title">${item.title}</span>
                             </div>
-                            ${item.isFinal ? '<span class="badge final-badge">Final</span>' : ''}
                         </div>
                         <div class="item-info">
                             ${type === 'movies'
@@ -128,7 +126,6 @@ export function initFeaturedContent() {
                 `;
                 handleImageSkeleton(el.querySelector('img'));
                 el.addEventListener('click', () => {
-                    const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(item.id);
                     window.location.href = `/${item.id}`;
                 });
                 featuredGrid.appendChild(el);

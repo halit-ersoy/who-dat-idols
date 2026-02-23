@@ -63,6 +63,7 @@ public class VideoController {
                             series.getCategory() != null ? List.of(series.getCategory().split(",")) : List.of());
                     response.put("language", series.getLanguage());
                     response.put("country", series.getCountry());
+                    response.put("isFinal", series.getFinalStatus() == 1);
                 } else {
                     response.put("title", episode.getName());
                 }

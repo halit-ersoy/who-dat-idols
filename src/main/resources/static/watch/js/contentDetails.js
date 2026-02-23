@@ -144,7 +144,16 @@ async function loadContentDetails(id) {
 
             document.getElementById('seasonNumber').textContent = `Sezon ${data.season}`;
             document.getElementById('episodeNumber').textContent = `Bölüm ${data.episode}`;
-            document.getElementById('totalEpisodes').style.display = 'none'; // Hide total for now
+
+            const totalEpisodesEl = document.getElementById('totalEpisodes');
+            if (data.isFinal) {
+                totalEpisodesEl.textContent = "Final Yaptı";
+                totalEpisodesEl.style.display = 'inline';
+                totalEpisodesEl.style.color = '#1ed760';
+                totalEpisodesEl.style.fontWeight = 'bold';
+            } else {
+                totalEpisodesEl.style.display = 'none';
+            }
         } else {
             if (seasonSection) seasonSection.style.display = 'none';
             if (episodeNav) episodeNav.style.display = 'none';
