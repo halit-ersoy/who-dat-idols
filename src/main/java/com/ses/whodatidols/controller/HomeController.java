@@ -110,7 +110,8 @@ public class HomeController {
                     title = series.getName();
                     language = series.getLanguage();
                     country = series.getCountry();
-                    isFinal = series.getFinalStatus() == 1;
+                    isFinal = series.getFinalStatus() > 0;
+                    item.finalStatus = series.getFinalStatus();
                     imageId = series.getId().toString();
                 }
             }
@@ -233,6 +234,7 @@ public class HomeController {
         public boolean isFinal;
         public String image;
         public String country;
+        public int finalStatus;
     }
 
     @GetMapping("/about")

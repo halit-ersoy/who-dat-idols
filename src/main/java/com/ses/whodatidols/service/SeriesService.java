@@ -58,15 +58,10 @@ public class SeriesService {
         return repository.findSeriesById(id);
     }
 
-    // Refactored to use FK if available, or fallback to XML parsing
-    // For now, we are in transition, so we might need to support both or assume
-    // migration
     public List<EpisodeViewModel> getEpisodesForSeries(UUID seriesId) {
-        // Try to fetch via FK first (The optimized way)
         List<Episode> dbEpisodes = repository.findEpisodesBySeriesId(seriesId);
 
         if (dbEpisodes != null && !dbEpisodes.isEmpty()) {
-            // New way
             List<EpisodeViewModel> viewModels = new ArrayList<>();
             for (Episode ep : dbEpisodes) {
                 EpisodeViewModel vm = new EpisodeViewModel();
@@ -83,7 +78,6 @@ public class SeriesService {
             return viewModels;
         }
 
-        // Fallback: XML Parsing (Legacy)
         Series series = repository.findSeriesById(seriesId);
         if (series == null || series.getEpisodeMetadataXml() == null || series.getEpisodeMetadataXml().isEmpty()) {
             return Collections.emptyList();
@@ -121,7 +115,6 @@ public class SeriesService {
                         episodes.add(vm);
                     }
                 } catch (IllegalArgumentException e) {
-                    // Skip invalid UUIDs
                 }
             }
         }
@@ -144,7 +137,6 @@ public class SeriesService {
 
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            // Automate HLS Conversion
             final String input = filePath.toString();
             final String output = uploadPath.resolve("hls").resolve(s.getId().toString()).toString();
             java.util.concurrent.CompletableFuture.runAsync(() -> {
@@ -167,7 +159,6 @@ public class SeriesService {
     public UUID saveEpisodeWithFile(Series seriesInfo, int seasonNumber, int episodeNumber, MultipartFile file,
             MultipartFile image, UUID existingSeriesId, boolean overwrite)
             throws IOException {
-        // 1. DİZİ KONTROLÜ (Parent)
         UUID seriesId;
         String currentXML;
         String seriesName;
@@ -181,7 +172,6 @@ public class SeriesService {
             currentXML = found.getEpisodeMetadataXml();
             seriesName = found.getName();
 
-            // Update finalStatus if provided in seriesInfo
             if (seriesInfo.getFinalStatus() != found.getFinalStatus()) {
                 found.setFinalStatus(seriesInfo.getFinalStatus());
                 repository.updateSeriesMetadata(found);
@@ -191,12 +181,10 @@ public class SeriesService {
             if (existingSeries == null) {
                 seriesId = UUID.randomUUID();
                 seriesInfo.setId(seriesId);
-                // Generate series slug
                 seriesInfo.setSlug(com.ses.whodatidols.util.SlugUtil.toSlug(seriesInfo.getName()));
-                // Assume empty XML first
                 seriesInfo.setEpisodeMetadataXml("<Seasons></Seasons>");
                 seriesInfo.setUploadDate(LocalDateTime.now());
-                repository.createSeries(seriesInfo); // finalStatus is included in seriesInfo
+                repository.createSeries(seriesInfo);
                 currentXML = "<Seasons></Seasons>";
                 seriesName = seriesInfo.getName();
             } else {
@@ -204,13 +192,11 @@ public class SeriesService {
                 currentXML = existingSeries.getEpisodeMetadataXml();
                 seriesName = existingSeries.getName();
 
-                // Update finalStatus if provided in seriesInfo
                 if (seriesInfo.getFinalStatus() != existingSeries.getFinalStatus()) {
                     existingSeries.setFinalStatus(seriesInfo.getFinalStatus());
                     repository.updateSeriesMetadata(existingSeries);
                 }
 
-                // Ensure existing series has a slug
                 if (existingSeries.getSlug() == null || existingSeries.getSlug().isEmpty()) {
                     String newSlug = com.ses.whodatidols.util.SlugUtil.toSlug(seriesName);
                     repository.updateSeriesSlug(seriesId, newSlug);
@@ -222,7 +208,6 @@ public class SeriesService {
             saveImage(seriesId, image);
         }
 
-        // Duplicate Check: Find ALL episodes in the target slot
         List<Episode> collisions = repository.findEpisodesBySeriesIdAndSeasonAndEpisodeNumber(seriesId, seasonNumber,
                 episodeNumber);
         if (!collisions.isEmpty()) {
@@ -234,14 +219,12 @@ public class SeriesService {
                 for (Episode collision : collisions) {
                     deleteEpisodeById(collision.getId());
                 }
-                // Refresh XML after deletions
                 Series updatedSeries = repository.findSeriesById(seriesId);
                 if (updatedSeries != null)
                     currentXML = updatedSeries.getEpisodeMetadataXml();
             }
         }
 
-        // 2. DOSYA VE BÖLÜM İŞLEMLERİ (Child)
         UUID episodeId = UUID.randomUUID();
         int duration = 1;
 
@@ -258,7 +241,6 @@ public class SeriesService {
             if (duration <= 0)
                 duration = 1;
 
-            // Automate HLS Conversion
             final String input = filePath.toString();
             final String output = uploadPath.resolve("hls").resolve(episodeId.toString()).toString();
             java.util.concurrent.CompletableFuture.runAsync(() -> {
@@ -272,11 +254,11 @@ public class SeriesService {
 
         Episode episodeData = new Episode();
         episodeData.setId(episodeId);
-        episodeData.setName(seriesName); // Usually inherits series name
+        episodeData.setName(seriesName);
         episodeData.setDurationMinutes(duration);
         episodeData.setReleaseYear(LocalDateTime.now().getYear());
         episodeData.setUploadDate(LocalDateTime.now());
-        episodeData.setSeriesId(seriesId); // OPTIMIZATION: Set FK!
+        episodeData.setSeriesId(seriesId);
         episodeData.setSeasonNumber(seasonNumber);
         episodeData.setEpisodeNumber(episodeNumber);
         episodeData.setSlug(com.ses.whodatidols.util.SlugUtil
@@ -284,12 +266,10 @@ public class SeriesService {
 
         repository.saveEpisode(episodeData);
 
-        // 3. XML GÜNCELLEME
         String updatedXML = injectEpisodeToXML(currentXML, seasonNumber, episodeNumber,
                 episodeId.toString());
         repository.updateSeriesXML(seriesId, updatedXML);
 
-        // Bildirim oluştur
         try {
             notificationService.createNotification(
                     "Yeni Bölüm Geldi!",
@@ -306,7 +286,7 @@ public class SeriesService {
 
     @Transactional
     @CacheEvict(value = "featuredContent", allEntries = true)
-    public void updateEpisode(UUID episodeId, int seasonNumber, int episodeNumber, MultipartFile file,
+    public void updateEpisode(UUID episodeId, int seasonNumber, int episodeNumber, int finalStatus, MultipartFile file,
             boolean overwrite)
             throws IOException {
         Episode ep = repository.findEpisodeById(episodeId);
@@ -315,9 +295,12 @@ public class SeriesService {
 
         Series parent = repository.findSeriesByEpisodeId(episodeId);
         if (parent != null) {
-            // Check if season or episode number changed to update XML
+            if (parent.getFinalStatus() != finalStatus) {
+                parent.setFinalStatus(finalStatus);
+                repository.updateSeriesMetadata(parent);
+            }
+
             if (ep.getSeasonNumber() != seasonNumber || ep.getEpisodeNumber() != episodeNumber) {
-                // Duplicate Check: Find ALL episodes in the target slot
                 List<Episode> collisions = repository.findEpisodesBySeriesIdAndSeasonAndEpisodeNumber(parent.getId(),
                         seasonNumber, episodeNumber);
                 if (!collisions.isEmpty() && collisions.stream().anyMatch(e -> !e.getId().equals(episodeId))) {
@@ -331,7 +314,7 @@ public class SeriesService {
                                 deleteEpisodeById(collision.getId());
                             }
                         }
-                        parent = repository.findSeriesById(parent.getId()); // Refresh parent XML after deletions
+                        parent = repository.findSeriesById(parent.getId());
                     }
                 }
 
@@ -341,7 +324,6 @@ public class SeriesService {
                 repository.updateSeriesXML(parent.getId(), updatedXml);
             }
 
-            // Update slug if it's missing or if season/episode numbers have changed
             if (ep.getSlug() == null || ep.getSlug().isEmpty() || ep.getSeasonNumber() != seasonNumber
                     || ep.getEpisodeNumber() != episodeNumber) {
                 ep.setSlug(com.ses.whodatidols.util.SlugUtil
@@ -362,7 +344,6 @@ public class SeriesService {
             if (duration > 0)
                 ep.setDurationMinutes(duration);
 
-            // Automate HLS Conversion
             final String input = filePath.toString();
             final String output = uploadPath.resolve("hls").resolve(episodeId.toString()).toString();
             java.util.concurrent.CompletableFuture.runAsync(() -> {
@@ -476,8 +457,6 @@ public class SeriesService {
             Path uploadPath = Paths.get(soapOperasPath).toAbsolutePath().normalize();
             Path filePath = uploadPath.resolve(fileId + ".mp4");
             Files.deleteIfExists(filePath);
-
-            // HLS sil
             deleteDirectory(uploadPath.resolve("hls").resolve(fileId));
         } catch (IOException e) {
             System.err.println("Dosya silinemedi: " + e.getMessage());
@@ -501,10 +480,6 @@ public class SeriesService {
             return "<Seasons>" + seasonTag + episodeTag + "</Season></Seasons>";
         }
 
-        // First, ensure any existing episode with the same number in the same season is
-        // removed to prevent duplicates
-        // This is a safety measure in case deleteEpisodeById missed something or XML is
-        // inconsistent
         xml = removeEpisodeNumberFromSeason(xml, seasonNum, episodeNum);
 
         if (xml.contains(seasonTag)) {
@@ -530,7 +505,6 @@ public class SeriesService {
     }
 
     private String removeEpisodeNumberFromSeason(String xml, int seasonNum, int episodeNum) {
-        // Find the specific season block
         String seasonStartTag = "<Season number=\"" + seasonNum + "\">";
         int start = xml.indexOf(seasonStartTag);
         if (start == -1)
@@ -541,8 +515,6 @@ public class SeriesService {
             return xml;
 
         String seasonContent = xml.substring(start, end);
-        // Regex to find any Episode tag with the same number within this season
-        // Added (?s) for multi-line support
         String pattern = "(?s)<Episode\\s+number=\"" + episodeNum + "\"[^>]*>.*?</Episode>";
         String newSeasonContent = seasonContent.replaceAll(pattern, "");
 
@@ -552,14 +524,12 @@ public class SeriesService {
     private String removeEpisodeFromXML(String xml, String episodeUUID) {
         if (xml == null)
             return null;
-        // Use (?s) to match newlines if they exist within the tag
         String patternString = "(?s)<Episode[^>]*>" + Pattern.quote(episodeUUID) + "</Episode>";
         return xml.replaceAll(patternString, "").trim();
     }
 
     public List<Episode> getRecentEpisodesWithMetadata(int limit) {
-        List<Episode> episodes = repository.findRecentEpisodes(limit);
-        return episodes;
+        return repository.findRecentEpisodes(limit);
     }
 
     public boolean hasEpisodeCollision(UUID seriesId, int season, int episodeNum, UUID excludeId) {

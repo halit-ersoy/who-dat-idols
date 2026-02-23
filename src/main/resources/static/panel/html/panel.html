@@ -443,11 +443,13 @@
                                         <option value="Lehçe">Lehçe</option>
                                     </select>
                                 </div>
-                                <div class="form-group"
-                                    style="display: flex; align-items: center; gap: 10px; margin-top: 25px;">
-                                    <input type="checkbox" id="seriesIsFinal" style="width: auto; margin-bottom: 0;">
-                                    <label for="seriesIsFinal" style="margin-bottom: 0; cursor: pointer;">Final
-                                        Yaptı</label>
+                                <div class="form-group">
+                                    <label for="seriesStatus">Dizi Durumu</label>
+                                    <select id="seriesStatus">
+                                        <option value="0">Devam Ediyor</option>
+                                        <option value="1">Final</option>
+                                        <option value="2">Sezon Finali</option>
+                                    </select>
                                 </div>
                                 <div class="form-group">
                                     <label for="seriesCountry">Yapımcı Ülke</label>
@@ -528,11 +530,13 @@
                                     <label for="episodeNum">Bölüm No</label>
                                     <input type="number" id="episodeNum" value="1" min="1" required>
                                 </div>
-                                <div class="form-group"
-                                    style="display: flex; align-items: center; gap: 10px; margin-top: 25px;">
-                                    <input type="checkbox" id="episodeIsFinal" style="width: auto; margin-bottom: 0;">
-                                    <label for="episodeIsFinal" style="margin-bottom: 0; cursor: pointer;">Final
-                                        Yaptı</label>
+                                <div class="form-group">
+                                    <label for="episodeSeriesStatus">Dizi Durumu</label>
+                                    <select id="episodeSeriesStatus">
+                                        <option value="0">Devam Ediyor</option>
+                                        <option value="1">Final</option>
+                                        <option value="2">Sezon Finali</option>
+                                    </select>
                                 </div>
 
                                 <!-- Bölüm Dosyası (Her iki durumda da gerekli) -->

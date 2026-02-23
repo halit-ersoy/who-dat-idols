@@ -103,8 +103,9 @@ export function initFeaturedContent() {
                 el.innerHTML = `
                     <div class="item-thumb img-skeleton">
                         <img src="${item.image}" alt="${item.title}">
-                        ${item.isFinal ? '<span class="badge final-badge">Final</span>' : ''}
                     </div>
+                    ${item.finalStatus === 1 ? '<span class="badge final-badge">Final</span>' : ''}
+                    ${item.finalStatus === 2 ? '<span class="badge final-badge season-final">Sezon Finali</span>' : ''}
                     <div class="item-details">
                         <div class="item-header">
                             <div class="title-container">

@@ -49,8 +49,7 @@ public class SeriesRepository {
                             "    CREATE NONCLUSTERED INDEX idx_episode_slug ON Episode(slug); " +
                             "END");
 
-            // One-time populate missing slugs for episodes (crude name-based fallback if
-            // SlugUtil wasn't used)
+            // One-time populate missing slugs for episodes
             jdbcTemplate.execute(
                     "UPDATE Episode SET slug = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(name, ' ', '-'), 'ı', 'i'), 'ğ', 'g'), 'ü', 'u'), 'ş', 's')) WHERE slug IS NULL OR slug = ''");
 
@@ -68,6 +67,14 @@ public class SeriesRepository {
                             "    CREATE NONCLUSTERED INDEX idx_series_slug ON Series(slug); " +
                             "END");
 
+            // Ensure finalStatus is INT (In case it was previously BIT/BOOLEAN)
+            jdbcTemplate.execute(
+                    "IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Series' AND COLUMN_NAME = 'finalStatus' AND DATA_TYPE = 'bit') "
+                            +
+                            "BEGIN " +
+                            "    ALTER TABLE Series ALTER COLUMN finalStatus INT; " +
+                            "END");
+
             jdbcTemplate.execute(
                     "IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Series' AND COLUMN_NAME = 'finalStatus') "
                             +
@@ -75,7 +82,6 @@ public class SeriesRepository {
                             "    ALTER TABLE Series ADD finalStatus INT DEFAULT 0; " +
                             "END");
 
-            // One-time populate missing slugs (Simple SQL version for existing data)
             jdbcTemplate.execute(
                     "UPDATE Series SET slug = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(name, ' ', '-'), 'ı', 'i'), 'ğ', 'g'), 'ü', 'u'), 'ş', 's')) WHERE slug IS NULL OR slug = ''");
         } catch (Exception e) {
@@ -91,27 +97,21 @@ public class SeriesRepository {
         s.setSummary(rs.getString("Summary"));
         s.setLanguage(rs.getString("Language"));
 
-        // Handle nullable Country
         try {
             s.setCountry(rs.getString("Country"));
         } catch (Exception e) {
-            // Column might not exist in some projections or failures
         }
 
-        // Handle nullable SeriesType
         try {
             s.setSeriesType(rs.getString("SeriesType"));
         } catch (Exception e) {
-            // Column might not exist
         }
 
         try {
             s.setSlug(rs.getString("slug"));
         } catch (Exception e) {
-            // Column might not exist
         }
 
-        // Handle nullable finalStatus
         Object fs = rs.getObject("finalStatus");
         if (fs instanceof Integer) {
             s.setFinalStatus((Integer) fs);
@@ -127,14 +127,11 @@ public class SeriesRepository {
                 s.setUploadDate(ts.toLocalDateTime());
             }
         } catch (Exception e) {
-            // Might not exist in all queries
         }
 
-        // Check if episodeCount column exists in RS (it will when using the new query)
         try {
             s.setEpisodeCount(rs.getInt("episodeCount"));
         } catch (Exception e) {
-            // Column might not exist in all queries using this mapper
         }
         return s;
     };
@@ -147,7 +144,6 @@ public class SeriesRepository {
         e.setReleaseYear(rs.getInt("ReleaseYear"));
         e.setUploadDate(rs.getTimestamp("uploadDate").toLocalDateTime());
 
-        // Handle new columns if they exist (they should after migration)
         String seriesId = rs.getString("SeriesId");
         if (seriesId != null)
             e.setSeriesId(UUID.fromString(seriesId));
@@ -158,7 +154,6 @@ public class SeriesRepository {
         try {
             e.setSlug(rs.getString("slug"));
         } catch (Exception ex) {
-            // Column might not exist
         }
 
         return e;
@@ -263,7 +258,6 @@ public class SeriesRepository {
     }
 
     private void updateSeriesCategories(UUID seriesId, String categoriesStr) {
-        // Clear existing
         jdbcTemplate.update("DELETE FROM SeriesCategories WHERE SeriesID = ?", seriesId.toString());
 
         if (categoriesStr != null && !categoriesStr.isBlank()) {
@@ -272,7 +266,6 @@ public class SeriesRepository {
                 if (trimmed.isEmpty())
                     continue;
 
-                // Ensure category exists
                 jdbcTemplate.update(
                         "IF NOT EXISTS (SELECT 1 FROM Categories WHERE Name = ?) INSERT INTO Categories (Name) VALUES (?)",
                         trimmed, trimmed);
@@ -379,16 +372,6 @@ public class SeriesRepository {
                     WHERE S.slug = ?
                     """;
             return jdbcTemplate.queryForObject(sql, seriesRowMapper, slug);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    public Episode findEpisodeBySeriesIdAndSeasonAndEpisodeNumber(UUID seriesId, int season, int episodeNumber) {
-        try {
-            return jdbcTemplate.queryForObject(
-                    "SELECT TOP 1 * FROM Episode WHERE SeriesId = ? AND SeasonNumber = ? AND EpisodeNumber = ?",
-                    episodeRowMapper, seriesId.toString(), season, episodeNumber);
         } catch (Exception e) {
             return null;
         }

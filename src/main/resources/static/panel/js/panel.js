@@ -932,7 +932,7 @@
             formData.append('language', document.getElementById('seriesLanguage').value);
             formData.append('country', document.getElementById('seriesCountry').value);
             formData.append('seriesType', document.getElementById('seriesType').value);
-            formData.append('finalStatus', document.getElementById('seriesIsFinal').checked ? 1 : 0);
+            formData.append('finalStatus', document.getElementById('seriesStatus').value);
             if (seriesImageInput.files.length > 0) {
                 formData.append('image', seriesImageInput.files[0]);
             }
@@ -971,6 +971,17 @@
             formData.append('episodeId', epId);
             formData.append('season', document.getElementById('seasonNum').value);
             formData.append('episodeNum', document.getElementById('episodeNum').value);
+
+            // Add finalStatus even in episode edit mode
+            let finalStatus = 0;
+            const seriesStatusEl = document.getElementById('seriesStatus');
+            const episodeSeriesStatusEl = document.getElementById('episodeSeriesStatus');
+            if (seriesStatusEl && seriesStatusEl.offsetParent !== null) {
+                finalStatus = seriesStatusEl.value;
+            } else if (episodeSeriesStatusEl && episodeSeriesStatusEl.offsetParent !== null) {
+                finalStatus = episodeSeriesStatusEl.value;
+            }
+            formData.append('finalStatus', finalStatus);
 
             if (seriesFileInput.files.length > 0) {
                 formData.append('file', seriesFileInput.files[0]);
@@ -1027,9 +1038,17 @@
         formData.append('episode', document.getElementById('episodeNum').value);
         if (seriesFileInput.files.length > 0) formData.append('file', seriesFileInput.files[0]);
 
-        // UNIFIED finalStatus: Check both checkboxes based on existence
-        const isFinal = document.getElementById('episodeIsFinal').checked || document.getElementById('seriesIsFinal').checked;
-        formData.append('finalStatus', isFinal ? 1 : 0);
+        // UNIFIED finalStatus: Check both selects based on UI state
+        let finalStatus = 0;
+        const seriesStatusEl = document.getElementById('seriesStatus');
+        const episodeSeriesStatusEl = document.getElementById('episodeSeriesStatus');
+
+        if (seriesStatusEl && seriesStatusEl.offsetParent !== null) {
+            finalStatus = seriesStatusEl.value;
+        } else if (episodeSeriesStatusEl && episodeSeriesStatusEl.offsetParent !== null) {
+            finalStatus = episodeSeriesStatusEl.value;
+        }
+        formData.append('finalStatus', finalStatus);
 
         if (mode === 'existing') {
             if (!existingId) return alert("Lütfen bir dizi seçin!");
@@ -1158,6 +1177,8 @@
                                         <span class="meta-item"><i class="fas fa-tags"></i> ${series.category || 'Genel'}</span>
                                         <span class="meta-item"><i class="fas fa-globe"></i> ${series.language || '-'}</span>
                                         <span class="meta-item"><i class="fas fa-video"></i> ${episodeCount} Bölüm</span>
+                                        ${series.finalStatus === 1 ? '<span class="meta-item" style="color:#ffc107; font-weight:bold;"><i class="fas fa-check-circle"></i> FİNAL</span>' : ''}
+                                        ${series.finalStatus === 2 ? '<span class="meta-item" style="color:#1ed760; font-weight:bold;"><i class="fas fa-play-circle"></i> SEZON FİNALİ</span>' : ''}
                                     </div>
                                 </div>
                             </div>
@@ -1311,7 +1332,7 @@
         document.getElementById('seriesType').value = series.seriesType || 'Dizi';
 
         // Final Status population
-        document.getElementById('seriesIsFinal').checked = series.finalStatus === 1;
+        document.getElementById('seriesStatus').value = series.finalStatus || 0;
 
         // Language matching
         const languageSelect = document.getElementById('seriesLanguage');

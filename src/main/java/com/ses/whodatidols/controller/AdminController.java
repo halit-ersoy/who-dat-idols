@@ -158,7 +158,6 @@ public class AdminController {
             @RequestParam("summary") String summary,
             @RequestParam(value = "country", required = false) String country) {
         try {
-            // Video file is optional if external sources are used
             movie.setCountry(country);
             movieService.saveMovieWithFile(movie, file, image, summary);
 
@@ -248,8 +247,6 @@ public class AdminController {
             @RequestParam("episode") int episode,
             @RequestParam(value = "overwrite", defaultValue = "false") boolean overwrite) {
         try {
-            // Video file is optional if external sources are used
-
             if (existingSeriesId != null) {
                 seriesInfo.setId(existingSeriesId);
             }
@@ -292,10 +289,11 @@ public class AdminController {
             @RequestParam("episodeId") UUID episodeId,
             @RequestParam("season") int season,
             @RequestParam("episodeNum") int episodeNum,
+            @RequestParam("finalStatus") int finalStatus,
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam(value = "overwrite", defaultValue = "false") boolean overwrite) {
         try {
-            seriesService.updateEpisode(episodeId, season, episodeNum, file, overwrite);
+            seriesService.updateEpisode(episodeId, season, episodeNum, finalStatus, file, overwrite);
             return ResponseEntity.ok("{\"id\": \"" + episodeId + "\", \"message\": \"Bölüm güncellendi.\"}");
         } catch (com.ses.whodatidols.exception.DuplicateConflictException e) {
             return ResponseEntity.status(409).body("{\"error\": \"" + e.getMessage() + "\"}");
@@ -655,8 +653,6 @@ public class AdminController {
         }
     }
 
-    // Comment Moderation Endpoints
-
     @GetMapping("/comment-moderation/pending")
     public ResponseEntity<List<CommentViewModel>> getPendingComments() {
         try {
@@ -703,8 +699,6 @@ public class AdminController {
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
         }
     }
-
-    // FEEDBACK MANAGEMENT
 
     @GetMapping("/feedbacks")
     public ResponseEntity<List<Map<String, Object>>> getAllFeedbacks() {
