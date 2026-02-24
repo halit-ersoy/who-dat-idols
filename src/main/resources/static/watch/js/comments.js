@@ -1,5 +1,7 @@
 // comments.js
 import { isUserLoggedIn } from '../../elements/userLogged.js';
+import { showReportModal } from '../../elements/premium-modals.js';
+
 
 export function initCommentsSection(videoId) {
     const commentForm = document.getElementById('commentForm');
@@ -220,6 +222,7 @@ export function initCommentsSection(videoId) {
             </button>
             ${isLoggedIn ? `<button class="action-button reply-btn" data-id="${c.id}"><i class="far fa-comment"></i> Yanıtla</button>` : ''}
             ${c.author ? `<button class="action-button delete-btn" data-id="${c.id}"><i class="far fa-trash-alt"></i> Sil</button>` : ''}
+            ${isLoggedIn && !c.author ? `<button class="action-button report-btn" data-id="${c.id}" data-nickname="${c.nickname}"><i class="far fa-flag"></i> Bildir</button>` : ''}
           </div>
           <div class="reply-form-container" id="reply-form-${c.id}" style="display:none; margin-top:10px;">
                 <textarea id="reply-input-${c.id}" class="comment-input" placeholder="Yanıtınızı yazın..." rows="2"></textarea>
@@ -262,6 +265,11 @@ export function initCommentsSection(videoId) {
         const submitReplyBtn = card.querySelector('.submit-reply-btn');
         if (submitReplyBtn) {
             submitReplyBtn.onclick = () => onSubmitComment(null, c.id);
+        }
+
+        const reportBtn = card.querySelector('.report-btn');
+        if (reportBtn) {
+            reportBtn.onclick = () => handleReportComment(c.nickname, c.comment);
         }
 
 
@@ -328,5 +336,19 @@ export function initCommentsSection(videoId) {
     function incrementCommentCount() {
         const span = document.querySelector('.comment-count');
         if (span) span.textContent = +span.textContent + 1;
+    }
+
+    async function handleReportComment(nickname, commentText) {
+        showReportModal(nickname, 'Yorum', (reason) => {
+            return fetch('/api/user/report', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nickname: nickname,
+                    reason: reason,
+                    context: `Yorum: "${commentText.substring(0, 100)}${commentText.length > 100 ? '...' : ''}"`
+                })
+            }).then(res => res.ok);
+        });
     }
 }

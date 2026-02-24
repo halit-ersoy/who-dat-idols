@@ -45,6 +45,13 @@ export function initLogin() {
                     `;
                     loginBtn.parentNode.replaceChild(profileSection, loginBtn);
 
+                    // Messaging icon visibility
+                    const messagesWrapper = document.getElementById('messages-wrapper');
+                    if (messagesWrapper) {
+                        const isMessagingEnabled = data.allowMessages === true || data.allowMessages === 1 || data.allowMessages === "true";
+                        messagesWrapper.style.display = isMessagingEnabled ? 'block' : 'none';
+                    }
+
                     const profileBtn = profileSection.querySelector('.profile-btn');
                     const dropdown = profileSection.querySelector('.profile-dropdown');
                     if (profileBtn && dropdown) {
@@ -79,6 +86,12 @@ export function initLogin() {
         localStorage.removeItem('wdiUserToken');
         localStorage.removeItem('wdiUserNickname');
         document.cookie = 'wdiAuth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
+        const messagesWrapper = document.getElementById('messages-wrapper');
+        if (messagesWrapper) {
+            messagesWrapper.style.display = 'none';
+        }
+
         window.location.reload();
     }
 

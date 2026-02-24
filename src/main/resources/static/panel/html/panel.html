@@ -65,6 +65,95 @@
             align-items: center;
             justify-content: center;
         }
+
+        /* Message Monitoring Styles */
+        .monitoring-container {
+            display: flex;
+            gap: 20px;
+            height: 600px;
+            background: #141414;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .monitoring-sidebar {
+            width: 300px;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            background: #0f0f0f;
+        }
+
+        .monitoring-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .monitoring-item {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .monitoring-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .monitoring-item.active {
+            background: rgba(30, 215, 96, 0.1);
+            border-left: 3px solid #1ed760;
+        }
+
+        .monitoring-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #0a0a0a;
+        }
+
+        .monitoring-chat-header {
+            padding: 15px 20px;
+            background: #141414;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-weight: 600;
+        }
+
+        .monitoring-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .monitoring-bubble {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .monitoring-bubble.sent {
+            align-self: flex-start;
+            background: #252525;
+            color: #ddd;
+        }
+
+        .monitoring-bubble.received {
+            align-self: flex-end;
+            background: #1ed760;
+            color: black;
+        }
+
+        .monitoring-info {
+            font-size: 0.7rem;
+            margin-top: 4px;
+            opacity: 0.5;
+        }
     </style>
     <script src="/homepage/js/devtools-protection.js"></script>
 </head>
@@ -104,6 +193,14 @@
                 </a>
                 <a href="#user-section" class="nav-link" data-section="user-section">
                     <i class="fas fa-users"></i> Kullanıcılar
+                </a>
+                <a href="#messages-monitoring-section" class="nav-link" data-section="messages-monitoring-section"
+                    id="nav-messages-monitoring">
+                    <i class="fas fa-comment-medical"></i> Mesaj İzleme
+                </a>
+                <a href="#user-reports-section" class="nav-link" data-section="user-reports-section"
+                    id="nav-user-reports">
+                    <i class="fas fa-flag"></i> Kullanıcı Raporları
                 </a>
                 <a href="#announcement-section" class="nav-link" data-section="announcement-section">
                     <i class="fas fa-bullhorn"></i> Duyuru Ayarları
@@ -1220,6 +1317,65 @@
                             </thead>
                             <tbody id="bannedIpsTableBody">
                                 <!-- Yasaklı IP'ler buraya gelecek -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MESSAGES MONITORING SECTION -->
+            <section id="messages-monitoring-section" class="admin-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-comment-medical"></i> Kullanıcı Yazışma İzleme</h2>
+                    </div>
+                    <div class="monitoring-container">
+                        <div class="monitoring-sidebar">
+                            <div style="padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <input type="text" id="monitoringSearch" placeholder="Kullanıcı ara..."
+                                    style="width:100%; padding:8px; border-radius:6px; background:#1a1a1a; border:1px solid #333; color:white; font-size:0.8rem;">
+                            </div>
+                            <div id="monitoringList" class="monitoring-list">
+                                <!-- Dinamik yüklenecek -->
+                            </div>
+                        </div>
+                        <div class="monitoring-chat">
+                            <div id="monitoringChatHeader" class="monitoring-chat-header">
+                                Sohbet seçilmedi
+                            </div>
+                            <div id="monitoringMessages" class="monitoring-messages">
+                                <div style="text-align:center; margin-top:100px; color:#666;">
+                                    <i class="fas fa-comments" style="font-size:3rem; margin-bottom:15px;"></i>
+                                    <p>İzlemek istediğiniz bir sohbeti seçin</p>
+                                </div>
+                            </div>
+                        </div>
+            </section>
+
+            <!-- USER REPORTS SECTION -->
+            <section id="user-reports-section" class="admin-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header"
+                        style="justify-content: space-between; display: flex; align-items: center;">
+                        <h2><i class="fas fa-flag"></i> Kullanıcı Raporları</h2>
+                        <button class="btn btn-sm btn-secondary" onclick="fetchUserReports()">
+                            <i class="fas fa-sync-alt"></i> Yenile
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Tarih</th>
+                                    <th>Bildiren</th>
+                                    <th>Bildirilen</th>
+                                    <th>Neden</th>
+                                    <th>Bağlam</th>
+                                    <th>İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userReportsTableBody">
+                                <!-- Raporlar buraya gelecek -->
                             </tbody>
                         </table>
                     </div>

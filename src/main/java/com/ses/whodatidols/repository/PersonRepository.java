@@ -213,7 +213,8 @@ public class PersonRepository {
     }
 
     public Optional<Person> findByNicknameOrEmail(String usernameOrEmail) {
-        String sql = "SELECT ID, nickname, name, surname, email, password, isBanned, banReason, role FROM [WhoDatIdols].[dbo].[Person] WHERE nickname = ? OR email = ?";
+        ensureAllowMessagesColumnExists();
+        String sql = "SELECT ID, nickname, name, surname, email, password, isBanned, banReason, role, allowMessages FROM [WhoDatIdols].[dbo].[Person] WHERE nickname = ? OR email = ?";
         return jdbcTemplate.query(sql, (rs) -> {
             if (rs.next()) {
                 Person p = new Person();
@@ -226,6 +227,7 @@ public class PersonRepository {
                 p.setBanned(rs.getBoolean("isBanned"));
                 p.setBanReason(rs.getString("banReason"));
                 p.setRole(rs.getString("role"));
+                p.setAllowMessages(rs.getBoolean("allowMessages"));
                 return Optional.of(p);
             }
             return Optional.empty();
@@ -260,7 +262,8 @@ public class PersonRepository {
     }
 
     public Map<String, Object> getUserInfoByCookie(String cookie) {
-        String sql = "EXEC GetUserInfoByCookie @cookie = ?";
+        ensureAllowMessagesColumnExists();
+        String sql = "SELECT ID, nickname, name, surname, email, isBanned, banReason, role, allowMessages FROM [WhoDatIdols].[dbo].[Person] WHERE cookie = ?";
         return jdbcTemplate.queryForMap(sql, UUID.fromString(cookie));
     }
 
@@ -276,13 +279,8 @@ public class PersonRepository {
     }
 
     public List<Person> findAllUsers() {
-        try {
-            jdbcTemplate.execute(
-                    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Person') AND name = 'role') ALTER TABLE Person ADD role NVARCHAR(50) DEFAULT 'USER'");
-        } catch (Exception e) {
-        }
-
-        String sql = "SELECT ID, nickname, name, surname, email, isBanned, banReason, role FROM [WhoDatIdols].[dbo].[Person] ORDER BY nickname ASC";
+        ensureAllowMessagesColumnExists();
+        String sql = "SELECT ID, nickname, name, surname, email, isBanned, banReason, role, allowMessages FROM [WhoDatIdols].[dbo].[Person] ORDER BY nickname ASC";
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
             Person p = new Person();
             p.setId(UUID.fromString(rs.getString("ID")));
@@ -293,6 +291,7 @@ public class PersonRepository {
             p.setBanned(rs.getBoolean("isBanned"));
             p.setBanReason(rs.getString("banReason"));
             p.setRole(rs.getString("role"));
+            p.setAllowMessages(rs.getBoolean("allowMessages"));
             return p;
         });
     }
@@ -312,5 +311,54 @@ public class PersonRepository {
                 (ban ? ", cookie = NULL " : "") +
                 "WHERE ID = ?";
         jdbcTemplate.update(sql, ban ? 1 : 0, reason, userId.toString());
+    }
+
+    private void ensureAllowMessagesColumnExists() {
+        try {
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('[WhoDatIdols].[dbo].[Person]') AND name = 'role') ALTER TABLE [WhoDatIdols].[dbo].[Person] ADD role NVARCHAR(50) DEFAULT 'USER'");
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('[WhoDatIdols].[dbo].[Person]') AND name = 'allowMessages') ALTER TABLE [WhoDatIdols].[dbo].[Person] ADD allowMessages BIT DEFAULT 1");
+            // Ensure existing users have it set correctly (SQL Server fix)
+            jdbcTemplate
+                    .execute("UPDATE [WhoDatIdols].[dbo].[Person] SET allowMessages = 1 WHERE allowMessages IS NULL");
+            jdbcTemplate.execute("UPDATE [WhoDatIdols].[dbo].[Person] SET isBanned = 0 WHERE isBanned IS NULL");
+            jdbcTemplate.execute("UPDATE [WhoDatIdols].[dbo].[Person] SET role = 'USER' WHERE role IS NULL");
+        } catch (Exception e) {
+            // Log or handle error if needed, but suppressed for auto-migration
+        }
+    }
+
+    public void updateAllowMessages(UUID userId, boolean allow) {
+        ensureAllowMessagesColumnExists();
+        String sql = "UPDATE [WhoDatIdols].[dbo].[Person] SET allowMessages = ? WHERE ID = ?";
+        jdbcTemplate.update(sql, allow ? 1 : 0, userId.toString());
+    }
+
+    public void updateAllowMessagesByCookie(String cookie, boolean allow) {
+        ensureAllowMessagesColumnExists();
+        String sql = "UPDATE [WhoDatIdols].[dbo].[Person] SET allowMessages = ? WHERE cookie = ?";
+        jdbcTemplate.update(sql, allow ? 1 : 0, UUID.fromString(cookie));
+    }
+
+    public List<Person> searchUsersForMessaging(String query, String excludeNickname) {
+        ensureAllowMessagesColumnExists();
+        String sql = "SELECT ID, nickname, name, surname, profilePhoto, role FROM [WhoDatIdols].[dbo].[Person] " +
+                "WHERE (nickname LIKE ? OR name LIKE ? OR surname LIKE ?) " +
+                "AND (allowMessages = 1 OR allowMessages IS NULL) " +
+                "AND (isBanned = 0 OR isBanned IS NULL) " +
+                "AND nickname != ? " +
+                "ORDER BY nickname ASC";
+        String searchPattern = "%" + query + "%";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            Person p = new Person();
+            p.setId(UUID.fromString(rs.getString("ID")));
+            p.setNickname(rs.getString("nickname"));
+            p.setName(rs.getString("name"));
+            p.setSurname(rs.getString("surname"));
+            p.setProfilePhoto(rs.getString("profilePhoto"));
+            p.setRole(rs.getString("role"));
+            return p;
+        }, searchPattern, searchPattern, searchPattern, excludeNickname);
     }
 }

@@ -10,10 +10,11 @@ document.addEventListener('DOMContentLoaded', () => {
     initHeaderScroll();
 
     setupProfileSection()
-        .then(() => {
+        .then((userData) => {
             initSettingsNavigation();
             initPasswordForm();
             initNotificationToggles();
+            initMessageToggles(userData.allowMessages);
         })
         .catch(error => {
             console.error('Initialization error:', error);
@@ -47,6 +48,7 @@ async function setupProfileSection() {
     document.getElementById('input-email').value = data.email || '';
 
     initProfileForm();
+    return data;
 }
 
 function initProfileForm() {
@@ -260,4 +262,54 @@ function setNotificationPreference(enabled) {
 function setNotificationUIState(enabled) {
     document.getElementById('notifications-on').classList.toggle('active', enabled);
     document.getElementById('notifications-off').classList.toggle('active', !enabled);
+}
+
+/**
+ * Initializes direct message toggle buttons.
+ */
+function initMessageToggles(initialState) {
+    const onBtn = document.getElementById('messages-on');
+    const offBtn = document.getElementById('messages-off');
+
+    if (!onBtn || !offBtn) return;
+
+    setMessageUIState(initialState);
+
+    onBtn.addEventListener('click', () => setMessagePreference(true));
+    offBtn.addEventListener('click', () => setMessagePreference(false));
+}
+
+async function setMessagePreference(enabled) {
+    try {
+        const response = await fetch('/api/user/settings/toggle-messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ allow: enabled })
+        });
+
+        if (response.ok) {
+            setMessageUIState(enabled);
+        } else {
+            alert('Ayarlar güncellenirken bir hata oluştu.');
+        }
+    } catch (error) {
+        console.error('Error toggling messages:', error);
+    }
+}
+
+function setMessageUIState(enabled) {
+    // Backend returns bit/boolean, sometimes 1/0
+    const isEnabled = enabled === true || enabled === 1 || enabled === "true";
+
+    const onBtn = document.getElementById('messages-on');
+    const offBtn = document.getElementById('messages-off');
+
+    if (onBtn) onBtn.classList.toggle('active', isEnabled);
+    if (offBtn) offBtn.classList.toggle('active', !isEnabled);
+
+    // Sync header icon visibility
+    const messagesWrapper = document.getElementById('messages-wrapper');
+    if (messagesWrapper) {
+        messagesWrapper.style.display = isEnabled ? 'block' : 'none';
+    }
 }

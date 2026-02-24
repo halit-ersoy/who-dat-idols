@@ -56,6 +56,7 @@ public class AdminController {
     private final FeedbackRepository feedbackRepository;
     private final SecurityViolationRepository securityViolationRepository;
     private final BannedIpRepository bannedIpRepository;
+    private final com.ses.whodatidols.repository.MessageRepository messageRepository;
 
     @Value("${media.source.trailers.path}")
     private String trailersPath;
@@ -78,7 +79,8 @@ public class AdminController {
             VideoSourceRepository videoSourceRepository, PersonRepository personRepository,
             CommentRepository commentRepository, com.ses.whodatidols.repository.HeroRepository heroRepository,
             TranslationService translationService, FeedbackRepository feedbackRepository,
-            SecurityViolationRepository securityViolationRepository, BannedIpRepository bannedIpRepository) {
+            SecurityViolationRepository securityViolationRepository, BannedIpRepository bannedIpRepository,
+            com.ses.whodatidols.repository.MessageRepository messageRepository) {
         this.movieService = movieService;
         this.seriesService = seriesService;
         this.tvMazeService = tvMazeService;
@@ -91,6 +93,7 @@ public class AdminController {
         this.feedbackRepository = feedbackRepository;
         this.securityViolationRepository = securityViolationRepository;
         this.bannedIpRepository = bannedIpRepository;
+        this.messageRepository = messageRepository;
     }
 
     @GetMapping("/panel")
@@ -790,6 +793,30 @@ public class AdminController {
     @DeleteMapping("/security/banned-ips/{ip:.+}")
     public ResponseEntity<Void> unbanIp(@PathVariable("ip") String ip) {
         bannedIpRepository.deleteByIp(ip);
+        return ResponseEntity.ok().build();
+    }
+
+    // MESSAGE MONITORING
+    @GetMapping("/messages/conversations")
+    public ResponseEntity<List<com.ses.whodatidols.model.Message>> getAllConversations() {
+        return ResponseEntity.ok(messageRepository.getAllConversations());
+    }
+
+    @GetMapping("/messages/history/{u1}/{u2}")
+    public ResponseEntity<List<com.ses.whodatidols.model.Message>> getAdminChatHistory(@PathVariable("u1") UUID u1,
+            @PathVariable("u2") UUID u2) {
+        return ResponseEntity.ok(messageRepository.getChatHistory(u1, u2));
+    }
+
+    // USER REPORTS
+    @GetMapping("/reports")
+    public ResponseEntity<List<java.util.Map<String, Object>>> getAllReports() {
+        return ResponseEntity.ok(messageRepository.getAllReports());
+    }
+
+    @PostMapping("/reports/{id}/resolve")
+    public ResponseEntity<Void> resolveReport(@PathVariable("id") UUID id) {
+        messageRepository.resolveReport(id);
         return ResponseEntity.ok().build();
     }
 }

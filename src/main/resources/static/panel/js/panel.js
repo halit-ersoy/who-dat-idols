@@ -29,6 +29,10 @@
                 fetchSecurityViolations();
             } else if (targetId === 'banned-ips-section') {
                 fetchBannedIps();
+            } else if (targetId === 'messages-monitoring-section') {
+                fetchAdminConversations();
+            } else if (targetId === 'user-reports-section') {
+                fetchUserReports();
             }
 
             // Scroll to top of main content
@@ -136,9 +140,28 @@
                 const movieLink = document.querySelector('.nav-link[data-section="movie-section"]');
                 if (movieLink) movieLink.click();
             } else if (!isSuperAdmin) {
-                // Regular Admin: Hide user management
+                // Regular Admin: Hide user management and messages monitoring
                 const userNavLink = document.querySelector('.nav-link[data-section="user-section"]');
                 if (userNavLink) userNavLink.style.display = 'none';
+
+                const messagesNavLink = document.getElementById('nav-messages-monitoring');
+                if (messagesNavLink) messagesNavLink.style.display = 'none';
+
+                const reportsNavLink = document.getElementById('nav-user-reports');
+                if (reportsNavLink) reportsNavLink.style.display = 'none';
+            }
+
+            // Reports & Monitoring Visibility (ONLY Kurucu & Gelistirici)
+            const canMonitorSafety = user.roles.includes('ROLE_KURUCU') || user.roles.includes('ROLE_GELISTIRICI');
+
+            const messagesNavLink = document.getElementById('nav-messages-monitoring');
+            if (messagesNavLink && !canMonitorSafety) {
+                messagesNavLink.style.display = 'none';
+            }
+
+            const reportsNavLink = document.getElementById('nav-user-reports');
+            if (reportsNavLink && !canMonitorSafety) {
+                reportsNavLink.style.display = 'none';
             }
 
             if (isSuperAdmin) {
@@ -2407,7 +2430,9 @@
     };
 
     function fetchUsers() {
-        const isSuperAdmin = window.currentAdmin && window.currentAdmin.roles.includes('ROLE_SUPER_ADMIN');
+        const roles = window.currentAdmin ? window.currentAdmin.roles : [];
+        const isSuperAdmin = roles.includes('ROLE_SUPER_ADMIN') || roles.includes('ROLE_KURUCU') || roles.includes('ROLE_GELISTIRICI');
+
         if (!isSuperAdmin) return;
 
         fetch('/admin/users')
@@ -2430,14 +2455,20 @@
                         '<span class="badge" style="background:#dc3545; color:#fff; padding:4px 8px; border-radius:4px; font-weight: 700;">Yasaklı</span>' :
                         '<span class="badge" style="background:#1ed760; color:#fff; padding:4px 8px; border-radius:4px; font-weight: 700;">Aktif</span>';
 
+                    const nicknameDisplay = user.nickname || '-';
+                    const emailDisplay = user.email || '-';
+                    const nameDisplay = user.name || '';
+                    const surnameDisplay = user.surname || '';
+                    const fullNameDisplay = (nameDisplay || surnameDisplay) ? `${nameDisplay} ${surnameDisplay}`.trim() : '-';
+
                     tr.innerHTML = `
-                        <td style="font-weight: 600;">${user.nickname}</td>
-                        <td title="${user.email || '-'}">${(user.email && user.email.length > 25) ? user.email.substring(0, 25) + '...' : (user.email || '-')}</td>
-                        <td>${user.name} ${user.surname}</td>
+                        <td style="font-weight: 600;">${nicknameDisplay}</td>
+                        <td title="${emailDisplay}">${(emailDisplay.length > 25) ? emailDisplay.substring(0, 25) + '...' : emailDisplay}</td>
+                        <td>${fullNameDisplay}</td>
                         <td>
                             <div class="premium-role-select">
-                                <div class="role-badge-display" onclick="toggleRoleDropdown(this)" data-role="${user.role}">
-                                    <span>${user.role}</span>
+                                <div class="role-badge-display" onclick="toggleRoleDropdown(this)" data-role="${user.role || 'USER'}">
+                                    <span>${user.role || 'USER'}</span>
                                     <i class="fas fa-chevron-down"></i>
                                 </div>
                                 <div class="role-dropdown-menu">
@@ -2455,9 +2486,9 @@
                             <div class="action-btn-group">
                                 ${isBanned ?
                             `<button class="action-btn-premium btn-unban" onclick="toggleUserBan('${user.id}', false, '')" title="Yasağı Kaldır"><i class="fas fa-undo"></i></button>` :
-                            `<button class="action-btn-premium btn-ban" onclick="openBanModal('${user.id}', '${user.nickname}')" title="Yasakla"><i class="fas fa-ban"></i></button>`
+                            `<button class="action-btn-premium btn-ban" onclick="openBanModal('${user.id}', '${nicknameDisplay.replace(/'/g, "\\'")}')" title="Yasakla"><i class="fas fa-ban"></i></button>`
                         }
-                                <button class="action-btn-premium btn-delete" onclick="deleteUser('${user.id}', '${user.nickname}')" title="Kullanıcıyı Sil"><i class="fas fa-trash"></i></button>
+                                <button class="action-btn-premium btn-delete" onclick="deleteUser('${user.id}', '${nicknameDisplay.replace(/'/g, "\\'")}')" title="Kullanıcıyı Sil"><i class="fas fa-trash"></i></button>
                             </div>
                         </td>
                     `;
@@ -3206,6 +3237,165 @@
                 } else {
                     alert("İşlem başarısız.");
                 }
+            })
+            .catch(err => alert("Hata: " + err));
+    };
+
+    /* ===========================================================
+       MESSAGES MONITORING
+       =========================================================== */
+    let allAdminConversations = [];
+
+    function fetchAdminConversations() {
+        fetch('/admin/messages/conversations')
+            .then(res => res.json())
+            .then(data => {
+                allAdminConversations = data;
+                renderAdminConversations(data);
+            })
+            .catch(err => console.error("Admin conversions error:", err));
+    }
+
+    function renderAdminConversations(conversations) {
+        const listContainer = document.getElementById('monitoringList');
+        if (!listContainer) return;
+
+        listContainer.innerHTML = '';
+
+        if (conversations.length === 0) {
+            listContainer.innerHTML = '<div style="padding:20px; text-align:center; color:#666;">Henüz konuşma yok.</div>';
+            return;
+        }
+
+        conversations.forEach(conv => {
+            const item = document.createElement('div');
+            item.className = 'monitoring-item';
+
+            const timestamp = new Date(conv.timestamp).toLocaleString('tr-TR', {
+                hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit'
+            });
+
+            item.innerHTML = `
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <span style="font-weight:600; font-size:0.85rem; color:#eee;">${conv.senderNickname} & ${conv.receiverNickname}</span>
+                    <span style="font-size:0.65rem; color:#666;">${timestamp}</span>
+                </div>
+                <div style="font-size:0.75rem; color:#888; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                    ${conv.content}
+                </div>
+            `;
+
+            item.onclick = () => {
+                document.querySelectorAll('.monitoring-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                loadAdminChatHistory(conv.senderId, conv.receiverId, conv.senderNickname, conv.receiverNickname);
+            };
+
+            listContainer.appendChild(item);
+        });
+    }
+
+    function loadAdminChatHistory(u1, u2, nick1, nick2) {
+        const messagesContainer = document.getElementById('monitoringMessages');
+        const header = document.getElementById('monitoringChatHeader');
+
+        if (header) header.innerText = `${nick1} & ${nick2} Sohbet Geçmişi`;
+        if (messagesContainer) messagesContainer.innerHTML = '<div style="text-align:center; margin-top:50px;"><i class="fas fa-spinner fa-spin"></i> Yükleniyor...</div>';
+
+        fetch(`/admin/messages/history/${u1}/${u2}`)
+            .then(res => res.json())
+            .then(messages => {
+                if (!messagesContainer) return;
+                messagesContainer.innerHTML = '';
+                messages.forEach(msg => {
+                    const bubble = document.createElement('div');
+                    // In admin view, we don't have a "me", so we use sender nickname to distinguish
+                    const isSender1 = msg.senderId === u1;
+                    bubble.className = `monitoring-bubble ${isSender1 ? 'sent' : 'received'}`;
+
+                    const time = new Date(msg.timestamp).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+                    bubble.innerHTML = `
+                        <div style="font-weight:600; font-size:0.7rem; margin-bottom:2px; color:${isSender1 ? '#ff9800' : '#1ed760'}">
+                            ${msg.senderNickname}
+                        </div>
+                        <div>${msg.content}</div>
+                        <div class="monitoring-info">${time} ${msg.isRead ? '• Görüldü' : ''}</div>
+                    `;
+                    messagesContainer.appendChild(bubble);
+                });
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            })
+            .catch(err => {
+                console.error("Chat history load error:", err);
+                if (messagesContainer) messagesContainer.innerHTML = '<div style="color:red; text-align:center;">Hata oluştu!</div>';
+            });
+    }
+
+    // Monitoring search
+    const monitoringSearchInput = document.getElementById('monitoringSearch');
+    if (monitoringSearchInput) {
+        monitoringSearchInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase();
+            const filtered = allAdminConversations.filter(c =>
+                c.senderNickname.toLowerCase().includes(query) ||
+                c.receiverNickname.toLowerCase().includes(query) ||
+                c.content.toLowerCase().includes(query)
+            );
+            renderAdminConversations(filtered);
+        });
+    }
+    /* ===========================================================
+       USER REPORTS
+       =========================================================== */
+    window.fetchUserReports = function () {
+        const tbody = document.getElementById('userReportsTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Yükleniyor...</td></tr>';
+
+        fetch('/admin/reports')
+            .then(res => res.json())
+            .then(reports => {
+                tbody.innerHTML = '';
+                if (reports.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#666;">Aktif rapor bulunmuyor.</td></tr>';
+                    return;
+                }
+                reports.forEach(report => {
+                    const tr = document.createElement('tr');
+                    const date = new Date(report.CreatedAt).toLocaleString('tr-TR');
+
+                    tr.innerHTML = `
+                        <td>${date}</td>
+                        <td>${report.ReporterNickname}</td>
+                        <td style="font-weight:600; color:var(--primary);">${report.ReportedNickname}</td>
+                        <td><span class="status-badge warning">${report.Reason}</span></td>
+                        <td>
+                            <div style="font-size:0.75rem; color:#aaa; max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${report.ContentContext || ''}">
+                                ${report.ContentContext || '-'}
+                            </div>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-success" onclick="resolveReport('${report.ID}')">
+                                <i class="fas fa-check"></i> ÇÖZÜLDÜ
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(err => {
+                console.error("Reports fetch error:", err);
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">Hata oluştu!</td></tr>';
+            });
+    };
+
+    window.resolveReport = function (id) {
+        if (!confirm("Bu raporu çözüldü olarak işaretlemek istiyor musunuz?")) return;
+        fetch(`/admin/reports/${id}/resolve`, { method: 'POST' })
+            .then(res => {
+                if (res.ok) fetchUserReports();
+                else alert("Hata oluştu.");
             })
             .catch(err => alert("Hata: " + err));
     };

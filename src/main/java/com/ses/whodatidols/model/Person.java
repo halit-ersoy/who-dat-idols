@@ -14,6 +14,7 @@ public class Person {
     private boolean isBanned;
     private String banReason;
     private String role;
+    private boolean allowMessages = true;
 
     // Default constructor
     public Person() {
@@ -107,5 +108,13 @@ public class Person {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public boolean isAllowMessages() {
+        return allowMessages;
+    }
+
+    public void setAllowMessages(boolean allowMessages) {
+        this.allowMessages = allowMessages;
     }
 }

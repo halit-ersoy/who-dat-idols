@@ -13,6 +13,7 @@ import { initHeaderInteractions, initSearchExpansion } from "./searchExpansion.j
 import { initCalendar } from "./calendar.js?v=2";
 import { initNotifications } from "./notifications.js?v=2";
 import { initFeedback } from "./feedback.js?v=2";
+import { initMessagingManager } from "./messagingManager.js?v=2";
 
 window.addEventListener('load', () => {
     const loadingScreen = document.getElementById('loading-screen');
@@ -43,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initCalendar();
     initNotifications();
     initFeedback();
+    initMessagingManager();
     initAnnouncement();
 });
 

@@ -34,7 +34,8 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers("/sitemap.xml", "/robots.txt").permitAll()
                                                 .requestMatchers("/admin/users", "/admin/ban-user",
-                                                                "/admin/update-role", "/admin/delete-user")
+                                                                "/admin/update-role", "/admin/delete-user",
+                                                                "/admin/messages/**")
                                                 .hasAnyRole("SUPER_ADMIN", "KURUCU", "GELISTIRICI")
                                                 .requestMatchers(
                                                                 "/admin/panel", "/admin/me", "/admin/translate",

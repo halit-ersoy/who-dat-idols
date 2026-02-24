@@ -32,7 +32,8 @@ header.scrolled {
     transition: transform 0.2s ease;
 }
 
-.logo-link:hover, .logo-link:focus {
+.logo-link:hover,
+.logo-link:focus {
     transform: scale(1.05);
     outline: none;
 }
@@ -56,7 +57,7 @@ header.at-top {
 header.at-top .nav-link,
 header.at-top .logo,
 header.at-top .search-button {
-    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .logo {
@@ -95,7 +96,8 @@ header.at-top .search-button {
     position: relative;
 }
 
-.nav-link:hover, .nav-link:focus {
+.nav-link:hover,
+.nav-link:focus {
     color: #1ed760;
 }
 
@@ -332,7 +334,7 @@ header.at-top .search-button {
     font-size: 1.2rem;
     cursor: pointer;
     position: relative;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
     padding: 0.5rem;
     border-radius: 50%;
 }
@@ -340,6 +342,45 @@ header.at-top .search-button {
 .notifications-btn:hover {
     color: #1ed760;
     transform: scale(1.1);
+}
+
+.messages-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.2rem;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+    padding: 0.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+.messages-btn:hover,
+.messages-btn.active {
+    color: #1ed760;
+    transform: scale(1.1);
+}
+
+.message-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background-color: #1ed760;
+    color: #000;
+    font-size: 0.65rem;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    box-shadow: 0 0 0 2px #000;
 }
 
 .notification-badge {
@@ -361,9 +402,17 @@ header.at-top .search-button {
 }
 
 @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
-    70% { box-shadow: 0 0 0 6px rgba(231, 76, 60, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+    0% {
+        box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px rgba(231, 76, 60, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(231, 76, 60, 0);
+    }
 }
 
 .login-btn {
