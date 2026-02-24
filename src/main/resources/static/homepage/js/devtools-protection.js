@@ -111,15 +111,21 @@
         },
 
         detectDevTools() {
-            const threshold = 160;
-            const widthDiff = window.outerWidth - window.innerWidth > threshold;
-            const heightDiff = window.outerHeight - window.innerHeight > threshold;
+            // Skip size checks on mobile devices to avoid false positives from browser toolbars/keyboards
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-            if (widthDiff || heightDiff) {
-                this.showWarning();
+            if (!isMobile) {
+                const threshold = 160;
+                const widthDiff = window.outerWidth - window.innerWidth > threshold;
+                const heightDiff = window.outerHeight - window.innerHeight > threshold;
+
+                if (widthDiff || heightDiff) {
+                    this.showWarning();
+                    return;
+                }
             }
 
-            // Advanced check using debugger
+            // Advanced check using debugger - works across platforms if tools are open
             const startTime = performance.now();
             debugger;
             const endTime = performance.now();
