@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import java.net.URI;
 
 @Controller
 public class CustomErrorController implements ErrorController {
@@ -28,6 +29,11 @@ public class CustomErrorController implements ErrorController {
             HttpStatus httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
             if (status != null) {
                 Integer statusCode = Integer.valueOf(status.toString());
+                if (statusCode == 404) {
+                    return ResponseEntity.status(HttpStatus.FOUND)
+                            .location(URI.create("/"))
+                            .build();
+                }
                 httpStatus = HttpStatus.valueOf(statusCode);
             }
 

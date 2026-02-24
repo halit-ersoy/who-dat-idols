@@ -90,6 +90,17 @@ export function initRegister() {
             return;
         }
 
+        const nicknameRegex = /^[a-zA-Z0-9_.]+$/;
+        if (!nicknameRegex.test(nickname)) {
+            this.innerHTML = '<i class="fas fa-times"></i> Geçersiz Karakter!';
+            this.style.backgroundColor = '#e74c3c';
+            setTimeout(() => {
+                this.innerHTML = 'Kayıt Ol';
+                this.style.backgroundColor = '';
+            }, 3000);
+            return;
+        }
+
         this.classList.add('loading');
         this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         const registerData = {

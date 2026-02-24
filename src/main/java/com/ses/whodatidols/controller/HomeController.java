@@ -338,6 +338,14 @@ public class HomeController {
                 return ResponseEntity.badRequest().body(error);
             }
 
+            // 1.5 Username Validation (Regex: Letters, Numbers, Underscore, Dot)
+            if (!person.getNickname().matches("^[a-zA-Z0-9_.]+$")) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "Kullanıcı adı sadece harf, rakam, alt çizgi (_) ve nokta (.) içerebilir.");
+                return ResponseEntity.badRequest().body(error);
+            }
+
             // 2. Duplicate Check (Nickname & Email)
             Optional<Person> existingUser = personRepository.findByNicknameOrEmail(person.getNickname());
             if (existingUser.isPresent()) {
@@ -579,6 +587,13 @@ public class HomeController {
             newName = newName.trim();
             newSurname = newSurname.trim();
             newEmail = newEmail.trim();
+
+            // 1.5 Username Validation
+            if (!newNickname.matches("^[a-zA-Z0-9_.]+$")) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "message",
+                                "Kullanıcı adı sadece harf, rakam, alt çizgi (_) ve nokta (.) içerebilir."));
+            }
 
             // 2. Fetch current user info to check for changes
             Map<String, Object> currentInfo = personRepository.getUserInfoByCookie(cookie);

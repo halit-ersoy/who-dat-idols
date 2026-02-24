@@ -79,6 +79,12 @@ async function handleProfileUpdate(e) {
         return;
     }
 
+    const nicknameRegex = /^[a-zA-Z0-9_.]+$/;
+    if (!nicknameRegex.test(nickname)) {
+        showButtonError(updateBtn, 'Geçersiz Karakter!', 'Profil Bilgilerini Güncelle');
+        return;
+    }
+
     const payload = { name, surname, nickname, email };
 
     try {
