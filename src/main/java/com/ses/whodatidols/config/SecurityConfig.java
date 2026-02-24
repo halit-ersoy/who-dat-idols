@@ -2,6 +2,7 @@ package com.ses.whodatidols.config;
 
 import com.ses.whodatidols.model.Person;
 import com.ses.whodatidols.repository.PersonRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -17,9 +18,18 @@ import java.util.Optional;
 @EnableWebSecurity
 public class SecurityConfig {
 
+        private final IpBlockFilter ipBlockFilter;
+
+        @Autowired
+        public SecurityConfig(IpBlockFilter ipBlockFilter) {
+                this.ipBlockFilter = ipBlockFilter;
+        }
+
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
                 http
+                                .addFilterBefore(ipBlockFilter,
+                                                org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
                                 .csrf(csrf -> csrf.disable())
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers("/sitemap.xml", "/robots.txt").permitAll()

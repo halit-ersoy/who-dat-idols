@@ -114,6 +114,12 @@
                 <a href="#feedback-section" class="nav-link" data-section="feedback-section">
                     <i class="fas fa-comment-dots"></i> Geri Bildirimler
                 </a>
+                <a href="#security-violations-section" class="nav-link" data-section="security-violations-section">
+                    <i class="fas fa-user-shield"></i> Güvenlik Kayıtları
+                </a>
+                <a href="#banned-ips-section" class="nav-link" data-section="banned-ips-section">
+                    <i class="fas fa-ban"></i> Yasaklı IP'ler
+                </a>
             </nav>
         </aside>
 
@@ -1165,6 +1171,60 @@
                 </div>
             </section>
 
+            <!-- SECURITY VIOLATIONS SECTION -->
+            <section id="security-violations-section" class="admin-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-user-shield"></i> Güvenlik İhlal Kayıtları</h2>
+                        <button class="btn btn-sm btn-secondary" onclick="fetchSecurityViolations()">
+                            <i class="fas fa-sync-alt"></i> Yenile
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Tarih</th>
+                                    <th>IP Adresi</th>
+                                    <th>Sayfa</th>
+                                    <th>Tarayıcı Bilgisi</th>
+                                    <th>İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody id="securityViolationsTableBody">
+                                <!-- Kayıtlar buraya gelecek -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            <!-- BANNED IPS SECTION -->
+            <section id="banned-ips-section" class="admin-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-ban"></i> Yasaklı IP Adresleri</h2>
+                        <button class="btn btn-sm btn-secondary" onclick="fetchBannedIps()">
+                            <i class="fas fa-sync-alt"></i> Yenile
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Tarih</th>
+                                    <th>IP Adresi</th>
+                                    <th>Neden</th>
+                                    <th>İtiraz Mesajı</th>
+                                    <th>İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bannedIpsTableBody">
+                                <!-- Yasaklı IP'ler buraya gelecek -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 

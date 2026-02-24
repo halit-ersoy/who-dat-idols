@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erişim Engellendi - WhoDatIdols</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Poppins:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #0f0f0f;
+            --primary: #1ed760;
+            --primary-hover: #1fdf64;
+            --text-main: #ffffff;
+            --text-dim: #b3b3b3;
+            --bg-card: rgba(24, 24, 24, 0.6);
+            --border: rgba(255, 255, 255, 0.08);
+            --backdrop-blur: blur(20px);
+            --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            --font-heading: 'Montserrat', sans-serif;
+            --font-body: 'Poppins', sans-serif;
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background-image: radial-gradient(circle at 10% 20%, rgba(30, 215, 96, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(30, 215, 96, 0.05) 0%, transparent 40%);
+            overflow: hidden;
+        }
+
+        .container {
+            max-width: 520px;
+            width: 100%;
+            background: var(--bg-card);
+            backdrop-filter: var(--backdrop-blur);
+            -webkit-backdrop-filter: var(--backdrop-blur);
+            border-radius: 24px;
+            padding: 50px 40px;
+            text-align: center;
+            box-shadow: var(--shadow-card);
+            border: var(--border);
+            animation: fadeIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .logo {
+            font-family: var(--font-heading);
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 40px;
+            letter-spacing: -1.5px;
+            text-shadow: 0 0 20px rgba(30, 215, 96, 0.4);
+            display: inline-block;
+        }
+
+        .icon-circle {
+            width: 80px;
+            height: 80px;
+            background: rgba(233, 30, 99, 0.1);
+            border: 1px solid rgba(233, 30, 99, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            color: #e91e63;
+            font-size: 32px;
+            box-shadow: 0 0 20px rgba(233, 30, 99, 0.2);
+        }
+
+        h1 {
+            font-family: var(--font-heading);
+            font-size: 28px;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        p.desc {
+            color: var(--text-dim);
+            line-height: 1.6;
+            margin-bottom: 35px;
+            font-size: 15px;
+        }
+
+        .reason-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 40px;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .reason-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .reason-label {
+            display: block;
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            font-family: var(--font-heading);
+        }
+
+        #reasonText {
+            font-size: 15px;
+            line-height: 1.5;
+            color: var(--text-main);
+        }
+
+        .appeal-box {
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 35px;
+            text-align: left;
+        }
+
+        .appeal-box h3 {
+            font-family: var(--font-heading);
+            font-size: 18px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .appeal-box h3 i {
+            color: var(--primary);
+            font-size: 16px;
+        }
+
+        textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 16px;
+            color: #fff;
+            font-family: var(--font-body);
+            font-size: 14px;
+            resize: none;
+            height: 100px;
+            margin-bottom: 12px;
+            transition: var(--transition);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 0 4px rgba(30, 215, 96, 0.1);
+        }
+
+        .char-info {
+            display: flex;
+            justify-content: flex-end;
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .btn {
+            width: 100%;
+            background: var(--primary);
+            color: #000;
+            border: none;
+            padding: 16px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-family: var(--font-body);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: 0 4px 15px rgba(30, 215, 96, 0.3);
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(30, 215, 96, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        #success {
+            display: none;
+            color: var(--primary);
+            background: rgba(30, 215, 96, 0.1);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(30, 215, 96, 0.2);
+            font-weight: 600;
+            text-align: center;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="logo">WhoDatIdols</div>
+
+        <div class="icon-circle">
+            <i class="fas fa-shield-alt"></i>
+        </div>
+
+        <h1>Erişim Kısıtlandı</h1>
+        <p class="desc">Güvenlik sistemimiz, mevcut IP adresinizden gelen trafiği riskli olarak işaretledi ve
+            erişiminizi kalıcı olarak askıya aldı.</p>
+
+        <div class="reason-card">
+            <span class="reason-label">Sistem Notu:</span>
+            <span id="reasonText">Yükleniyor...</span>
+        </div>
+
+        <div class="appeal-box" id="appealSection">
+            <h3><i class="fas fa-envelope-open-text"></i> İtiraz Gönder</h3>
+            <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 15px;">Eğer bir hata olduğunu
+                düşünüyorsanız durumu açıklayan tek bir mesaj gönderebilirsiniz. (100 Karakter)</p>
+
+            <textarea id="msg" maxlength="100" placeholder="Açıklamanızı buraya yazın..."></textarea>
+            <div class="char-info"><span id="count">0</span>/100</div>
+
+            <button class="btn" id="btn" onclick="send()">
+                <i class="fas fa-paper-plane"></i> GÖNDER
+            </button>
+            <div id="success">
+                <i class="fas fa-check-circle" style="margin-right: 8px;"></i> İtirazınız başarıyla iletildi.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const msg = document.getElementById('msg');
+        const count = document.getElementById('count');
+        const btn = document.getElementById('btn');
+        const reason = document.getElementById('reasonText');
+        const success = document.getElementById('success');
+        const section = document.getElementById('appealSection');
+
+        fetch('/api/security/ban-info')
+            .then(res => res.json())
+            .then(data => {
+                reason.textContent = data.reason;
+                if (data.hasAppealed === "true") showSent();
+            })
+            .catch(() => reason.textContent = "Güvenlik protokolü ihlali.");
+
+        msg.addEventListener('input', () => count.textContent = msg.value.length);
+
+        function send() {
+            const text = msg.value.trim();
+            if (!text) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> İLETİLİYOR...';
+
+            fetch('/api/security/appeal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text })
+            })
+                .then(res => {
+                    if (res.ok) showSent();
+                    else {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-paper-plane"></i> GÖNDER';
+                        alert("Bir sorun oluştu.");
+                    }
+                })
+                .catch(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-paper-plane"></i> GÖNDER';
+                });
+        }
+
+        function showSent() {
+            msg.style.display = 'none';
+            btn.style.display = 'none';
+            document.querySelector('.char-info').style.display = 'none';
+            success.style.display = 'block';
+        }
+    </script>
+</body>
+
+</html>

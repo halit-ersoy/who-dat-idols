@@ -25,6 +25,10 @@
             // Section-specific on-show hooks
             if (targetId === 'feedback-section') {
                 fetchFeedbacks();
+            } else if (targetId === 'security-violations-section') {
+                fetchSecurityViolations();
+            } else if (targetId === 'banned-ips-section') {
+                fetchBannedIps();
             }
 
             // Scroll to top of main content
@@ -3029,4 +3033,136 @@
         fetchFeedbacks();
     }
 
+    /* ===========================================================
+       GÜVENLİK İHLAL KAYITLARI (SECURITY VIOLATIONS)
+       =========================================================== */
+    window.fetchSecurityViolations = function () {
+        const tbody = document.getElementById('securityViolationsTableBody');
+        if (!tbody) return;
+
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Yükleniyor...</td></tr>';
+
+        fetch('/admin/security/violations')
+            .then(res => res.json())
+            .then(violations => {
+                tbody.innerHTML = '';
+                if (!violations || violations.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#666;">Henüz ihlal kaydı bulunamadı.</td></tr>';
+                    return;
+                }
+
+                violations.forEach(v => {
+                    const date = new Date(v.timestamp).toLocaleString('tr-TR');
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${date}</td>
+                        <td style="color:var(--danger); font-family:monospace;">${v.ipAddress}</td>
+                        <td><a href="${v.pageUrl}" target="_blank" style="color:var(--primary); font-size:12px; max-width:150px; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${v.pageUrl}</a></td>
+                        <td style="font-size:11px; color:#888; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${v.userAgent}">${v.userAgent}</td>
+                        <td>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-danger" onclick="deleteSecurityViolation(${v.id})">
+                                    <i class="fas fa-trash"></i> SİL
+                                </button>
+                                <button class="btn btn-sm btn-secondary" onclick="banIp('${v.ipAddress}')">
+                                    <i class="fas fa-ban"></i> YASAKLA
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(err => {
+                console.error("Güvenlik kayıtları hatası:", err);
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--danger);">Kayıtlar yüklenemedi.</td></tr>';
+            });
+    };
+
+    window.deleteSecurityViolation = function (id) {
+        if (!confirm("Bu kaydı silmek istediğinize emin misiniz?")) return;
+
+        fetch(`/admin/security/violations/${id}`, { method: 'DELETE' })
+            .then(res => {
+                if (res.ok) {
+                    fetchSecurityViolations();
+                } else {
+                    res.text().then(msg => alert("Hata: " + msg));
+                }
+            })
+            .catch(err => alert("Hata: " + err));
+    };
+
+    window.banIp = function (ip) {
+        if (!confirm(`${ip} adresini yasaklamak istediğinize emin misiniz?`)) return;
+
+        const reason = prompt("Yasaklama nedeni (Opsiyonel):", "Security Violation");
+
+        const params = new URLSearchParams();
+        params.append('ip', ip);
+        if (reason) params.append('reason', reason);
+
+        fetch(`/admin/security/ban?${params.toString()}`, { method: 'POST' })
+            .then(res => {
+                if (res.ok) {
+                    alert("IP adresi yasaklandı.");
+                    fetchSecurityViolations();
+                } else {
+                    alert("İşlem başarısız.");
+                }
+            })
+            .catch(err => alert("Hata: " + err));
+    };
+
+    window.fetchBannedIps = function () {
+        const tbody = document.getElementById('bannedIpsTableBody');
+        if (!tbody) return;
+
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Yükleniyor...</td></tr>';
+
+        fetch('/admin/security/banned-ips')
+            .then(res => res.json())
+            .then(ips => {
+                tbody.innerHTML = '';
+                if (!ips || ips.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#666;">Yasaklı IP bulunamadı.</td></tr>';
+                    return;
+                }
+
+                ips.forEach(item => {
+                    const date = new Date(item.timestamp).toLocaleString('tr-TR');
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${date}</td>
+                        <td style="font-family:monospace;">${item.ipAddress}</td>
+                        <td>${item.reason || '-'}</td>
+                        <td style="font-style:italic; color:var(--primary); font-size:12px;">${item.appealMessage || '-'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-success" onclick="unbanIp('${item.ipAddress}')">
+                                <i class="fas fa-check"></i> YASAĞI KALDIR
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(err => {
+                console.error("Yasaklı IP'ler hatası:", err);
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--danger);">Yüklenemedi.</td></tr>';
+            });
+    };
+
+    window.unbanIp = function (ip) {
+        if (!confirm(`${ip} adresinin yasağını kaldırmak üzeresiniz. Onaylıyor musunuz?`)) return;
+
+        fetch(`/admin/security/banned-ips/${ip}`, { method: 'DELETE' })
+            .then(res => {
+                if (res.ok) {
+                    fetchBannedIps();
+                } else {
+                    alert("İşlem başarısız.");
+                }
+            })
+            .catch(err => alert("Hata: " + err));
+    };
 });

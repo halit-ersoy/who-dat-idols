@@ -65,6 +65,17 @@
             this.overlay.style.display = 'flex';
             document.body.style.overflow = 'hidden';
 
+            // Report violation to backend
+            fetch('/api/security/report', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    pageUrl: window.location.href
+                })
+            }).catch(err => console.error("Violation report failed:", err));
+
             // Log attack attempt (optional)
             console.warn("DevTools attempt detected!");
         },

@@ -4,10 +4,14 @@ import com.ses.whodatidols.model.Movie;
 import com.ses.whodatidols.model.Series;
 import com.ses.whodatidols.model.Person;
 import com.ses.whodatidols.model.VideoSource;
+import com.ses.whodatidols.model.SecurityViolation;
+import com.ses.whodatidols.model.BannedIp;
 import com.ses.whodatidols.repository.PersonRepository;
 import com.ses.whodatidols.repository.VideoSourceRepository;
 import com.ses.whodatidols.repository.CommentRepository;
 import com.ses.whodatidols.repository.FeedbackRepository;
+import com.ses.whodatidols.repository.SecurityViolationRepository;
+import com.ses.whodatidols.repository.BannedIpRepository;
 import com.ses.whodatidols.viewmodel.CommentViewModel;
 import com.ses.whodatidols.service.MovieService;
 import com.ses.whodatidols.service.SeriesService;
@@ -50,6 +54,8 @@ public class AdminController {
     private final com.ses.whodatidols.repository.HeroRepository heroRepository;
     private final TranslationService translationService;
     private final FeedbackRepository feedbackRepository;
+    private final SecurityViolationRepository securityViolationRepository;
+    private final BannedIpRepository bannedIpRepository;
 
     @Value("${media.source.trailers.path}")
     private String trailersPath;
@@ -71,7 +77,8 @@ public class AdminController {
             TvMazeService tvMazeService, JdbcTemplate jdbcTemplate,
             VideoSourceRepository videoSourceRepository, PersonRepository personRepository,
             CommentRepository commentRepository, com.ses.whodatidols.repository.HeroRepository heroRepository,
-            TranslationService translationService, FeedbackRepository feedbackRepository) {
+            TranslationService translationService, FeedbackRepository feedbackRepository,
+            SecurityViolationRepository securityViolationRepository, BannedIpRepository bannedIpRepository) {
         this.movieService = movieService;
         this.seriesService = seriesService;
         this.tvMazeService = tvMazeService;
@@ -82,6 +89,8 @@ public class AdminController {
         this.heroRepository = heroRepository;
         this.translationService = translationService;
         this.feedbackRepository = feedbackRepository;
+        this.securityViolationRepository = securityViolationRepository;
+        this.bannedIpRepository = bannedIpRepository;
     }
 
     @GetMapping("/panel")
@@ -743,5 +752,35 @@ public class AdminController {
         int exp = (int) (Math.log(bytes) / Math.log(1024));
         char pre = "KMGTPE".charAt(exp - 1);
         return String.format("%.1f %sB", bytes / Math.pow(1024, exp), pre);
+    }
+
+    @GetMapping("/security/violations")
+    public ResponseEntity<List<SecurityViolation>> getSecurityViolations() {
+        return ResponseEntity.ok(securityViolationRepository.findAllByOrderByTimestampDesc());
+    }
+
+    @DeleteMapping("/security/violations/{id}")
+    public ResponseEntity<Void> deleteSecurityViolation(@PathVariable("id") Long id) {
+        securityViolationRepository.deleteById(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/security/ban")
+    public ResponseEntity<Void> banIp(@RequestParam("ip") String ip,
+            @RequestParam(value = "reason", required = false) String reason) {
+        bannedIpRepository.save(ip, reason != null ? reason : "Security Violation");
+        securityViolationRepository.deleteByIp(ip);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/security/banned-ips")
+    public ResponseEntity<List<BannedIp>> getBannedIps() {
+        return ResponseEntity.ok(bannedIpRepository.findAll());
+    }
+
+    @DeleteMapping("/security/banned-ips/{ip:.+}")
+    public ResponseEntity<Void> unbanIp(@PathVariable("ip") String ip) {
+        bannedIpRepository.deleteByIp(ip);
+        return ResponseEntity.ok().build();
     }
 }
