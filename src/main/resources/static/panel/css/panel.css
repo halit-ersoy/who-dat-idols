@@ -1467,55 +1467,167 @@ input[type='checkbox']:hover {
     gap: 15px;
 }
 
-/* Premium Role Switcher Component */
-.role-switcher {
-    display: flex;
-    gap: 6px;
-    background: rgba(0, 0, 0, 0.4);
-    padding: 4px;
-    border-radius: 50px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+/* Compact Premium Role Selector */
+.premium-role-select {
+    position: relative;
     width: fit-content;
-    backdrop-filter: blur(10px);
 }
 
-.role-btn {
-    padding: 6px 14px;
+.role-badge-display {
+    padding: 6px 12px;
     border-radius: 50px;
     font-size: 0.65rem;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid transparent;
-    color: rgba(255, 255, 255, 0.4);
-    background: transparent;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     text-transform: uppercase;
     letter-spacing: 0.8px;
-    outline: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
+    min-width: 100px;
+    justify-content: space-between;
 }
 
-.role-btn:hover {
-    color: rgba(255, 255, 255, 0.8);
-    background: rgba(255, 255, 255, 0.03);
+.role-badge-display i {
+    font-size: 0.7rem;
+    opacity: 0.6;
+    transition: transform 0.3s ease;
 }
 
-.role-btn.active {
-    color: #fff;
-    transform: scale(1.05);
+.premium-role-select.active .role-badge-display i {
+    transform: rotate(180deg);
 }
 
-.role-btn.active[data-role="USER"] {
-    background: rgba(179, 179, 179, 0.2);
-    color: #fff;
-    border-color: rgba(179, 179, 179, 0.3);
-    box-shadow: 0 0 15px rgba(179, 179, 179, 0.1);
+/* Dynamic colors for the display badge */
+.role-badge-display[data-role="USER"] {
+    background: rgba(179, 179, 179, 0.15);
+    color: #eee;
+    border-color: rgba(179, 179, 179, 0.2);
 }
 
-.role-btn.active[data-role="ADMIN"] {
-    background: rgba(30, 215, 96, 0.2);
+.role-badge-display[data-role="CEVIRMEN"] {
+    background: rgba(41, 121, 255, 0.15);
+    color: #448aff;
+    border-color: rgba(41, 121, 255, 0.3);
+}
+
+.role-badge-display[data-role="ADMIN"] {
+    background: rgba(30, 215, 96, 0.15);
     color: var(--primary);
-    border-color: rgba(30, 215, 96, 0.4);
-    box-shadow: 0 0 15px rgba(30, 215, 96, 0.3);
+    border-color: rgba(30, 215, 96, 0.3);
+}
+
+.role-badge-display[data-role="KURUCU"] {
+    background: rgba(139, 0, 0, 0.2);
+    color: #ff4d4d;
+    border-color: rgba(139, 0, 0, 0.4);
+}
+
+.role-badge-display[data-role="GELISTIRICI"] {
+    background: rgba(40, 40, 40, 0.6);
+    color: #eee;
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.role-badge-display:hover {
+    filter: brightness(1.2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.role-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    background: #1a1a1a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 6px;
+    width: 150px;
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 1000;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    animation: slideInDown 0.2s ease;
+}
+
+.premium-role-select.active .role-dropdown-menu {
+    display: flex;
+}
+
+.role-option {
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.role-option:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    padding-left: 15px;
+}
+
+/* Specific option colors on hover or if active */
+.role-option[data-role="KURUCU"]:hover {
+    color: #ff4d4d;
+    background: rgba(139, 0, 0, 0.15);
+}
+
+.role-option[data-role="GELISTIRICI"]:hover {
+    color: #eee;
+    background: rgba(50, 50, 50, 0.5);
+}
+
+.role-option[data-role="ADMIN"]:hover {
+    color: var(--primary);
+    background: rgba(30, 215, 96, 0.15);
+}
+
+.role-option[data-role="CEVIRMEN"]:hover {
+    color: #448aff;
+    background: rgba(41, 121, 255, 0.15);
+}
+
+.role-option[data-role="USER"]:hover {
+    color: #fff;
+    background: rgba(179, 179, 179, 0.15);
+}
+
+.role-option.active {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.role-option.active::after {
+    content: '\f00c';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    font-size: 0.6rem;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .role-btn.active[data-role="SUPER_ADMIN"] {

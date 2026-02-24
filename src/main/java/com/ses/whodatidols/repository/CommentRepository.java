@@ -45,7 +45,8 @@ public class CommentRepository {
                         c.ContentId,
                         CASE WHEN cl.UserId IS NOT NULL THEN 1 ELSE 0 END as isLiked,
                         CASE WHEN c.UserId = p_me.ID THEN 1 ELSE 0 END as isAuthor,
-                        c.IsApproved
+                        c.IsApproved,
+                        p.Role
                     FROM Comments c
                     LEFT JOIN Person p ON c.UserId = p.ID
                     LEFT JOIN Person p_me ON p_me.cookie = ?
@@ -88,7 +89,7 @@ public class CommentRepository {
     public void addComment(UUID contentId, String cookie, String text, boolean spoiler, UUID parentId) {
         String sql = """
                     INSERT INTO Comments (ContentId, UserId, Text, Spoiler, Nickname, ParentId, IsApproved)
-                    SELECT ?, ID, ?, ?, Nickname, ?, CASE WHEN Role IN ('ADMIN', 'SUPER_ADMIN') THEN 1 ELSE 0 END
+                    SELECT ?, ID, ?, ?, Nickname, ?, CASE WHEN Role IN ('ADMIN', 'SUPER_ADMIN', 'KURUCU', 'GELISTIRICI') THEN 1 ELSE 0 END
                     FROM Person WHERE cookie = ? AND isBanned = 0
                 """;
         int affected = jdbcTemplate.update(sql,
@@ -116,7 +117,8 @@ public class CommentRepository {
                         0 as isAuthor,
                         c.IsApproved,
                         COALESCE(m.Name, s.Name, (e.name + ' S' + CAST(e.SeasonNumber AS VARCHAR) + 'E' + CAST(e.EpisodeNumber AS VARCHAR))) as ContentName,
-                        COALESCE(m.Slug, e.Slug, CAST(c.ContentId AS VARCHAR(36))) as ContentSlug
+                        COALESCE(m.Slug, e.Slug, CAST(c.ContentId AS VARCHAR(36))) as ContentSlug,
+                        p.Role
                     FROM Comments c
                     LEFT JOIN Person p ON c.UserId = p.ID
                     LEFT JOIN Movie m ON c.ContentId = m.ID
@@ -141,7 +143,8 @@ public class CommentRepository {
                         0 as isAuthor,
                         c.IsApproved,
                         COALESCE(m.Name, s.Name, (e.name + ' S' + CAST(e.SeasonNumber AS VARCHAR) + 'E' + CAST(e.EpisodeNumber AS VARCHAR))) as ContentName,
-                        COALESCE(m.Slug, e.Slug, CAST(c.ContentId AS VARCHAR(36))) as ContentSlug
+                        COALESCE(m.Slug, e.Slug, CAST(c.ContentId AS VARCHAR(36))) as ContentSlug,
+                        p.Role
                     FROM Comments c
                     LEFT JOIN Person p ON c.UserId = p.ID
                     LEFT JOIN Movie m ON c.ContentId = m.ID
@@ -286,6 +289,12 @@ public class CommentRepository {
                 vm.setApproved(rs.getBoolean("IsApproved"));
             } catch (SQLException e) {
                 vm.setApproved(true);
+            }
+
+            try {
+                vm.setRole(rs.getString("Role"));
+            } catch (SQLException e) {
+                vm.setRole("USER");
             }
 
             String parentIdStr = rs.getString("ParentId");

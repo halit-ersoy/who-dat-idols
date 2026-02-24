@@ -193,10 +193,23 @@ export function initCommentsSection(videoId) {
 
         const isLoggedIn = isUserLoggedIn();
 
+        let badgeHtml = '';
+        if (c.role === 'ADMIN') {
+            badgeHtml = '<span class="admin-badge"><i class="fas fa-shield-alt"></i> ADMİN</span>';
+        } else if (c.role === 'SUPER_ADMIN') {
+            badgeHtml = '<span class="super-admin-badge"><i class="fas fa-crown"></i> SUPER ADMİN</span>';
+        } else if (c.role === 'KURUCU') {
+            badgeHtml = '<span class="founder-badge"><i class="fas fa-crown"></i> KURUCU</span>';
+        } else if (c.role === 'GELISTIRICI') {
+            badgeHtml = '<span class="developer-badge"><i class="fas fa-code"></i> GELİŞTİRİCİ</span>';
+        } else if (c.role === 'CEVIRMEN') {
+            badgeHtml = '<span class="translator-badge"><i class="fas fa-language"></i> ÇEVİRMEN</span>';
+        }
+
         card.innerHTML = `
           <div class="comment-header">
             ${profileImg}
-            <div class="comment-user">${c.nickname || 'Kullanıcı'}</div>
+            <div class="comment-user"><span class="user-nickname">${c.nickname || 'Kullanıcı'}</span> ${badgeHtml}</div>
             <div class="comment-date">${dateStr}</div>
           </div>
           ${contentHtml}

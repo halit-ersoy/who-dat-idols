@@ -35,8 +35,24 @@ public class SecurityConfig {
                                                 .requestMatchers("/sitemap.xml", "/robots.txt").permitAll()
                                                 .requestMatchers("/admin/users", "/admin/ban-user",
                                                                 "/admin/update-role", "/admin/delete-user")
-                                                .hasRole("SUPER_ADMIN")
-                                                .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                                                .hasAnyRole("SUPER_ADMIN", "KURUCU", "GELISTIRICI")
+                                                .requestMatchers(
+                                                                "/admin/panel", "/admin/me", "/admin/translate",
+                                                                "/admin/movies", "/admin/series", "/admin/series/check",
+                                                                "/admin/check-episode-collision",
+                                                                "/admin/check-movie-collision",
+                                                                "/admin/add-movie", "/admin/update-movie",
+                                                                "/admin/update-series",
+                                                                "/admin/add-series", "/admin/delete-episode",
+                                                                "/admin/update-episode",
+                                                                "/admin/delete-series-by-name", "/admin/delete-movie",
+                                                                "/admin/delete-movies-bulk",
+                                                                "/admin/delete-series-bulk",
+                                                                "/admin/add-source", "/admin/delete-source",
+                                                                "/admin/delete-sources-for-content")
+                                                .hasAnyRole("CEVIRMEN", "ADMIN", "SUPER_ADMIN", "KURUCU", "GELISTIRICI")
+                                                .requestMatchers("/admin/**")
+                                                .hasAnyRole("ADMIN", "SUPER_ADMIN", "KURUCU", "GELISTIRICI")
                                                 .anyRequest().permitAll())
                                 .formLogin(form -> form
                                                 .loginPage("/login-admin")
@@ -59,7 +75,7 @@ public class SecurityConfig {
                                 return User.builder()
                                                 .username("admin")
                                                 .password("{noop}qlXLvn3hbxGGJKT6tXhOjIUxHBw6doyH")
-                                                .roles("SUPER_ADMIN")
+                                                .roles("SUPER_ADMIN", "KURUCU")
                                                 .build();
                         }
 
@@ -67,18 +83,21 @@ public class SecurityConfig {
                         Optional<Person> personOp = personRepository.findByNicknameOrEmail(username);
                         if (personOp.isPresent()) {
                                 Person person = personOp.get();
-                                // Check if user has ADMIN or SUPER_ADMIN role in DB
-                                if ("ADMIN".equalsIgnoreCase(person.getRole())
-                                                || "SUPER_ADMIN".equalsIgnoreCase(person.getRole())) {
-                                        String role = "ADMIN";
-                                        if ("SUPER_ADMIN".equalsIgnoreCase(person.getRole())) {
-                                                role = "SUPER_ADMIN";
-                                        }
+                                // Check if user has ADMIN, SUPER_ADMIN, KURUCU, GELISTIRICI or CEVIRMEN role in
+                                // DB
+                                String dbRole = person.getRole();
+                                if (dbRole != null && (dbRole.equalsIgnoreCase("ADMIN")
+                                                || dbRole.equalsIgnoreCase("SUPER_ADMIN")
+                                                || dbRole.equalsIgnoreCase("KURUCU")
+                                                || dbRole.equalsIgnoreCase("GELISTIRICI")
+                                                || dbRole.equalsIgnoreCase("CEVIRMEN"))) {
+
+                                        String springRole = dbRole.toUpperCase();
 
                                         return User.builder()
                                                         .username(person.getNickname())
                                                         .password("{noop}" + person.getPassword())
-                                                        .roles(role)
+                                                        .roles(springRole)
                                                         .build();
                                 }
                         }

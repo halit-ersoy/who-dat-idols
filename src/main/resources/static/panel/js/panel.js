@@ -114,13 +114,34 @@
         .then(res => res.json())
         .then(user => {
             window.currentAdmin = user;
-            const isSuperAdmin = user.roles.includes('ROLE_SUPER_ADMIN');
+            const isSuperAdmin = user.roles.includes('ROLE_SUPER_ADMIN') ||
+                user.roles.includes('ROLE_KURUCU') ||
+                user.roles.includes('ROLE_GELISTIRICI');
+            const isTranslator = user.roles.includes('ROLE_CEVIRMEN');
 
-            // Hide user management link if not super admin
-            if (!isSuperAdmin) {
+            // Hide sections based on role
+            if (isTranslator) {
+                const translatorHiddenSections = [
+                    'hero-section', 'calendar-section', 'upcoming-section',
+                    'view-management-section', 'comments-section', 'user-section',
+                    'announcement-section', 'update-notes-section', 'feedback-section',
+                    'security-violations-section', 'banned-ips-section'
+                ];
+                translatorHiddenSections.forEach(section => {
+                    const navLink = document.querySelector(`.nav-link[data-section="${section}"]`);
+                    if (navLink) navLink.style.display = 'none';
+                });
+
+                // Redirect to movie-section if currently on dashboard (or just default)
+                const movieLink = document.querySelector('.nav-link[data-section="movie-section"]');
+                if (movieLink) movieLink.click();
+            } else if (!isSuperAdmin) {
+                // Regular Admin: Hide user management
                 const userNavLink = document.querySelector('.nav-link[data-section="user-section"]');
                 if (userNavLink) userNavLink.style.display = 'none';
-            } else {
+            }
+
+            if (isSuperAdmin) {
                 fetchUsers();
             }
 
@@ -2411,13 +2432,21 @@
 
                     tr.innerHTML = `
                         <td style="font-weight: 600;">${user.nickname}</td>
-                        <td>${user.email || '-'}</td>
+                        <td title="${user.email || '-'}">${(user.email && user.email.length > 25) ? user.email.substring(0, 25) + '...' : (user.email || '-')}</td>
                         <td>${user.name} ${user.surname}</td>
                         <td>
-                            <div class="role-switcher">
-                                <button class="role-btn ${user.role === 'USER' || !user.role ? 'active' : ''}" data-role="USER" onclick="updateUserRoleUnified('${user.id}', 'USER', this)">User</button>
-                                <button class="role-btn ${user.role === 'ADMIN' ? 'active' : ''}" data-role="ADMIN" onclick="updateUserRoleUnified('${user.id}', 'ADMIN', this)">Admin</button>
-                                <button class="role-btn ${user.role === 'SUPER_ADMIN' ? 'active' : ''}" data-role="SUPER_ADMIN" onclick="updateUserRoleUnified('${user.id}', 'SUPER_ADMIN', this)">Super</button>
+                            <div class="premium-role-select">
+                                <div class="role-badge-display" onclick="toggleRoleDropdown(this)" data-role="${user.role}">
+                                    <span>${user.role}</span>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                <div class="role-dropdown-menu">
+                                    <div class="role-option ${user.role === 'USER' || !user.role ? 'active' : ''}" data-role="USER" onclick="updateUserRoleUnified('${user.id}', 'USER', this)">User</div>
+                                    <div class="role-option ${user.role === 'CEVIRMEN' ? 'active' : ''}" data-role="CEVIRMEN" onclick="updateUserRoleUnified('${user.id}', 'CEVIRMEN', this)">Çevirmen</div>
+                                    <div class="role-option ${user.role === 'ADMIN' ? 'active' : ''}" data-role="ADMIN" onclick="updateUserRoleUnified('${user.id}', 'ADMIN', this)">Admin</div>
+                                    <div class="role-option ${user.role === 'KURUCU' ? 'active' : ''}" data-role="KURUCU" onclick="updateUserRoleUnified('${user.id}', 'KURUCU', this)">Kurucu</div>
+                                    <div class="role-option ${user.role === 'GELISTIRICI' ? 'active' : ''}" data-role="GELISTIRICI" onclick="updateUserRoleUnified('${user.id}', 'GELISTIRICI', this)">Gelistirici</div>
+                                </div>
                             </div>
                         </td>
                         <td>${statusBadge}</td>
@@ -2438,7 +2467,7 @@
             .catch(err => console.error("User fetch error:", err));
     }
 
-    window.updateUserRoleUnified = function (userId, role, btnElement) {
+    window.updateUserRoleUnified = function (userId, role, optionElement) {
         if (!confirm(`Kullanıcı rolünü "${role}" olarak güncellemek istediğinize emin misiniz?`)) {
             return;
         }
@@ -2446,11 +2475,6 @@
         const formData = new URLSearchParams();
         formData.append('userId', userId);
         formData.append('role', role);
-
-        // Visual update
-        const parent = btnElement.parentElement;
-        parent.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
-        btnElement.classList.add('active');
 
         fetch('/admin/update-role', {
             method: 'POST',
@@ -2464,6 +2488,26 @@
             }
         });
     };
+
+    // Compact Role Selector Logic
+    window.toggleRoleDropdown = function (element) {
+        const parent = element.parentElement;
+        const isActive = parent.classList.contains('active');
+
+        // Close all other dropdowns
+        document.querySelectorAll('.premium-role-select').forEach(el => el.classList.remove('active'));
+
+        if (!isActive) {
+            parent.classList.add('active');
+        }
+    };
+
+    // Global listener to close dropdowns when clicking outside
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.premium-role-select')) {
+            document.querySelectorAll('.premium-role-select').forEach(el => el.classList.remove('active'));
+        }
+    });
 
     window.toggleUserBan = function (userId, ban, reason) {
         const formData = new URLSearchParams();
