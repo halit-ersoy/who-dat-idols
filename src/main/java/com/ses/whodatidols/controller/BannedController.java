@@ -23,7 +23,11 @@ public class BannedController {
     }
 
     @GetMapping("/banned")
-    public ResponseEntity<Resource> getBannedPage() {
+    public ResponseEntity<Object> getBannedPage(HttpServletRequest request) {
+        String ip = getClientIp(request);
+        if (!bannedIpRepository.isBanned(ip)) {
+            return ResponseEntity.status(302).header("Location", "/").build();
+        }
         try {
             Resource htmlPage = new ClassPathResource("static/error/html/banned.html");
             if (!htmlPage.exists()) {

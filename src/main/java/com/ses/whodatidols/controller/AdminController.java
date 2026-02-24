@@ -722,16 +722,24 @@ public class AdminController {
     public ResponseEntity<List<Map<String, Object>>> getStorageStats() {
         try {
             List<Map<String, Object>> storageList = new java.util.ArrayList<>();
+            Path currentPath = Paths.get(".").toAbsolutePath();
+            java.nio.file.FileStore appStore = Files.getFileStore(currentPath);
+
             for (java.nio.file.FileStore store : java.nio.file.FileSystems.getDefault().getFileStores()) {
+                // Only show the store where the app is located
+                if (!store.equals(appStore)) {
+                    continue;
+                }
+
                 long totalSpace = store.getTotalSpace();
                 if (totalSpace <= 0)
-                    continue; // Skip empty or inaccessible stores
+                    continue;
 
                 long unallocatedSpace = store.getUnallocatedSpace();
                 long usedSpace = totalSpace - unallocatedSpace;
 
                 Map<String, Object> stats = new HashMap<>();
-                stats.put("name", store.name());
+                stats.put("name", "Ana Depolama");
                 stats.put("description", store.toString());
                 stats.put("total", formatBytes(totalSpace));
                 stats.put("used", formatBytes(usedSpace));
@@ -742,6 +750,7 @@ public class AdminController {
             }
             return ResponseEntity.ok(storageList);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(500).build();
         }
     }
