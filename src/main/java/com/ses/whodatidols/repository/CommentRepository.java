@@ -88,7 +88,7 @@ public class CommentRepository {
     public void addComment(UUID contentId, String cookie, String text, boolean spoiler, UUID parentId) {
         String sql = """
                     INSERT INTO Comments (ContentId, UserId, Text, Spoiler, Nickname, ParentId, IsApproved)
-                    SELECT ?, ID, ?, ?, Nickname, ?, 0
+                    SELECT ?, ID, ?, ?, Nickname, ?, CASE WHEN Role IN ('ADMIN', 'SUPER_ADMIN') THEN 1 ELSE 0 END
                     FROM Person WHERE cookie = ? AND isBanned = 0
                 """;
         int affected = jdbcTemplate.update(sql,
