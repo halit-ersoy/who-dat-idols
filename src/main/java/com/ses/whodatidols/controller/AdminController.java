@@ -372,6 +372,26 @@ public class AdminController {
         }
     }
 
+    @DeleteMapping("/delete-movie-source")
+    public ResponseEntity<String> deleteMovieSource(@RequestParam("id") UUID id) {
+        try {
+            movieService.deleteMovieSource(id);
+            return ResponseEntity.ok("Film ana kaynağı başarıyla silindi (metadata korundu).");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Film ana kaynağı silinirken hata oluştu: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/delete-episode-source")
+    public ResponseEntity<String> deleteEpisodeSource(@RequestParam("id") UUID id) {
+        try {
+            seriesService.deleteEpisodeSource(id);
+            return ResponseEntity.ok("Bölüm ana kaynağı başarıyla silindi (metadata korundu).");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Bölüm ana kaynağı silinemedi: " + e.getMessage());
+        }
+    }
+
     @DeleteMapping("/delete-movie")
     public ResponseEntity<String> deleteMovie(@RequestParam("id") UUID id) {
         try {

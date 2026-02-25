@@ -398,6 +398,21 @@ public class SeriesService {
 
     @Transactional
     @CacheEvict(value = "featuredContent", allEntries = true)
+    public void deleteEpisodeSource(UUID id) {
+        // 1. Dosyaları fiziksel olarak sil (mp4, hls klasörü)
+        deletePhysicalFile(id.toString());
+
+        // 2. Veritabanında bölümün süresini 1 dakikaya çekerek ana kaynağın olmadığını
+        // belirt
+        Episode ep = repository.findEpisodeById(id);
+        if (ep != null) {
+            ep.setDurationMinutes(1);
+            repository.updateEpisode(ep);
+        }
+    }
+
+    @Transactional
+    @CacheEvict(value = "featuredContent", allEntries = true)
     public void deleteEpisodeById(UUID id) {
         Series parentSeries = repository.findSeriesByEpisodeId(id);
         if (parentSeries != null) {

@@ -190,6 +190,21 @@ public class MovieService {
 
     @org.springframework.transaction.annotation.Transactional
     @CacheEvict(value = "featuredContent", allEntries = true)
+    public void deleteMovieSource(UUID id) {
+        // 1. Dosyaları fiziksel olarak sil (mp4, jpg, hls klasörü)
+        deletePhysicalFiles(id);
+
+        // 2. Veritabanında filmin süresini 1 dakikaya çekerek ana kaynağın olmadığını
+        // belirt
+        Movie movie = movieRepository.findMovieById(id);
+        if (movie != null) {
+            movie.setDurationMinutes(1);
+            movieRepository.update(movie);
+        }
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    @CacheEvict(value = "featuredContent", allEntries = true)
     public void deleteMovieById(UUID id) {
         // 1. Veritabanından kaynakları ve filmi sil
         videoSourceRepository.deleteAllForContent(id);

@@ -995,6 +995,26 @@
         // Update Poster Preview
         updatePosterPreview('movie', `/media/image/${movie.id}?t=${Date.now()}`);
 
+        // Setup Delete Main Source Button
+        const btnDeleteMovieSource = document.getElementById('btnDeleteMovieSource');
+        if (btnDeleteMovieSource) {
+            btnDeleteMovieSource.style.display = 'block';
+            btnDeleteMovieSource.onclick = () => {
+                if (confirm(`'${movie.name}' filminin ana video kaynağını silmek istediğinize emin misiniz? (Film bilgileri ve dış kaynaklar silinmez)`)) {
+                    fetch('/admin/delete-movie-source?id=' + movie.id, { method: 'DELETE' })
+                        .then(res => {
+                            if (res.ok) {
+                                alert("Ana kaynak başarıyla silindi.");
+                                fetchMovies();
+                                resetMovieForm();
+                            } else {
+                                res.text().then(msg => alert("Hata: " + msg));
+                            }
+                        });
+                }
+            };
+        }
+
         movieSubmitBtn.innerText = "DEĞİŞİKLİKLERİ KAYDET";
         movieSubmitBtn.classList.remove('btn-primary');
         movieSubmitBtn.style.backgroundColor = "#ffc107";
@@ -1027,6 +1047,12 @@
         movieSubmitBtn.style.color = "";
         movieCancelBtn.style.display = "none";
         updateVideoRequirement('movie');
+
+        const btnDeleteMovieSource = document.getElementById('btnDeleteMovieSource');
+        if (btnDeleteMovieSource) {
+            btnDeleteMovieSource.style.display = 'none';
+            btnDeleteMovieSource.onclick = null;
+        }
 
         if (movieImageInput) movieImageInput.value = "";
         if (moviePosterUrlInput) moviePosterUrlInput.value = "";
@@ -1590,6 +1616,26 @@
 
         setupSeriesEditMode("BÖLÜMÜ GÜNCELLE");
 
+        // Setup Delete Main Source Button
+        const btnDeleteEpisodeSource = document.getElementById('btnDeleteEpisodeSource');
+        if (btnDeleteEpisodeSource) {
+            btnDeleteEpisodeSource.style.display = 'block';
+            btnDeleteEpisodeSource.onclick = () => {
+                if (confirm(`'${ep.name}' dizisinin ${ep.season}. Sezon ${ep.episode}. Bölüm ana video kaynağını silmek istediğinize emin misiniz? (Bölüm bilgileri ve dış kaynaklar silinmez)`)) {
+                    fetch('/admin/delete-episode-source?id=' + ep.id, { method: 'DELETE' })
+                        .then(res => {
+                            if (res.ok) {
+                                alert("Ana kaynak başarıyla silindi.");
+                                fetchSeries();
+                                resetSeriesForm();
+                            } else {
+                                res.text().then(msg => alert("Hata: " + msg));
+                            }
+                        });
+                }
+            };
+        }
+
         // Load External Sources
         document.getElementById('seriesSourcesList').innerHTML = '';
         if (ep.id) {
@@ -1672,6 +1718,12 @@
         seriesSubmitBtn.style.color = "";
         seriesCancelBtn.style.display = "none";
         updateVideoRequirement('series');
+
+        const btnDeleteEpisodeSource = document.getElementById('btnDeleteEpisodeSource');
+        if (btnDeleteEpisodeSource) {
+            btnDeleteEpisodeSource.style.display = 'none';
+            btnDeleteEpisodeSource.onclick = null;
+        }
 
         // Reset visibility to default (New mode)
         document.getElementById('seriesModeGroup').style.display = 'block';
