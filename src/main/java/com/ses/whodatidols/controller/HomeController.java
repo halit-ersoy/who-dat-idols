@@ -110,9 +110,18 @@ public class HomeController {
                     title = series.getName();
                     language = series.getLanguage();
                     country = series.getCountry();
-                    isFinal = series.getFinalStatus() > 0;
-                    item.finalStatus = series.getFinalStatus();
                     imageId = series.getId().toString();
+
+                    // Only apply Finale badges if this episode is the absolute latest episode of
+                    // the series
+                    UUID latestEpisodeId = seriesService.getLatestEpisodeIdBySeriesId(ep.getSeriesId());
+                    if (latestEpisodeId != null && latestEpisodeId.equals(ep.getId())) {
+                        isFinal = series.getFinalStatus() > 0;
+                        item.finalStatus = series.getFinalStatus();
+                    } else {
+                        isFinal = false;
+                        item.finalStatus = 0;
+                    }
                 }
             }
 

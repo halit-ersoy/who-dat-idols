@@ -176,7 +176,7 @@
             });
 
             fetchSystemStats();
-            setInterval(fetchSystemStats, 3000);
+            setInterval(fetchSystemStats, 500);
         } catch (error) {
             console.error("Error initializing Chart.js:", error);
         }
@@ -193,7 +193,20 @@
                 cpuChart.data.datasets[0].data.push(data.cpu);
                 cpuChart.update();
 
-                // Update RAM
+                // Update Hardware Labels
+                const cpuLabel = document.getElementById('cpu-hardware-info');
+                const ramLabel = document.getElementById('ram-hardware-info');
+
+                if (cpuLabel && data.cpuCores) {
+                    cpuLabel.textContent = `${data.cpuCores} Çekirdek`;
+                }
+
+                if (ramLabel && data.ramTotal) {
+                    const totalGb = Math.round(data.ramTotal / (1024 * 1024 * 1024));
+                    ramLabel.textContent = `${totalGb} GB Toplam`;
+                }
+
+                // Update RAM Chart (Restored)
                 ramChart.data.datasets[0].data.shift();
                 ramChart.data.datasets[0].data.push(data.ramPercent);
                 ramChart.update();

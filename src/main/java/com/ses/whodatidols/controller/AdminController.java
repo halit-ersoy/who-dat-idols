@@ -141,12 +141,15 @@ public class AdminController {
                 cpuLoad = 0;
             stats.put("cpu", Math.round(cpuLoad * 100.0 * 100.0) / 100.0);
 
-            long totalMem = Runtime.getRuntime().totalMemory();
-            long freeMem = Runtime.getRuntime().freeMemory();
-            long usedMem = totalMem - freeMem;
-            stats.put("ramTotal", totalMem);
-            stats.put("ramUsed", usedMem);
-            stats.put("ramPercent", Math.round(((double) usedMem / totalMem) * 100.0 * 100.0) / 100.0);
+            long physicalTotalMem = osBean.getTotalMemorySize();
+            long physicalFreeMem = osBean.getFreeMemorySize();
+            long physicalUsedMem = physicalTotalMem - physicalFreeMem;
+
+            stats.put("ramTotal", physicalTotalMem);
+            stats.put("ramUsed", physicalUsedMem);
+            stats.put("ramPercent", Math.round(((double) physicalUsedMem / physicalTotalMem) * 100.0 * 100.0) / 100.0);
+
+            stats.put("cpuCores", Runtime.getRuntime().availableProcessors());
 
             return ResponseEntity.ok(stats);
         } catch (Exception e) {

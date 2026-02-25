@@ -257,6 +257,16 @@ public class SeriesRepository {
         }
     }
 
+    public UUID findLatestEpisodeIdBySeriesId(UUID seriesId) {
+        try {
+            String sql = "SELECT TOP 1 ID FROM Episode WHERE SeriesId = ? ORDER BY SeasonNumber DESC, EpisodeNumber DESC";
+            String idStr = jdbcTemplate.queryForObject(sql, String.class, seriesId.toString());
+            return idStr != null ? UUID.fromString(idStr) : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private void updateSeriesCategories(UUID seriesId, String categoriesStr) {
         jdbcTemplate.update("DELETE FROM SeriesCategories WHERE SeriesID = ?", seriesId.toString());
 

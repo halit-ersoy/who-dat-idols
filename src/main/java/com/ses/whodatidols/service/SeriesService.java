@@ -58,6 +58,10 @@ public class SeriesService {
         return repository.findSeriesById(id);
     }
 
+    public UUID getLatestEpisodeIdBySeriesId(UUID id) {
+        return repository.findLatestEpisodeIdBySeriesId(id);
+    }
+
     public List<EpisodeViewModel> getEpisodesForSeries(UUID seriesId) {
         List<Episode> dbEpisodes = repository.findEpisodesBySeriesId(seriesId);
 
