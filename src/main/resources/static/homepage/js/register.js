@@ -90,6 +90,16 @@ export function initRegister() {
             return;
         }
 
+        if (password.length < 6) {
+            this.innerHTML = '<i class="fas fa-times"></i> Şifre çok kısa! (En az 6)';
+            this.style.backgroundColor = '#e74c3c';
+            setTimeout(() => {
+                this.innerHTML = 'Kayıt Ol';
+                this.style.backgroundColor = '';
+            }, 3000);
+            return;
+        }
+
         const nicknameRegex = /^[a-zA-Z0-9_.]+$/;
         if (!nicknameRegex.test(nickname)) {
             this.innerHTML = '<i class="fas fa-times"></i> Geçersiz Karakter!';

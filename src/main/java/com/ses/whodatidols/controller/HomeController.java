@@ -339,6 +339,14 @@ public class HomeController {
                 return ResponseEntity.badRequest().body(error);
             }
 
+            // 1.2 Password Length Validation
+            if (person.getPassword().length() < 6) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "Şifre en az 6 karakter olmalıdır.");
+                return ResponseEntity.badRequest().body(error);
+            }
+
             // 1.5 Username Validation (Regex: Letters, Numbers, Underscore, Dot)
             if (!person.getNickname().matches("^[a-zA-Z0-9_.]+$")) {
                 Map<String, Object> error = new HashMap<>();
@@ -437,6 +445,13 @@ public class HomeController {
             String usernameOrEmail = request.get("usernameOrEmail");
             String code = request.get("code");
             String newPassword = request.get("newPassword");
+
+            if (newPassword == null || newPassword.length() < 6) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "Şifre çok kısa! En az 6 karakter gereklidir.");
+                return ResponseEntity.badRequest().body(response);
+            }
 
             Map<String, Object> result = personRepository.resetPassword(usernameOrEmail, code, newPassword);
             boolean isSuccess = (boolean) result.get("Result");

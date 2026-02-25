@@ -139,7 +139,7 @@ export function initForgotPass() {
     forgotPasswordForm.appendChild(newLoginLinkContainer);
 
     // Login link tıklama işlemi
-    document.body.addEventListener('click', function(e) {
+    document.body.addEventListener('click', function (e) {
         if (e.target && e.target.id === 'back-to-login') {
             e.preventDefault();
             forgotPasswordModal.classList.remove('active');
@@ -232,6 +232,16 @@ export function initForgotPass() {
             }
             if (newPassword !== confirmPassword) {
                 this.innerHTML = '<i class="fas fa-times"></i> Şifreler eşleşmiyor';
+                this.style.backgroundColor = '#e74c3c';
+                setTimeout(() => {
+                    this.innerHTML = 'Şifremi Güncelle';
+                    this.style.backgroundColor = '';
+                }, 3000);
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                this.innerHTML = '<i class="fas fa-times"></i> Şifre çok kısa! (En az 6)';
                 this.style.backgroundColor = '#e74c3c';
                 setTimeout(() => {
                     this.innerHTML = 'Şifremi Güncelle';
@@ -337,7 +347,7 @@ export function initForgotPass() {
     }
 
     // Verification code submit event listener (document.body üzerinden)
-    document.body.addEventListener('click', function(e) {
+    document.body.addEventListener('click', function (e) {
         if (e.target && e.target.id === 'verify-code-submit') {
             const verifyButton = e.target;
             verifyButton.classList.add('loading');

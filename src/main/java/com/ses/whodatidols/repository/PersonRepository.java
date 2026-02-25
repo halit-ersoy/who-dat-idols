@@ -63,7 +63,7 @@ public class PersonRepository {
                                 Map<String, Object> emailFailure = new HashMap<>();
                                 emailFailure.put("Result", false);
                                 emailFailure.put("Message",
-                                        "E-posta gönderimi başarısız oldu. Lütfen daha sonra tekrar deneyin.");
+                                        "E-posta gönderimi başarısız oldu: " + e.getMessage());
                                 return emailFailure;
                             }
                         }

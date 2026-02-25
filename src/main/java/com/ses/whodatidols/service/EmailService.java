@@ -23,6 +23,7 @@ public class EmailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
+            helper.setFrom("info@whodatidols.com");
             helper.setTo(email);
             helper.setSubject("Who Dat Idols - Şifre Sıfırlama Kodu");
 
