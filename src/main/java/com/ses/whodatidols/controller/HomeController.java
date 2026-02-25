@@ -301,11 +301,12 @@ public class HomeController {
     public ResponseEntity<Resource> watchPageBySlug(@PathVariable("slug") String slug) {
         // Exclude static paths from matching here, though Spring usually handles static
         // prior to @PathVariable
-        if (slug.equals("about") || slug.equals("privacy_policy") || slug.equals("terms_of_use") || slug.equals("sss")
-                || slug.equals("favorites") || slug.equals("profile") || slug.equals("login-admin")
-                || slug.equals("settings") || slug.equals("coming-soon") || slug.equals("programlar")
-                || slug.equals("diziler") || slug.equals("bl-dizileri") || slug.equals("watch")) {
-            return ResponseEntity.notFound().build();
+        // Validate slug existence in Series, Movies, or Episodes
+        boolean isValid = seriesService.isValidSlug(slug) || movieService.isValidSlug(slug);
+        if (!isValid) {
+            return ResponseEntity.status(302)
+                    .header("Location", "/")
+                    .build();
         }
 
         try {

@@ -268,4 +268,8 @@ public class MovieService {
             throw new RuntimeException("JPG_CONVERSION_ERROR_URL: " + e.getMessage(), e);
         }
     }
+
+    public boolean isValidSlug(String slug) {
+        return movieRepository.findMovieBySlug(slug) != null;
+    }
 }

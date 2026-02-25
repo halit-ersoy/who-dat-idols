@@ -548,4 +548,8 @@ public class SeriesService {
     public List<Series> getTop6SeriesByCount() {
         return repository.findTop6SeriesByCount();
     }
+
+    public boolean isValidSlug(String slug) {
+        return repository.findEpisodeBySlug(slug) != null || repository.findSeriesBySlug(slug) != null;
+    }
 }
