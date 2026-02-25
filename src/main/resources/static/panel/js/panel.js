@@ -62,6 +62,11 @@
     fetchUpdateNotes();
     fetchStorageStats();
 
+    let cpuChart, ramChart;
+    const maxDataPoints = 20;
+
+    initSystemResourceCharts();
+
     // Poll live users every 30 seconds
     setInterval(fetchLiveActiveUsers, 30000);
 
@@ -110,6 +115,90 @@
                 console.error("Storage stats error:", err);
                 container.innerHTML = '<div style="font-size:12px; color:var(--danger);">Hata</div>';
             });
+    }
+
+    function initSystemResourceCharts() {
+        try {
+            const cpuCtx = document.getElementById('cpuChart');
+            const ramCtx = document.getElementById('ramChart');
+
+            if (!cpuCtx || !ramCtx || typeof Chart === 'undefined') {
+                console.warn("Chart.js is not loaded or canvas elements are missing.");
+                return;
+            }
+
+            Chart.defaults.color = '#aaa';
+            Chart.defaults.font.family = "'Poppins', sans-serif";
+
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 0 },
+                scales: {
+                    x: { display: false },
+                    y: { min: 0, max: 100, border: { dash: [4, 4] }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                },
+                plugins: { legend: { display: false } }
+            };
+
+            cpuChart = new Chart(cpuCtx, {
+                type: 'line',
+                data: {
+                    labels: Array(maxDataPoints).fill(''),
+                    datasets: [{
+                        label: 'CPU (%)',
+                        data: Array(maxDataPoints).fill(0),
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: commonOptions
+            });
+
+            ramChart = new Chart(ramCtx, {
+                type: 'line',
+                data: {
+                    labels: Array(maxDataPoints).fill(''),
+                    datasets: [{
+                        label: 'RAM (%)',
+                        data: Array(maxDataPoints).fill(0),
+                        borderColor: '#9b59b6',
+                        backgroundColor: 'rgba(155, 89, 182, 0.2)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: commonOptions
+            });
+
+            fetchSystemStats();
+            setInterval(fetchSystemStats, 3000);
+        } catch (error) {
+            console.error("Error initializing Chart.js:", error);
+        }
+    }
+
+    function fetchSystemStats() {
+        fetch('/admin/system-stats')
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) return;
+
+                // Update CPU
+                cpuChart.data.datasets[0].data.shift();
+                cpuChart.data.datasets[0].data.push(data.cpu);
+                cpuChart.update();
+
+                // Update RAM
+                ramChart.data.datasets[0].data.shift();
+                ramChart.data.datasets[0].data.push(data.ramPercent);
+                ramChart.update();
+            })
+            .catch(err => console.error("System stat error:", err));
     }
 
     // Role-based UI initialization

@@ -39,6 +39,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.lang.management.ManagementFactory;
+import com.sun.management.OperatingSystemMXBean;
 
 @RestController
 @RequestMapping("/admin")
@@ -127,6 +129,30 @@ public class AdminController {
     @GetMapping("/series")
     public ResponseEntity<List<Series>> getSeriesList() {
         return ResponseEntity.ok(seriesService.getAllSeries());
+    }
+
+    @GetMapping("/system-stats")
+    public ResponseEntity<Map<String, Object>> getSystemStats() {
+        Map<String, Object> stats = new HashMap<>();
+        try {
+            OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
+            double cpuLoad = osBean.getCpuLoad();
+            if (cpuLoad < 0)
+                cpuLoad = 0;
+            stats.put("cpu", Math.round(cpuLoad * 100.0 * 100.0) / 100.0);
+
+            long totalMem = Runtime.getRuntime().totalMemory();
+            long freeMem = Runtime.getRuntime().freeMemory();
+            long usedMem = totalMem - freeMem;
+            stats.put("ramTotal", totalMem);
+            stats.put("ramUsed", usedMem);
+            stats.put("ramPercent", Math.round(((double) usedMem / totalMem) * 100.0 * 100.0) / 100.0);
+
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            stats.put("error", e.getMessage());
+            return ResponseEntity.status(500).body(stats);
+        }
     }
 
     @GetMapping("/series/check")

@@ -154,8 +154,39 @@
             margin-top: 4px;
             opacity: 0.5;
         }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background-color: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .chart-card h4 {
+            margin: 0 0 15px 0;
+            color: #eee;
+            font-size: 16px;
+        }
+
+        .chart-wrapper {
+            width: 100%;
+            height: 200px;
+            position: relative;
+        }
     </style>
     <script src="/homepage/js/devtools-protection.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -266,6 +297,22 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="charts-container" id="systemChartsContainer">
+                    <div class="chart-card">
+                        <h4><i class="fas fa-microchip" style="color: #3498db;"></i> CPU Kullanımı</h4>
+                        <div class="chart-wrapper">
+                            <canvas id="cpuChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h4><i class="fas fa-memory" style="color: #9b59b6;"></i> RAM Kullanımı</h4>
+                        <div class="chart-wrapper">
+                            <canvas id="ramChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Quick Actions or Recent Activity could go here -->
             </section>
 
@@ -1271,11 +1318,14 @@
             <!-- SECURITY VIOLATIONS SECTION -->
             <section id="security-violations-section" class="admin-section" style="display: none;">
                 <div class="card">
-                    <div class="card-header" style="justify-content: space-between; display: flex; align-items: center;">
+                    <div class="card-header"
+                        style="justify-content: space-between; display: flex; align-items: center;">
                         <h2><i class="fas fa-user-shield"></i> Güvenlik İhlal Kayıtları</h2>
                         <div style="display: flex; gap: 10px; align-items: center;">
-                            <button id="btnDeleteSelectedViolations" class="btn btn-sm btn-danger" style="display: none;">
-                                <i class="fas fa-trash"></i> Seçilenleri Sil (<span id="countSelectedViolations">0</span>)
+                            <button id="btnDeleteSelectedViolations" class="btn btn-sm btn-danger"
+                                style="display: none;">
+                                <i class="fas fa-trash"></i> Seçilenleri Sil (<span
+                                    id="countSelectedViolations">0</span>)
                             </button>
                             <button class="btn btn-sm btn-secondary" onclick="fetchSecurityViolations()">
                                 <i class="fas fa-sync-alt"></i> Yenile
@@ -1356,38 +1406,40 @@
                                 </div>
                             </div>
                         </div>
-            </section>
-
-            <!-- USER REPORTS SECTION -->
-            <section id="user-reports-section" class="admin-section" style="display: none;">
-                <div class="card">
-                    <div class="card-header"
-                        style="justify-content: space-between; display: flex; align-items: center;">
-                        <h2><i class="fas fa-flag"></i> Kullanıcı Raporları</h2>
-                        <button class="btn btn-sm btn-secondary" onclick="fetchUserReports()">
-                            <i class="fas fa-sync-alt"></i> Yenile
-                        </button>
-                    </div>
-                    <div class="table-container">
-                        <table class="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>Tarih</th>
-                                    <th>Bildiren</th>
-                                    <th>Bildirilen</th>
-                                    <th>Neden</th>
-                                    <th>Bağlam</th>
-                                    <th>İşlem</th>
-                                </tr>
-                            </thead>
-                            <tbody id="userReportsTableBody">
-                                <!-- Raporlar buraya gelecek -->
-                            </tbody>
-                        </table>
                     </div>
                 </div>
-            </section>
-        </main>
+    </div>
+    </section>
+
+    <!-- USER REPORTS SECTION -->
+    <section id="user-reports-section" class="admin-section" style="display: none;">
+        <div class="card">
+            <div class="card-header" style="justify-content: space-between; display: flex; align-items: center;">
+                <h2><i class="fas fa-flag"></i> Kullanıcı Raporları</h2>
+                <button class="btn btn-sm btn-secondary" onclick="fetchUserReports()">
+                    <i class="fas fa-sync-alt"></i> Yenile
+                </button>
+            </div>
+            <div class="table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th>Bildiren</th>
+                            <th>Bildirilen</th>
+                            <th>Neden</th>
+                            <th>Bağlam</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userReportsTableBody">
+                        <!-- Raporlar buraya gelecek -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+    </main>
     </div>
 
     <!-- TVMaze Results Modal -->
