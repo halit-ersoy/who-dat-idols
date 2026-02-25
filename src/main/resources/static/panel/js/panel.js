@@ -23,7 +23,23 @@
             });
 
             // Section-specific on-show hooks
-            if (targetId === 'feedback-section') {
+            if (targetId === 'dashboard-section') {
+                fetchLiveActiveUsers();
+                fetchStorageStats();
+                fetchDashboardStats();
+            } else if (targetId === 'hero-section') {
+                fetchHeroVideos();
+            } else if (targetId === 'movie-section') {
+                fetchMovies();
+            } else if (targetId === 'series-section') {
+                fetchSeries();
+            } else if (targetId === 'archive-section') {
+                fetchHeroVideos();
+                fetchMovies();
+                fetchSeries();
+            } else if (targetId === 'view-management-section') {
+                fetchViewStats();
+            } else if (targetId === 'feedback-section') {
                 fetchFeedbacks();
             } else if (targetId === 'security-violations-section') {
                 fetchSecurityViolations();
@@ -33,6 +49,8 @@
                 fetchAdminConversations();
             } else if (targetId === 'user-reports-section') {
                 fetchUserReports();
+            } else if (targetId === 'update-notes-section') {
+                fetchUpdateNotes();
             }
 
             // Scroll to top of main content
@@ -54,13 +72,10 @@
     }
 
     // Sayfa açılınca mevcut listeleri çek
-    fetchHeroVideos();
-    fetchMovies();
-    fetchSeries();
-    fetchViewStats();
+    // Dashboard is immediately visible, so we load its specific stats
     fetchLiveActiveUsers();
-    fetchUpdateNotes();
     fetchStorageStats();
+    fetchDashboardStats();
 
     let cpuChart, ramChart;
     const maxDataPoints = 20;
@@ -2014,28 +2029,24 @@
 
     /**
      * DASHBOARD STATS CALCULATOR
-     * Calculates totals from window.currentMovies and window.currentSeries
+     * Fetches counts from the server for Dashboard
      */
-    function updateDashboardStats() {
-        // Movies
-        const movieCount = window.currentMovies ? window.currentMovies.length : 0;
-        const movieEl = document.getElementById('statTotalMovies');
-        if (movieEl) movieEl.innerText = movieCount;
+    function fetchDashboardStats() {
+        fetch('/admin/dashboard-stats')
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) return;
 
-        // Series
-        const seriesCount = window.currentSeries ? window.currentSeries.length : 0;
-        const seriesEl = document.getElementById('statTotalSeries');
-        if (seriesEl) seriesEl.innerText = seriesCount;
+                const movieEl = document.getElementById('statTotalMovies');
+                if (movieEl) movieEl.innerText = data.movies || 0;
 
-        // Episodes
-        let episodeCount = 0;
-        if (window.currentSeries) {
-            window.currentSeries.forEach(s => {
-                episodeCount += (s.episodeCount || 0);
-            });
-            const epEl = document.getElementById('statTotalEpisodes');
-            if (epEl) epEl.innerText = episodeCount;
-        }
+                const seriesEl = document.getElementById('statTotalSeries');
+                if (seriesEl) seriesEl.innerText = data.series || 0;
+
+                const epEl = document.getElementById('statTotalEpisodes');
+                if (epEl) epEl.innerText = data.episodes || 0;
+            })
+            .catch(err => console.error("Dashboard stats error:", err));
     }
 
     /* ===========================================================

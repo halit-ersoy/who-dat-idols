@@ -158,6 +158,25 @@ public class AdminController {
         }
     }
 
+    @GetMapping("/dashboard-stats")
+    public ResponseEntity<Map<String, Object>> getDashboardStats() {
+        Map<String, Object> stats = new HashMap<>();
+        try {
+            Integer totalMovies = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM Movie", Integer.class);
+            Integer totalSeries = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM Series", Integer.class);
+            Integer totalEpisodes = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM Episode", Integer.class);
+
+            stats.put("movies", totalMovies != null ? totalMovies : 0);
+            stats.put("series", totalSeries != null ? totalSeries : 0);
+            stats.put("episodes", totalEpisodes != null ? totalEpisodes : 0);
+
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            stats.put("error", e.getMessage());
+            return ResponseEntity.status(500).body(stats);
+        }
+    }
+
     @GetMapping("/series/check")
     public ResponseEntity<Map<String, Boolean>> checkSeriesExists(@RequestParam("name") String name) {
         boolean exists = seriesService.findSeriesByName(name) != null;
