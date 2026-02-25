@@ -777,6 +777,12 @@ public class AdminController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/security/violations/bulk-delete")
+    public ResponseEntity<Void> deleteSecurityViolationsBulk(@RequestBody List<Long> ids) {
+        securityViolationRepository.deleteByIds(ids);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/security/ban")
     public ResponseEntity<Void> banIp(@RequestParam("ip") String ip,
             @RequestParam(value = "reason", required = false) String reason) {

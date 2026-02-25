@@ -3111,18 +3111,22 @@
     /* ===========================================================
        GÜVENLİK İHLAL KAYITLARI (SECURITY VIOLATIONS)
        =========================================================== */
+    let selectedViolationIds = new Set();
+
     window.fetchSecurityViolations = function () {
         const tbody = document.getElementById('securityViolationsTableBody');
         if (!tbody) return;
 
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Yükleniyor...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Yükleniyor...</td></tr>';
+        selectedViolationIds.clear();
+        updateViolationSelectionUI();
 
         fetch('/admin/security/violations')
             .then(res => res.json())
             .then(violations => {
                 tbody.innerHTML = '';
                 if (!violations || violations.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#666;">Henüz ihlal kaydı bulunamadı.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#666;">Henüz ihlal kaydı bulunamadı.</td></tr>';
                     return;
                 }
 
@@ -3130,6 +3134,7 @@
                     const date = new Date(v.timestamp).toLocaleString('tr-TR');
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
+                        <td><input type="checkbox" class="violation-checkbox" value="${v.id}" ${selectedViolationIds.has(v.id.toString()) ? 'checked' : ''} onclick="event.stopPropagation(); toggleViolationSelection('${v.id}', this.checked)"></td>
                         <td>${date}</td>
                         <td style="color:var(--danger); font-family:monospace;">${v.ipAddress}</td>
                         <td><a href="${v.pageUrl}" target="_blank" style="color:var(--primary); font-size:12px; max-width:150px; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${v.pageUrl}</a></td>
@@ -3150,9 +3155,72 @@
             })
             .catch(err => {
                 console.error("Güvenlik kayıtları hatası:", err);
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--danger);">Kayıtlar yüklenemedi.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--danger);">Kayıtlar yüklenemedi.</td></tr>';
             });
     };
+
+    window.toggleViolationSelection = function (id, isChecked) {
+        if (isChecked) {
+            selectedViolationIds.add(id);
+        } else {
+            selectedViolationIds.delete(id);
+        }
+        updateViolationSelectionUI();
+    };
+
+    function updateViolationSelectionUI() {
+        const count = selectedViolationIds.size;
+        const btnDelete = document.getElementById('btnDeleteSelectedViolations');
+        const countSpan = document.getElementById('countSelectedViolations');
+        const selectAll = document.getElementById('selectAllViolations');
+
+        if (countSpan) countSpan.innerText = count;
+        if (btnDelete) btnDelete.style.display = count > 0 ? 'inline-flex' : 'none';
+
+        if (selectAll) {
+            const checkboxes = document.querySelectorAll('.violation-checkbox');
+            selectAll.checked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
+        }
+    }
+
+    const selectAllViolations = document.getElementById('selectAllViolations');
+    if (selectAllViolations) {
+        selectAllViolations.onclick = function () {
+            const checkboxes = document.querySelectorAll('.violation-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = this.checked;
+                if (this.checked) {
+                    selectedViolationIds.add(cb.value);
+                } else {
+                    selectedViolationIds.delete(cb.value);
+                }
+            });
+            updateViolationSelectionUI();
+        };
+    }
+
+    const btnBulkDeleteViolations = document.getElementById('btnDeleteSelectedViolations');
+    if (btnBulkDeleteViolations) {
+        btnBulkDeleteViolations.onclick = function () {
+            const count = selectedViolationIds.size;
+            if (!confirm(`${count} adet güvenlik kaydını silmek istediğinize emin misiniz?`)) return;
+
+            const ids = Array.from(selectedViolationIds).map(id => parseInt(id));
+
+            fetch('/admin/security/violations/bulk-delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(ids)
+            }).then(res => {
+                if (res.ok) {
+                    selectedViolationIds.clear();
+                    fetchSecurityViolations();
+                } else {
+                    res.text().then(msg => alert("Hata: " + msg));
+                }
+            }).catch(err => alert("Hata: " + err));
+        };
+    }
 
     window.deleteSecurityViolation = function (id) {
         if (!confirm("Bu kaydı silmek istediğinize emin misiniz?")) return;

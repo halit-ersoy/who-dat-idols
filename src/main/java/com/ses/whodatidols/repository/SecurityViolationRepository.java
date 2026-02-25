@@ -58,4 +58,12 @@ public class SecurityViolationRepository {
         String sql = "DELETE FROM [WhoDatIdols].[dbo].[SecurityViolations] WHERE IpAddress = ?";
         jdbcTemplate.update(sql, ipAddress);
     }
+
+    public void deleteByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty())
+            return;
+        String placeholders = ids.stream().map(id -> "?").collect(java.util.stream.Collectors.joining(","));
+        String sql = "DELETE FROM [WhoDatIdols].[dbo].[SecurityViolations] WHERE ID IN (" + placeholders + ")";
+        jdbcTemplate.update(sql, ids.toArray());
+    }
 }
