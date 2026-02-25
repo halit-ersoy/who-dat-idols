@@ -12,10 +12,10 @@
             this.createOverlay();
             this.disableShortcuts();
             this.disableContextMenu();
-            this.detectDevTools();
 
-            // Check every 500ms
-            setInterval(() => this.detectDevTools(), 500);
+            // Periyodik kontrol ve 'debugger' zamanlayıcısı Smart TV ve Mobil
+            // cihazlarda takılmalar nedeniyle asılsız uyarılar (false positive) ürettiği için kaldırıldı.
+            // Artık sadece tuş kombinasyonları (F12 vs.) dinleniyor.
         },
 
         createOverlay() {
@@ -83,19 +83,23 @@
         disableShortcuts() {
             window.addEventListener('keydown', (e) => {
                 // F12
-                if (e.keyCode === 123) {
+                if (e.key === 'F12' || e.keyCode === 123) {
                     e.preventDefault();
                     this.showWarning();
                     return false;
                 }
-                // Ctrl+Shift+I, J, C
-                if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) {
+
+                const isCmdOrCtrl = e.ctrlKey || e.metaKey;
+
+                // Windows/Linux (Ctrl+Shift+I/J/C) veya Mac (Cmd+Option+I/J/C) 
+                if ((isCmdOrCtrl && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) ||
+                    (e.metaKey && e.altKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67))) {
                     e.preventDefault();
                     this.showWarning();
                     return false;
                 }
-                // Ctrl+U (View Source)
-                if (e.ctrlKey && e.keyCode === 85) {
+                // Ctrl+U veya Mac (Cmd+Option+U) (Kaynağı Görüntüle)
+                if ((isCmdOrCtrl && e.keyCode === 85) || (e.metaKey && e.altKey && e.keyCode === 85)) {
                     e.preventDefault();
                     this.showWarning();
                     return false;
@@ -110,29 +114,6 @@
             });
         },
 
-        detectDevTools() {
-            // Skip size checks on mobile devices to avoid false positives from browser toolbars/keyboards
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-            if (!isMobile) {
-                const threshold = 160;
-                const widthDiff = window.outerWidth - window.innerWidth > threshold;
-                const heightDiff = window.outerHeight - window.innerHeight > threshold;
-
-                if (widthDiff || heightDiff) {
-                    this.showWarning();
-                    return;
-                }
-            }
-
-            // Advanced check using debugger - works across platforms if tools are open
-            const startTime = performance.now();
-            debugger;
-            const endTime = performance.now();
-            if (endTime - startTime > 100) {
-                this.showWarning();
-            }
-        }
     };
 
     // Initialize when DOM is ready
