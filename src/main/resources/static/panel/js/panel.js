@@ -941,7 +941,7 @@
             .then(res => res.json())
             .then(movies => {
                 window.currentMovies = movies;
-                updateDashboardStats();
+                fetchDashboardStats();
                 const tbody = document.querySelector('#movieTable tbody');
                 tbody.innerHTML = '';
                 movies.forEach(movie => {
@@ -1311,7 +1311,7 @@
             .then(res => res.json())
             .then(seriesList => {
                 window.currentSeries = seriesList;
-                updateDashboardStats(); // Update stats immediately after fetch
+                fetchDashboardStats(); // Update stats immediately after fetch
 
                 const container = document.getElementById('seriesAccordion');
                 const cardGrid = document.getElementById('seriesCardGrid');
