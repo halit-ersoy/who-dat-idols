@@ -252,6 +252,82 @@ public class MovieRepository {
         }
     }
 
+    @SuppressWarnings("null")
+    public List<Movie> findMoviesWithFilters(Integer categoryId, Integer year, String country, String sort, int offset,
+            int limit) {
+        StringBuilder sql = new StringBuilder(
+                """
+                            SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug,
+                                   (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                                    JOIN MovieCategories MC ON MC.CategoryID = C.ID
+                                    WHERE MC.MovieID = M.ID) as category
+                            FROM [WhoDatIdols].[dbo].[Movie] M
+                            WHERE 1=1
+                        """);
+
+        List<Object> params = new java.util.ArrayList<>();
+
+        if (categoryId != null && categoryId > 0) {
+            sql.append(
+                    " AND EXISTS (SELECT 1 FROM MovieCategories MC2 WHERE MC2.MovieID = M.ID AND MC2.CategoryID = ?)");
+            params.add(categoryId);
+        }
+
+        if (year != null && year > 0) {
+            sql.append(" AND M.ReleaseYear = ?");
+            params.add(year);
+        }
+
+        if (country != null && !country.isEmpty() && !country.equals("all")) {
+            sql.append(" AND M.Country = ?");
+            params.add(country);
+        }
+
+        // Sorting
+        if ("oldest".equalsIgnoreCase(sort)) {
+            sql.append(" ORDER BY M.uploadDate ASC, M.name ASC");
+        } else if ("a-z".equalsIgnoreCase(sort)) {
+            sql.append(" ORDER BY M.name ASC");
+        } else if ("z-a".equalsIgnoreCase(sort)) {
+            sql.append(" ORDER BY M.name DESC");
+        } else {
+            // Default newest
+            sql.append(" ORDER BY M.uploadDate DESC, M.name ASC");
+        }
+        sql.append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        params.add(offset);
+        params.add(limit);
+
+        String finalSql = sql.toString();
+        return jdbcTemplate.query(finalSql, new MovieRowMapper(), params.toArray());
+    }
+
+    @SuppressWarnings("null")
+    public int countMoviesWithFilters(Integer categoryId, Integer year, String country) {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Movie] M WHERE 1=1");
+        List<Object> params = new java.util.ArrayList<>();
+
+        if (categoryId != null && categoryId > 0) {
+            sql.append(
+                    " AND EXISTS (SELECT 1 FROM MovieCategories MC2 WHERE MC2.MovieID = M.ID AND MC2.CategoryID = ?)");
+            params.add(categoryId);
+        }
+
+        if (year != null && year > 0) {
+            sql.append(" AND M.ReleaseYear = ?");
+            params.add(year);
+        }
+
+        if (country != null && !country.isEmpty() && !country.equals("all")) {
+            sql.append(" AND M.Country = ?");
+            params.add(country);
+        }
+
+        String finalSql = sql.toString();
+        Integer count = jdbcTemplate.queryForObject(finalSql, Integer.class, params.toArray());
+        return count != null ? count : 0;
+    }
+
     public String getImagePathById(UUID movieId) {
         // SQL Injection riskine karşı parametreli sorgu
         String sql = "SELECT [Summary] FROM [WhoDatIdols].[dbo].[Movie] WHERE [ID] = ?";

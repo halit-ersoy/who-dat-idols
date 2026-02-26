@@ -680,10 +680,25 @@ public class HomeController {
         }
     }
 
-    @GetMapping({ "/coming-soon", "/programlar", "/diziler", "/bl-dizileri", "/filmler" })
+    @GetMapping({ "/coming-soon", "/bl-dizileri" })
     public ResponseEntity<Resource> getComingSoonPage() {
         try {
             Resource htmlPage = new ClassPathResource("static/coming-soon/html/coming-soon.html");
+            if (!htmlPage.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
+                    .body(htmlPage);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @GetMapping({ "/programlar", "/diziler", "/filmler" })
+    public ResponseEntity<Resource> getCategoryPage() {
+        try {
+            Resource htmlPage = new ClassPathResource("static/category/html/category.html");
             if (!htmlPage.exists()) {
                 return ResponseEntity.notFound().build();
             }

@@ -480,4 +480,109 @@ public class SeriesRepository {
                 """;
         return jdbcTemplate.query(sql, seriesRowMapper);
     }
+
+    @SuppressWarnings("null")
+    public List<Series> findSeriesWithFilters(String seriesType, Integer categoryId, Integer finalStatus, Integer year,
+            String country, String sort, int offset, int limit) {
+        StringBuilder sql = new StringBuilder(
+                """
+                            SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
+                                   (SELECT COUNT(*) FROM Episode E WHERE E.SeriesId = S.ID) as episodeCount,
+                                   (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                                    JOIN SeriesCategories SC ON SC.CategoryID = C.ID
+                                    WHERE SC.SeriesID = S.ID) as category
+                            FROM Series S
+                            WHERE 1=1
+                        """);
+
+        List<Object> params = new java.util.ArrayList<>();
+
+        // Default to 'Dizi' if not provided
+        if (seriesType != null && !seriesType.isEmpty()) {
+            sql.append(" AND S.SeriesType = ?");
+            params.add(seriesType);
+        } else {
+            sql.append(" AND (S.SeriesType = 'Dizi' OR S.SeriesType IS NULL)");
+        }
+
+        if (categoryId != null && categoryId > 0) {
+            sql.append(
+                    " AND EXISTS (SELECT 1 FROM SeriesCategories SC2 WHERE SC2.SeriesID = S.ID AND SC2.CategoryID = ?)");
+            params.add(categoryId);
+        }
+
+        if (finalStatus != null && finalStatus >= 0) {
+            sql.append(" AND S.finalStatus = ?");
+            params.add(finalStatus);
+        }
+
+        if (year != null && year > 0) {
+            sql.append(" AND EXISTS (SELECT 1 FROM Episode E WHERE E.SeriesId = S.ID AND E.ReleaseYear = ?)");
+            params.add(year);
+        }
+
+        if (country != null && !country.isEmpty() && !country.equals("all")) {
+            sql.append(" AND S.Country = ?");
+            params.add(country);
+        }
+
+        // Sorting
+        if ("oldest".equalsIgnoreCase(sort)) {
+            sql.append(" ORDER BY S.uploadDate ASC, S.name ASC");
+        } else if ("a-z".equalsIgnoreCase(sort)) {
+            sql.append(" ORDER BY S.name ASC");
+        } else if ("z-a".equalsIgnoreCase(sort)) {
+            sql.append(" ORDER BY S.name DESC");
+        } else {
+            // Default newest
+            sql.append(" ORDER BY S.uploadDate DESC, S.name ASC");
+        }
+
+        sql.append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        params.add(offset);
+        params.add(limit);
+
+        String finalSql = sql.toString();
+        return jdbcTemplate.query(finalSql, seriesRowMapper, params.toArray());
+    }
+
+    @SuppressWarnings("null")
+    public int countSeriesWithFilters(String seriesType, Integer categoryId, Integer finalStatus, Integer year,
+            String country) {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Series S WHERE 1=1");
+        List<Object> params = new java.util.ArrayList<>();
+
+        if (seriesType != null && !seriesType.isEmpty()) {
+            sql.append(" AND S.SeriesType = ?");
+            params.add(seriesType);
+        } else {
+            sql.append(" AND (S.SeriesType = 'Dizi' OR S.SeriesType IS NULL)");
+        }
+
+        if (categoryId != null && categoryId > 0) {
+            sql.append(
+                    " AND EXISTS (SELECT 1 FROM SeriesCategories SC2 WHERE SC2.SeriesID = S.ID AND SC2.CategoryID = ?)");
+            params.add(categoryId);
+        }
+
+        if (finalStatus != null && finalStatus >= 0) {
+            sql.append(" AND S.finalStatus = ?");
+            params.add(finalStatus);
+        }
+
+        if (year != null && year > 0) {
+            sql.append(" AND EXISTS (SELECT 1 FROM Episode E WHERE E.SeriesId = S.ID AND E.ReleaseYear = ?)");
+            params.add(year);
+        }
+
+        if (country != null && !country.isEmpty() && !country.equals("all")) {
+            sql.append(" AND S.Country = ?");
+            params.add(country);
+        }
+
+        String finalSql = sql.toString();
+        Integer count = jdbcTemplate.queryForObject(finalSql, Integer.class, params.toArray());
+        return count != null ? count : 0;
+    }
+
 }
