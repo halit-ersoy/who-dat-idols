@@ -132,6 +132,7 @@ public class HomeController {
                     language = series.getLanguage();
                     country = series.getCountry();
                     imageId = series.getId().toString();
+                    item.seriesType = series.getSeriesType();
 
                     UUID latestEpisodeId = seriesService.getLatestEpisodeIdBySeriesId(ep.getSeriesId());
                     if (latestEpisodeId != null && latestEpisodeId.equals(ep.getId())) {
@@ -261,6 +262,7 @@ public class HomeController {
         public String image;
         public String country;
         public int finalStatus;
+        public String seriesType;
     }
 
     @GetMapping("/about")

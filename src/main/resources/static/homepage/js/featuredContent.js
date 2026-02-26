@@ -131,7 +131,8 @@ export function initFeaturedContent() {
                 let specialBadgeHtml = '';
                 if (type === 'tv') {
                     if (item.season === 1 && item.episode === 1) {
-                        specialBadgeHtml = '<span class="badge new-series-badge">Yeni Dizi</span>';
+                        let badgeText = (item.seriesType === 'Program') ? 'Yeni Program' : 'Yeni Dizi';
+                        specialBadgeHtml = `<span class="badge new-series-badge">${badgeText}</span>`;
                     } else if (item.season > 1 && item.episode === 1) {
                         specialBadgeHtml = '<span class="badge new-series-badge">Yeni Sezon</span>';
                     }
