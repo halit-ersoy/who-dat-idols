@@ -67,10 +67,7 @@ export function initFeaturedContent() {
         currentMode = mode;
         currentPage = 1;
         updateToggleState();
-        featuredGrid.classList.add('fade-out');
-        setTimeout(() => {
-            loadPage(1);
-        }, 300);
+        loadPage(1);
     }
 
     function updateToggleState() {
@@ -82,36 +79,46 @@ export function initFeaturedContent() {
     async function loadPage(page) {
         isLoading = true;
         currentPage = page;
-        featuredGrid.innerHTML = '<div style="text-align: center; color: white; width: 100%; grid-column: 1 / -1;">Yükleniyor...</div>';
 
-        try {
-            const url = `/api/featured-content/${currentMode}?page=${page}&size=${itemsPerPage}`;
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Veri çekilemedi.');
+        // Match Weekly Best transition: add fade-out and wait
+        featuredGrid.classList.add('fade-out');
 
-            const data = await response.json();
-            renderFeaturedGrid(data.content, currentMode);
-            setupPagination(data.totalPages);
-
-            // Scroll to the top of the grid if not initial load
-            const sectionHeader = featuredGrid.previousElementSibling;
-            if (sectionHeader) {
-                const headerOffset = 100;
-                const elementPosition = sectionHeader.getBoundingClientRect().top;
-                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-                window.scrollTo({
-                    top: offsetPosition,
-                    behavior: "smooth"
-                });
+        setTimeout(async () => {
+            let skeletonHtml = '';
+            for (let i = 0; i < 20; i++) {
+                skeletonHtml += `
+                    <div class="featured-item" style="pointer-events: none; opacity: 1;">
+                        <div class="item-thumb img-skeleton" style="width: 60px; height: 80px; border-radius: 8px;"></div>
+                        <div class="item-details" style="display: flex; flex-direction: column; justify-content: center; gap: 8px; width: 100%;">
+                            <div class="img-skeleton" style="width: 80%; height: 14px; border-radius: 4px;"></div>
+                            <div class="img-skeleton" style="width: 50%; height: 12px; border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                `;
             }
+            featuredGrid.innerHTML = skeletonHtml;
+            featuredGrid.classList.remove('fade-out');
+            featuredGrid.classList.add('fade-in');
 
-        } catch (err) {
-            console.error('Error fetching featured content:', err);
-            featuredGrid.innerHTML = '<div class="error-message" style="grid-column: 1 / -1;">Veri yüklenemedi.</div>';
-            paginationContainer.innerHTML = '';
-        } finally {
-            isLoading = false;
-        }
+            try {
+                const url = `/api/featured-content/${currentMode}?page=${page}&size=${itemsPerPage}`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Veri çekilemedi.');
+
+                const data = await response.json();
+                renderFeaturedGrid(data.content, currentMode);
+                setupPagination(data.totalPages);
+
+            } catch (err) {
+                console.error('Error fetching featured content:', err);
+                featuredGrid.innerHTML = '<div class="error-message" style="grid-column: 1 / -1;">Veri yüklenemedi.</div>';
+                paginationContainer.innerHTML = '';
+                featuredGrid.classList.remove('fade-out');
+                featuredGrid.classList.add('fade-in');
+            } finally {
+                isLoading = false;
+            }
+        }, 300);
     }
 
     function renderFeaturedGrid(data, type) {

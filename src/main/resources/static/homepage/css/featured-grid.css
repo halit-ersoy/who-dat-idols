@@ -5,6 +5,16 @@
     margin-bottom: 40px;
     width: 100%;
     max-width: 100%;
+    -webkit-transition: opacity 0.3s ease;
+    transition: opacity 0.3s ease;
+}
+
+.featured-grid.fade-out {
+    opacity: 0.3;
+}
+
+.featured-grid.fade-in {
+    opacity: 1;
 }
 
 .featured-toggle {
@@ -74,11 +84,13 @@
     border-radius: 12px;
     padding: 10px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    -webkit-transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(5px);
     overflow: hidden;
+    position: relative;
 }
 
 .featured-item:hover {
