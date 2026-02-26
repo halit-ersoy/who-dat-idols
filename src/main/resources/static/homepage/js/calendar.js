@@ -46,9 +46,21 @@ export function initCalendar() {
     });
 
     function loadCalendarData() {
+        const cachedCalendar = sessionStorage.getItem('calendarData');
+        if (cachedCalendar) {
+            try {
+                const calendarData = JSON.parse(cachedCalendar);
+                createDrawerStructure(calendarData);
+                return;
+            } catch (e) {
+                console.error('Failed to parse cached calendar data:', e);
+            }
+        }
+
         fetch('/api/calendar')
             .then(response => response.json())
             .then(calendarData => {
+                sessionStorage.setItem('calendarData', JSON.stringify(calendarData));
                 // Setup the drawer structure
                 createDrawerStructure(calendarData);
             })

@@ -3,6 +3,7 @@ package com.ses.whodatidols.controller;
 import com.ses.whodatidols.model.UpdateNote;
 import com.ses.whodatidols.repository.UpdateNoteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +18,7 @@ public class UpdateNoteController {
     @Autowired
     private UpdateNoteRepository updateNoteRepository;
 
+    @Cacheable("updateNotes")
     @GetMapping
     public List<UpdateNote> getActiveUpdates() {
         return updateNoteRepository.findActive();

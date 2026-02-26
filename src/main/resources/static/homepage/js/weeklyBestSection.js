@@ -17,13 +17,25 @@ export function initWeeklyBestSection() {
     let isLoading = false;
 
     // Set initial toggle state
+    // Don't fetch yet, wait for intersection
     updateToggleState();
 
-    // Sayfa yüklendiğinde her iki veri setini de çekiyoruz, ancak dizileri önce render ediyoruz
-    fetchAndCache('tv').then(() => {
-        renderWeeklyBest('tv');
-    });
-    fetchAndCache('movies');
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                obs.disconnect(); // Sadece ilk görünümde çalıştır
+                // Sayfa ilk görüldüğünde her iki veri setini de çekiyoruz, ancak dizileri önce render ediyoruz
+                fetchAndCache('tv').then(() => {
+                    renderWeeklyBest('tv');
+                });
+                fetchAndCache('movies');
+            }
+        });
+    }, { rootMargin: "300px" });
+
+    if (weeklyBestContainer) {
+        observer.observe(weeklyBestContainer);
+    }
 
     movieToggle.addEventListener('click', () => {
         if (currentMode !== 'movies' && !isLoading) {

@@ -54,9 +54,26 @@ function initAnnouncement() {
 
     if (!bar || !textSpan) return;
 
+    const cachedData = sessionStorage.getItem('announcementData');
+    if (cachedData) {
+        try {
+            const data = JSON.parse(cachedData);
+            if (data.active && data.text) {
+                textSpan.textContent = data.text;
+                bar.style.display = 'block';
+            } else {
+                bar.style.display = 'none';
+            }
+            return;
+        } catch (e) {
+            console.error('Failed to parse cached announcement:', e);
+        }
+    }
+
     fetch('/api/settings/announcement')
         .then(res => res.json())
         .then(data => {
+            sessionStorage.setItem('announcementData', JSON.stringify(data));
             if (data.active && data.text) {
                 textSpan.textContent = data.text;
                 bar.style.display = 'block';

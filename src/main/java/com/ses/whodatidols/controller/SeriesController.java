@@ -5,6 +5,7 @@ import com.ses.whodatidols.repository.SeriesRepository;
 import com.ses.whodatidols.service.SeriesService;
 import com.ses.whodatidols.viewmodel.EpisodeViewModel;
 import com.ses.whodatidols.viewmodel.VideoViewModel;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,6 +26,7 @@ public class SeriesController {
         this.seriesService = seriesService;
     }
 
+    @Cacheable(value = "recentSeries", key = "#page + '-' + #size")
     @GetMapping("/recent")
     public ResponseEntity<PageResponse<VideoViewModel>> getRecentSeriesPaged(
             @RequestParam(value = "page", defaultValue = "1") int page,

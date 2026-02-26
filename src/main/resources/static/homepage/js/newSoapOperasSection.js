@@ -183,12 +183,21 @@ export function initNewSoapOperasSection() {
         });
     }
 
-    (async () => {
-        const initialData = await fetchSoapOperas(1, 14, "");
-        if (initialData && initialData.content) {
-            populateCarousel(initialData.content);
-        }
-    })();
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(async entry => {
+            if (entry.isIntersecting) {
+                obs.disconnect();
+                const initialData = await fetchSoapOperas(1, 14, "");
+                if (initialData && initialData.content) {
+                    populateCarousel(initialData.content);
+                }
+            }
+        });
+    }, { rootMargin: "200px" });
+
+    if (newSoapOperasCarousel) {
+        observer.observe(newSoapOperasCarousel);
+    }
 
     viewAllBtn.addEventListener('click', async (e) => {
         e.preventDefault();

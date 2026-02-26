@@ -1,5 +1,6 @@
 package com.ses.whodatidols.controller;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -84,6 +85,7 @@ public class SavedController {
         }
     }
 
+    @Cacheable("translatedEpisodes")
     @GetMapping("/translated")
     public ResponseEntity<?> getTranslatedEpisodes() {
         try {
@@ -97,6 +99,7 @@ public class SavedController {
         }
     }
 
+    @Cacheable("loadedEpisodes")
     @GetMapping("/loaded")
     public ResponseEntity<?> getLoadedEpisodes() {
         try {

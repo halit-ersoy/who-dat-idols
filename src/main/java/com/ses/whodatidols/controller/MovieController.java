@@ -3,6 +3,7 @@ package com.ses.whodatidols.controller;
 import com.ses.whodatidols.model.Movie;
 import com.ses.whodatidols.repository.MovieRepository;
 import com.ses.whodatidols.viewmodel.VideoViewModel;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,6 +24,7 @@ public class MovieController {
                 this.movieRepository = movieRepository;
         }
 
+        @Cacheable(value = "recentMovies", key = "#page + '-' + #size")
         @GetMapping("/recent")
         public ResponseEntity<PageResponse<VideoViewModel>> getRecentMoviesPaged(
                         @RequestParam(value = "page", defaultValue = "1") int page,

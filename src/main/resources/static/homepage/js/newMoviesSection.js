@@ -186,12 +186,22 @@ export function initNewMoviesSection() {
     }
 
     // Başlangıçta ana sayfadaki carousel için ilk sayfayı (14 item) çek
-    (async () => {
-        const initialData = await fetchMovies(1, 14, "");
-        if (initialData && initialData.content) {
-            populateCarousel(initialData.content);
-        }
-    })();
+    // Sadece görünür olduğunda yükle (Lazy Load)
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(async entry => {
+            if (entry.isIntersecting) {
+                obs.disconnect(); // Sadece bir kere yükle
+                const initialData = await fetchMovies(1, 14, "");
+                if (initialData && initialData.content) {
+                    populateCarousel(initialData.content);
+                }
+            }
+        });
+    }, { rootMargin: "200px" });
+
+    if (newMoviesCarousel) {
+        observer.observe(newMoviesCarousel);
+    }
 
     viewAllBtn.addEventListener('click', async (e) => {
         e.preventDefault();

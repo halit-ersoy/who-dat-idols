@@ -2,6 +2,7 @@ package com.ses.whodatidols.controller;
 
 import com.ses.whodatidols.model.CalendarEvent;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -41,6 +42,7 @@ public class CalendarController {
     }
 
     // Public API to get calendar data
+    @Cacheable("calendar")
     @GetMapping("/api/calendar")
     public ResponseEntity<Map<String, List<Map<String, Object>>>> getCalendar() {
         String sql = "SELECT * FROM CalendarEvent ORDER BY sortOrder ASC, showTime ASC";

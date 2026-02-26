@@ -5,6 +5,7 @@ import com.ses.whodatidols.model.Series;
 import com.ses.whodatidols.repository.MovieRepository;
 import com.ses.whodatidols.service.SeriesService;
 import com.ses.whodatidols.viewmodel.VideoViewModel;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,6 +26,7 @@ public class WeeklyBestController {
         this.seriesService = seriesService;
     }
 
+    @Cacheable("weeklyBestMovies")
     @GetMapping("/movies")
     public ResponseEntity<List<VideoViewModel>> getTopMovies() {
         List<Movie> topMovies = movieRepository.findTop6MoviesByCount();
@@ -54,6 +56,7 @@ public class WeeklyBestController {
         return ResponseEntity.ok(viewModels);
     }
 
+    @Cacheable("weeklyBestSeries")
     @GetMapping("/tv")
     public ResponseEntity<List<VideoViewModel>> getTopSoapOperas() {
         List<Series> topSeries = seriesService.getTop6SeriesByCount();

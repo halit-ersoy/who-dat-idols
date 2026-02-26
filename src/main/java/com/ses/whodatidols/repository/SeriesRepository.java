@@ -67,6 +67,45 @@ public class SeriesRepository {
                             "    CREATE NONCLUSTERED INDEX idx_series_slug ON Series(slug); " +
                             "END");
 
+            // Performance Indexes for Series
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_series_uploaddate' AND object_id = OBJECT_ID('Series')) "
+                            +
+                            "BEGIN " +
+                            "    CREATE NONCLUSTERED INDEX idx_series_uploaddate ON Series(uploadDate DESC, name ASC); "
+                            +
+                            "END");
+
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_series_viewcount' AND object_id = OBJECT_ID('Series')) "
+                            +
+                            "BEGIN " +
+                            "    CREATE NONCLUSTERED INDEX idx_series_viewcount ON Series(viewCount DESC, name ASC); " +
+                            "END");
+
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_series_country' AND object_id = OBJECT_ID('Series')) "
+                            +
+                            "BEGIN " +
+                            "    CREATE NONCLUSTERED INDEX idx_series_country ON Series(Country); " +
+                            "END");
+
+            // Performance Indexes for Episode
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_episode_uploaddate' AND object_id = OBJECT_ID('Episode')) "
+                            +
+                            "BEGIN " +
+                            "    CREATE NONCLUSTERED INDEX idx_episode_uploaddate ON Episode(uploadDate DESC, name ASC); "
+                            +
+                            "END");
+
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_episode_viewcount' AND object_id = OBJECT_ID('Episode')) "
+                            +
+                            "BEGIN " +
+                            "    CREATE NONCLUSTERED INDEX idx_episode_viewcount ON Episode(viewCount DESC); " +
+                            "END");
+
             // Ensure finalStatus is INT (In case it was previously BIT/BOOLEAN)
             jdbcTemplate.execute(
                     "IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Series' AND COLUMN_NAME = 'finalStatus' AND DATA_TYPE = 'bit') "

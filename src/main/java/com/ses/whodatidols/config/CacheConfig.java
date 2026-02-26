@@ -1,29 +1,47 @@
 package com.ses.whodatidols.config;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.cache.caffeine.CaffeineCacheManager;
-import org.springframework.context.annotation.Bean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.concurrent.TimeUnit;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 
 @Configuration
-@EnableCaching
+@EnableScheduling
 public class CacheConfig {
 
-    @Bean
-    public Caffeine<Object, Object> caffeineConfig() {
-        return Caffeine.newBuilder()
-                .expireAfterWrite(10, TimeUnit.MINUTES) // 10 dakikalik taze tutma suresi
-                .maximumSize(10_000); // RAM'i sismemek icin en fazla 10 bin kayit sakla
+    private static final Logger logger = LoggerFactory.getLogger(CacheConfig.class);
+
+    /**
+     * Evict dynamic content caches every 15 minutes.
+     * This ensures the homepage shows recent updates reasonably fast
+     * while drastically reducing DB load.
+     */
+    @CacheEvict(value = {
+            "weeklyBestMovies",
+            "weeklyBestSeries",
+            "recentSeries",
+            "recentMovies",
+            "translatedEpisodes",
+            "loadedEpisodes"
+    }, allEntries = true)
+    @Scheduled(fixedRateString = "${cache.dynamic.ttl:900000}") // 900000 ms = 15 minutes
+    public void evictDynamicCaches() {
+        logger.debug("Evicting dynamic content caches (weekly best, recent content, etc.)");
     }
 
-    @Bean
-    public CacheManager cacheManager(@org.springframework.lang.NonNull Caffeine<Object, Object> caffeine) {
-        CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager();
-        caffeineCacheManager.setCaffeine(caffeine);
-        return caffeineCacheManager;
+    /**
+     * Evict mostly static content caches every 12 hours.
+     * Things like update notes, announcements, and calendar don't change often.
+     */
+    @CacheEvict(value = {
+            "updateNotes",
+            "calendar",
+            "announcements"
+    }, allEntries = true)
+    @Scheduled(fixedRateString = "${cache.static.ttl:43200000}") // 43200000 ms = 12 hours
+    public void evictStaticCaches() {
+        logger.debug("Evicting static content caches (update notes, calendar, announcements)");
     }
 }

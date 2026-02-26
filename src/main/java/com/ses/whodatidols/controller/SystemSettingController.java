@@ -1,6 +1,7 @@
 package com.ses.whodatidols.controller;
 
 import com.ses.whodatidols.repository.SystemSettingRepository;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +20,7 @@ public class SystemSettingController {
      * Public endpoint to get the current announcement.
      * Used by the Homepage.
      */
+    @Cacheable("announcements")
     @GetMapping("/api/settings/announcement")
     public ResponseEntity<Map<String, Object>> getAnnouncement() {
         return ResponseEntity.ok(repository.getAnnouncement());

@@ -43,6 +43,28 @@ public class MovieRepository {
                             "    CREATE NONCLUSTERED INDEX idx_movie_slug ON Movie(slug); " +
                             "END");
 
+            // Performance Indexes
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_movie_uploaddate' AND object_id = OBJECT_ID('Movie')) "
+                            +
+                            "BEGIN " +
+                            "    CREATE NONCLUSTERED INDEX idx_movie_uploaddate ON Movie(uploadDate DESC, name ASC); " +
+                            "END");
+
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_movie_viewcount' AND object_id = OBJECT_ID('Movie')) "
+                            +
+                            "BEGIN " +
+                            "    CREATE NONCLUSTERED INDEX idx_movie_viewcount ON Movie(viewCount DESC, name ASC); " +
+                            "END");
+
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_movie_country_year' AND object_id = OBJECT_ID('Movie')) "
+                            +
+                            "BEGIN " +
+                            "    CREATE NONCLUSTERED INDEX idx_movie_country_year ON Movie(Country, ReleaseYear); " +
+                            "END");
+
             // One-time populate missing slugs
             jdbcTemplate.execute(
                     "UPDATE Movie SET slug = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(name, ' ', '-'), 'ı', 'i'), 'ğ', 'g'), 'ü', 'u'), 'ş', 's')) WHERE slug IS NULL OR slug = ''");
