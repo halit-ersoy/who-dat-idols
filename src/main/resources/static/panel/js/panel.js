@@ -2637,18 +2637,21 @@
                         <td title="${emailDisplay}">${(emailDisplay.length > 25) ? emailDisplay.substring(0, 25) + '...' : emailDisplay}</td>
                         <td>${fullNameDisplay}</td>
                         <td>
-                            <div class="premium-role-select">
-                                <div class="role-badge-display" onclick="toggleRoleDropdown(this)" data-role="${user.role || 'USER'}">
-                                    <span>${user.role || 'USER'}</span>
-                                    <i class="fas fa-chevron-down"></i>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="premium-role-select">
+                                    <div class="role-badge-display" onclick="toggleRoleDropdown(this)" data-role="${user.role || 'USER'}">
+                                        <span>${user.role || 'USER'}</span>
+                                        <i class="fas fa-chevron-down"></i>
+                                    </div>
+                                    <div class="role-dropdown-menu">
+                                        <div class="role-option ${user.role === 'USER' || !user.role ? 'active' : ''}" data-role="USER" onclick="updateUserRoleUnified('${user.id}', 'USER', this)">User</div>
+                                        <div class="role-option ${user.role === 'CEVIRMEN' ? 'active' : ''}" data-role="CEVIRMEN" onclick="updateUserRoleUnified('${user.id}', 'CEVIRMEN', this)">Çevirmen</div>
+                                        <div class="role-option ${user.role === 'ADMIN' ? 'active' : ''}" data-role="ADMIN" onclick="updateUserRoleUnified('${user.id}', 'ADMIN', this)">Admin</div>
+                                        <div class="role-option ${user.role === 'KURUCU' ? 'active' : ''}" data-role="KURUCU" onclick="updateUserRoleUnified('${user.id}', 'KURUCU', this)">Kurucu</div>
+                                        <div class="role-option ${user.role === 'GELISTIRICI' ? 'active' : ''}" data-role="GELISTIRICI" onclick="updateUserRoleUnified('${user.id}', 'GELISTIRICI', this)">Gelistirici</div>
+                                    </div>
                                 </div>
-                                <div class="role-dropdown-menu">
-                                    <div class="role-option ${user.role === 'USER' || !user.role ? 'active' : ''}" data-role="USER" onclick="updateUserRoleUnified('${user.id}', 'USER', this)">User</div>
-                                    <div class="role-option ${user.role === 'CEVIRMEN' ? 'active' : ''}" data-role="CEVIRMEN" onclick="updateUserRoleUnified('${user.id}', 'CEVIRMEN', this)">Çevirmen</div>
-                                    <div class="role-option ${user.role === 'ADMIN' ? 'active' : ''}" data-role="ADMIN" onclick="updateUserRoleUnified('${user.id}', 'ADMIN', this)">Admin</div>
-                                    <div class="role-option ${user.role === 'KURUCU' ? 'active' : ''}" data-role="KURUCU" onclick="updateUserRoleUnified('${user.id}', 'KURUCU', this)">Kurucu</div>
-                                    <div class="role-option ${user.role === 'GELISTIRICI' ? 'active' : ''}" data-role="GELISTIRICI" onclick="updateUserRoleUnified('${user.id}', 'GELISTIRICI', this)">Gelistirici</div>
-                                </div>
+                                ${user.isVerified ? '<span title="Doğrulanmış Hesap" style="color: #1ed760; font-size: 1.2rem; cursor: help;"><i class="fas fa-check-circle"></i></span>' : ''}
                             </div>
                         </td>
                         <td>${statusBadge}</td>

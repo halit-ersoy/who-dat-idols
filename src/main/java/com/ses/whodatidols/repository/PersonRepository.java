@@ -160,6 +160,109 @@ public class PersonRepository {
         }
     }
 
+    /**
+     * Generates a code specifically for email verification
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> generateEmailVerificationCode(String nickname) {
+        try {
+            // Generate a random 6-digit code
+            String code = String.format("%06d", new java.util.Random().nextInt(1000000));
+
+            Map<String, Object> result = jdbcTemplate.call(connection -> {
+                var callableStatement = connection.prepareCall(CALL_VERIFY_GENERATE_CODE);
+                callableStatement.setString(1, nickname);
+                callableStatement.setString(2, null);
+                callableStatement.setString(3, null);
+                callableStatement.setString(4, code);
+                return callableStatement;
+            }, new ArrayList<SqlParameter>());
+
+            if (result.containsKey("#result-set-1")) {
+                List<Map<String, Object>> resultSet = (List<Map<String, Object>>) result.get("#result-set-1");
+                if (!resultSet.isEmpty()) {
+                    Map<String, Object> responseMap = resultSet.get(0);
+                    boolean isSuccess = (boolean) responseMap.get("Result");
+
+                    // If successful and email exists, send the verification code
+                    if (isSuccess && responseMap.containsKey("Email")) {
+                        String email = (String) responseMap.get("Email");
+                        if (email != null && !email.isEmpty()) {
+                            try {
+                                // Send verification code via email
+                                emailService.sendVerificationCode(email, code);
+                            } catch (RuntimeException e) {
+                                // Email sending failed, update response
+                                Map<String, Object> emailFailure = new HashMap<>();
+                                emailFailure.put("Result", false);
+                                emailFailure.put("Message", "E-posta gönderimi başarısız oldu: " + e.getMessage());
+                                return emailFailure;
+                            }
+                        }
+                    }
+
+                    // Create a clean response map without exposing the code
+                    Map<String, Object> cleanResponse = new HashMap<>();
+                    cleanResponse.put("Result", responseMap.get("Result"));
+                    cleanResponse.put("Message", responseMap.get("Message"));
+                    cleanResponse.put("success", responseMap.get("Result")); // For UI
+                    return cleanResponse;
+                }
+            }
+
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Bir hata oluştu");
+            return error;
+
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", e.getMessage());
+            return error;
+        }
+    }
+
+    /**
+     * Verifies the email verification code
+     */
+    public Map<String, Object> verifyEmailCode(String nickname, String code) {
+        try {
+            Map<String, Object> verifyResult = verifyResetCode(nickname, code);
+
+            boolean isSuccess = false;
+            if (verifyResult.containsKey("Result") && verifyResult.get("Result") instanceof Boolean) {
+                isSuccess = (boolean) verifyResult.get("Result");
+            }
+
+            if (isSuccess) {
+                // If code is valid, update the user to be verified
+                jdbcTemplate.update("UPDATE [WhoDatIdols].[dbo].[Person] SET isVerified = 1 WHERE nickname = ?",
+                        nickname);
+
+                // Clear the verification code
+                jdbcTemplate.update(
+                        "DELETE FROM [WhoDatIdols].[dbo].[VerificationCode] WHERE ID = (SELECT ID FROM [WhoDatIdols].[dbo].[Person] WHERE nickname = ?)",
+                        nickname);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("message", "Hesabınız başarıyla doğrulandı!");
+                return response;
+            } else {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "Geçersiz veya süresi dolmuş kod.");
+                return response;
+            }
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", e.getMessage());
+            return error;
+        }
+    }
+
     public boolean validateCredentials(String usernameOrEmail, String password) {
         // Öncelikle nickname üzerinden kontrol et
         Integer nicknameMatch = jdbcTemplate.queryForObject(
@@ -214,7 +317,7 @@ public class PersonRepository {
 
     public Optional<Person> findByNicknameOrEmail(String usernameOrEmail) {
         ensureAllowMessagesColumnExists();
-        String sql = "SELECT ID, nickname, name, surname, email, password, isBanned, banReason, role, allowMessages FROM [WhoDatIdols].[dbo].[Person] WHERE nickname = ? OR email = ?";
+        String sql = "SELECT ID, nickname, name, surname, email, password, isBanned, banReason, role, allowMessages, isVerified FROM [WhoDatIdols].[dbo].[Person] WHERE nickname = ? OR email = ?";
         return jdbcTemplate.query(sql, (rs) -> {
             if (rs.next()) {
                 Person p = new Person();
@@ -228,6 +331,7 @@ public class PersonRepository {
                 p.setBanReason(rs.getString("banReason"));
                 p.setRole(rs.getString("role"));
                 p.setAllowMessages(rs.getBoolean("allowMessages"));
+                p.setVerified(rs.getBoolean("isVerified"));
                 return Optional.of(p);
             }
             return Optional.empty();
@@ -263,7 +367,7 @@ public class PersonRepository {
 
     public Map<String, Object> getUserInfoByCookie(String cookie) {
         ensureAllowMessagesColumnExists();
-        String sql = "SELECT ID, nickname, name, surname, email, isBanned, banReason, role, allowMessages FROM [WhoDatIdols].[dbo].[Person] WHERE cookie = ?";
+        String sql = "SELECT ID, nickname, name, surname, email, isBanned, banReason, role, allowMessages, isVerified FROM [WhoDatIdols].[dbo].[Person] WHERE cookie = ?";
         return jdbcTemplate.queryForMap(sql, UUID.fromString(cookie));
     }
 
@@ -275,12 +379,25 @@ public class PersonRepository {
     public Map<String, Object> updateProfileByCookie(String cookie, String nickname, String name, String surname,
             String email) {
         String sql = "EXEC UpdateUserProfile @cookie = ?, @nickname = ?, @name = ?, @surname = ?, @email = ?";
+
+        // Before updating, check if email changed
+        try {
+            Map<String, Object> currentUser = getUserInfoByCookie(cookie);
+            String currentEmail = (String) currentUser.get("email");
+            if (currentEmail != null && !currentEmail.equals(email)) {
+                jdbcTemplate.update("UPDATE [WhoDatIdols].[dbo].[Person] SET isVerified = 0 WHERE cookie = ?",
+                        UUID.fromString(cookie));
+            }
+        } catch (Exception e) {
+            // Ignore error
+        }
+
         return jdbcTemplate.queryForMap(sql, UUID.fromString(cookie), nickname, name, surname, email);
     }
 
     public List<Person> findAllUsers() {
         ensureAllowMessagesColumnExists();
-        String sql = "SELECT ID, nickname, name, surname, email, isBanned, banReason, role, allowMessages FROM [WhoDatIdols].[dbo].[Person] ORDER BY nickname ASC";
+        String sql = "SELECT ID, nickname, name, surname, email, isBanned, banReason, role, allowMessages, isVerified FROM [WhoDatIdols].[dbo].[Person] ORDER BY nickname ASC";
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
             Person p = new Person();
             p.setId(UUID.fromString(rs.getString("ID")));
@@ -292,6 +409,7 @@ public class PersonRepository {
             p.setBanReason(rs.getString("banReason"));
             p.setRole(rs.getString("role"));
             p.setAllowMessages(rs.getBoolean("allowMessages"));
+            p.setVerified(rs.getBoolean("isVerified"));
             return p;
         });
     }
@@ -319,11 +437,14 @@ public class PersonRepository {
                     "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('[WhoDatIdols].[dbo].[Person]') AND name = 'role') ALTER TABLE [WhoDatIdols].[dbo].[Person] ADD role NVARCHAR(50) DEFAULT 'USER'");
             jdbcTemplate.execute(
                     "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('[WhoDatIdols].[dbo].[Person]') AND name = 'allowMessages') ALTER TABLE [WhoDatIdols].[dbo].[Person] ADD allowMessages BIT DEFAULT 1");
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('[WhoDatIdols].[dbo].[Person]') AND name = 'isVerified') ALTER TABLE [WhoDatIdols].[dbo].[Person] ADD isVerified BIT DEFAULT 0");
             // Ensure existing users have it set correctly (SQL Server fix)
             jdbcTemplate
                     .execute("UPDATE [WhoDatIdols].[dbo].[Person] SET allowMessages = 1 WHERE allowMessages IS NULL");
             jdbcTemplate.execute("UPDATE [WhoDatIdols].[dbo].[Person] SET isBanned = 0 WHERE isBanned IS NULL");
             jdbcTemplate.execute("UPDATE [WhoDatIdols].[dbo].[Person] SET role = 'USER' WHERE role IS NULL");
+            jdbcTemplate.execute("UPDATE [WhoDatIdols].[dbo].[Person] SET isVerified = 0 WHERE isVerified IS NULL");
         } catch (Exception e) {
             // Log or handle error if needed, but suppressed for auto-migration
         }

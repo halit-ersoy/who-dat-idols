@@ -667,6 +667,52 @@ public class HomeController {
         }
     }
 
+    @PostMapping("/api/user/request-verification")
+    @ResponseBody
+    public ResponseEntity<?> requestVerification(@CookieValue(name = "wdiAuth", required = false) String cookie) {
+        if (cookie == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "Unauthorized"));
+        }
+        try {
+            Map<String, Object> userInfo = personRepository.getUserInfoByCookie(cookie);
+            String email = (String) userInfo.get("email");
+
+            if (email == null || email.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "message", "E-posta adresi bulunamadı."));
+            }
+
+            Map<String, Object> result = personRepository
+                    .generateEmailVerificationCode((String) userInfo.get("nickname"));
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/api/user/verify-email")
+    @ResponseBody
+    public ResponseEntity<?> verifyEmail(@CookieValue(name = "wdiAuth", required = false) String cookie,
+            @RequestBody Map<String, String> request) {
+        if (cookie == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "Unauthorized"));
+        }
+        try {
+            String code = request.get("code");
+            if (code == null || code.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Kod gerekli."));
+            }
+
+            Map<String, Object> userInfo = personRepository.getUserInfoByCookie(cookie);
+            String nickname = (String) userInfo.get("nickname");
+
+            Map<String, Object> result = personRepository.verifyEmailCode(nickname, code.trim());
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
     @GetMapping("/favorites")
     public ResponseEntity<Resource> getFavoritesPage() {
         try {

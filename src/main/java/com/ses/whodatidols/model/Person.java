@@ -15,6 +15,7 @@ public class Person {
     private String banReason;
     private String role;
     private boolean allowMessages = true;
+    private boolean isVerified = false;
 
     // Default constructor
     public Person() {
@@ -116,5 +117,14 @@ public class Person {
 
     public void setAllowMessages(boolean allowMessages) {
         this.allowMessages = allowMessages;
+    }
+
+    @JsonProperty("isVerified")
+    public boolean isVerified() {
+        return isVerified;
+    }
+
+    public void setVerified(boolean verified) {
+        isVerified = verified;
     }
 }

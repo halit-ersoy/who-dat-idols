@@ -41,13 +41,23 @@ async function setupProfileSection() {
     document.getElementById('user-fullname').innerText = `${data.name} ${data.surname}`;
     document.getElementById('user-nickname').innerText = `@${data.nickname}`;
 
-    // Form inputs
     document.getElementById('input-name').value = data.name || '';
     document.getElementById('input-surname').value = data.surname || '';
     document.getElementById('input-nickname').value = data.nickname || '';
     document.getElementById('input-email').value = data.email || '';
 
+    // Verification UI
+    const verificationContainer = document.getElementById('verification-status-container');
+    if (verificationContainer) {
+        if (data.isVerified) {
+            verificationContainer.innerHTML = '<div class="verification-badge"><i class="fas fa-check-circle"></i> Doğrulanmış Hesap</div>';
+        } else {
+            verificationContainer.innerHTML = '<button type="button" id="request-verification-btn" class="settings-btn" style="padding: 10px 20px; font-size: 0.8rem; margin: 0; width: auto; border-radius: 12px;">Hesabımı Doğrula</button>';
+        }
+    }
+
     initProfileForm();
+    initVerification();
     return data;
 }
 
@@ -114,6 +124,105 @@ async function handleProfileUpdate(e) {
     } catch (error) {
         console.error('Error updating profile:', error);
         showButtonError(updateBtn, 'Hata', 'Profil Bilgilerini Güncelle');
+    }
+}
+
+/**
+ * Initializes the email verification form and modal logic.
+ */
+function initVerification() {
+    const requestBtn = document.getElementById('request-verification-btn');
+    const modal = document.getElementById('verification-modal');
+    const closeBtn = document.getElementById('close-verification-modal');
+    const submitBtn = document.getElementById('submit-verification-btn');
+    const input = document.getElementById('verification-code-input');
+    const message = document.getElementById('verification-message');
+
+    if (requestBtn) {
+        requestBtn.addEventListener('click', async () => {
+            const originalText = requestBtn.innerHTML;
+            requestBtn.disabled = true;
+            requestBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gönderiliyor...';
+
+            try {
+                const response = await fetch('/api/user/request-verification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    requestBtn.innerHTML = '<i class="fas fa-check"></i> Gönderildi';
+                    setTimeout(() => {
+                        modal.style.display = 'flex';
+                        requestBtn.innerHTML = originalText;
+                        requestBtn.disabled = false;
+                    }, 1000);
+                } else {
+                    showButtonError(requestBtn, data.message || 'Başarısız', originalText);
+                }
+            } catch (error) {
+                console.error('Error requesting verification:', error);
+                showButtonError(requestBtn, 'Sunucu Hatası', originalText);
+            }
+        });
+    }
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+            if (message) message.style.display = 'none';
+            if (input) input.value = '';
+        });
+    }
+
+    // Close modal on outside click
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+            if (message) message.style.display = 'none';
+            if (input) input.value = '';
+        }
+    });
+
+    if (submitBtn) {
+        submitBtn.addEventListener('click', async () => {
+            const code = input.value.trim();
+            if (!code || code.length !== 6) {
+                showButtonError(submitBtn, '6 haneli kodu girin', 'Doğrula');
+                return;
+            }
+
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Doğrulanıyor...';
+            if (message) message.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/user/verify-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    submitBtn.innerHTML = '<i class="fas fa-check"></i> Doğrulandı';
+                    submitBtn.style.backgroundColor = '#1ed760';
+
+                    setTimeout(() => {
+                        modal.style.display = 'none';
+                        // Refresh the UI by fetching profile again, or just reload the page for simplicity
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    showButtonError(submitBtn, data.message || 'Geçersiz kod', originalText);
+                }
+            } catch (error) {
+                console.error('Error verifying code:', error);
+                showButtonError(submitBtn, 'Sunucu Hatası', originalText);
+            }
+        });
     }
 }
 

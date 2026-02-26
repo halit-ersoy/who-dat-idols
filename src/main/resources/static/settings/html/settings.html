@@ -15,11 +15,17 @@
 </head>
 
 <body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
     <div id="loading-screen">
         <div class="loading-text">WDI</div>
     </div>
     <header>
-        <a href="/" class="logo" style="text-decoration: none;">WDI</a>
+        <div class="logo">WDI</div>
+        <a href="/" class="back-button"><i class="fas fa-arrow-left"></i> Anasayfaya Dön</a>
     </header>
 
     <main class="settings-container">
@@ -39,32 +45,69 @@
                 <h2>Profil Bilgileri</h2>
                 <div class="settings-card">
                     <form id="profile-form" novalidate>
-                        <div class="settings-field">
-                            <label for="input-name">Ad:</label>
-                            <input type="text" id="input-name" class="form-control" placeholder="Adınızı girin"
-                                required>
+                        <div class="form-row">
+                            <div class="settings-field">
+                                <label for="input-name">Ad</label>
+                                <div class="input-container">
+                                    <i class="fas fa-user"></i>
+                                    <input type="text" id="input-name" class="form-control" placeholder="Ad" required>
+                                </div>
+                            </div>
+                            <div class="settings-field">
+                                <label for="input-surname">Soyad</label>
+                                <div class="input-container">
+                                    <i class="fas fa-signature"></i>
+                                    <input type="text" id="input-surname" class="form-control" placeholder="Soyad"
+                                        required>
+                                </div>
+                            </div>
                         </div>
+
                         <div class="settings-field">
-                            <label for="input-surname">Soyad:</label>
-                            <input type="text" id="input-surname" class="form-control" placeholder="Soyadınızı girin"
-                                required>
+                            <label for="input-nickname">Kullanıcı Adı</label>
+                            <div class="input-container">
+                                <i class="fas fa-at"></i>
+                                <input type="text" id="input-nickname" class="form-control" placeholder="Kullanıcı adı"
+                                    required>
+                            </div>
                         </div>
-                        <div class="settings-field">
-                            <label for="input-nickname">Kullanıcı Adı:</label>
-                            <input type="text" id="input-nickname" class="form-control"
-                                placeholder="Kullanıcı adınızı girin" required>
+
+                        <div class="settings-field email-field-group">
+                            <div class="label-with-addon">
+                                <label for="input-email">E-posta</label>
+                                <div id="verification-status-container"></div>
+                            </div>
+                            <div class="input-container">
+                                <i class="fas fa-envelope"></i>
+                                <input type="email" id="input-email" class="form-control" placeholder="E-posta adresi"
+                                    required>
+                            </div>
                         </div>
-                        <div class="settings-field">
-                            <label for="input-email">E-posta:</label>
-                            <input type="email" id="input-email" class="form-control"
-                                placeholder="E-posta adresinizi girin" required>
-                        </div>
-                        <button type="submit" id="update-profile-btn" class="settings-btn">Profil Bilgilerini
-                            Güncelle</button>
+
+                        <button type="submit" id="update-profile-btn" class="settings-btn premium-btn">
+                            <i class="fas fa-save"></i> Profil Bilgilerini Güncelle
+                        </button>
                         <div id="profile-message" class="password-message" style="display: none;"></div>
                     </form>
                 </div>
             </section>
+
+            <!-- Verification Modal -->
+            <div id="verification-modal" class="modal" style="display: none;">
+                <div class="modal-content" style="max-width: 400px;">
+                    <span class="close-btn" id="close-verification-modal">&times;</span>
+                    <h2>Hesabı Doğrula</h2>
+                    <p style="margin: 10px 0; font-size: 0.9rem; color: #ccc;">E-posta adresinize gönderilen 6 haneli
+                        kodu giriniz.</p>
+                    <div class="form-group">
+                        <input type="text" id="verification-code-input" class="form-control" placeholder="6 haneli kod"
+                            maxlength="6" style="text-align: center; font-size: 1.2rem; letter-spacing: 2px;">
+                    </div>
+                    <button id="submit-verification-btn" class="settings-btn" style="margin-top: 15px;">Doğrula</button>
+                    <div id="verification-message" class="password-message" style="display: none; margin-top: 10px;">
+                    </div>
+                </div>
+            </div>
 
             <section id="password-section" class="settings-section">
                 <h2>Şifre Değiştir</h2>
