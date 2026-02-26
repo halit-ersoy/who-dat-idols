@@ -680,7 +680,7 @@ public class HomeController {
         }
     }
 
-    @GetMapping({ "/coming-soon", "/programlar", "/diziler", "/bl-dizileri" })
+    @GetMapping({ "/coming-soon", "/programlar", "/diziler", "/bl-dizileri", "/filmler" })
     public ResponseEntity<Resource> getComingSoonPage() {
         try {
             Resource htmlPage = new ClassPathResource("static/coming-soon/html/coming-soon.html");
