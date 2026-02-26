@@ -1,7 +1,7 @@
 // comments.js
 import { isUserLoggedIn } from '../../elements/userLogged.js';
 import { showReportModal } from '../../elements/premium-modals.js';
-
+import { escapeHtml } from '../../elements/sanitize.js';
 
 export function initCommentsSection(videoId) {
     const commentForm = document.getElementById('commentForm');
@@ -174,8 +174,11 @@ export function initCommentsSection(videoId) {
             hour: '2-digit', minute: '2-digit'
         });
 
+        const safeNickname = escapeHtml(c.nickname || 'Kullanıcı');
+        const safeComment = escapeHtml(c.comment);
+
         const profileImg = c.profilePhoto
-            ? `<img src="${c.profilePhoto}" class="user-avatar-img" alt="${c.nickname}">`
+            ? `<img src="${escapeHtml(c.profilePhoto)}" class="user-avatar-img" alt="${safeNickname}">`
             : `<div class="user-avatar"><i class="fas fa-user"></i></div>`;
 
         let contentHtml = '';
@@ -187,10 +190,10 @@ export function initCommentsSection(videoId) {
                     </div>
                     <button class="btn-reveal">Detayı Gör</button>
                 </div>
-                <div class="comment-content blurred">${c.comment}</div>
+                <div class="comment-content blurred">${safeComment}</div>
             `;
         } else {
-            contentHtml = `<div class="comment-content">${c.comment}</div>`;
+            contentHtml = `<div class="comment-content">${safeComment}</div>`;
         }
 
         const isLoggedIn = isUserLoggedIn();
@@ -211,7 +214,7 @@ export function initCommentsSection(videoId) {
         card.innerHTML = `
           <div class="comment-header">
             ${profileImg}
-            <div class="comment-user"><span class="user-nickname">${c.nickname || 'Kullanıcı'}</span> ${badgeHtml}</div>
+            <div class="comment-user"><span class="user-nickname">${safeNickname}</span> ${badgeHtml}</div>
             <div class="comment-date">${dateStr}</div>
           </div>
           ${contentHtml}

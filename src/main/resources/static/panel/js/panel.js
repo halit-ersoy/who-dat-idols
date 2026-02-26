@@ -1,5 +1,10 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
 
+    const escapeHtml = (unsafe) => {
+        if (!unsafe) return '';
+        return String(unsafe).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    };
+
     // Sidebar navigation logic
     const navLinks = document.querySelectorAll('.admin-nav .nav-link');
     const sections = document.querySelectorAll('.admin-section');
@@ -2620,11 +2625,12 @@
                         '<span class="badge" style="background:#dc3545; color:#fff; padding:4px 8px; border-radius:4px; font-weight: 700;">Yasaklı</span>' :
                         '<span class="badge" style="background:#1ed760; color:#fff; padding:4px 8px; border-radius:4px; font-weight: 700;">Aktif</span>';
 
-                    const nicknameDisplay = user.nickname || '-';
-                    const emailDisplay = user.email || '-';
-                    const nameDisplay = user.name || '';
-                    const surnameDisplay = user.surname || '';
+                    const nicknameDisplay = escapeHtml(user.nickname || '-');
+                    const emailDisplay = escapeHtml(user.email || '-');
+                    const nameDisplay = escapeHtml(user.name || '');
+                    const surnameDisplay = escapeHtml(user.surname || '');
                     const fullNameDisplay = (nameDisplay || surnameDisplay) ? `${nameDisplay} ${surnameDisplay}`.trim() : '-';
+                    const banReasonDisplay = escapeHtml(user.banReason || '-');
 
                     tr.innerHTML = `
                         <td style="font-weight: 600;">${nicknameDisplay}</td>
@@ -2646,7 +2652,7 @@
                             </div>
                         </td>
                         <td>${statusBadge}</td>
-                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${user.banReason || ''}">${user.banReason || '-'}</td>
+                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${banReasonDisplay}">${banReasonDisplay}</td>
                         <td>
                             <div class="action-btn-group">
                                 ${isBanned ?
@@ -2786,9 +2792,11 @@
     function buildCommentRow(comment, mode) {
         const tr = document.createElement('tr');
         const dateStr = new Date(comment.date).toLocaleString('tr-TR');
-        const contentName = comment.contentName || comment.contentId || 'İçerik';
+        const contentName = escapeHtml(comment.contentName || comment.contentId || 'İçerik');
         const targetLink = comment.contentSlug || comment.contentId;
         const contentLink = targetLink ? `<a href="/${targetLink}" target="_blank" style="color: var(--primary); font-weight: 500;">${contentName}</a>` : '-';
+        const safeNickname = escapeHtml(comment.nickname || 'Kullanıcı');
+        const safeText = escapeHtml(comment.comment || '');
 
         const actionBtns = mode === 'pending'
             ? `<button class="btn btn-sm btn-success" onclick="approveComment('${comment.id}')" title="Onayla"><i class="fas fa-check"></i></button>
@@ -2802,11 +2810,11 @@
         tr.innerHTML = `
             <td>
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-weight: 600;">${comment.nickname}</span>
+                    <span style="font-weight: 600;">${safeNickname}</span>
                 </div>
             </td>
             <td>
-                <div style="max-width: 300px; white-space: pre-wrap;">${comment.comment}</div>
+                <div style="max-width: 300px; white-space: pre-wrap;">${safeText}</div>
                 ${comment.spoiler ? '<span class="badge badge-warning" style="font-size: 0.7em;">SPOILER</span>' : ''}
             </td>
             <td>${contentLink}</td>
