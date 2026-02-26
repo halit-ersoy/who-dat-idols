@@ -857,6 +857,13 @@ body {
     background-color: rgba(0, 0, 0, 0.85);
     backdrop-filter: blur(8px);
     overflow-y: auto;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.active {
+    display: flex !important;
+    z-index: 9999 !important;
 }
 
 .modal-content {

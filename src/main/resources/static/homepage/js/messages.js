@@ -56,9 +56,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!users || users.length === 0) {
             userSearchResults.innerHTML = '<div style="padding: 10px; font-size: 0.8rem; color: #888;">Sonuç bulunamadı.</div>';
         } else {
-            userSearchResults.innerHTML = users.map(user => `
-                <div class="search-item" data-nickname="${user.nickname}" data-role="${user.role || ''}">
-                    <div class="avatar">${user.nickname[0].toUpperCase()}</div>
+            userSearchResults.innerHTML = users.map(user => {
+                const initial = user.nickname[0].toUpperCase();
+                const avatarUrl = `/media/profile/${user.id}?t=${new Date().getTime()}`;
+                return `
+                <div class="search-item" data-nickname="${user.nickname}" data-role="${user.role || ''}" data-id="${user.id}">
+                    <div class="avatar" style="position: relative; overflow: hidden; color: white;">
+                        ${initial}
+                        <img src="${avatarUrl}" onerror="this.style.display='none'" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                    </div>
                     <div class="info">
                         <div style="display:flex; align-items:center; gap:5px;">
                             <div class="nickname">${user.nickname}</div>
@@ -67,7 +73,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="name" style="font-size: 0.75rem; color: #888;">${user.name} ${user.surname}</div>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
 
             userSearchResults.querySelectorAll('.search-item').forEach(item => {
                 item.addEventListener('click', () => {
@@ -107,16 +114,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const myNickname = localStorage.getItem('wdiUserNickname');
 
         conversationsList.innerHTML = conversations.map(c => {
-            const otherUser = c.senderNickname === myNickname ? c.receiverNickname : c.senderNickname;
+            const isSentByMe = c.senderNickname === myNickname;
+            const otherUser = isSentByMe ? c.receiverNickname : c.senderNickname;
+            const otherUserId = isSentByMe ? c.receiverId : c.senderId;
             const isActive = otherUser === currentReceiver;
             const isUnread = !c.read && c.receiverNickname === myNickname;
             const time = formatTime(new Date(c.timestamp));
-            const isSentByMe = c.senderNickname === myNickname;
             const statusIcon = isSentByMe ? (c.read ? '<i class="fas fa-check-double message-status-tick read" style="font-size: 0.7rem; margin-right: 3px;"></i>' : '<i class="fas fa-check message-status-tick" style="font-size: 0.7rem; margin-right: 3px;"></i>') : '';
 
+            const initial = otherUser[0].toUpperCase();
+            const avatarUrl = `/media/profile/${otherUserId}?t=${new Date().getTime()}`;
+
             return `
-                <div class="conversation-item ${isActive ? 'active' : ''} ${isUnread ? 'unread' : ''}" data-nickname="${otherUser}">
-                    <div class="avatar">${otherUser[0].toUpperCase()}</div>
+                <div class="conversation-item ${isActive ? 'active' : ''} ${isUnread ? 'unread' : ''}" data-nickname="${otherUser}" data-id="${otherUserId}">
+                    <div class="avatar" style="position: relative; overflow: hidden; color: white;">
+                        ${initial}
+                        <img src="${avatarUrl}" onerror="this.style.display='none'" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                    </div>
                     <div class="conversation-info">
                         <div class="conversation-top">
                             <div style="display: flex; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; flex: 1;">
@@ -136,20 +150,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 const nickname = item.dataset.nickname;
                 const conv = conversations.find(c => (c.senderNickname === myNickname ? c.receiverNickname : c.senderNickname) === nickname);
                 const role = conv ? (conv.senderNickname === myNickname ? conv.receiverRole : conv.senderRole) : null;
-                startConversation(nickname, role);
+                const otherId = item.dataset.id;
+                startConversation(nickname, role, otherId);
             });
         });
     }
 
     // 4. Chat Logic
-    function startConversation(nickname, role = null) {
+    function startConversation(nickname, role = null, receiverId = null) {
         currentReceiver = nickname;
         currentReceiverRole = role;
+
+        const initial = nickname[0].toUpperCase();
+        const avatarUrl = receiverId ? `/media/profile/${receiverId}?t=${new Date().getTime()}` : '';
 
         // Update UI
         chatArea.innerHTML = `
             <div class="chat-header">
-                <div class="receiver-avatar">${nickname[0].toUpperCase()}</div>
+                <div class="receiver-avatar" style="position: relative; overflow: hidden; color: white;">
+                    ${initial}
+                    ${avatarUrl ? `<img src="${avatarUrl}" onerror="this.style.display='none'" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` : ''}
+                </div>
                 <div class="receiver-info">
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         <h3 style="margin: 0; font-size: 1.1rem;">${nickname}</h3>

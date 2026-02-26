@@ -24,6 +24,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 
 import com.ses.whodatidols.viewmodel.PageResponse;
 
@@ -33,6 +40,9 @@ public class HomeController {
     private final MovieService movieService;
     private final SeriesService seriesService;
     private final MovieRepository movieRepository;
+
+    @org.springframework.beans.factory.annotation.Value("${media.profile.images.path}")
+    private String profileImagesPath;
 
     public HomeController(PersonRepository personRepository, MovieService movieService,
             SeriesService seriesService, MovieRepository movieRepository) {
@@ -712,6 +722,96 @@ public class HomeController {
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/api/user/upload-profile-photo")
+    @ResponseBody
+    public ResponseEntity<?> uploadProfilePhoto(
+            @CookieValue(name = "wdiAuth", required = false) String cookie,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+
+        if (cookie == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "Oturum süresi dolmuş."));
+        }
+
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Dosya seçilmedi."));
+        }
+
+        try {
+            Map<String, Object> userInfo = personRepository.getUserInfoByCookie(cookie);
+            if (userInfo == null || !userInfo.containsKey("ID")) {
+                return ResponseEntity.status(401).body(Map.of("success", false, "message", "Kullanıcı bulunamadı."));
+            }
+
+            String userId = userInfo.get("ID").toString();
+            BufferedImage originalImage = ImageIO.read(file.getInputStream());
+
+            if (originalImage == null) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Geçersiz resim formatı."));
+            }
+
+            int width = originalImage.getWidth();
+            int height = originalImage.getHeight();
+
+            if (width < 300 || height < 300) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "message", "Resim boyutu en az 300x300 olmalıdır."));
+            }
+
+            BufferedImage finalImage = originalImage;
+            if (width > 500 || height > 500) {
+                int newWidth = 500;
+                int newHeight = 500;
+                Image resultingImage = originalImage.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH);
+                finalImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
+                Graphics2D g2d = finalImage.createGraphics();
+                g2d.drawImage(resultingImage, 0, 0, null);
+                g2d.dispose();
+            }
+
+            Path uploadDir = Paths.get(profileImagesPath).toAbsolutePath().normalize();
+            Files.createDirectories(uploadDir);
+
+            Path targetLocation = uploadDir.resolve(userId + ".jpg");
+            ImageIO.write(finalImage, "jpg", targetLocation.toFile());
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Profil fotoğrafı güncellendi.",
+                    "imageUrl", "/media/profile/" + userId + "?t=" + System.currentTimeMillis()));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500)
+                    .body(Map.of("success", false, "message", "Yükleme sırasında bir hata oluştu: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/api/user/remove-profile-photo")
+    @ResponseBody
+    public ResponseEntity<?> removeProfilePhoto(@CookieValue(name = "wdiAuth", required = false) String cookie) {
+        if (cookie == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "Unauthorized"));
+        }
+
+        try {
+            Map<String, Object> userInfo = personRepository.getUserInfoByCookie(cookie);
+            String userId = userInfo.get("ID").toString();
+
+            Path uploadDir = Paths.get(profileImagesPath).toAbsolutePath().normalize();
+            Path targetLocation = uploadDir.resolve(userId + ".jpg");
+
+            if (Files.exists(targetLocation)) {
+                Files.delete(targetLocation);
+            }
+
+            return ResponseEntity.ok(Map.of("success", true, "message", "Fotoğraf kaldırıldı."));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500)
+                    .body(Map.of("success", false, "message", "Silme sırasında bir hata oluştu: " + e.getMessage()));
         }
     }
 

@@ -13,7 +13,6 @@ public class CommentViewModel {
     private boolean likedByCurrentUser;
     private boolean author;
     private java.util.List<CommentViewModel> replies;
-    private String profilePhoto;
 
     public java.util.UUID getId() {
         return id;
@@ -95,14 +94,6 @@ public class CommentViewModel {
         this.author = author;
     }
 
-    public String getProfilePhoto() {
-        return profilePhoto;
-    }
-
-    public void setProfilePhoto(String profilePhoto) {
-        this.profilePhoto = profilePhoto;
-    }
-
     private boolean approved;
 
     public boolean isApproved() {
@@ -151,5 +142,15 @@ public class CommentViewModel {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    private java.util.UUID authorId;
+
+    public java.util.UUID getAuthorId() {
+        return authorId;
+    }
+
+    public void setAuthorId(java.util.UUID authorId) {
+        this.authorId = authorId;
     }
 }

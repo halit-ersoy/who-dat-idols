@@ -32,6 +32,9 @@
     font-weight: bold;
     margin-right: 8px;
     font-size: 14px;
+    overflow: hidden;
+    color: #fff;
+    transition: all 0.3s ease;
 }
 
 .profile-name {

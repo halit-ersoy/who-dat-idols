@@ -10,7 +10,6 @@ public class Person {
     private String surname;
     private String email;
     private String password;
-    private String profilePhoto;
     private boolean isBanned;
     private String banReason;
     private String role;
@@ -76,14 +75,6 @@ public class Person {
 
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public String getProfilePhoto() {
-        return profilePhoto;
-    }
-
-    public void setProfilePhoto(String profilePhoto) {
-        this.profilePhoto = profilePhoto;
     }
 
     @JsonProperty("isBanned")

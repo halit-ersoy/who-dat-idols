@@ -177,9 +177,18 @@ export function initCommentsSection(videoId) {
         const safeNickname = escapeHtml(c.nickname || 'Kullanıcı');
         const safeComment = escapeHtml(c.comment);
 
-        const profileImg = c.profilePhoto
-            ? `<img src="${escapeHtml(c.profilePhoto)}" class="user-avatar-img" alt="${safeNickname}">`
-            : `<div class="user-avatar"><i class="fas fa-user"></i></div>`;
+        const initialLetter = safeNickname.charAt(0).toUpperCase();
+        let profileImg = `<div class="user-avatar" style="background-color: #1ed760; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">${initialLetter}</div>`;
+
+        if (c.authorId) {
+            const profileImgUrl = `/media/profile/${c.authorId}?t=${new Date().getTime()}`;
+            profileImg = `
+                <div class="user-avatar" style="position: relative; overflow: hidden; background-color: #1ed760; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                    ${initialLetter}
+                    <img src="${profileImgUrl}" onerror="this.style.display='none'" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; z-index: 1;">
+                </div>
+            `;
+        }
 
         let contentHtml = '';
         if (c.spoiler) {

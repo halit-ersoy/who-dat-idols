@@ -2081,8 +2081,56 @@
         }
     }
 
-    closeModalBtn.onclick = () => { tmdbModal.style.display = 'none'; };
-    window.onclick = (e) => { if (e.target == tmdbModal) tmdbModal.style.display = 'none'; };
+    closeModalBtn.onclick = () => {
+        tmdbModal.classList.remove('active');
+        tmdbModal.style.display = 'none'; // Keep both for safety during transition
+    };
+
+    // --- Profile Photo Preview ---
+    window.openProfilePhotoPreview = function (element, url) {
+        if (element.dataset.hasPhoto === 'false') return;
+
+        console.log("Opening profile photo preview:", url);
+        const modal = document.getElementById('profilePhotoModal');
+        const enlargedImg = document.getElementById('enlargedProfilePhoto');
+        if (modal && enlargedImg) {
+            enlargedImg.src = url;
+            modal.classList.add('active');
+        } else {
+            console.error("Profile photo modal elements not found!");
+        }
+    };
+
+    document.querySelectorAll('.close-profile-photo-modal').forEach(btn => {
+        btn.onclick = () => {
+            const modal = document.getElementById('profilePhotoModal');
+            if (modal) modal.classList.remove('active');
+        };
+    });
+
+    window.addEventListener('click', (e) => {
+        const tmdbModal = document.getElementById('tmdbModal');
+        const banModal = document.getElementById('banModal');
+        const profilePhotoModal = document.getElementById('profilePhotoModal');
+
+        if (e.target == tmdbModal) {
+            tmdbModal.classList.remove('active');
+            tmdbModal.style.display = 'none';
+        }
+        if (e.target == banModal) banModal.classList.remove('active');
+        if (e.target == profilePhotoModal) profilePhotoModal.classList.remove('active');
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(m => {
+                m.classList.remove('active');
+                if (m.id === 'tmdbModal') m.style.display = 'none';
+            });
+        }
+    });
+    // --- End Profile Photo Preview ---
 
     /**
      * DASHBOARD STATS CALCULATOR
@@ -2586,11 +2634,11 @@
         currentBanUserId = userId;
         document.getElementById('banUserPlaceholder').innerHTML = `<strong>${nickname}</strong> kullanıcısını yasaklamak üzeresiniz.`;
         document.getElementById('banReason').value = '';
-        banModal.style.display = 'block';
+        banModal.classList.add('active');
     };
 
     document.querySelectorAll('.close-ban-modal').forEach(btn => {
-        btn.onclick = () => { banModal.style.display = 'none'; };
+        btn.onclick = () => { banModal.classList.remove('active'); };
     });
 
     document.getElementById('confirmBanBtn').onclick = () => {
@@ -2632,7 +2680,16 @@
                     const fullNameDisplay = (nameDisplay || surnameDisplay) ? `${nameDisplay} ${surnameDisplay}`.trim() : '-';
                     const banReasonDisplay = escapeHtml(user.banReason || '-');
 
+                    const initialLetter = (user.nickname || 'X').charAt(0).toUpperCase();
+                    const avatarUrl = `/media/profile/${user.id}?t=${new Date().getTime()}`;
+
                     tr.innerHTML = `
+                        <td>
+                            <div onclick="openProfilePhotoPreview(this, '${avatarUrl}')" data-has-photo="true" style="width: 35px; height: 35px; border-radius: 50%; background-color: #1ed760; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; position: relative; overflow: hidden; font-size: 14px; cursor: pointer; transition: transform 0.2s;" onmouseover="if(this.dataset.hasPhoto==='true') this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                                <span style="pointer-events: none;">${initialLetter}</span>
+                                <img src="${avatarUrl}" onerror="this.style.display='none'; this.parentElement.dataset.hasPhoto='false'; this.parentElement.style.cursor='default'; this.parentElement.style.transform='none';" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; z-index: 1; pointer-events: none;">
+                            </div>
+                        </td>
                         <td style="font-weight: 600;">${nicknameDisplay}</td>
                         <td title="${emailDisplay}">${(emailDisplay.length > 25) ? emailDisplay.substring(0, 25) + '...' : emailDisplay}</td>
                         <td>${fullNameDisplay}</td>

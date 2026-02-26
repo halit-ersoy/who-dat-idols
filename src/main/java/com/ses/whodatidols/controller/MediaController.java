@@ -47,6 +47,9 @@ public class MediaController {
     @Value("${media.static.images.path}")
     private String staticImagesPath;
 
+    @Value("${media.profile.images.path}")
+    private String profileImagesPath;
+
     @Value("${media.source.upcoming.path}")
     private String upcomingPath;
 
@@ -85,6 +88,33 @@ public class MediaController {
 
         } catch (IOException e) {
             logger.error("Error serving static image {}: {}", imageName, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // --- 1.1 PROFIL FOTOĞRAFI SUNUCUSU ---
+    @GetMapping("/profile/{id}")
+    public ResponseEntity<Resource> getProfileImage(@PathVariable("id") UUID id) {
+        logger.debug("Requesting profile image for id: {}", id);
+        try {
+            Path rootPath = Paths.get(profileImagesPath).toAbsolutePath().normalize();
+            Path imagePath = findExistingImage(rootPath, id);
+
+            if (imagePath == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            MediaType mediaType = determineMediaType(imagePath);
+            if (mediaType == null) {
+                mediaType = MediaType.IMAGE_JPEG;
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(mediaType)
+                    .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(1)))
+                    .body(new UrlResource(imagePath.toUri()));
+        } catch (IOException e) {
+            logger.error("Error serving profile image for id {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

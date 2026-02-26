@@ -39,7 +39,7 @@ public class CommentRepository {
                     SELECT
                         c.ID, c.Text as comment, c.CreatedAt as date, c.Spoiler,
                         COALESCE(p.Nickname, c.Nickname) as nickname,
-                        p.profilePhoto,
+                        c.UserId as authorId,
                         c.LikeCount,
                         c.ParentId,
                         c.ContentId,
@@ -109,7 +109,7 @@ public class CommentRepository {
                     SELECT
                         c.ID, c.Text as comment, c.CreatedAt as date, c.Spoiler,
                         COALESCE(p.Nickname, c.Nickname) as nickname,
-                        p.profilePhoto,
+                        c.UserId as authorId,
                         c.LikeCount,
                         c.ParentId,
                         c.ContentId,
@@ -135,7 +135,7 @@ public class CommentRepository {
                     SELECT
                         c.ID, c.Text as comment, c.CreatedAt as date, c.Spoiler,
                         COALESCE(p.Nickname, c.Nickname) as nickname,
-                        p.profilePhoto,
+                        c.UserId as authorId,
                         c.LikeCount,
                         c.ParentId,
                         c.ContentId,
@@ -283,7 +283,15 @@ public class CommentRepository {
             vm.setLikeCount(rs.getInt("LikeCount"));
             vm.setLikedByCurrentUser(rs.getInt("isLiked") > 0);
             vm.setAuthor(rs.getInt("isAuthor") > 0);
-            vm.setProfilePhoto(rs.getString("profilePhoto"));
+
+            try {
+                String authorIdStr = rs.getString("authorId");
+                if (authorIdStr != null) {
+                    vm.setAuthorId(UUID.fromString(authorIdStr));
+                }
+            } catch (SQLException e) {
+                // Ignore if authorId does not exist
+            }
 
             try {
                 vm.setApproved(rs.getBoolean("IsApproved"));

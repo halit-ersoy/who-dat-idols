@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
             initPasswordForm();
             initNotificationToggles();
             initMessageToggles(userData.allowMessages);
+            setupProfilePhotoUpload(userData);
         })
         .catch(error => {
             console.error('Initialization error:', error);
@@ -37,7 +38,38 @@ async function setupProfileSection() {
     const data = await response.json();
 
     // Header/Sidebar info
-    document.getElementById('user-avatar').innerText = (data.nickname || '').charAt(0).toUpperCase();
+    const avatarEl = document.getElementById('user-avatar');
+    // Try to load the user's profile photo
+    const userId = data.id || data.ID || data.Id;
+    const profileImgUrl = `/media/profile/${userId}?t=${new Date().getTime()}`;
+
+    // Set fallback immediately: an initial letter
+    const initialLetter = (data.nickname || '').charAt(0).toUpperCase();
+    avatarEl.innerText = initialLetter;
+
+    // Build the image tag to overlay on top, hiding the initial if it loads successfully
+    avatarEl.style.backgroundImage = `url('${profileImgUrl}')`;
+    avatarEl.style.color = "transparent"; // Hide letter initially
+    avatarEl.style.backgroundColor = "transparent"; // Hide background color
+
+    const removePhotoBtn = document.getElementById('remove-photo-btn');
+
+    // Check if image actually loads. If not, fallback to letter color
+    const imgTest = new Image();
+    imgTest.onload = () => {
+        avatarEl.style.backgroundImage = `url('${profileImgUrl}')`;
+        avatarEl.style.color = "transparent";
+        avatarEl.style.backgroundColor = "transparent";
+        if (removePhotoBtn) removePhotoBtn.style.display = 'block';
+    };
+    imgTest.onerror = () => {
+        avatarEl.style.backgroundImage = 'none';
+        avatarEl.style.color = "#000"; // Show letter
+        avatarEl.style.backgroundColor = ""; // Default CSS color
+        if (removePhotoBtn) removePhotoBtn.style.display = 'none';
+    };
+    imgTest.src = profileImgUrl;
+
     document.getElementById('user-fullname').innerText = `${data.name} ${data.surname}`;
     document.getElementById('user-nickname').innerText = `@${data.nickname}`;
 
@@ -426,5 +458,203 @@ function setMessageUIState(enabled) {
     const messagesWrapper = document.getElementById('messages-wrapper');
     if (messagesWrapper) {
         messagesWrapper.style.display = isEnabled ? 'block' : 'none';
+    }
+}
+
+/**
+ * Handles profile photo upload and Cropper.js logic.
+ */
+function setupProfilePhotoUpload(userData) {
+    const avatarWrapper = document.querySelector('.settings-avatar-wrapper');
+    const fileInput = document.getElementById('profile-photo-input');
+    const cropModal = document.getElementById('crop-modal');
+    const closeCropModal = document.getElementById('close-crop-modal');
+    const cropImage = document.getElementById('crop-image');
+    const saveCropBtn = document.getElementById('save-crop-btn');
+    const cropMessage = document.getElementById('crop-message');
+    const userAvatar = document.getElementById('user-avatar');
+
+    let cropper = null;
+
+    if (!avatarWrapper || !fileInput) return;
+
+    // Trigger file selection
+    avatarWrapper.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    // Handle file selection
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Reset Cropper if exists
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+
+        // Validate type
+        if (!file.type.startsWith('image/')) {
+            alert('Lütfen geçerli bir resim dosyası seçin.');
+            return;
+        }
+
+        // Show modal and initialize Cropper
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            cropImage.src = event.target.result;
+            cropModal.style.display = 'flex';
+            cropMessage.style.display = 'none';
+
+            // Need to wait for image to load before cropping
+            cropImage.onload = () => {
+                cropper = new Cropper(cropImage, {
+                    aspectRatio: 1, // Square
+                    viewMode: 1, // Restrict crop box to not exceed canvas
+                    dragMode: 'move',
+                    autoCropArea: 1,
+                    restore: false,
+                    guides: false,
+                    center: false,
+                    highlight: false,
+                    cropBoxMovable: false,
+                    cropBoxResizable: false,
+                    toggleDragModeOnDblclick: false,
+                });
+            };
+        };
+        reader.readAsDataURL(file);
+
+        // Reset input so the same file can be selected again if needed
+        fileInput.value = '';
+    });
+
+    // Close Modal
+    const closeModalFunc = () => {
+        cropModal.style.display = 'none';
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+    };
+
+    if (closeCropModal) {
+        closeCropModal.addEventListener('click', closeModalFunc);
+    }
+
+    window.addEventListener('click', (e) => {
+        if (e.target === cropModal) {
+            closeModalFunc();
+        }
+    });
+
+    // Save and Upload Cropped Image
+    if (saveCropBtn) {
+        saveCropBtn.addEventListener('click', async () => {
+            if (!cropper) return;
+
+            const originalText = saveCropBtn.innerHTML;
+            saveCropBtn.disabled = true;
+            saveCropBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yükleniyor...';
+            cropMessage.style.display = 'none';
+
+            try {
+                // Get cropped canvas
+                const canvas = cropper.getCroppedCanvas({
+                    imageSmoothingEnabled: true,
+                    imageSmoothingQuality: 'high',
+                });
+
+                if (!canvas) {
+                    throw new Error('Canvas oluşturulamadı.');
+                }
+
+                // Convert canvas to Blob
+                canvas.toBlob(async (blob) => {
+                    if (!blob) {
+                        showButtonError(saveCropBtn, 'Hata', originalText);
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('file', blob, 'profile.jpg');
+
+                    try {
+                        const response = await fetch('/api/user/upload-profile-photo', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok && data.success) {
+                            saveCropBtn.innerHTML = '<i class="fas fa-check"></i> Başarılı';
+
+                            // Load new avatar immediately
+                            userAvatar.style.backgroundImage = `url('${data.imageUrl}')`;
+                            userAvatar.style.color = "transparent";
+
+                            setTimeout(() => {
+                                closeModalFunc();
+                                saveCropBtn.disabled = false;
+                                saveCropBtn.innerHTML = originalText;
+                            }, 1000);
+                        } else {
+                            cropMessage.innerText = data.message || 'Yükleme başarısız.';
+                            cropMessage.style.display = 'block';
+                            cropMessage.style.color = '#ff4d4d'; // error red
+                            saveCropBtn.disabled = false;
+                            saveCropBtn.innerHTML = originalText;
+                        }
+                    } catch (uploadError) {
+                        console.error('Upload Error:', uploadError);
+                        cropMessage.innerText = 'Sunucuyla iletişim kurulamadı.';
+                        cropMessage.style.display = 'block';
+                        cropMessage.style.color = '#ff4d4d';
+                        saveCropBtn.disabled = false;
+                        saveCropBtn.innerHTML = originalText;
+                    }
+                }, 'image/jpeg', 0.9); // 90% quality JPEG
+            } catch (error) {
+                console.error('Crop Error:', error);
+                showButtonError(saveCropBtn, 'Hata', originalText);
+            }
+        });
+    }
+
+    const removePhotoBtn = document.getElementById('remove-photo-btn');
+    if (removePhotoBtn) {
+        removePhotoBtn.addEventListener('click', async () => {
+            if (!confirm('Profil fotoğrafınızı kaldırmak istediğinize emin misiniz?')) return;
+
+            const originalText = removePhotoBtn.innerHTML;
+            removePhotoBtn.disabled = true;
+            removePhotoBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kaldırılıyor...';
+
+            try {
+                const response = await fetch('/api/user/remove-profile-photo', {
+                    method: 'DELETE'
+                });
+                const responseData = await response.json();
+
+                if (response.ok && responseData.success) {
+                    removePhotoBtn.style.display = 'none';
+                    // Re-render avatar fallback
+                    userAvatar.style.backgroundImage = 'none';
+                    userAvatar.style.color = '#000';
+                    userAvatar.style.backgroundColor = '';
+
+                    // Trigger a custom event or let the user refresh to see changes globally
+                    // A simple window reload does the trick to refresh header too
+                    setTimeout(() => window.location.reload(), 500);
+                } else {
+                    showButtonError(removePhotoBtn, 'Hata', originalText);
+                }
+            } catch (error) {
+                console.error('Remove Photo Error:', error);
+                showButtonError(removePhotoBtn, 'Hata', originalText);
+            }
+        });
     }
 }

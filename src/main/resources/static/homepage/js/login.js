@@ -27,11 +27,15 @@ export function initLogin() {
                         return;
                     }
 
+                    const userId = data.id || data.ID || data.Id;
+                    const profileImgUrl = `/media/profile/${userId}?t=${new Date().getTime()}`;
+                    const initialLetter = userNickname.charAt(0).toUpperCase();
+
                     const profileSection = document.createElement('div');
                     profileSection.className = 'profile-section';
                     profileSection.innerHTML = `
                         <button class="profile-btn" aria-label="Profil">
-                            <span class="profile-avatar">${userNickname.charAt(0).toUpperCase()}</span>
+                            <span class="profile-avatar" id="header-profile-avatar">${initialLetter}</span>
                             <span class="profile-name">${userNickname}</span>
                             <i class="fas fa-chevron-down"></i>
                         </button>
@@ -44,6 +48,26 @@ export function initLogin() {
                         </div>
                     `;
                     loginBtn.parentNode.replaceChild(profileSection, loginBtn);
+
+                    const avatarEl = document.getElementById('header-profile-avatar');
+                    avatarEl.style.backgroundImage = `url('${profileImgUrl}')`;
+                    avatarEl.style.backgroundSize = 'cover';
+                    avatarEl.style.backgroundPosition = 'center';
+                    avatarEl.style.color = "transparent";
+                    avatarEl.style.backgroundColor = "transparent";
+
+                    const imgTest = new Image();
+                    imgTest.onload = () => {
+                        avatarEl.style.backgroundImage = `url('${profileImgUrl}')`;
+                        avatarEl.style.color = "transparent";
+                        avatarEl.style.backgroundColor = "transparent";
+                    };
+                    imgTest.onerror = () => {
+                        avatarEl.style.backgroundImage = 'none';
+                        avatarEl.style.color = "white";
+                        avatarEl.style.backgroundColor = ""; // Reset to CSS default 
+                    };
+                    imgTest.src = profileImgUrl;
 
                     // Messaging icon visibility
                     const messagesWrapper = document.getElementById('messages-wrapper');
