@@ -3,8 +3,11 @@
 export function initMessagingManager() {
     updateMessageBadge();
 
-    // Periodically update badge every 60 seconds
-    setInterval(updateMessageBadge, 60000);
+    const isMessagesPage = window.location.pathname.includes('/messages');
+    const pollInterval = isMessagesPage ? 5000 : 60000;
+
+    // Periodically update badge based on current page
+    setInterval(updateMessageBadge, pollInterval);
 }
 
 export function updateMessageBadge() {
