@@ -4,6 +4,7 @@ import com.ses.whodatidols.model.Episode;
 import com.ses.whodatidols.model.Movie;
 import com.ses.whodatidols.model.Person;
 import com.ses.whodatidols.model.Series;
+import com.ses.whodatidols.repository.MovieRepository;
 import com.ses.whodatidols.repository.PersonRepository;
 import com.ses.whodatidols.service.MovieService;
 import com.ses.whodatidols.service.SeriesService;
@@ -24,17 +25,21 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.ses.whodatidols.viewmodel.PageResponse;
+
 @Controller
 public class HomeController {
     private final PersonRepository personRepository;
     private final MovieService movieService;
     private final SeriesService seriesService;
+    private final MovieRepository movieRepository;
 
     public HomeController(PersonRepository personRepository, MovieService movieService,
-            SeriesService seriesService) {
+            SeriesService seriesService, MovieRepository movieRepository) {
         this.personRepository = personRepository;
         this.movieService = movieService;
         this.seriesService = seriesService;
+        this.movieRepository = movieRepository;
     }
 
     @GetMapping("/")
@@ -52,14 +57,18 @@ public class HomeController {
         }
     }
 
-    @Cacheable("featuredContent")
-    @GetMapping("/api/featured-content")
+    @Cacheable(value = "featuredMovies", key = "#page + '-' + #size")
+    @GetMapping("/api/featured-content/movies")
     @ResponseBody
-    public ResponseEntity<FeaturedContentResponse> getFeaturedContent() {
-        FeaturedContentResponse response = new FeaturedContentResponse();
+    public ResponseEntity<PageResponse<FeaturedItem>> getFeaturedMoviesPaged(
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size) {
 
-        // 1. Movies (20 adet - Recently Added)
-        List<Movie> movies = movieService.getRecentMovies(20);
+        int offset = (page - 1) * size;
+        List<Movie> movies = movieRepository.findRecentMoviesPaged(offset, size);
+        int totalElements = movieRepository.countAllMovies();
+        int totalPages = (int) Math.ceil((double) totalElements / size);
+
         List<FeaturedItem> movieItems = new java.util.ArrayList<>();
         for (Movie m : movies) {
             FeaturedItem item = new FeaturedItem();
@@ -67,7 +76,6 @@ public class HomeController {
             item.title = m.getName();
             item.image = "/media/image/" + m.getId();
 
-            // Use explicit country if available, otherwise fallback to language mapping
             if (m.getCountry() != null && !m.getCountry().isEmpty()) {
                 item.country = m.getCountry();
             } else {
@@ -81,21 +89,35 @@ public class HomeController {
 
             movieItems.add(item);
         }
-        response.movies = movieItems;
 
-        // 2. Series (Bölüm bazlı - Condensing applied)
+        PageResponse<FeaturedItem> response = new PageResponse<>(movieItems, totalPages, page, totalElements);
+        return ResponseEntity.ok(response);
+    }
+
+    @Cacheable(value = "featuredTv", key = "#page + '-' + #size")
+    @GetMapping("/api/featured-content/tv")
+    @ResponseBody
+    public ResponseEntity<PageResponse<FeaturedItem>> getFeaturedTvPaged(
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size) {
+
         // Fetch more to ensure diversity after condensing
         List<Episode> rawEpisodes = seriesService.getRecentEpisodesWithMetadata(1000);
         List<Episode> condensedEpisodes = condenseConsecutiveEpisodes(rawEpisodes);
 
-        List<FeaturedItem> tvItems = new java.util.ArrayList<>();
-        int tvCount = 0;
-        for (Episode ep : condensedEpisodes) {
-            if (tvCount >= 20)
-                break;
+        int totalElements = condensedEpisodes.size();
+        int totalPages = (int) Math.ceil((double) totalElements / size);
 
+        int offset = (page - 1) * size;
+        List<Episode> paginatedEpisodes = condensedEpisodes.stream()
+                .skip(offset)
+                .limit(size)
+                .collect(java.util.stream.Collectors.toList());
+
+        List<FeaturedItem> tvItems = new java.util.ArrayList<>();
+        for (Episode ep : paginatedEpisodes) {
             FeaturedItem item = new FeaturedItem();
-            item.id = ep.getSlug() != null ? ep.getSlug() : ep.getId().toString(); // Item ID is slug or Episode ID
+            item.id = ep.getSlug() != null ? ep.getSlug() : ep.getId().toString();
 
             String title = ep.getName();
             String language = "kr";
@@ -103,7 +125,6 @@ public class HomeController {
             boolean isFinal = false;
             String imageId = ep.getId().toString();
 
-            // Fetch Series Metadata (Language, Final Status, Name)
             if (ep.getSeriesId() != null) {
                 Series series = seriesService.getSeriesById(ep.getSeriesId());
                 if (series != null) {
@@ -112,8 +133,6 @@ public class HomeController {
                     country = series.getCountry();
                     imageId = series.getId().toString();
 
-                    // Only apply Finale badges if this episode is the absolute latest episode of
-                    // the series
                     UUID latestEpisodeId = seriesService.getLatestEpisodeIdBySeriesId(ep.getSeriesId());
                     if (latestEpisodeId != null && latestEpisodeId.equals(ep.getId())) {
                         isFinal = series.getFinalStatus() > 0;
@@ -128,23 +147,21 @@ public class HomeController {
             item.title = title;
             item.image = "/media/image/" + imageId;
 
-            // Use explicit country if available, otherwise fallback to language mapping
             if (country != null && !country.isEmpty()) {
                 item.country = country;
             } else {
                 item.country = mapLanguageToCode(language);
             }
 
-            item.isNew = isRecent(ep.getUploadDate()); // Dinamik kontrol (24 saat)
+            item.isNew = isRecent(ep.getUploadDate());
             item.isFinal = isFinal;
             item.season = ep.getSeasonNumber();
             item.episode = ep.getEpisodeNumber();
 
             tvItems.add(item);
-            tvCount++;
         }
-        response.tv = tvItems;
 
+        PageResponse<FeaturedItem> response = new PageResponse<>(tvItems, totalPages, page, totalElements);
         return ResponseEntity.ok(response);
     }
 
