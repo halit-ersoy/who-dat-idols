@@ -37,6 +37,13 @@ public class MovieRepository {
                             "END");
 
             jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Movie' AND COLUMN_NAME = 'isAdult') "
+                            +
+                            "BEGIN " +
+                            "    ALTER TABLE Movie ADD isAdult BIT DEFAULT 0 NOT NULL; " +
+                            "END");
+
+            jdbcTemplate.execute(
                     "IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_movie_slug' AND object_id = OBJECT_ID('Movie')) "
                             +
                             "BEGIN " +

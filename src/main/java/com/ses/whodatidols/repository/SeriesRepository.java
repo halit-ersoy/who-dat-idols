@@ -61,6 +61,13 @@ public class SeriesRepository {
                             "END");
 
             jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Series' AND COLUMN_NAME = 'isAdult') "
+                            +
+                            "BEGIN " +
+                            "    ALTER TABLE Series ADD isAdult BIT DEFAULT 0 NOT NULL; " +
+                            "END");
+
+            jdbcTemplate.execute(
                     "IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_series_slug' AND object_id = OBJECT_ID('Series')) "
                             +
                             "BEGIN " +
