@@ -14,6 +14,7 @@ public class Movie {
     private int releaseYear;
     private LocalDateTime uploadDate;
     private String slug;
+    private boolean isAdult;
 
     // Constructors
     public Movie() {
@@ -110,5 +111,17 @@ public class Movie {
 
     public void setSlug(String slug) {
         this.slug = slug;
+    }
+
+    public boolean isAdult() {
+        return isAdult;
+    }
+
+    public void setAdult(boolean adult) {
+        isAdult = adult;
+    }
+
+    public void setIsAdult(boolean isAdult) {
+        this.isAdult = isAdult;
     }
 }

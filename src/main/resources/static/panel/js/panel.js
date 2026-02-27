@@ -833,6 +833,7 @@
             formData.append('releaseYear', document.getElementById('movieYear').value);
             formData.append('language', document.getElementById('movieLanguage').value);
             formData.append('country', document.getElementById('movieCountry').value);
+            formData.append('isAdult', document.getElementById('movieIsAdult') && document.getElementById('movieIsAdult').checked ? 'true' : 'false');
 
             if (movieImageInput.files.length > 0) {
                 formData.append('image', movieImageInput.files[0]);
@@ -906,6 +907,7 @@
             formData.append('releaseYear', document.getElementById('movieYear').value);
             formData.append('language', document.getElementById('movieLanguage').value);
             formData.append('country', document.getElementById('movieCountry').value);
+            formData.append('isAdult', document.getElementById('movieIsAdult') && document.getElementById('movieIsAdult').checked ? 'true' : 'false');
             if (movieFileInput.files.length > 0) formData.append('file', movieFileInput.files[0]);
             if (movieImageInput.files.length > 0) formData.append('image', movieImageInput.files[0]);
             if (lastFetchedPosterUrl) formData.append('imageUrl', lastFetchedPosterUrl);
@@ -979,6 +981,10 @@
         document.getElementById('movieCategory').value = movie.category;
         document.getElementById('movieSummary').value = movie.summary;
         document.getElementById('movieYear').value = movie.releaseYear;
+
+        // isAdult
+        const isAdultCheckbox = document.getElementById('movieIsAdult');
+        if (isAdultCheckbox) isAdultCheckbox.checked = movie.adult || movie.isAdult || false;
 
         // Country population
         document.getElementById('movieCountry').value = movie.country || 'kr';
@@ -1062,6 +1068,8 @@
         if (movieImageInput) movieImageInput.value = "";
         if (moviePosterUrlInput) moviePosterUrlInput.value = "";
         document.getElementById('movieCountry').value = 'kr';
+        const isAdultCheckbox = document.getElementById('movieIsAdult');
+        if (isAdultCheckbox) isAdultCheckbox.checked = false;
         lastFetchedPosterUrl = "";
         updatePosterPreview('movie', null);
         resetFileInputs();
@@ -1164,6 +1172,7 @@
             formData.append('language', document.getElementById('seriesLanguage').value);
             formData.append('country', document.getElementById('seriesCountry').value);
             formData.append('seriesType', document.getElementById('seriesType').value);
+            formData.append('isAdult', document.getElementById('seriesIsAdult') && document.getElementById('seriesIsAdult').checked ? 'true' : 'false');
             formData.append('finalStatus', document.getElementById('seriesStatus').value);
             if (seriesImageInput.files.length > 0) {
                 formData.append('image', seriesImageInput.files[0]);
@@ -1294,6 +1303,7 @@
             formData.append('language', document.getElementById('seriesLanguage').value);
             formData.append('country', document.getElementById('seriesCountry').value);
             formData.append('seriesType', document.getElementById('seriesType').value);
+            formData.append('isAdult', document.getElementById('seriesIsAdult') && document.getElementById('seriesIsAdult').checked ? 'true' : 'false');
             if (seriesImageInput.files.length > 0) formData.append('image', seriesImageInput.files[0]);
             if (lastFetchedPosterUrl) formData.append('imageUrl', lastFetchedPosterUrl);
         }
@@ -1557,6 +1567,10 @@
         document.getElementById('seriesCategory').value = series.category;
         document.getElementById('seriesSummary').value = series.summary || series.content || series._content;
 
+        // isAdult
+        const sIsAdultCheckbox = document.getElementById('seriesIsAdult');
+        if (sIsAdultCheckbox) sIsAdultCheckbox.checked = series.adult || series.isAdult || false;
+
         // Country population
         document.getElementById('seriesCountry').value = series.country || 'kr';
 
@@ -1742,6 +1756,8 @@
         if (seriesPosterUrlInput) seriesPosterUrlInput.value = "";
         document.getElementById('seriesCountry').value = 'kr';
         document.getElementById('seriesType').value = 'Dizi';
+        const sIsAdultCheckbox = document.getElementById('seriesIsAdult');
+        if (sIsAdultCheckbox) sIsAdultCheckbox.checked = false;
         lastFetchedPosterUrl = "";
         updatePosterPreview('series', null);
 

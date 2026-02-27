@@ -139,3 +139,77 @@ body {
 .source-btn.active i {
     opacity: 1;
 }
+
+/* +18 Blur Overlay Styles */
+.video-wrapper.blurred-adult video,
+.video-wrapper.blurred-adult iframe {
+    filter: blur(20px) brightness(0.5);
+    transition: filter 0.5s ease-in-out;
+}
+
+.adult-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 30px 40px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    color: white;
+    text-align: center;
+    pointer-events: auto;
+}
+
+.adult-overlay.active {
+    display: flex;
+}
+
+.adult-overlay i {
+    font-size: 48px;
+    color: #1ed760;
+    margin-bottom: 15px;
+    filter: drop-shadow(0 0 10px rgba(30, 215, 96, 0.4));
+}
+
+.adult-overlay h3 {
+    font-size: 24px;
+    margin: 0 0 10px 0;
+    font-weight: 700;
+}
+
+.adult-overlay p {
+    font-size: 14px;
+    color: #ccc;
+    margin: 0 0 25px 0;
+}
+
+.btn-remove-blur {
+    background: linear-gradient(135deg, rgba(30, 215, 96, 0.9) 0%, rgba(20, 180, 80, 0.95) 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(30, 215, 96, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+.btn-remove-blur:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(30, 215, 96, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.btn-remove-blur:active {
+    transform: translateY(1px);
+}

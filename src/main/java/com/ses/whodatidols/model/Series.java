@@ -17,6 +17,7 @@ public class Series {
 
     private String seriesType;
     private String slug;
+    private boolean isAdult;
 
     // Getter and Setters
     public UUID getId() {
@@ -113,5 +114,17 @@ public class Series {
 
     public void setSlug(String slug) {
         this.slug = slug;
+    }
+
+    public boolean isAdult() {
+        return isAdult;
+    }
+
+    public void setAdult(boolean adult) {
+        isAdult = adult;
+    }
+
+    public void setIsAdult(boolean isAdult) {
+        this.isAdult = isAdult;
     }
 }

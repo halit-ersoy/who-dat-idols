@@ -64,8 +64,10 @@ public class VideoController {
                     response.put("language", series.getLanguage());
                     response.put("country", series.getCountry());
                     response.put("finalStatus", series.getFinalStatus());
+                    response.put("adult", series.isAdult());
                 } else {
                     response.put("title", episode.getName());
+                    response.put("adult", false); // Default if no parent series found
                 }
             } catch (Exception e) {
                 // Ignore if parent not found
@@ -92,6 +94,7 @@ public class VideoController {
             response.put("country", movie.getCountry());
             response.put("type", "movie");
             response.put("slug", movie.getSlug());
+            response.put("adult", movie.isAdult());
             return ResponseEntity.ok(response);
         }
 

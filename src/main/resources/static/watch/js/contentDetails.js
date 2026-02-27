@@ -19,11 +19,40 @@ async function loadContentDetails(id) {
         if (!response.ok) throw new Error('Details not found');
         const data = await response.json();
 
-        // Update Title - Both in content details and the top video header
+        // Update title and +18 badge
         const titleEl = document.getElementById('title');
         const contentTitleEl = document.getElementById('contentTitle');
-        if (titleEl) titleEl.innerText = data.title;
-        if (contentTitleEl) contentTitleEl.innerText = data.title;
+        if (titleEl) {
+            titleEl.textContent = data.title;
+        }
+
+        if (contentTitleEl) {
+            const spans = contentTitleEl.querySelectorAll('span');
+            contentTitleEl.textContent = data.title + ' ';
+            spans.forEach(span => contentTitleEl.appendChild(span));
+        }
+
+        // Handle Adult Content Video Blur Overlay
+        const adultOverlay = document.getElementById('adultOverlay');
+        const videoWrapper = document.querySelector('.video-wrapper');
+        const removeBlurBtn = document.getElementById('removeBlurBtn');
+
+        if (data.adult && adultOverlay && videoWrapper) {
+            videoWrapper.classList.add('blurred-adult');
+            adultOverlay.classList.add('active');
+
+            if (removeBlurBtn) {
+                removeBlurBtn.addEventListener('click', () => {
+                    videoWrapper.classList.remove('blurred-adult');
+                    adultOverlay.classList.remove('active');
+                    // Play video if possible
+                    const videoPlayer = document.getElementById('videoPlayer');
+                    if (videoPlayer) {
+                        videoPlayer.play().catch(e => console.log('Auto-play prevented:', e));
+                    }
+                });
+            }
+        }
 
         // Update document title
         document.title = `${data.title} - Who Dat Idols?`;

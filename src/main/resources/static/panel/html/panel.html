@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="tr">
 
 <head>
@@ -440,8 +440,16 @@
                                     <option value="Kmerce">Kmerce</option>
                                     <option value="Hırvatça">Hırvatça</option>
                                     <option value="İtalyanca">İtalyanca</option>
-                                    <option value="Lehçe">Lehçe</option>
-                                </select>
+                                    <option value="Lehçe">Lehçe</option>                            </select>
+                            </div>
+                            <div class="form-group" style="display: flex; align-items: flex-end; justify-content: flex-start; margin-bottom: 15px;">
+                                <div class="toggle-switch-wrapper" style="margin-top: 25px;">
+                                    <label class="switch">
+                                        <input type="checkbox" id="movieIsAdult" name="isAdult">
+                                        <span class="slider round"></span>
+                                    </label>
+                                    <span style="margin-left: 10px; font-weight: 500; color: #eee; cursor: pointer; user-select: none;" onclick="document.getElementById('movieIsAdult').click()"><i class="fas fa-exclamation-triangle" style="color: #f44336; margin-right: 5px;"></i> +18 İçerik</span>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="movieCountry">Yapımcı Ülke</label>
@@ -666,8 +674,16 @@
                                     <select id="seriesStatus">
                                         <option value="0">Devam Ediyor</option>
                                         <option value="1">Final</option>
-                                        <option value="2">Sezon Finali</option>
-                                    </select>
+                                        <option value="2">Sezon Finali</option>                                    </select>
+                                </div>
+                                <div class="form-group" style="display: flex; align-items: flex-end; justify-content: flex-start; margin-bottom: 15px;">
+                                    <div class="toggle-switch-wrapper" style="margin-top: 25px;">
+                                        <label class="switch">
+                                            <input type="checkbox" id="seriesIsAdult" name="isAdult">
+                                            <span class="slider round"></span>
+                                        </label>
+                                        <span style="margin-left: 10px; font-weight: 500; color: #eee; cursor: pointer; user-select: none;" onclick="document.getElementById('seriesIsAdult').click()"><i class="fas fa-exclamation-triangle" style="color: #f44336; margin-right: 5px;"></i> +18 İçerik</span>
+                                    </div>
                                 </div>
                                 <div class="form-group">
                                     <label for="seriesCountry">Yapımcı Ülke</label>
