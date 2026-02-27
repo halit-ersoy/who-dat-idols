@@ -131,6 +131,15 @@
     color: #1ed760;
 }
 
+.form-group.has-error label {
+    color: #e74c3c !important;
+}
+
+.form-group.has-error .form-control {
+    border-color: #e74c3c !important;
+    box-shadow: 0 0 10px rgba(231, 76, 60, 0.2) !important;
+}
+
 .forgot-password {
     text-align: right;
     margin-bottom: 25px;

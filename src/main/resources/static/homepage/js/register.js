@@ -33,6 +33,7 @@ export function initRegister() {
     closeRegisterModal.addEventListener('click', () => {
         registerModal.classList.remove('active');
         document.body.style.overflow = '';
+        clearErrors();
 
         // Reset all form fields
         document.getElementById('first-name').value = '';
@@ -63,10 +64,27 @@ export function initRegister() {
                 this.parentElement.classList.remove('active');
             }
         });
+        input.addEventListener('input', function () {
+            this.parentElement.classList.remove('has-error');
+        });
     });
+
+    function setError(inputElementId) {
+        const element = document.getElementById(inputElementId);
+        if (element && element.parentElement) {
+            element.parentElement.classList.add('has-error');
+        }
+    }
+
+    function clearErrors() {
+        document.querySelectorAll('.form-group.has-error').forEach(group => {
+            group.classList.remove('has-error');
+        });
+    }
 
     // Registration submission
     registerSubmit.addEventListener('click', async function () {
+        clearErrors();
         const firstName = document.getElementById('first-name').value.trim();
         const lastName = document.getElementById('last-name').value.trim();
         const nickname = document.getElementById('nickname').value.trim();
@@ -75,12 +93,14 @@ export function initRegister() {
 
         if (!firstName || !lastName || !nickname || !email || !password) {
             let missingField = "";
-            if (!firstName) missingField = "Ad";
-            else if (!lastName) missingField = "Soyad";
-            else if (!nickname) missingField = "Kullanıcı Adı";
-            else if (!email) missingField = "E-posta";
-            else if (!password) missingField = "Şifre";
+            let missingId = "";
+            if (!firstName) { missingField = "Ad"; missingId = "first-name"; }
+            else if (!lastName) { missingField = "Soyad"; missingId = "last-name"; }
+            else if (!nickname) { missingField = "Kullanıcı Adı"; missingId = "nickname"; }
+            else if (!email) { missingField = "E-posta"; missingId = "register-email"; }
+            else if (!password) { missingField = "Şifre"; missingId = "register-password"; }
 
+            setError(missingId);
             this.innerHTML = `<i class="fas fa-times"></i> ${missingField} eksik!`;
             this.style.backgroundColor = '#e74c3c';
             setTimeout(() => {
@@ -91,6 +111,7 @@ export function initRegister() {
         }
 
         if (password.length < 6) {
+            setError('register-password');
             this.innerHTML = '<i class="fas fa-times"></i> Şifre çok kısa! (En az 6)';
             this.style.backgroundColor = '#e74c3c';
             setTimeout(() => {
@@ -102,7 +123,20 @@ export function initRegister() {
 
         const nicknameRegex = /^[a-zA-Z0-9_.]+$/;
         if (!nicknameRegex.test(nickname)) {
-            this.innerHTML = '<i class="fas fa-times"></i> Geçersiz Karakter!';
+            setError('nickname');
+            this.innerHTML = '<i class="fas fa-times"></i> Sadece harf, rakam, _ ve .';
+            this.style.backgroundColor = '#e74c3c';
+            setTimeout(() => {
+                this.innerHTML = 'Kayıt Ol';
+                this.style.backgroundColor = '';
+            }, 3000);
+            return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            setError('register-email');
+            this.innerHTML = '<i class="fas fa-times"></i> Geçersiz E-posta!';
             this.style.backgroundColor = '#e74c3c';
             setTimeout(() => {
                 this.innerHTML = 'Kayıt Ol';

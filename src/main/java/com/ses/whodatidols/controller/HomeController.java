@@ -385,6 +385,14 @@ public class HomeController {
                 return ResponseEntity.badRequest().body(error);
             }
 
+            // 1.3 Email Format Validation
+            if (!person.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "Geçersiz e-posta formatı!");
+                return ResponseEntity.badRequest().body(error);
+            }
+
             // 1.5 Username Validation (Regex: Letters, Numbers, Underscore, Dot)
             if (!person.getNickname().matches("^[a-zA-Z0-9_.]+$")) {
                 Map<String, Object> error = new HashMap<>();
