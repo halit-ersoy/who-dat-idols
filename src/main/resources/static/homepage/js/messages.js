@@ -12,6 +12,23 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentReceiverRole = null;
     let chatInterval = null;
 
+    const popularEmojis = [
+        '😀', '😂', '😍', '😊', '🥰', '😎', '😜', '🤔', '🙄', '😴',
+        '😭', '😱', '😡', '👍', '👎', '❤️', '🔥', '✨', '🙌', '👏',
+        '🎉', '🎈', '🎂', '🥳', '🥺', '🤡', '💀', '💩', '👻', '👾',
+        '🚀', '💯', '🙏', '💪', '👀', '🌟'
+    ];
+
+    function isOnlyEmojis(text) {
+        // Regex for matching emojis: covers standard emojis, variations, and modifiers
+        const emojiRegex = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
+        const emojis = text.match(emojiRegex);
+        if (!emojis) return { only: false, count: 0 };
+
+        const cleaned = text.replace(emojiRegex, '').trim();
+        return { only: cleaned.length === 0, count: emojis.length };
+    }
+
     function getRoleBadge(role) {
         if (role === 'ADMIN') {
             return '<span class="admin-badge"><i class="fas fa-shield-alt"></i> ADMİN</span>';
@@ -190,7 +207,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="text-align:center; padding: 20px; color: #888;">Yükleniyor...</div>
             </div>
             <div class="chat-input-area" id="chat-input-area">
+                <div id="emoji-picker" class="emoji-picker">
+                    ${popularEmojis.map(emoji => `<div class="emoji-item">${emoji}</div>`).join('')}
+                </div>
                 <div class="chat-input-wrapper">
+                    <button class="emoji-btn" id="emoji-btn-toggle" title="Emoji">
+                        <i class="far fa-smile"></i>
+                    </button>
                     <textarea id="message-input" placeholder="Bir mesaj yazın..." rows="1" maxlength="400"></textarea>
                     <div class="char-counter"><span id="char-count">0</span> / 400</div>
                     <button class="send-btn" id="send-message-btn" disabled>
@@ -224,6 +247,33 @@ document.addEventListener('DOMContentLoaded', () => {
         // Setup input event
         const input = document.getElementById('message-input');
         const sendBtn = document.getElementById('send-message-btn');
+        const emojiBtn = document.getElementById('emoji-btn-toggle');
+        const picker = document.getElementById('emoji-picker');
+
+        emojiBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            picker.classList.toggle('active');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (picker && !picker.contains(e.target) && !emojiBtn.contains(e.target)) {
+                picker.classList.remove('active');
+            }
+        });
+
+        picker.querySelectorAll('.emoji-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const start = input.selectionStart;
+                const end = input.selectionEnd;
+                const text = input.value;
+                input.value = text.substring(0, start) + item.innerText + text.substring(end);
+                input.focus();
+                input.selectionStart = input.selectionEnd = start + item.innerText.length;
+
+                // Trigger input event for auto-resize and button enable
+                input.dispatchEvent(new Event('input'));
+            });
+        });
 
         input.addEventListener('input', () => {
             const val = input.value;
@@ -234,10 +284,14 @@ document.addEventListener('DOMContentLoaded', () => {
             input.style.height = (input.scrollHeight) + 'px';
         });
 
-        sendBtn.addEventListener('click', () => sendMessage(nickname, input.value.trim()));
+        sendBtn.addEventListener('click', () => {
+            picker.classList.remove('active');
+            sendMessage(nickname, input.value.trim());
+        });
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
+                picker.classList.remove('active');
                 sendBtn.click();
             }
         });
@@ -257,8 +311,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     const isSent = m.senderNickname === myNickname;
                     const statusIcon = m.read ? '<i class="fas fa-check-double message-status-tick read"></i>' : '<i class="fas fa-check message-status-tick"></i>';
 
+                    const emojiInfo = isOnlyEmojis(m.content);
+                    let bubbleClass = isSent ? 'sent' : 'received';
+                    if (emojiInfo.only && emojiInfo.count <= 2) {
+                        bubbleClass += ' only-emoji';
+                        if (emojiInfo.count === 1) bubbleClass += ' large';
+                        else if (emojiInfo.count === 2) bubbleClass += ' medium';
+                    }
+
                     return `
-                        <div class="message-bubble ${isSent ? 'sent' : 'received'}">
+                        <div class="message-bubble ${bubbleClass}">
                             ${m.content}
                             <div class="message-footer">
                                 <span class="message-time">${formatTime(new Date(m.timestamp))}</span>

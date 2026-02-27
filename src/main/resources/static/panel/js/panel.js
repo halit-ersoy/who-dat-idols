@@ -3617,7 +3617,7 @@
                     const time = new Date(msg.timestamp).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 
                     bubble.innerHTML = `
-                        <div style="font-weight:600; font-size:0.7rem; margin-bottom:2px; color:${isSender1 ? '#ff9800' : '#1ed760'}">
+                        <div style="font-weight:600; font-size:0.7rem; margin-bottom:2px; color:${isSender1 ? '#ff9800' : 'rgba(0,0,0,0.7)'}">
                             ${msg.senderNickname}
                         </div>
                         <div>${msg.content}</div>
