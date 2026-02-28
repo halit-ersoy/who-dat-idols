@@ -3,7 +3,6 @@ package com.ses.whodatidols.service;
 import com.ses.whodatidols.model.Movie;
 import com.ses.whodatidols.repository.MovieRepository;
 import com.ses.whodatidols.repository.VideoSourceRepository;
-import org.springframework.cache.annotation.CacheEvict;
 import com.ses.whodatidols.util.FFmpegUtils;
 import com.ses.whodatidols.controller.MediaController;
 import com.ses.whodatidols.util.ImageUtils;
@@ -28,18 +27,20 @@ public class MovieService {
     private final NotificationService notificationService;
     private final VideoSourceRepository videoSourceRepository;
     private final FFmpegUtils ffmpegUtils;
+    private final CacheService cacheService;
 
     @Value("${media.source.movies.path}")
     private String moviesPath;
 
     public MovieService(MovieRepository movieRepository, TvMazeService tvMazeService,
             NotificationService notificationService, VideoSourceRepository videoSourceRepository,
-            FFmpegUtils ffmpegUtils) {
+            FFmpegUtils ffmpegUtils, CacheService cacheService) {
         this.movieRepository = movieRepository;
         this.tvMazeService = tvMazeService;
         this.notificationService = notificationService;
         this.videoSourceRepository = videoSourceRepository;
         this.ffmpegUtils = ffmpegUtils;
+        this.cacheService = cacheService;
     }
 
     // Listeyi Getir
@@ -61,9 +62,9 @@ public class MovieService {
     }
 
     // Güncelleme Operasyonu
-    @CacheEvict(value = "featuredContent", allEntries = true)
     public void updateMovie(Movie movie, MultipartFile file, MultipartFile image, boolean overwrite)
             throws IOException {
+        cacheService.evictContentCaches();
         Movie existingCollision = movieRepository.findMovieByName(movie.getName());
         if (existingCollision != null && !existingCollision.getId().equals(movie.getId())) {
             if (!overwrite) {
@@ -128,9 +129,9 @@ public class MovieService {
         }
     }
 
-    @CacheEvict(value = "featuredContent", allEntries = true)
     public void saveMovieWithFile(Movie movie, MultipartFile file, MultipartFile image, String summary)
             throws IOException {
+        cacheService.evictContentCaches();
         UUID uuid = UUID.randomUUID();
         movie.setId(uuid);
         movie.setUploadDate(LocalDateTime.now());
@@ -189,8 +190,8 @@ public class MovieService {
     }
 
     @org.springframework.transaction.annotation.Transactional
-    @CacheEvict(value = "featuredContent", allEntries = true)
     public void deleteMovieSource(UUID id) {
+        cacheService.evictContentCaches();
         // 1. Dosyaları fiziksel olarak sil (mp4, jpg, hls klasörü)
         deletePhysicalFiles(id);
 
@@ -204,8 +205,8 @@ public class MovieService {
     }
 
     @org.springframework.transaction.annotation.Transactional
-    @CacheEvict(value = "featuredContent", allEntries = true)
     public void deleteMovieById(UUID id) {
+        cacheService.evictContentCaches();
         // 1. Veritabanından kaynakları ve filmi sil
         videoSourceRepository.deleteAllForContent(id);
         movieRepository.deleteById(id);

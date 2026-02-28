@@ -9,7 +9,6 @@ import com.ses.whodatidols.util.FFmpegUtils;
 import com.ses.whodatidols.util.ImageUtils;
 import com.ses.whodatidols.viewmodel.EpisodeViewModel;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,18 +31,20 @@ public class SeriesService {
     private final NotificationService notificationService;
     private final VideoSourceRepository videoSourceRepository;
     private final FFmpegUtils ffmpegUtils;
+    private final CacheService cacheService;
 
     @Value("${media.source.soap_operas.path}")
     private String soapOperasPath;
 
     public SeriesService(SeriesRepository repository, TvMazeService tvMazeService,
             NotificationService notificationService, VideoSourceRepository videoSourceRepository,
-            FFmpegUtils ffmpegUtils) {
+            FFmpegUtils ffmpegUtils, CacheService cacheService) {
         this.repository = repository;
         this.tvMazeService = tvMazeService;
         this.notificationService = notificationService;
         this.videoSourceRepository = videoSourceRepository;
         this.ffmpegUtils = ffmpegUtils;
+        this.cacheService = cacheService;
     }
 
     public List<Series> getAllSeries() {
@@ -129,8 +130,8 @@ public class SeriesService {
         return episodes;
     }
 
-    @CacheEvict(value = "featuredContent", allEntries = true)
     public void updateSeriesMetadata(Series s, MultipartFile file, MultipartFile image) throws IOException {
+        cacheService.evictContentCaches();
         if (file != null && !file.isEmpty()) {
             Path uploadPath = Paths.get(soapOperasPath).toAbsolutePath().normalize();
             if (!Files.exists(uploadPath))
@@ -159,10 +160,10 @@ public class SeriesService {
     }
 
     @Transactional
-    @CacheEvict(value = "featuredContent", allEntries = true)
     public UUID saveEpisodeWithFile(Series seriesInfo, int seasonNumber, int episodeNumber, MultipartFile file,
             MultipartFile image, UUID existingSeriesId, boolean overwrite)
             throws IOException {
+        cacheService.evictContentCaches();
         UUID seriesId;
         String currentXML;
         String seriesName;
@@ -289,10 +290,10 @@ public class SeriesService {
     }
 
     @Transactional
-    @CacheEvict(value = "featuredContent", allEntries = true)
     public void updateEpisode(UUID episodeId, int seasonNumber, int episodeNumber, int finalStatus, MultipartFile file,
             boolean overwrite)
             throws IOException {
+        cacheService.evictContentCaches();
         Episode ep = repository.findEpisodeById(episodeId);
         if (ep == null)
             throw new RuntimeException("Bölüm bulunamadı.");
@@ -397,8 +398,8 @@ public class SeriesService {
     }
 
     @Transactional
-    @CacheEvict(value = "featuredContent", allEntries = true)
     public void deleteEpisodeSource(UUID id) {
+        cacheService.evictContentCaches();
         // 1. Dosyaları fiziksel olarak sil (mp4, hls klasörü)
         deletePhysicalFile(id.toString());
 
@@ -412,8 +413,8 @@ public class SeriesService {
     }
 
     @Transactional
-    @CacheEvict(value = "featuredContent", allEntries = true)
     public void deleteEpisodeById(UUID id) {
+        cacheService.evictContentCaches();
         Series parentSeries = repository.findSeriesByEpisodeId(id);
         if (parentSeries != null) {
             String currentXml = parentSeries.getEpisodeMetadataXml();
@@ -436,8 +437,8 @@ public class SeriesService {
     }
 
     @Transactional
-    @CacheEvict(value = "featuredContent", allEntries = true)
     public void deleteSeriesById(UUID id) {
+        cacheService.evictContentCaches();
         Series series = repository.findSeriesById(id);
         if (series == null)
             return;
