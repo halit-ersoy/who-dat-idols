@@ -161,7 +161,7 @@ public class SeriesService {
 
     @Transactional
     public UUID saveEpisodeWithFile(Series seriesInfo, int seasonNumber, int episodeNumber, MultipartFile file,
-            MultipartFile image, UUID existingSeriesId, boolean overwrite)
+            MultipartFile image, UUID existingSeriesId, boolean overwrite, boolean isAdult)
             throws IOException {
         cacheService.evictContentCaches();
         UUID seriesId;
@@ -266,6 +266,7 @@ public class SeriesService {
         episodeData.setSeriesId(seriesId);
         episodeData.setSeasonNumber(seasonNumber);
         episodeData.setEpisodeNumber(episodeNumber);
+        episodeData.setAdult(isAdult);
         episodeData.setSlug(com.ses.whodatidols.util.SlugUtil
                 .toSlug(seriesName + "-" + seasonNumber + "-sezon-" + episodeNumber + "-bolum"));
 
@@ -291,7 +292,7 @@ public class SeriesService {
 
     @Transactional
     public void updateEpisode(UUID episodeId, int seasonNumber, int episodeNumber, int finalStatus, MultipartFile file,
-            boolean overwrite)
+            boolean overwrite, boolean isAdult)
             throws IOException {
         cacheService.evictContentCaches();
         Episode ep = repository.findEpisodeById(episodeId);
@@ -338,6 +339,7 @@ public class SeriesService {
 
         ep.setSeasonNumber(seasonNumber);
         ep.setEpisodeNumber(episodeNumber);
+        ep.setAdult(isAdult);
 
         if (file != null && !file.isEmpty()) {
             Path uploadPath = Paths.get(soapOperasPath).toAbsolutePath().normalize();

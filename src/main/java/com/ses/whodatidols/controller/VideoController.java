@@ -64,10 +64,10 @@ public class VideoController {
                     response.put("language", series.getLanguage());
                     response.put("country", series.getCountry());
                     response.put("finalStatus", series.getFinalStatus());
-                    response.put("adult", series.isAdult());
+                    response.put("adult", episode.isAdult());
                 } else {
                     response.put("title", episode.getName());
-                    response.put("adult", false); // Default if no parent series found
+                    response.put("adult", episode.isAdult());
                 }
             } catch (Exception e) {
                 // Ignore if parent not found

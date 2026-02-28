@@ -305,7 +305,8 @@ public class AdminController {
             @RequestParam(value = "country", required = false) String country,
             @RequestParam("season") int season,
             @RequestParam("episode") int episode,
-            @RequestParam(value = "overwrite", defaultValue = "false") boolean overwrite) {
+            @RequestParam(value = "overwrite", defaultValue = "false") boolean overwrite,
+            @RequestParam(value = "isAdult", defaultValue = "false") boolean isAdult) {
         try {
             if (existingSeriesId != null) {
                 seriesInfo.setId(existingSeriesId);
@@ -314,7 +315,7 @@ public class AdminController {
             seriesInfo.setSummary(summary);
             seriesInfo.setCountry(country);
             UUID episodeId = seriesService.saveEpisodeWithFile(seriesInfo, season, episode, file, image,
-                    existingSeriesId, overwrite);
+                    existingSeriesId, overwrite, isAdult);
 
             if (existingSeriesId == null && (image == null || image.isEmpty()) && imageUrl != null
                     && !imageUrl.isEmpty()) {
@@ -351,9 +352,10 @@ public class AdminController {
             @RequestParam("episodeNum") int episodeNum,
             @RequestParam("finalStatus") int finalStatus,
             @RequestParam(value = "file", required = false) MultipartFile file,
-            @RequestParam(value = "overwrite", defaultValue = "false") boolean overwrite) {
+            @RequestParam(value = "overwrite", defaultValue = "false") boolean overwrite,
+            @RequestParam(value = "isAdult", defaultValue = "false") boolean isAdult) {
         try {
-            seriesService.updateEpisode(episodeId, season, episodeNum, finalStatus, file, overwrite);
+            seriesService.updateEpisode(episodeId, season, episodeNum, finalStatus, file, overwrite, isAdult);
             return ResponseEntity.ok("{\"id\": \"" + episodeId + "\", \"message\": \"Bölüm güncellendi.\"}");
         } catch (com.ses.whodatidols.exception.DuplicateConflictException e) {
             return ResponseEntity.status(409).body("{\"error\": \"" + e.getMessage() + "\"}");

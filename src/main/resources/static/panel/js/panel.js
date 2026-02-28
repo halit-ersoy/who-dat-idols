@@ -1172,7 +1172,6 @@
             formData.append('language', document.getElementById('seriesLanguage').value);
             formData.append('country', document.getElementById('seriesCountry').value);
             formData.append('seriesType', document.getElementById('seriesType').value);
-            formData.append('isAdult', document.getElementById('seriesIsAdult') && document.getElementById('seriesIsAdult').checked ? 'true' : 'false');
             formData.append('finalStatus', document.getElementById('seriesStatus').value);
             if (seriesImageInput.files.length > 0) {
                 formData.append('image', seriesImageInput.files[0]);
@@ -1223,6 +1222,7 @@
                 finalStatus = episodeSeriesStatusEl.value;
             }
             formData.append('finalStatus', finalStatus);
+            formData.append('isAdult', document.getElementById('episodeIsAdult') && document.getElementById('episodeIsAdult').checked ? 'true' : 'false');
 
             if (seriesFileInput.files.length > 0) {
                 formData.append('file', seriesFileInput.files[0]);
@@ -1290,6 +1290,7 @@
             finalStatus = episodeSeriesStatusEl.value;
         }
         formData.append('finalStatus', finalStatus);
+        formData.append('isAdult', document.getElementById('episodeIsAdult') && document.getElementById('episodeIsAdult').checked ? 'true' : 'false');
 
         if (mode === 'existing') {
             if (!existingId) return alert("Lütfen bir dizi seçin!");
@@ -1303,7 +1304,6 @@
             formData.append('language', document.getElementById('seriesLanguage').value);
             formData.append('country', document.getElementById('seriesCountry').value);
             formData.append('seriesType', document.getElementById('seriesType').value);
-            formData.append('isAdult', document.getElementById('seriesIsAdult') && document.getElementById('seriesIsAdult').checked ? 'true' : 'false');
             if (seriesImageInput.files.length > 0) formData.append('image', seriesImageInput.files[0]);
             if (lastFetchedPosterUrl) formData.append('imageUrl', lastFetchedPosterUrl);
         }
@@ -1567,10 +1567,6 @@
         document.getElementById('seriesCategory').value = series.category;
         document.getElementById('seriesSummary').value = series.summary || series.content || series._content;
 
-        // isAdult
-        const sIsAdultCheckbox = document.getElementById('seriesIsAdult');
-        if (sIsAdultCheckbox) sIsAdultCheckbox.checked = series.adult || series.isAdult || false;
-
         // Country population
         document.getElementById('seriesCountry').value = series.country || 'kr';
 
@@ -1623,6 +1619,9 @@
         episodeIdInput.value = ep.id;
         document.getElementById('seasonNum').value = ep.season;
         document.getElementById('episodeNum').value = ep.episode;
+
+        const epIsAdultCheckbox = document.getElementById('episodeIsAdult');
+        if (epIsAdultCheckbox) epIsAdultCheckbox.checked = ep.isAdult || ep.adult || false;
 
         // Form Layout for Episode Edit
         document.getElementById('seriesModeGroup').style.display = 'none';
@@ -1756,8 +1755,8 @@
         if (seriesPosterUrlInput) seriesPosterUrlInput.value = "";
         document.getElementById('seriesCountry').value = 'kr';
         document.getElementById('seriesType').value = 'Dizi';
-        const sIsAdultCheckbox = document.getElementById('seriesIsAdult');
-        if (sIsAdultCheckbox) sIsAdultCheckbox.checked = false;
+        const epIsAdultCheckbox = document.getElementById('episodeIsAdult');
+        if (epIsAdultCheckbox) epIsAdultCheckbox.checked = false;
         lastFetchedPosterUrl = "";
         updatePosterPreview('series', null);
 

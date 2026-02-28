@@ -13,6 +13,7 @@ public class Episode {
     private int seasonNumber;
     private int episodeNumber;
     private String slug;
+    private boolean isAdult;
 
     // Getters and Setters
     public UUID getId() {
@@ -85,5 +86,17 @@ public class Episode {
 
     public void setSlug(String slug) {
         this.slug = slug;
+    }
+
+    public boolean isAdult() {
+        return isAdult;
+    }
+
+    public void setAdult(boolean adult) {
+        isAdult = adult;
+    }
+
+    public void setIsAdult(boolean isAdult) {
+        this.isAdult = isAdult;
     }
 }
