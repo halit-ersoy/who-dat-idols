@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,7 +29,7 @@ public class BannedIpRepository {
                         IpAddress NVARCHAR(255) UNIQUE,
                         Reason NVARCHAR(MAX),
                         AppealMessage NVARCHAR(100),
-                        Timestamp DATETIME DEFAULT GETDATE()
+                        Timestamp DATETIME DEFAULT GETUTCDATE()
                     )
                 END
                 ELSE
@@ -44,8 +45,8 @@ public class BannedIpRepository {
 
     public void save(String ipAddress, String reason) {
         String sql = "IF NOT EXISTS (SELECT 1 FROM [WhoDatIdols].[dbo].[BannedIps] WHERE IpAddress = ?) " +
-                "INSERT INTO [WhoDatIdols].[dbo].[BannedIps] (IpAddress, Reason) VALUES (?, ?)";
-        jdbcTemplate.update(sql, ipAddress, ipAddress, reason);
+                "INSERT INTO [WhoDatIdols].[dbo].[BannedIps] (IpAddress, Reason, Timestamp) VALUES (?, ?, ?)";
+        jdbcTemplate.update(sql, ipAddress, ipAddress, reason, java.sql.Timestamp.from(Instant.now()));
     }
 
     public void updateAppeal(String ipAddress, String appealMessage) {
@@ -61,22 +62,28 @@ public class BannedIpRepository {
 
     public Optional<BannedIp> findByIp(String ipAddress) {
         String sql = "SELECT * FROM [WhoDatIdols].[dbo].[BannedIps] WHERE IpAddress = ?";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> new BannedIp(
-                rs.getLong("ID"),
-                rs.getString("IpAddress"),
-                rs.getString("Reason"),
-                rs.getString("AppealMessage"),
-                rs.getTimestamp("Timestamp").toLocalDateTime()), ipAddress).stream().findFirst();
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            java.sql.Timestamp ts = rs.getTimestamp("Timestamp");
+            return new BannedIp(
+                    rs.getLong("ID"),
+                    rs.getString("IpAddress"),
+                    rs.getString("Reason"),
+                    rs.getString("AppealMessage"),
+                    ts != null ? ts.toInstant() : null);
+        }, ipAddress).stream().findFirst();
     }
 
     public List<BannedIp> findAll() {
         String sql = "SELECT * FROM [WhoDatIdols].[dbo].[BannedIps] ORDER BY Timestamp DESC";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> new BannedIp(
-                rs.getLong("ID"),
-                rs.getString("IpAddress"),
-                rs.getString("Reason"),
-                rs.getString("AppealMessage"),
-                rs.getTimestamp("Timestamp").toLocalDateTime()));
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            java.sql.Timestamp ts = rs.getTimestamp("Timestamp");
+            return new BannedIp(
+                    rs.getLong("ID"),
+                    rs.getString("IpAddress"),
+                    rs.getString("Reason"),
+                    rs.getString("AppealMessage"),
+                    ts != null ? ts.toInstant() : null);
+        });
     }
 
     public void deleteByIp(String ipAddress) {

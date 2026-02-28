@@ -1,13 +1,13 @@
 package com.ses.whodatidols.model;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 public class UpdateNote {
     private UUID id;
     private String title;
     private String message;
-    private LocalDateTime createdAt;
+    private Instant createdAt;
     private boolean active;
 
     public UpdateNote() {
@@ -17,7 +17,7 @@ public class UpdateNote {
         this.id = UUID.randomUUID();
         this.title = title;
         this.message = message;
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = Instant.now();
         this.active = true;
     }
 
@@ -46,11 +46,11 @@ public class UpdateNote {
         this.message = message;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public Instant getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 

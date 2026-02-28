@@ -1,6 +1,6 @@
 package com.ses.whodatidols.model;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 public class Movie {
@@ -12,7 +12,7 @@ public class Movie {
     private String language;
     private String country;
     private int releaseYear;
-    private LocalDateTime uploadDate;
+    private Instant uploadDate;
     private String slug;
     private boolean isAdult;
 
@@ -21,7 +21,7 @@ public class Movie {
     }
 
     public Movie(UUID id, String name, String category, String summary, int durationMinutes,
-            String language, int releaseYear, LocalDateTime uploadDate) {
+            String language, int releaseYear, Instant uploadDate) {
         this.id = id;
         this.name = name;
         this.category = category;
@@ -97,11 +97,11 @@ public class Movie {
         this.releaseYear = releaseYear;
     }
 
-    public LocalDateTime getUploadDate() {
+    public Instant getUploadDate() {
         return uploadDate;
     }
 
-    public void setUploadDate(LocalDateTime uploadDate) {
+    public void setUploadDate(Instant uploadDate) {
         this.uploadDate = uploadDate;
     }
 

@@ -94,7 +94,7 @@ public class MovieRepository {
                 movie.getLanguage(),
                 movie.getCountry(),
                 movie.getReleaseYear(),
-                java.sql.Timestamp.valueOf(movie.getUploadDate()),
+                java.sql.Timestamp.from(movie.getUploadDate()),
                 movie.getSlug(),
                 movie.isAdult());
 
@@ -399,8 +399,9 @@ public class MovieRepository {
             movie.setReleaseYear(rs.getInt("ReleaseYear")); // UPDATED
 
             // uploadDate null gelebilir, kontrol ediyoruz
-            if (rs.getTimestamp("uploadDate") != null) {
-                movie.setUploadDate(rs.getTimestamp("uploadDate").toLocalDateTime());
+            java.sql.Timestamp ts = rs.getTimestamp("uploadDate");
+            if (ts != null) {
+                movie.setUploadDate(ts.toInstant());
             }
 
             try {

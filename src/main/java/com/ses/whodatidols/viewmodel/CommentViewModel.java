@@ -1,13 +1,13 @@
 package com.ses.whodatidols.viewmodel;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public class CommentViewModel {
     private java.util.UUID id;
     private java.util.UUID parentId;
     private String nickname;
     private String comment;
-    private LocalDateTime date;
+    private Instant date;
     private boolean spoiler;
     private int likeCount;
     private boolean likedByCurrentUser;
@@ -46,11 +46,11 @@ public class CommentViewModel {
         this.comment = comment;
     }
 
-    public LocalDateTime getDate() {
+    public Instant getDate() {
         return date;
     }
 
-    public void setDate(LocalDateTime date) {
+    public void setDate(Instant date) {
         this.date = date;
     }
 

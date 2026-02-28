@@ -1,6 +1,6 @@
 package com.ses.whodatidols.model;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 public class Series {
@@ -13,7 +13,7 @@ public class Series {
     private int finalStatus;
     private String episodeMetadataXml; // Formerly soapOperaSeries (To be deprecated)
     private int episodeCount;
-    private LocalDateTime uploadDate;
+    private Instant uploadDate;
 
     private String seriesType;
     private String slug;
@@ -99,11 +99,11 @@ public class Series {
         this.episodeCount = episodeCount;
     }
 
-    public LocalDateTime getUploadDate() {
+    public Instant getUploadDate() {
         return uploadDate;
     }
 
-    public void setUploadDate(LocalDateTime uploadDate) {
+    public void setUploadDate(Instant uploadDate) {
         this.uploadDate = uploadDate;
     }
 

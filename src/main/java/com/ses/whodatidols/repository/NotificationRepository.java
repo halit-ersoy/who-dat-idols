@@ -41,7 +41,7 @@ public class NotificationRepository {
                 notification.getMessage(),
                 notification.getContentId().toString(),
                 notification.getType(),
-                java.sql.Timestamp.valueOf(notification.getCreatedAt()),
+                java.sql.Timestamp.from(notification.getCreatedAt()),
                 notification.isRead() ? 1 : 0);
     }
 
@@ -78,7 +78,9 @@ public class NotificationRepository {
             n.setMessage(rs.getString("Message"));
             n.setContentId(UUID.fromString(rs.getString("ContentID")));
             n.setType(rs.getString("Type"));
-            n.setCreatedAt(rs.getTimestamp("CreatedAt").toLocalDateTime());
+            java.sql.Timestamp ts = rs.getTimestamp("CreatedAt");
+            if (ts != null)
+                n.setCreatedAt(ts.toInstant());
             n.setRead(rs.getBoolean("IsRead"));
 
             try {

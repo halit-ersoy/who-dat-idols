@@ -85,12 +85,58 @@ export function initCalendar() {
         };
 
         const daysOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        const today = days[new Date().getDay()];
+        const daysShort = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const userNow = new Date();
+        const todayDayName = daysShort[userNow.getDay()];
+
+        // Data processing: Shift events to user's local day/time
+        // We assume database 'showTime' is in Turkey Time (UTC+3)
+        const localCalendarData = {
+            monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: [], sunday: []
+        };
+
+        Object.keys(calendarData).forEach(dbDay => {
+            const shows = calendarData[dbDay] || [];
+            shows.forEach(show => {
+                // Parse "HH:mm" in TRT (UTC+3)
+                const [hours, minutes] = show.time.split(':').map(Number);
+
+                // Create a date object representing specific day in TRT
+                // Find index of dbDay in daysShort to get correct JS day
+                const dbDayIdx = daysShort.indexOf(dbDay);
+
+                // Construct a date in user's locale but representing the TRT time
+                // A reliable way: Create a UTC date and shift by 3 hours
+                const trDate = new Date();
+                // Set to the correct day of week relative to now
+                const currentDay = trDate.getDay();
+                const distance = dbDayIdx - currentDay;
+                trDate.setDate(trDate.getDate() + distance);
+                trDate.setHours(hours - 3, minutes, 0, 0); // Convert TRT (UTC+3) to UTC
+
+                // Now trDate is the exact UTC moment the show airs.
+                // Fetch user's local day and time from this UTC moment.
+                const localDayName = daysShort[trDate.getDay()];
+                const localHours = String(trDate.getHours()).padStart(2, '0');
+                const localMinutes = String(trDate.getMinutes()).padStart(2, '0');
+                const localTimeStr = `${localHours}:${localMinutes}`;
+
+                if (localCalendarData[localDayName]) {
+                    localCalendarData[localDayName].push({
+                        ...show,
+                        time: localTimeStr,
+                        originalTime: show.time // Keep for reference if needed
+                    });
+                }
+            });
+        });
 
         // Create drawer for each day in specific order
         daysOrder.forEach(day => {
-            const shows = calendarData[day] || [];
+            const shows = localCalendarData[day] || [];
+            // Sort by time
+            shows.sort((a, b) => a.time.localeCompare(b.time));
+
             const dayEl = document.createElement('div');
             dayEl.className = 'calendar-day';
             dayEl.dataset.day = day;
@@ -137,7 +183,7 @@ export function initCalendar() {
 
         // Open today's drawer by default
         setTimeout(() => {
-            toggleDrawer(today);
+            toggleDrawer(todayDayName);
         }, 100);
     }
 

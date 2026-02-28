@@ -27,7 +27,7 @@ public class UpdateNoteRepository {
                 "[ID] UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(), " +
                 "[title] NVARCHAR(255) NOT NULL, " +
                 "[message] NVARCHAR(MAX) NOT NULL, " +
-                "[createdAt] DATETIME DEFAULT GETDATE(), " +
+                "[createdAt] DATETIME DEFAULT GETUTCDATE(), " +
                 "[isActive] BIT DEFAULT 1)";
         jdbcTemplate.execute(sql);
     }
@@ -48,7 +48,7 @@ public class UpdateNoteRepository {
                 note.getId() == null ? UUID.randomUUID() : note.getId(),
                 note.getTitle(),
                 note.getMessage(),
-                java.sql.Timestamp.valueOf(note.getCreatedAt()),
+                java.sql.Timestamp.from(note.getCreatedAt()),
                 note.isActive());
     }
 
@@ -69,7 +69,9 @@ public class UpdateNoteRepository {
             note.setId(UUID.fromString(rs.getString("ID")));
             note.setTitle(rs.getString("title"));
             note.setMessage(rs.getString("message"));
-            note.setCreatedAt(rs.getTimestamp("createdAt").toLocalDateTime());
+            java.sql.Timestamp ts = rs.getTimestamp("createdAt");
+            if (ts != null)
+                note.setCreatedAt(ts.toInstant());
             note.setActive(rs.getBoolean("isActive"));
             return note;
         }

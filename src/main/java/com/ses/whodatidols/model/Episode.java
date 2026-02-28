@@ -1,6 +1,6 @@
 package com.ses.whodatidols.model;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 public class Episode {
@@ -9,7 +9,7 @@ public class Episode {
     private String name; // Inherited from Series name usually, or explicit episode title
     private int durationMinutes; // Formerly time
     private int releaseYear; // Formerly year
-    private LocalDateTime uploadDate;
+    private Instant uploadDate;
     private int seasonNumber;
     private int episodeNumber;
     private String slug;
@@ -56,11 +56,11 @@ public class Episode {
         this.releaseYear = releaseYear;
     }
 
-    public LocalDateTime getUploadDate() {
+    public Instant getUploadDate() {
         return uploadDate;
     }
 
-    public void setUploadDate(LocalDateTime uploadDate) {
+    public void setUploadDate(Instant uploadDate) {
         this.uploadDate = uploadDate;
     }
 

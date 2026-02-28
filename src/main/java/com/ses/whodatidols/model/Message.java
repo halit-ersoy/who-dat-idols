@@ -1,6 +1,6 @@
 package com.ses.whodatidols.model;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 public class Message {
@@ -8,7 +8,7 @@ public class Message {
     private UUID senderId;
     private UUID receiverId;
     private String content;
-    private LocalDateTime timestamp;
+    private Instant timestamp;
     private boolean isRead;
 
     // Additional fields for UI convenience
@@ -52,11 +52,11 @@ public class Message {
         this.content = content;
     }
 
-    public LocalDateTime getTimestamp() {
+    public Instant getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
+    public void setTimestamp(Instant timestamp) {
         this.timestamp = timestamp;
     }
 

@@ -5,8 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,7 +26,7 @@ public class MessageRepository {
                 "SenderID UNIQUEIDENTIFIER NOT NULL," +
                 "ReceiverID UNIQUEIDENTIFIER NOT NULL," +
                 "Content NVARCHAR(MAX) NOT NULL," +
-                "Timestamp DATETIME DEFAULT GETDATE()," +
+                "Timestamp DATETIME DEFAULT GETUTCDATE()," +
                 "IsRead BIT DEFAULT 0," +
                 "FOREIGN KEY (SenderID) REFERENCES Person(ID)," +
                 "FOREIGN KEY (ReceiverID) REFERENCES Person(ID)" +
@@ -44,7 +43,7 @@ public class MessageRepository {
                 "CREATE TABLE UserBlocks (" +
                 "BlockerID UNIQUEIDENTIFIER NOT NULL," +
                 "BlockedID UNIQUEIDENTIFIER NOT NULL," +
-                "CreatedAt DATETIME DEFAULT GETDATE()," +
+                "CreatedAt DATETIME DEFAULT GETUTCDATE()," +
                 "PRIMARY KEY (BlockerID, BlockedID)," +
                 "FOREIGN KEY (BlockerID) REFERENCES Person(ID)," +
                 "FOREIGN KEY (BlockedID) REFERENCES Person(ID)" +
@@ -64,7 +63,7 @@ public class MessageRepository {
                 "ReportedID UNIQUEIDENTIFIER NOT NULL," +
                 "Reason NVARCHAR(255) NOT NULL," +
                 "ContentContext NVARCHAR(MAX)," +
-                "CreatedAt DATETIME DEFAULT GETDATE()," +
+                "CreatedAt DATETIME DEFAULT GETUTCDATE()," +
                 "IsResolved BIT DEFAULT 0," +
                 "FOREIGN KEY (ReporterID) REFERENCES Person(ID)," +
                 "FOREIGN KEY (ReportedID) REFERENCES Person(ID)" +
@@ -79,7 +78,7 @@ public class MessageRepository {
     public void sendMessage(UUID senderId, UUID receiverId, String content) {
         ensureMessageTableExists();
         String sql = "INSERT INTO UserMessages (SenderID, ReceiverID, Content, Timestamp) VALUES (?, ?, ?, ?)";
-        jdbcTemplate.update(sql, senderId, receiverId, content, Timestamp.valueOf(LocalDateTime.now()));
+        jdbcTemplate.update(sql, senderId, receiverId, content, java.sql.Timestamp.from(Instant.now()));
     }
 
     public List<Message> getChatHistory(UUID user1, UUID user2) {
@@ -98,7 +97,9 @@ public class MessageRepository {
             m.setSenderId(UUID.fromString(rs.getString("SenderID")));
             m.setReceiverId(UUID.fromString(rs.getString("ReceiverID")));
             m.setContent(rs.getString("Content"));
-            m.setTimestamp(rs.getTimestamp("Timestamp").toLocalDateTime());
+            java.sql.Timestamp ts = rs.getTimestamp("Timestamp");
+            if (ts != null)
+                m.setTimestamp(ts.toInstant());
             m.setRead(rs.getBoolean("IsRead"));
             m.setSenderNickname(rs.getString("SenderNickname"));
             m.setReceiverNickname(rs.getString("ReceiverNickname"));
@@ -128,7 +129,9 @@ public class MessageRepository {
             m.setSenderId(UUID.fromString(rs.getString("SenderID")));
             m.setReceiverId(UUID.fromString(rs.getString("ReceiverID")));
             m.setContent(rs.getString("Content"));
-            m.setTimestamp(rs.getTimestamp("Timestamp").toLocalDateTime());
+            java.sql.Timestamp ts = rs.getTimestamp("Timestamp");
+            if (ts != null)
+                m.setTimestamp(ts.toInstant());
             m.setRead(rs.getBoolean("IsRead"));
             m.setSenderNickname(rs.getString("SenderNickname"));
             m.setReceiverNickname(rs.getString("ReceiverNickname"));
@@ -163,7 +166,9 @@ public class MessageRepository {
             m.setSenderId(UUID.fromString(rs.getString("SenderID")));
             m.setReceiverId(UUID.fromString(rs.getString("ReceiverID")));
             m.setContent(rs.getString("Content"));
-            m.setTimestamp(rs.getTimestamp("Timestamp").toLocalDateTime());
+            java.sql.Timestamp ts = rs.getTimestamp("Timestamp");
+            if (ts != null)
+                m.setTimestamp(ts.toInstant());
             m.setRead(rs.getBoolean("IsRead"));
             m.setSenderNickname(rs.getString("SenderNickname"));
             m.setReceiverNickname(rs.getString("ReceiverNickname"));
@@ -190,8 +195,8 @@ public class MessageRepository {
     public void blockUser(UUID blockerId, UUID blockedId) {
         ensureUserBlocksTableExists();
         String sql = "IF NOT EXISTS (SELECT * FROM UserBlocks WHERE BlockerID = ? AND BlockedID = ?) " +
-                "INSERT INTO UserBlocks (BlockerID, BlockedID) VALUES (?, ?)";
-        jdbcTemplate.update(sql, blockerId, blockedId, blockerId, blockedId);
+                "INSERT INTO UserBlocks (BlockerID, BlockedID, CreatedAt) VALUES (?, ?, ?)";
+        jdbcTemplate.update(sql, blockerId, blockedId, blockerId, blockedId, java.sql.Timestamp.from(Instant.now()));
     }
 
     public void unblockUser(UUID blockerId, UUID blockedId) {
@@ -202,8 +207,8 @@ public class MessageRepository {
 
     public void reportUser(UUID reporterId, UUID reportedId, String reason, String context) {
         ensureUserReportsTableExists();
-        String sql = "INSERT INTO UserReports (ReporterID, ReportedID, Reason, ContentContext) VALUES (?, ?, ?, ?)";
-        jdbcTemplate.update(sql, reporterId, reportedId, reason, context);
+        String sql = "INSERT INTO UserReports (ReporterID, ReportedID, Reason, ContentContext, CreatedAt) VALUES (?, ?, ?, ?, ?)";
+        jdbcTemplate.update(sql, reporterId, reportedId, reason, context, java.sql.Timestamp.from(Instant.now()));
     }
 
     public List<java.util.Map<String, Object>> getAllReports() {

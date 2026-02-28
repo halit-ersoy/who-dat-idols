@@ -1,18 +1,18 @@
 package com.ses.whodatidols.model;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public class BannedIp {
     private Long id;
     private String ipAddress;
     private String reason;
     private String appealMessage;
-    private LocalDateTime timestamp;
+    private Instant timestamp;
 
     public BannedIp() {
     }
 
-    public BannedIp(Long id, String ipAddress, String reason, String appealMessage, LocalDateTime timestamp) {
+    public BannedIp(Long id, String ipAddress, String reason, String appealMessage, Instant timestamp) {
         this.id = id;
         this.ipAddress = ipAddress;
         this.reason = reason;
@@ -53,11 +53,11 @@ public class BannedIp {
         this.appealMessage = appealMessage;
     }
 
-    public LocalDateTime getTimestamp() {
+    public Instant getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
+    public void setTimestamp(Instant timestamp) {
         this.timestamp = timestamp;
     }
 }

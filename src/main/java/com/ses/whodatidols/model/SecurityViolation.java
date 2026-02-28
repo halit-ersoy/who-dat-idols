@@ -1,18 +1,18 @@
 package com.ses.whodatidols.model;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public class SecurityViolation {
     private Long id;
     private String ipAddress;
     private String userAgent;
     private String pageUrl;
-    private LocalDateTime timestamp;
+    private Instant timestamp;
 
     public SecurityViolation() {
     }
 
-    public SecurityViolation(Long id, String ipAddress, String userAgent, String pageUrl, LocalDateTime timestamp) {
+    public SecurityViolation(Long id, String ipAddress, String userAgent, String pageUrl, Instant timestamp) {
         this.id = id;
         this.ipAddress = ipAddress;
         this.userAgent = userAgent;
@@ -53,11 +53,11 @@ public class SecurityViolation {
         this.pageUrl = pageUrl;
     }
 
-    public LocalDateTime getTimestamp() {
+    public Instant getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
+    public void setTimestamp(Instant timestamp) {
         this.timestamp = timestamp;
     }
 }

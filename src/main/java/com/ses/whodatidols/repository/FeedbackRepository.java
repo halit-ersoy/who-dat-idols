@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,8 +63,8 @@ public class FeedbackRepository {
             }
 
             // Insert feedback
-            String insertSql = "INSERT INTO [WhoDatIdols].[dbo].[Feedback] (UserID, Subject, Message) VALUES (?, ?, ?)";
-            jdbcTemplate.update(insertSql, userId.toString(), subject, message);
+            String insertSql = "INSERT INTO [WhoDatIdols].[dbo].[Feedback] (UserID, Subject, Message, CreatedAt) VALUES (?, ?, ?, ?)";
+            jdbcTemplate.update(insertSql, userId.toString(), subject, message, java.sql.Timestamp.from(Instant.now()));
 
             response.put("success", true);
             response.put("message", "Geri bildiriminiz başarıyla gönderildi. Teşekkür ederiz!");
@@ -75,7 +76,7 @@ public class FeedbackRepository {
     }
 
     private int getDailyFeedbackCount() {
-        String sql = "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Feedback] WHERE CAST(CreatedAt AS DATE) = CAST(GETDATE() AS DATE)";
+        String sql = "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Feedback] WHERE CAST(CreatedAt AS DATE) = CAST(GETUTCDATE() AS DATE)";
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
         return count != null ? count : 0;
     }

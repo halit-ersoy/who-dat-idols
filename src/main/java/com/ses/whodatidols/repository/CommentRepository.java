@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -88,8 +89,8 @@ public class CommentRepository {
 
     public void addComment(UUID contentId, String cookie, String text, boolean spoiler, UUID parentId) {
         String sql = """
-                    INSERT INTO Comments (ContentId, UserId, Text, Spoiler, Nickname, ParentId, IsApproved)
-                    SELECT ?, ID, ?, ?, Nickname, ?, CASE WHEN Role IN ('ADMIN', 'SUPER_ADMIN', 'KURUCU', 'GELISTIRICI') THEN 1 ELSE 0 END
+                    INSERT INTO Comments (ContentId, UserId, Text, Spoiler, Nickname, ParentId, IsApproved, CreatedAt)
+                    SELECT ?, ID, ?, ?, Nickname, ?, CASE WHEN Role IN ('ADMIN', 'SUPER_ADMIN', 'KURUCU', 'GELISTIRICI') THEN 1 ELSE 0 END, ?
                     FROM Person WHERE cookie = ? AND isBanned = 0
                 """;
         int affected = jdbcTemplate.update(sql,
@@ -97,6 +98,7 @@ public class CommentRepository {
                 text,
                 spoiler,
                 parentId != null ? parentId.toString() : null,
+                java.sql.Timestamp.from(Instant.now()),
                 cookie);
 
         if (affected == 0) {
@@ -329,7 +331,7 @@ public class CommentRepository {
 
             java.sql.Timestamp ts = rs.getTimestamp("date");
             if (ts != null) {
-                vm.setDate(ts.toLocalDateTime());
+                vm.setDate(ts.toInstant());
             }
             return vm;
         }

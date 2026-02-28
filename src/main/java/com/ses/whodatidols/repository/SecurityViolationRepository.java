@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 
 @Repository
@@ -27,7 +28,7 @@ public class SecurityViolationRepository {
                         IpAddress NVARCHAR(255),
                         UserAgent NVARCHAR(MAX),
                         PageUrl NVARCHAR(MAX),
-                        Timestamp DATETIME DEFAULT GETDATE()
+                        Timestamp DATETIME DEFAULT GETUTCDATE()
                     )
                 END
                 """;
@@ -35,18 +36,21 @@ public class SecurityViolationRepository {
     }
 
     public void save(String ipAddress, String userAgent, String pageUrl) {
-        String sql = "INSERT INTO [WhoDatIdols].[dbo].[SecurityViolations] (IpAddress, UserAgent, PageUrl) VALUES (?, ?, ?)";
-        jdbcTemplate.update(sql, ipAddress, userAgent, pageUrl);
+        String sql = "INSERT INTO [WhoDatIdols].[dbo].[SecurityViolations] (IpAddress, UserAgent, PageUrl, Timestamp) VALUES (?, ?, ?, ?)";
+        jdbcTemplate.update(sql, ipAddress, userAgent, pageUrl, java.sql.Timestamp.from(Instant.now()));
     }
 
     public List<SecurityViolation> findAllByOrderByTimestampDesc() {
         String sql = "SELECT * FROM [WhoDatIdols].[dbo].[SecurityViolations] ORDER BY Timestamp DESC";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> new SecurityViolation(
-                rs.getLong("ID"),
-                rs.getString("IpAddress"),
-                rs.getString("UserAgent"),
-                rs.getString("PageUrl"),
-                rs.getTimestamp("Timestamp").toLocalDateTime()));
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            java.sql.Timestamp ts = rs.getTimestamp("Timestamp");
+            return new SecurityViolation(
+                    rs.getLong("ID"),
+                    rs.getString("IpAddress"),
+                    rs.getString("UserAgent"),
+                    rs.getString("PageUrl"),
+                    ts != null ? ts.toInstant() : null);
+        });
     }
 
     public void deleteById(Long id) {

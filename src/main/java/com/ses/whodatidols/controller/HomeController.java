@@ -19,6 +19,8 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -249,11 +251,10 @@ public class HomeController {
         return "kr"; // Bilinmiyorsa Kore varsay
     }
 
-    private boolean isRecent(java.time.LocalDateTime date) {
-        if (date == null)
+    private boolean isRecent(Instant uploadDate) {
+        if (uploadDate == null)
             return false;
-        // 24 saatten yeni mi? (1 gün)
-        return date.isAfter(java.time.LocalDateTime.now().minusHours(24));
+        return uploadDate.isAfter(Instant.now().minus(7, ChronoUnit.DAYS));
     }
 
     // DTO Classes

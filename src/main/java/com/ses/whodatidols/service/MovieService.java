@@ -15,7 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -134,7 +134,7 @@ public class MovieService {
         cacheService.evictContentCaches();
         UUID uuid = UUID.randomUUID();
         movie.setId(uuid);
-        movie.setUploadDate(LocalDateTime.now());
+        movie.setUploadDate(Instant.now());
         movie.setSummary(summary); // Özet summary'e gidiyor
         movie.setSlug(com.ses.whodatidols.util.SlugUtil.toSlug(movie.getName()));
 

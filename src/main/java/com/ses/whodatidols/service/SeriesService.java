@@ -15,7 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.*;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -188,7 +188,7 @@ public class SeriesService {
                 seriesInfo.setId(seriesId);
                 seriesInfo.setSlug(com.ses.whodatidols.util.SlugUtil.toSlug(seriesInfo.getName()));
                 seriesInfo.setEpisodeMetadataXml("<Seasons></Seasons>");
-                seriesInfo.setUploadDate(LocalDateTime.now());
+                seriesInfo.setUploadDate(Instant.now());
                 repository.createSeries(seriesInfo);
                 currentXML = "<Seasons></Seasons>";
                 seriesName = seriesInfo.getName();
@@ -261,8 +261,8 @@ public class SeriesService {
         episodeData.setId(episodeId);
         episodeData.setName(seriesName);
         episodeData.setDurationMinutes(duration);
-        episodeData.setReleaseYear(LocalDateTime.now().getYear());
-        episodeData.setUploadDate(LocalDateTime.now());
+        episodeData.setReleaseYear(java.time.Year.now().getValue());
+        episodeData.setUploadDate(Instant.now());
         episodeData.setSeriesId(seriesId);
         episodeData.setSeasonNumber(seasonNumber);
         episodeData.setEpisodeNumber(episodeNumber);

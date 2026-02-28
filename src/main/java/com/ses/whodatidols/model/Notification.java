@@ -1,6 +1,6 @@
 package com.ses.whodatidols.model;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 public class Notification {
@@ -9,7 +9,7 @@ public class Notification {
     private String message;
     private UUID contentId;
     private String type; // 'Movie' or 'SoapOpera'
-    private LocalDateTime createdAt;
+    private Instant createdAt;
     private boolean isRead;
     private String slug; // Used for UI routing
 
@@ -22,7 +22,7 @@ public class Notification {
         this.message = message;
         this.contentId = contentId;
         this.type = type;
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = Instant.now();
         this.isRead = false;
     }
 
@@ -67,11 +67,11 @@ public class Notification {
         this.type = type;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public Instant getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 

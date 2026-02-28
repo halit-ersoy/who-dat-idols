@@ -182,9 +182,8 @@ public class SeriesRepository {
         s.setEpisodeMetadataXml(rs.getString("EpisodeMetadataXml"));
         try {
             java.sql.Timestamp ts = rs.getTimestamp("uploadDate");
-            if (ts != null) {
-                s.setUploadDate(ts.toLocalDateTime());
-            }
+            if (ts != null)
+                s.setUploadDate(ts.toInstant());
         } catch (Exception e) {
         }
 
@@ -201,7 +200,9 @@ public class SeriesRepository {
         e.setName(rs.getString("name"));
         e.setDurationMinutes(rs.getInt("DurationMinutes"));
         e.setReleaseYear(rs.getInt("ReleaseYear"));
-        e.setUploadDate(rs.getTimestamp("uploadDate").toLocalDateTime());
+        java.sql.Timestamp ts = rs.getTimestamp("uploadDate");
+        if (ts != null)
+            e.setUploadDate(ts.toInstant());
 
         String seriesId = rs.getString("SeriesId");
         if (seriesId != null)

@@ -1,6 +1,6 @@
 package com.ses.whodatidols.model;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 public class Feedback {
@@ -8,7 +8,15 @@ public class Feedback {
     private UUID userId;
     private String subject;
     private String message;
-    private LocalDateTime createdAt;
+    private Instant createdAt;
+
+    public Feedback(UUID id, UUID userId, String subject, String message, Instant createdAt) {
+        this.id = id;
+        this.userId = userId;
+        this.subject = subject;
+        this.message = message;
+        this.createdAt = createdAt;
+    }
 
     public Feedback() {
     }
@@ -45,11 +53,11 @@ public class Feedback {
         this.message = message;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public Instant getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 }
