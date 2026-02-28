@@ -264,7 +264,15 @@ public class MovieRepository {
     }
 
     public List<Movie> findTop6MoviesByCount() {
-        return jdbcTemplate.query("EXEC GetTop6MovieIdsByCount", new MovieRowMapper());
+        String sql = """
+                SELECT TOP 6 M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult,
+                       (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                        JOIN MovieCategories MC ON MC.CategoryID = C.ID
+                        WHERE MC.MovieID = M.ID) as category
+                FROM [WhoDatIdols].[dbo].[Movie] M
+                ORDER BY M.viewCount DESC, M.name ASC
+                """;
+        return jdbcTemplate.query(sql, new MovieRowMapper());
     }
 
     public Movie findMovieById(UUID id) {
