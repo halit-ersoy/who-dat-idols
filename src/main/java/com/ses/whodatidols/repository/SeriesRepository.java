@@ -3,6 +3,8 @@ package com.ses.whodatidols.repository;
 import com.ses.whodatidols.model.Episode;
 import com.ses.whodatidols.model.Series;
 
+import java.sql.Timestamp;
+
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
@@ -288,7 +290,7 @@ public class SeriesRepository {
                 series.getSeriesType(),
                 series.getFinalStatus(),
                 series.getEpisodeMetadataXml(),
-                series.getUploadDate(),
+                Timestamp.from(series.getUploadDate()),
                 series.getSlug());
 
         updateSeriesCategories(series.getId(), series.getCategory());
@@ -362,7 +364,7 @@ public class SeriesRepository {
                 episode.getName(),
                 episode.getDurationMinutes(),
                 episode.getReleaseYear(),
-                episode.getUploadDate(),
+                Timestamp.from(episode.getUploadDate()),
                 episode.getSeriesId(),
                 episode.getSeasonNumber(),
                 episode.getEpisodeNumber(),
