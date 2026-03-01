@@ -11,26 +11,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Fetch active updates
     async function fetchUpdates() {
-        const cachedUpdates = sessionStorage.getItem('updateNotesData');
-        if (cachedUpdates) {
-            try {
-                const notes = JSON.parse(cachedUpdates);
-                allNotes = notes;
-                renderNotes(notes);
-                if (notes.length > 0) {
-                    checkNewUpdate(notes[0]);
-                }
-                return;
-            } catch (e) {
-                console.error('Failed to parse cached update notes:', e);
-            }
-        }
-
         try {
-            const response = await fetch('/api/updates');
+            // Add timestamp to bypass browser cache
+            const response = await fetch(`/api/updates?t=${new Date().getTime()}`);
             const notes = await response.json();
-
-            sessionStorage.setItem('updateNotesData', JSON.stringify(notes));
 
             allNotes = notes;
 
