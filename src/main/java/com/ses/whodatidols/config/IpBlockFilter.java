@@ -41,6 +41,9 @@ public class IpBlockFilter extends OncePerRequestFilter {
 
         String clientIp = request.getHeader("X-Forwarded-For");
         if (clientIp == null || clientIp.isEmpty()) {
+            clientIp = request.getHeader("X-Real-IP");
+        }
+        if (clientIp == null || clientIp.isEmpty()) {
             clientIp = request.getRemoteAddr();
         } else {
             clientIp = clientIp.split(",")[0].trim();

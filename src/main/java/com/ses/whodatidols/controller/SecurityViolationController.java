@@ -20,7 +20,12 @@ public class SecurityViolationController {
             @RequestBody ViolationRequest violationRequest) {
         String ipAddress = request.getHeader("X-Forwarded-For");
         if (ipAddress == null || ipAddress.isEmpty()) {
+            ipAddress = request.getHeader("X-Real-IP");
+        }
+        if (ipAddress == null || ipAddress.isEmpty()) {
             ipAddress = request.getRemoteAddr();
+        } else {
+            ipAddress = ipAddress.split(",")[0].trim();
         }
 
         String userAgent = request.getHeader("User-Agent");

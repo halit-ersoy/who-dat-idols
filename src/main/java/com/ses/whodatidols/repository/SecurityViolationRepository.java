@@ -31,11 +31,19 @@ public class SecurityViolationRepository {
                         Timestamp DATETIME DEFAULT GETUTCDATE()
                     )
                 END
+
+                -- Cleanup malformed IP addresses
+                UPDATE [WhoDatIdols].[dbo].[SecurityViolations]
+                SET IpAddress = LTRIM(RTRIM(LEFT(IpAddress, CHARINDEX(',', IpAddress) - 1)))
+                WHERE IpAddress LIKE '%,%'
                 """;
         jdbcTemplate.execute(sql);
     }
 
     public void save(String ipAddress, String userAgent, String pageUrl) {
+        if (ipAddress != null && ipAddress.contains(",")) {
+            ipAddress = ipAddress.split(",")[0].trim();
+        }
         String sql = "INSERT INTO [WhoDatIdols].[dbo].[SecurityViolations] (IpAddress, UserAgent, PageUrl, Timestamp) VALUES (?, ?, ?, ?)";
         jdbcTemplate.update(sql, ipAddress, userAgent, pageUrl, java.sql.Timestamp.from(Instant.now()));
     }

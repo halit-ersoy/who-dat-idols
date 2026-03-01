@@ -39,11 +39,34 @@ public class BannedIpRepository {
                         ALTER TABLE [WhoDatIdols].[dbo].[BannedIps] ADD AppealMessage NVARCHAR(100)
                     END
                 END
+
+                -- Cleanup malformed IP addresses (keep only the first one if multiple are present)
+                -- 1. Delete duplicates that would arise from shortening
+                DELETE FROM [WhoDatIdols].[dbo].[BannedIps]
+                WHERE ID IN (
+                    SELECT ID FROM (
+                        SELECT ID, ROW_NUMBER() OVER(
+                            PARTITION BY CASE WHEN CHARINDEX(',', IpAddress) > 0
+                                              THEN LTRIM(RTRIM(LEFT(IpAddress, CHARINDEX(',', IpAddress) - 1)))
+                                              ELSE IpAddress END
+                            ORDER BY ID
+                        ) as RowNum
+                        FROM [WhoDatIdols].[dbo].[BannedIps]
+                    ) t WHERE RowNum > 1
+                );
+
+                -- 2. Shorten remaining malformed IPs
+                UPDATE [WhoDatIdols].[dbo].[BannedIps]
+                SET IpAddress = LTRIM(RTRIM(LEFT(IpAddress, CHARINDEX(',', IpAddress) - 1)))
+                WHERE IpAddress LIKE '%,%'
                 """;
         jdbcTemplate.execute(createTableSql);
     }
 
     public void save(String ipAddress, String reason) {
+        if (ipAddress != null && ipAddress.contains(",")) {
+            ipAddress = ipAddress.split(",")[0].trim();
+        }
         String sql = "IF NOT EXISTS (SELECT 1 FROM [WhoDatIdols].[dbo].[BannedIps] WHERE IpAddress = ?) " +
                 "INSERT INTO [WhoDatIdols].[dbo].[BannedIps] (IpAddress, Reason, Timestamp) VALUES (?, ?, ?)";
         jdbcTemplate.update(sql, ipAddress, ipAddress, reason, java.sql.Timestamp.from(Instant.now()));
