@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const initial = user.nickname[0].toUpperCase();
                 const avatarUrl = `/media/profile/${user.id}?t=${new Date().getTime()}`;
                 return `
-                <div class="search-item" data-nickname="${user.nickname}" data-role="${user.role || ''}" data-id="${user.id}">
+                <div class="search-item" data-nickname="${user.nickname}" data-role="${user.role || ''}" data-id="${user.id}" data-verified="${user.isVerified || false}">
                     <div class="avatar" style="position: relative; overflow: hidden; color: white;">
                         ${initial}
                         <img src="${avatarUrl}" onerror="this.style.display='none'" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
@@ -85,6 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="info">
                         <div style="display:flex; align-items:center; gap:5px;">
                             <div class="nickname">${user.nickname}</div>
+                            ${user.isVerified ? '<i class="fas fa-check-circle" style="color: #1DA1F2; font-size: 0.8rem;" title="Doğrulanmış Hesap"></i>' : ''}
                             ${getRoleBadge(user.role)}
                         </div>
                         <div class="name" style="font-size: 0.75rem; color: #888;">${user.name} ${user.surname}</div>
@@ -97,7 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.addEventListener('click', () => {
                     const nickname = item.dataset.nickname;
                     const role = item.dataset.role;
-                    startConversation(nickname, role);
+                    const verified = item.dataset.verified === 'true';
+                    startConversation(nickname, role, item.dataset.id, verified);
                     userSearchResults.classList.remove('active');
                     userSearchInput.value = '';
                 });
@@ -143,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const avatarUrl = `/media/profile/${otherUserId}?t=${new Date().getTime()}`;
 
             return `
-                <div class="conversation-item ${isActive ? 'active' : ''} ${isUnread ? 'unread' : ''}" data-nickname="${otherUser}" data-id="${otherUserId}">
+                <div class="conversation-item ${isActive ? 'active' : ''} ${isUnread ? 'unread' : ''}" data-nickname="${otherUser}" data-id="${otherUserId}" data-verified="${isSentByMe ? c.receiverVerified : c.senderVerified}">
                     <div class="avatar" style="position: relative; overflow: hidden; color: white;">
                         ${initial}
                         <img src="${avatarUrl}" onerror="this.style.display='none'" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
@@ -152,7 +154,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="conversation-top">
                             <div style="display: flex; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; flex: 1;">
                                 <span class="nickname" style="flex-shrink: 0;">${otherUser}</span>
-                                ${getRoleBadge(c.senderNickname === myNickname ? c.receiverRole : c.senderRole)}
+                                ${(isSentByMe ? c.receiverVerified : c.senderVerified) ? '<i class="fas fa-check-circle" style="color: #1DA1F2; font-size: 0.75rem;" title="Doğrulanmış Hesap"></i>' : ''}
+                                ${getRoleBadge(isSentByMe ? c.receiverRole : c.senderRole)}
                             </div>
                             <span class="time" style="flex-shrink: 0; margin-left: 8px;">${time}</span>
                         </div>
@@ -167,14 +170,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const nickname = item.dataset.nickname;
                 const conv = conversations.find(c => (c.senderNickname === myNickname ? c.receiverNickname : c.senderNickname) === nickname);
                 const role = conv ? (conv.senderNickname === myNickname ? conv.receiverRole : conv.senderRole) : null;
+                const verified = conv ? (conv.senderNickname === myNickname ? conv.receiverVerified : conv.senderVerified) : false;
                 const otherId = item.dataset.id;
-                startConversation(nickname, role, otherId);
+                startConversation(nickname, role, otherId, verified);
             });
         });
     }
 
     // 4. Chat Logic
-    function startConversation(nickname, role = null, receiverId = null) {
+    function startConversation(nickname, role = null, receiverId = null, verified = false) {
         currentReceiver = nickname;
         currentReceiverRole = role;
 
@@ -191,6 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="receiver-info">
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         <h3 style="margin: 0; font-size: 1.1rem;">${nickname}</h3>
+                        ${verified ? '<i class="fas fa-check-circle" style="color: #1DA1F2;" title="Doğrulanmış Hesap"></i>' : ''}
                         ${getRoleBadge(role)}
                     </div>
                 </div>
@@ -409,6 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const isBlocked = btn.classList.contains('active');
         const endpoint = isBlocked ? '/api/messages/unblock' : '/api/messages/block';
         const msg = isBlocked ? "Engeli kaldırmak istiyor musunuz?" : "Bu kullanıcıyı engellemek istiyor musunuz? Birbirinize mesaj gönderemezsiniz.";
+        const verified = btn.dataset.senderVerified === 'true'; // This is a bit hacky, but let's just re-fetch for simplicity or pass it
 
         if (!confirm(msg)) return;
 

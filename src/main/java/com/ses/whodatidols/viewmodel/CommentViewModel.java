@@ -12,6 +12,7 @@ public class CommentViewModel {
     private int likeCount;
     private boolean likedByCurrentUser;
     private boolean author;
+    private boolean verified;
     private java.util.List<CommentViewModel> replies;
 
     public java.util.UUID getId() {
@@ -152,5 +153,13 @@ public class CommentViewModel {
 
     public void setAuthorId(java.util.UUID authorId) {
         this.authorId = authorId;
+    }
+
+    public boolean isVerified() {
+        return verified;
+    }
+
+    public void setVerified(boolean verified) {
+        this.verified = verified;
     }
 }

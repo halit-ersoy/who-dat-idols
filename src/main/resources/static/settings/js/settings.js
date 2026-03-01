@@ -71,7 +71,8 @@ async function setupProfileSection() {
     imgTest.src = profileImgUrl;
 
     document.getElementById('user-fullname').innerText = `${data.name} ${data.surname}`;
-    document.getElementById('user-nickname').innerText = `@${data.nickname}`;
+    const verifiedBadge = data.isVerified ? ' <i class="fas fa-check-circle" style="color: #1DA1F2; font-size: 0.85rem; margin-left: 4px;" title="Doğrulanmış Hesap"></i>' : '';
+    document.getElementById('user-nickname').innerHTML = `@${data.nickname}${verifiedBadge}`;
 
     document.getElementById('input-name').value = data.name || '';
     document.getElementById('input-surname').value = data.surname || '';
@@ -143,7 +144,12 @@ async function handleProfileUpdate(e) {
             updateBtn.innerHTML = '<i class="fas fa-check"></i> Başarılı';
             // Update sidebar info
             document.getElementById('user-fullname').innerText = `${payload.name} ${payload.surname}`;
-            document.getElementById('user-nickname').innerText = `@${payload.nickname}`;
+            // Keep the tick if it was there. We don't have isVerified in payload, 
+            // but we can check if it exists in the current innerHTML or re-fetch.
+            // Simplified: just check if the icon was there.
+            const wasVerified = document.getElementById('user-nickname').querySelector('.fa-check-circle') !== null;
+            const verifiedBadge = wasVerified ? ' <i class="fas fa-check-circle" style="color: #1DA1F2; font-size: 0.85rem; margin-left: 4px;" title="Doğrulanmış Hesap"></i>' : '';
+            document.getElementById('user-nickname').innerHTML = `@${payload.nickname}${verifiedBadge}`;
 
             setTimeout(() => {
                 updateBtn.disabled = false;

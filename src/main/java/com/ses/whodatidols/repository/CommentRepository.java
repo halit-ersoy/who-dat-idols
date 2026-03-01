@@ -47,7 +47,8 @@ public class CommentRepository {
                         CASE WHEN cl.UserId IS NOT NULL THEN 1 ELSE 0 END as isLiked,
                         CASE WHEN c.UserId = p_me.ID THEN 1 ELSE 0 END as isAuthor,
                         c.IsApproved,
-                        p.Role
+                        p.Role,
+                        p.isVerified
                     FROM Comments c
                     LEFT JOIN Person p ON c.UserId = p.ID
                     LEFT JOIN Person p_me ON p_me.cookie = ?
@@ -120,7 +121,8 @@ public class CommentRepository {
                         c.IsApproved,
                         COALESCE(m.Name, s.Name, (e.name + ' S' + CAST(e.SeasonNumber AS VARCHAR) + 'E' + CAST(e.EpisodeNumber AS VARCHAR))) as ContentName,
                         COALESCE(m.Slug, e.Slug, CAST(c.ContentId AS VARCHAR(36))) as ContentSlug,
-                        p.Role
+                        p.Role,
+                        p.isVerified
                     FROM Comments c
                     LEFT JOIN Person p ON c.UserId = p.ID
                     LEFT JOIN Movie m ON c.ContentId = m.ID
@@ -146,7 +148,8 @@ public class CommentRepository {
                         c.IsApproved,
                         COALESCE(m.Name, s.Name, (e.name + ' S' + CAST(e.SeasonNumber AS VARCHAR) + 'E' + CAST(e.EpisodeNumber AS VARCHAR))) as ContentName,
                         COALESCE(m.Slug, e.Slug, CAST(c.ContentId AS VARCHAR(36))) as ContentSlug,
-                        p.Role
+                        p.Role,
+                        p.isVerified
                     FROM Comments c
                     LEFT JOIN Person p ON c.UserId = p.ID
                     LEFT JOIN Movie m ON c.ContentId = m.ID
@@ -305,6 +308,12 @@ public class CommentRepository {
                 vm.setRole(rs.getString("Role"));
             } catch (SQLException e) {
                 vm.setRole("USER");
+            }
+
+            try {
+                vm.setVerified(rs.getBoolean("isVerified"));
+            } catch (SQLException e) {
+                vm.setVerified(false);
             }
 
             String parentIdStr = rs.getString("ParentId");

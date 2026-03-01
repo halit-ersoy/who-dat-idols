@@ -175,15 +175,16 @@ export function initCommentsSection(videoId) {
         });
 
         const safeNickname = escapeHtml(c.nickname || 'Kullanıcı');
+        const verifiedBadge = c.verified ? '<i class="fas fa-check-circle verified-badge" style="color: #1DA1F2; margin-left: 4px;" title="Doğrulanmış Hesap"></i>' : '';
         const safeComment = escapeHtml(c.comment);
 
         const initialLetter = safeNickname.charAt(0).toUpperCase();
-        let profileImg = `<div class="user-avatar" style="background-color: #1ed760; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">${initialLetter}</div>`;
+        let profileImg = `<div class="user-avatar">${initialLetter}</div>`;
 
         if (c.authorId) {
             const profileImgUrl = `/media/profile/${c.authorId}?t=${new Date().getTime()}`;
             profileImg = `
-                <div class="user-avatar" style="position: relative; overflow: hidden; background-color: #1ed760; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                <div class="user-avatar">
                     ${initialLetter}
                     <img src="${profileImgUrl}" onerror="this.style.display='none'" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; z-index: 1;">
                 </div>
@@ -223,7 +224,7 @@ export function initCommentsSection(videoId) {
         card.innerHTML = `
           <div class="comment-header">
             ${profileImg}
-            <div class="comment-user"><span class="user-nickname">${safeNickname}</span> ${badgeHtml}</div>
+            <div class="comment-user"><span class="user-nickname">${safeNickname}${verifiedBadge}</span> ${badgeHtml}</div>
             <div class="comment-date">${dateStr}</div>
           </div>
           ${contentHtml}

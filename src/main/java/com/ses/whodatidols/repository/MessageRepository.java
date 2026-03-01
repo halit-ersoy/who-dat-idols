@@ -84,7 +84,7 @@ public class MessageRepository {
     public List<Message> getChatHistory(UUID user1, UUID user2) {
         ensureMessageTableExists();
         String sql = "SELECT m.ID, m.SenderID, m.ReceiverID, m.Content, m.Timestamp, m.IsRead, " +
-                "p1.nickname as SenderNickname, p2.nickname as ReceiverNickname, p1.role as SenderRole, p2.role as ReceiverRole "
+                "p1.nickname as SenderNickname, p2.nickname as ReceiverNickname, p1.role as SenderRole, p2.role as ReceiverRole, p1.isVerified as SenderVerified, p2.isVerified as ReceiverVerified "
                 +
                 "FROM UserMessages m " +
                 "JOIN Person p1 ON m.SenderID = p1.ID " +
@@ -105,15 +105,17 @@ public class MessageRepository {
             m.setReceiverNickname(rs.getString("ReceiverNickname"));
             m.setSenderRole(rs.getString("SenderRole"));
             m.setReceiverRole(rs.getString("ReceiverRole"));
+            m.setSenderVerified(rs.getBoolean("SenderVerified"));
+            m.setReceiverVerified(rs.getBoolean("ReceiverVerified"));
             return m;
         }, user1, user2, user2, user1);
     }
 
     public List<Message> getConversationList(UUID userId) {
         ensureMessageTableExists();
-        String sqlServerPart = "SELECT ID, SenderID, ReceiverID, Content, Timestamp, IsRead, SenderNickname, ReceiverNickname, SenderRole, ReceiverRole FROM ("
+        String sqlServerPart = "SELECT ID, SenderID, ReceiverID, Content, Timestamp, IsRead, SenderNickname, ReceiverNickname, SenderRole, ReceiverRole, SenderVerified, ReceiverVerified FROM ("
                 +
-                "  SELECT m.*, p1.nickname as SenderNickname, p2.nickname as ReceiverNickname, p1.role as SenderRole, p2.role as ReceiverRole, "
+                "  SELECT m.*, p1.nickname as SenderNickname, p2.nickname as ReceiverNickname, p1.role as SenderRole, p2.role as ReceiverRole, p1.isVerified as SenderVerified, p2.isVerified as ReceiverVerified, "
                 +
                 "  ROW_NUMBER() OVER (PARTITION BY CASE WHEN SenderID < ReceiverID THEN CAST(SenderID AS VARCHAR(36)) + CAST(ReceiverID AS VARCHAR(36)) ELSE CAST(ReceiverID AS VARCHAR(36)) + CAST(SenderID AS VARCHAR(36)) END ORDER BY Timestamp DESC) as RowNum "
                 +
@@ -137,6 +139,8 @@ public class MessageRepository {
             m.setReceiverNickname(rs.getString("ReceiverNickname"));
             m.setSenderRole(rs.getString("SenderRole"));
             m.setReceiverRole(rs.getString("ReceiverRole"));
+            m.setSenderVerified(rs.getBoolean("SenderVerified"));
+            m.setReceiverVerified(rs.getBoolean("ReceiverVerified"));
             return m;
         }, userId, userId);
     }
@@ -149,9 +153,9 @@ public class MessageRepository {
 
     public List<Message> getAllConversations() {
         ensureMessageTableExists();
-        String sql = "SELECT ID, SenderID, ReceiverID, Content, Timestamp, IsRead, SenderNickname, ReceiverNickname, SenderRole, ReceiverRole FROM ("
+        String sql = "SELECT ID, SenderID, ReceiverID, Content, Timestamp, IsRead, SenderNickname, ReceiverNickname, SenderRole, ReceiverRole, SenderVerified, ReceiverVerified FROM ("
                 +
-                "  SELECT m.*, p1.nickname as SenderNickname, p2.nickname as ReceiverNickname, p1.role as SenderRole, p2.role as ReceiverRole, "
+                "  SELECT m.*, p1.nickname as SenderNickname, p2.nickname as ReceiverNickname, p1.role as SenderRole, p2.role as ReceiverRole, p1.isVerified as SenderVerified, p2.isVerified as ReceiverVerified, "
                 +
                 "  ROW_NUMBER() OVER (PARTITION BY CASE WHEN SenderID < ReceiverID THEN CAST(SenderID AS VARCHAR(36)) + CAST(ReceiverID AS VARCHAR(36)) ELSE CAST(ReceiverID AS VARCHAR(36)) + CAST(SenderID AS VARCHAR(36)) END ORDER BY Timestamp DESC) as RowNum "
                 +
@@ -174,6 +178,8 @@ public class MessageRepository {
             m.setReceiverNickname(rs.getString("ReceiverNickname"));
             m.setSenderRole(rs.getString("SenderRole"));
             m.setReceiverRole(rs.getString("ReceiverRole"));
+            m.setSenderVerified(rs.getBoolean("SenderVerified"));
+            m.setReceiverVerified(rs.getBoolean("ReceiverVerified"));
             return m;
         });
     }

@@ -16,6 +16,8 @@ public class Message {
     private String receiverNickname;
     private String senderRole;
     private String receiverRole;
+    private boolean senderVerified;
+    private boolean receiverVerified;
 
     public Message() {
     }
@@ -98,5 +100,21 @@ public class Message {
 
     public void setReceiverRole(String receiverRole) {
         this.receiverRole = receiverRole;
+    }
+
+    public boolean isSenderVerified() {
+        return senderVerified;
+    }
+
+    public void setSenderVerified(boolean senderVerified) {
+        this.senderVerified = senderVerified;
+    }
+
+    public boolean isReceiverVerified() {
+        return receiverVerified;
+    }
+
+    public void setReceiverVerified(boolean receiverVerified) {
+        this.receiverVerified = receiverVerified;
     }
 }

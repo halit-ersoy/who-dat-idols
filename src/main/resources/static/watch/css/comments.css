@@ -52,18 +52,22 @@
 }
 
 .user-avatar {
-    width: 50px;
-    height: 50px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     background: linear-gradient(135deg, #333, #222);
     display: flex;
     align-items: center;
     justify-content: center;
     color: #1ed760;
+    font-weight: 700;
+    font-size: 1.1rem;
     flex-shrink: 0;
     transition: all 0.3s ease;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
-    border: 2px solid transparent;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
 }
 
 .comment-form:focus-within .user-avatar {

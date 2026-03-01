@@ -464,7 +464,7 @@ public class PersonRepository {
 
     public List<Person> searchUsersForMessaging(String query, String excludeNickname) {
         ensureAllowMessagesColumnExists();
-        String sql = "SELECT ID, nickname, name, surname, role FROM [WhoDatIdols].[dbo].[Person] " +
+        String sql = "SELECT ID, nickname, name, surname, role, isVerified FROM [WhoDatIdols].[dbo].[Person] " +
                 "WHERE (nickname LIKE ? OR name LIKE ? OR surname LIKE ?) " +
                 "AND (allowMessages = 1 OR allowMessages IS NULL) " +
                 "AND (isBanned = 0 OR isBanned IS NULL) " +
@@ -478,6 +478,7 @@ public class PersonRepository {
             p.setName(rs.getString("name"));
             p.setSurname(rs.getString("surname"));
             p.setRole(rs.getString("role"));
+            p.setVerified(rs.getBoolean("isVerified"));
             return p;
         }, searchPattern, searchPattern, searchPattern, excludeNickname);
     }
