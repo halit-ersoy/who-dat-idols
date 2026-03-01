@@ -254,7 +254,7 @@ public class HomeController {
     private boolean isRecent(Instant uploadDate) {
         if (uploadDate == null)
             return false;
-        return uploadDate.isAfter(Instant.now().minus(7, ChronoUnit.DAYS));
+        return uploadDate.isAfter(Instant.now().minus(24, ChronoUnit.HOURS));
     }
 
     // DTO Classes
