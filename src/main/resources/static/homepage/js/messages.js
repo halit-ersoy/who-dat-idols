@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentReceiver = null;
     let currentReceiverRole = null;
     let chatInterval = null;
+    let lastConversationsJson = null;
+    let lastMessagesCount = 0;
 
     const popularEmojis = [
         '😀', '😂', '😍', '😊', '🥰', '😎', '😜', '🤔', '🙄', '😴',
@@ -78,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             userSearchResults.innerHTML = users.map(user => {
                 const initial = user.nickname[0].toUpperCase();
-                const avatarUrl = `/media/profile/${user.id}?t=${new Date().getTime()}`;
+                const avatarUrl = `/media/profile/${user.id}`;
                 return `
                 <div class="search-item" data-nickname="${user.nickname}" data-role="${user.role || ''}" data-id="${user.id}" data-verified="${user.isVerified || false}">
                     <div class="avatar" style="position: relative; overflow: hidden; color: white;">
@@ -128,6 +130,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderConversations(conversations) {
+        const conversationsJson = JSON.stringify(conversations);
+        if (conversationsJson === lastConversationsJson) return;
+        lastConversationsJson = conversationsJson;
+
         if (!conversations || conversations.length === 0) {
             conversationsList.innerHTML = '<div class="chat-empty-state" style="padding: 20px;"><p style="font-size: 0.9rem;">Henüz bir sohbet yok.</p></div>';
             return;
@@ -155,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const initial = otherUser[0].toUpperCase();
-            const avatarUrl = `/media/profile/${otherUserId}?t=${new Date().getTime()}`;
+            const avatarUrl = `/media/profile/${otherUserId}`;
 
             return `
                 <div class="conversation-item ${isActive ? 'active' : ''} ${isUnread ? 'unread' : ''}" data-nickname="${otherUser}" data-id="${otherUserId}" data-verified="${isSentByMe ? c.receiverVerified : c.senderVerified}">
@@ -203,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.dataset.activeChat = nickname;
 
         const initial = nickname[0].toUpperCase();
-        const avatarUrl = receiverId ? `/media/profile/${receiverId}?t=${new Date().getTime()}` : '';
+        const avatarUrl = receiverId ? `/media/profile/${receiverId}` : '';
 
         // Update UI
         chatArea.innerHTML = `
@@ -334,6 +340,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 const myNickname = localStorage.getItem('wdiUserNickname');
                 const wasAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
 
+                if (silent && messages.length === lastMessagesCount) {
+                    // Update only ticks/status if count is same
+                    messages.forEach(m => {
+                        const msgElement = container.querySelector(`[data-id="${m.id}"]`);
+                        if (msgElement) {
+                            const footer = msgElement.querySelector('.message-footer');
+                            const isSent = m.senderNickname === myNickname;
+                            if (isSent && footer) {
+                                let statusIcon = '';
+                                if (m.read) statusIcon = '<i class="fas fa-check-double message-status-tick read"></i>';
+                                else if (m.delivered) statusIcon = '<i class="fas fa-check-double message-status-tick"></i>';
+                                else statusIcon = '<i class="fas fa-check message-status-tick"></i>';
+
+                                const tickElement = footer.querySelector('.message-status-tick');
+                                if (tickElement) tickElement.outerHTML = statusIcon;
+                            }
+                        }
+                    });
+                    return;
+                }
+
+                lastMessagesCount = messages.length;
+
                 container.innerHTML = messages.map(m => {
                     const isSent = m.senderNickname === myNickname;
 
@@ -357,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     return `
-                        <div class="message-bubble ${bubbleClass}">
+                        <div class="message-bubble ${bubbleClass}" data-id="${m.id}">
                             ${m.content}
                             <div class="message-footer">
                                 <span class="message-time">${formatTime(new Date(m.timestamp))}</span>
