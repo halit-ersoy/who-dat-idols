@@ -137,6 +137,9 @@ export function initVideoControls(videoId) {
                     playerContainer.mozRequestFullScreen();
                 } else if (playerContainer.msRequestFullscreen) {
                     playerContainer.msRequestFullscreen();
+                } else if (videoPlayer.webkitEnterFullscreen) {
+                    // Fallback for iOS/iPhone where requestFullscreen on elements is not supported
+                    videoPlayer.webkitEnterFullscreen();
                 }
             } else {
                 // Exit fullscreen
