@@ -34,23 +34,27 @@ public class SitemapController {
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xml.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
 
+        java.util.Set<String> addedUrls = new java.util.HashSet<>();
+        java.util.Set<String> blacklistedSlugs = java.util.Set.of("delete", "edit", "admin", "login", "register",
+                "panel", "api");
+
         // 1. Static Pages
-        addUrl(xml, "/", "1.0", "daily", Instant.now());
-        addUrl(xml, "/about", "0.5", "monthly", null);
-        addUrl(xml, "/privacy_policy", "0.3", "monthly", null);
-        addUrl(xml, "/terms_of_use", "0.3", "monthly", null);
-        addUrl(xml, "/sss", "0.5", "weekly", null);
-        addUrl(xml, "/programlar", "0.5", "weekly", Instant.now());
-        addUrl(xml, "/diziler", "0.5", "weekly", Instant.now());
-        addUrl(xml, "/filmler", "0.5", "weekly", Instant.now());
-        addUrl(xml, "/bl-dizileri", "0.5", "weekly", Instant.now());
+        addUrlWithCheck(xml, addedUrls, "/", "1.0", "daily", Instant.now());
+        addUrlWithCheck(xml, addedUrls, "/about", "0.5", "monthly", null);
+        addUrlWithCheck(xml, addedUrls, "/privacy_policy", "0.3", "monthly", null);
+        addUrlWithCheck(xml, addedUrls, "/terms_of_use", "0.3", "monthly", null);
+        addUrlWithCheck(xml, addedUrls, "/sss", "0.5", "weekly", null);
+        addUrlWithCheck(xml, addedUrls, "/programlar", "0.5", "weekly", Instant.now());
+        addUrlWithCheck(xml, addedUrls, "/diziler", "0.5", "weekly", Instant.now());
+        addUrlWithCheck(xml, addedUrls, "/filmler", "0.5", "weekly", Instant.now());
+        addUrlWithCheck(xml, addedUrls, "/bl-dizileri", "0.5", "weekly", Instant.now());
 
         // 2. Movies
         List<Movie> movies = movieRepository.findAll();
         for (Movie movie : movies) {
             String slug = movie.getSlug();
-            if (slug != null && !slug.isEmpty()) {
-                addUrl(xml, "/" + slug, "0.8", "weekly", movie.getUploadDate());
+            if (slug != null && !slug.isEmpty() && !blacklistedSlugs.contains(slug.toLowerCase())) {
+                addUrlWithCheck(xml, addedUrls, "/" + slug, "0.8", "weekly", movie.getUploadDate());
             }
         }
 
@@ -58,21 +62,29 @@ public class SitemapController {
         List<Series> allSeries = seriesRepository.findAllSeries();
         for (Series series : allSeries) {
             String seriesSlug = series.getSlug();
-            if (seriesSlug != null && !seriesSlug.isEmpty()) {
-                addUrl(xml, "/" + seriesSlug, "0.8", "weekly", series.getUploadDate());
+            if (seriesSlug != null && !seriesSlug.isEmpty() && !blacklistedSlugs.contains(seriesSlug.toLowerCase())) {
+                addUrlWithCheck(xml, addedUrls, "/" + seriesSlug, "0.8", "weekly", series.getUploadDate());
             }
 
             List<Episode> episodes = seriesRepository.findEpisodesBySeriesId(series.getId());
             for (Episode episode : episodes) {
                 String epSlug = episode.getSlug();
-                if (epSlug != null && !epSlug.isEmpty()) {
-                    addUrl(xml, "/" + epSlug, "0.7", "weekly", episode.getUploadDate());
+                if (epSlug != null && !epSlug.isEmpty() && !blacklistedSlugs.contains(epSlug.toLowerCase())) {
+                    addUrlWithCheck(xml, addedUrls, "/" + epSlug, "0.7", "weekly", episode.getUploadDate());
                 }
             }
         }
 
         xml.append("</urlset>");
         return xml.toString();
+    }
+
+    private void addUrlWithCheck(StringBuilder xml, java.util.Set<String> addedUrls, String path, String priority,
+            String changefreq, Instant lastmod) {
+        if (!addedUrls.contains(path)) {
+            addUrl(xml, path, priority, changefreq, lastmod);
+            addedUrls.add(path);
+        }
     }
 
     private void addUrl(StringBuilder xml, String path, String priority, String changefreq, Instant lastmod) {
