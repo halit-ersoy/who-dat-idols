@@ -49,6 +49,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Initial Load
     fetchConversations();
 
+    // Global interval to refresh conversations list (sidebar)
+    setInterval(fetchConversations, 5000);
+
     // 2. User Search Logic
     let searchTimeout = null;
     userSearchInput.addEventListener('input', () => {
@@ -139,7 +142,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const isActive = otherUser === currentReceiver;
             const isUnread = !c.read && c.receiverNickname === myNickname;
             const time = formatTime(new Date(c.timestamp));
-            const statusIcon = isSentByMe ? (c.read ? '<i class="fas fa-check-double message-status-tick read" style="font-size: 0.7rem; margin-right: 3px;"></i>' : '<i class="fas fa-check message-status-tick" style="font-size: 0.7rem; margin-right: 3px;"></i>') : '';
+
+            let statusIcon = '';
+            if (isSentByMe) {
+                if (c.read) {
+                    statusIcon = '<i class="fas fa-check-double message-status-tick read" style="font-size: 0.7rem; margin-right: 3px;"></i>';
+                } else if (c.delivered) {
+                    statusIcon = '<i class="fas fa-check-double message-status-tick" style="font-size: 0.7rem; margin-right: 3px;"></i>';
+                } else {
+                    statusIcon = '<i class="fas fa-check message-status-tick" style="font-size: 0.7rem; margin-right: 3px;"></i>';
+                }
+            }
 
             const initial = otherUser[0].toUpperCase();
             const avatarUrl = `/media/profile/${otherUserId}?t=${new Date().getTime()}`;
@@ -172,7 +185,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const role = conv ? (conv.senderNickname === myNickname ? conv.receiverRole : conv.senderRole) : null;
                 const verified = conv ? (conv.senderNickname === myNickname ? conv.receiverVerified : conv.senderVerified) : false;
                 const otherId = item.dataset.id;
-                startConversation(nickname, role, otherId, verified);
+
+                // Only start if it's a different person to avoid flash
+                if (currentReceiver !== nickname) {
+                    startConversation(nickname, role, otherId, verified);
+                }
             });
         });
     }
@@ -181,6 +198,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function startConversation(nickname, role = null, receiverId = null, verified = false) {
         currentReceiver = nickname;
         currentReceiverRole = role;
+
+        // Expose active chat partner globally for the notification manager
+        document.body.dataset.activeChat = nickname;
 
         const initial = nickname[0].toUpperCase();
         const avatarUrl = receiverId ? `/media/profile/${receiverId}?t=${new Date().getTime()}` : '';
@@ -246,6 +266,8 @@ document.addEventListener('DOMContentLoaded', () => {
         chatInterval = setInterval(() => {
             if (currentReceiver === nickname) {
                 loadChatHistory(nickname, true);
+                // Also refresh sidebar during active chat to update last message/status
+                fetchConversations();
             }
         }, 5000);
 
@@ -314,7 +336,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 container.innerHTML = messages.map(m => {
                     const isSent = m.senderNickname === myNickname;
-                    const statusIcon = m.read ? '<i class="fas fa-check-double message-status-tick read"></i>' : '<i class="fas fa-check message-status-tick"></i>';
+
+                    let statusIcon = '';
+                    if (isSent) {
+                        if (m.read) {
+                            statusIcon = '<i class="fas fa-check-double message-status-tick read"></i>';
+                        } else if (m.delivered) {
+                            statusIcon = '<i class="fas fa-check-double message-status-tick"></i>';
+                        } else {
+                            statusIcon = '<i class="fas fa-check message-status-tick"></i>';
+                        }
+                    }
 
                     const emojiInfo = isOnlyEmojis(m.content);
                     let bubbleClass = isSent ? 'sent' : 'received';

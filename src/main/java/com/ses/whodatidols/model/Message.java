@@ -10,6 +10,7 @@ public class Message {
     private String content;
     private Instant timestamp;
     private boolean isRead;
+    private boolean isDelivered;
 
     // Additional fields for UI convenience
     private String senderNickname;
@@ -68,6 +69,14 @@ public class Message {
 
     public void setRead(boolean read) {
         isRead = read;
+    }
+
+    public boolean isDelivered() {
+        return isDelivered;
+    }
+
+    public void setDelivered(boolean delivered) {
+        isDelivered = delivered;
     }
 
     public String getSenderNickname() {

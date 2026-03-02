@@ -28,11 +28,20 @@ public class MessageRepository {
                 "Content NVARCHAR(MAX) NOT NULL," +
                 "Timestamp DATETIME DEFAULT GETUTCDATE()," +
                 "IsRead BIT DEFAULT 0," +
+                "IsDelivered BIT DEFAULT 0," +
                 "FOREIGN KEY (SenderID) REFERENCES Person(ID)," +
                 "FOREIGN KEY (ReceiverID) REFERENCES Person(ID)" +
                 ")";
         try {
             jdbcTemplate.execute(sql);
+
+            // Migration: Add IsDelivered column if it doesn't exist (for existing tables)
+            String alterSql = "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('UserMessages') AND name = 'IsDelivered') "
+                    +
+                    "BEGIN " +
+                    "ALTER TABLE UserMessages ADD IsDelivered BIT DEFAULT 0; " +
+                    "END";
+            jdbcTemplate.execute(alterSql);
         } catch (Exception e) {
             System.err.println("Error creating UserMessages table: " + e.getMessage());
         }
@@ -83,7 +92,7 @@ public class MessageRepository {
 
     public List<Message> getChatHistory(UUID user1, UUID user2) {
         ensureMessageTableExists();
-        String sql = "SELECT m.ID, m.SenderID, m.ReceiverID, m.Content, m.Timestamp, m.IsRead, " +
+        String sql = "SELECT m.ID, m.SenderID, m.ReceiverID, m.Content, m.Timestamp, m.IsRead, m.IsDelivered, " +
                 "p1.nickname as SenderNickname, p2.nickname as ReceiverNickname, p1.role as SenderRole, p2.role as ReceiverRole, p1.isVerified as SenderVerified, p2.isVerified as ReceiverVerified "
                 +
                 "FROM UserMessages m " +
@@ -101,6 +110,7 @@ public class MessageRepository {
             if (ts != null)
                 m.setTimestamp(ts.toInstant());
             m.setRead(rs.getBoolean("IsRead"));
+            m.setDelivered(rs.getBoolean("IsDelivered"));
             m.setSenderNickname(rs.getString("SenderNickname"));
             m.setReceiverNickname(rs.getString("ReceiverNickname"));
             m.setSenderRole(rs.getString("SenderRole"));
@@ -113,7 +123,7 @@ public class MessageRepository {
 
     public List<Message> getConversationList(UUID userId) {
         ensureMessageTableExists();
-        String sqlServerPart = "SELECT ID, SenderID, ReceiverID, Content, Timestamp, IsRead, SenderNickname, ReceiverNickname, SenderRole, ReceiverRole, SenderVerified, ReceiverVerified FROM ("
+        String sqlServerPart = "SELECT ID, SenderID, ReceiverID, Content, Timestamp, IsRead, IsDelivered, SenderNickname, ReceiverNickname, SenderRole, ReceiverRole, SenderVerified, ReceiverVerified FROM ("
                 +
                 "  SELECT m.*, p1.nickname as SenderNickname, p2.nickname as ReceiverNickname, p1.role as SenderRole, p2.role as ReceiverRole, p1.isVerified as SenderVerified, p2.isVerified as ReceiverVerified, "
                 +
@@ -135,6 +145,7 @@ public class MessageRepository {
             if (ts != null)
                 m.setTimestamp(ts.toInstant());
             m.setRead(rs.getBoolean("IsRead"));
+            m.setDelivered(rs.getBoolean("IsDelivered"));
             m.setSenderNickname(rs.getString("SenderNickname"));
             m.setReceiverNickname(rs.getString("ReceiverNickname"));
             m.setSenderRole(rs.getString("SenderRole"));
@@ -147,13 +158,19 @@ public class MessageRepository {
 
     public void markAsRead(UUID senderId, UUID receiverId) {
         ensureMessageTableExists();
-        String sql = "UPDATE UserMessages SET IsRead = 1 WHERE SenderID = ? AND ReceiverID = ? AND IsRead = 0";
+        String sql = "UPDATE UserMessages SET IsRead = 1, IsDelivered = 1 WHERE SenderID = ? AND ReceiverID = ? AND IsRead = 0";
         jdbcTemplate.update(sql, senderId, receiverId);
+    }
+
+    public void markAsDelivered(UUID receiverId) {
+        ensureMessageTableExists();
+        String sql = "UPDATE UserMessages SET IsDelivered = 1 WHERE ReceiverID = ? AND IsDelivered = 0";
+        jdbcTemplate.update(sql, receiverId);
     }
 
     public List<Message> getAllConversations() {
         ensureMessageTableExists();
-        String sql = "SELECT ID, SenderID, ReceiverID, Content, Timestamp, IsRead, SenderNickname, ReceiverNickname, SenderRole, ReceiverRole, SenderVerified, ReceiverVerified FROM ("
+        String sql = "SELECT ID, SenderID, ReceiverID, Content, Timestamp, IsRead, IsDelivered, SenderNickname, ReceiverNickname, SenderRole, ReceiverRole, SenderVerified, ReceiverVerified FROM ("
                 +
                 "  SELECT m.*, p1.nickname as SenderNickname, p2.nickname as ReceiverNickname, p1.role as SenderRole, p2.role as ReceiverRole, p1.isVerified as SenderVerified, p2.isVerified as ReceiverVerified, "
                 +
@@ -174,6 +191,7 @@ public class MessageRepository {
             if (ts != null)
                 m.setTimestamp(ts.toInstant());
             m.setRead(rs.getBoolean("IsRead"));
+            m.setDelivered(rs.getBoolean("IsDelivered"));
             m.setSenderNickname(rs.getString("SenderNickname"));
             m.setReceiverNickname(rs.getString("ReceiverNickname"));
             m.setSenderRole(rs.getString("SenderRole"));

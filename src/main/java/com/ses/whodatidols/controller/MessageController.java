@@ -104,6 +104,11 @@ public class MessageController {
             UUID userId = UUID.fromString(userInfo.get("ID").toString());
 
             List<Message> conversations = messageRepository.getConversationList(userId);
+
+            // Mark all unread messages for this user as delivered when they check their
+            // list
+            messageRepository.markAsDelivered(userId);
+
             return ResponseEntity.ok(conversations);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
@@ -130,6 +135,8 @@ public class MessageController {
 
             List<Message> history = messageRepository.getChatHistory(userId, otherUser.get().getId());
 
+            // Mark as delivered when opening the chat
+            messageRepository.markAsDelivered(userId);
             // Mark as read when opening the chat
             messageRepository.markAsRead(otherUser.get().getId(), userId);
 
