@@ -54,8 +54,8 @@ async function loadContentDetails(id) {
             }
         }
 
-        // Update document title
-        document.title = `${data.title} - Who Dat Idols?`;
+        // Update document title with SEO keyword
+        document.title = `${data.title} İzle - Who Dat Idols?`;
 
         // SEO: Update Meta Description and Canonical
         if (data.plot) {
@@ -65,23 +65,22 @@ async function loadContentDetails(id) {
 
         const canonicalLink = document.getElementById('canonicalLink');
         if (canonicalLink && data.slug) {
-            canonicalLink.setAttribute('href', `https://whodatidols.com/watch/${data.slug}`);
+            // Fix: remove '/watch/' for root-level slugs
+            canonicalLink.setAttribute('href', `https://whodatidols.com/${data.slug}`);
         }
 
         // SEO: Structured Data (JSON-LD)
         const structuredDataEl = document.getElementById('structuredData');
         if (structuredDataEl) {
-            // Sanitize description: strip control characters and trim to 500 chars for JSON-LD safety
             const sanitizeText = (text) => {
                 if (!text) return undefined;
                 return text
-                    .replace(/[\u0000-\u001F\u007F]/g, ' ')  // strip control chars (newlines, tabs, etc.)
-                    .replace(/\s+/g, ' ')                      // collapse whitespace
+                    .replace(/[\u0000-\u001F\u007F]/g, ' ')
+                    .replace(/\s+/g, ' ')
                     .trim()
                     .substring(0, 500);
             };
 
-            // Convert "120 dk" → "PT120M" (ISO 8601 duration)
             const formatDuration = (dur) => {
                 if (!dur) return undefined;
                 const match = dur.match(/(\d+)/);
@@ -92,7 +91,7 @@ async function loadContentDetails(id) {
             const slug = data.slug || id;
             const contentUrl = `${baseUrl}/${slug}`;
 
-            // Main content schema (Movie or Episode)
+            // Main content schema
             const contentSchema = {
                 "@context": "https://schema.org",
                 "@type": data.type === 'movie' ? "Movie" : "Episode",
@@ -101,7 +100,11 @@ async function loadContentDetails(id) {
                 "description": sanitizeText(data.plot),
                 "image": `${baseUrl}/media/image/${id}`,
                 "datePublished": data.year ? String(data.year) : undefined,
-                "duration": formatDuration(data.duration)
+                "duration": formatDuration(data.duration),
+                "potentialAction": {
+                    "@type": "WatchAction",
+                    "target": contentUrl
+                }
             };
 
             if (data.type === 'episode' && data.season) {
@@ -111,12 +114,18 @@ async function loadContentDetails(id) {
                 };
             }
 
-            // BreadcrumbList schema — 2 levels: Ana Sayfa → İçerik
-            // All content lives at /{slug}, no category pages exist
+            // BreadcrumbList
             const breadcrumbItems = [
-                { "@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": baseUrl },
-                { "@type": "ListItem", "position": 2, "name": data.title, "item": contentUrl }
+                { "@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": baseUrl }
             ];
+
+            if (data.type === 'movie') {
+                breadcrumbItems.push({ "@type": "ListItem", "position": 2, "name": "Filmler", "item": `${baseUrl}/filmler` });
+            } else {
+                breadcrumbItems.push({ "@type": "ListItem", "position": 2, "name": "Diziler", "item": `${baseUrl}/diziler` });
+            }
+
+            breadcrumbItems.push({ "@type": "ListItem", "position": 3, "name": data.title, "item": contentUrl });
 
             const breadcrumbSchema = {
                 "@context": "https://schema.org",
@@ -124,7 +133,6 @@ async function loadContentDetails(id) {
                 "itemListElement": breadcrumbItems
             };
 
-            // Emit both schemas as a JSON-LD array
             structuredDataEl.textContent = JSON.stringify([contentSchema, breadcrumbSchema]);
         }
 

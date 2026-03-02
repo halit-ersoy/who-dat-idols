@@ -336,7 +336,7 @@ public class HomeController {
         }
     }
 
-    @GetMapping("/{slug:[a-zA-Z0-9-]+}")
+    @GetMapping("/{slug:[a-zA-Z0-9-'’]+}")
     public ResponseEntity<Resource> watchPageBySlug(@PathVariable("slug") String slug) {
         // Exclude static paths from matching here, though Spring usually handles static
         // prior to @PathVariable

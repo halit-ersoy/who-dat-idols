@@ -74,7 +74,14 @@ public class MovieRepository {
 
             // One-time populate missing slugs
             jdbcTemplate.execute(
-                    "UPDATE Movie SET slug = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(name, ' ', '-'), 'ı', 'i'), 'ğ', 'g'), 'ü', 'u'), 'ş', 's')) WHERE slug IS NULL OR slug = ''");
+                    "UPDATE Movie SET slug = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(name, ' ', '-'), 'ı', 'i'), 'ğ', 'g'), 'ü', 'u'), 'ş', 's'), 'ö', 'o'), 'ç', 'c'), '?', ''), '!', '')) WHERE slug IS NULL OR slug = ''");
+
+            // Clean up existing slugs (strip SEO suffixes)
+            jdbcTemplate.execute("UPDATE Movie SET slug = LEFT(slug, LEN(slug) - 6) WHERE slug LIKE '%-watch'");
+
+            // Special character cleanup for smart quotes and apostrophes (N' for unicode)
+            jdbcTemplate.execute(
+                    "UPDATE Movie SET slug = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(slug, N'’', ''), N'‘', ''), N'”', ''), N'“', ''), '''', ''), ':', '-'), ';', '-') WHERE slug LIKE N'%’%' OR slug LIKE N'%‘%' OR slug LIKE N'%”%' OR slug LIKE N'%“%' OR slug LIKE '%''%' OR slug LIKE '%:%' OR slug LIKE '%;%'");
         } catch (Exception e) {
             System.err.println("Schema update failed: " + e.getMessage());
         }

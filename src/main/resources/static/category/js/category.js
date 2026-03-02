@@ -58,8 +58,38 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize
     async function init() {
         await fetchFilterOptions();
+        parseUrlParams();
         loadContent(true);
         setupEventListeners();
+    }
+
+    function parseUrlParams() {
+        const params = new URLSearchParams(window.location.search);
+
+        if (params.has('categoryId')) {
+            state.categoryId = params.get('categoryId');
+            els.filterCat.value = state.categoryId;
+        }
+
+        if (params.has('country')) {
+            state.country = params.get('country');
+            els.filterCountry.value = state.country;
+        }
+
+        if (params.has('year')) {
+            state.year = params.get('year');
+            els.filterYear.value = state.year;
+        }
+
+        if (params.has('status')) {
+            state.status = params.get('status');
+            els.filterStatus.value = state.status;
+        }
+
+        if (params.has('sort')) {
+            state.sort = params.get('sort');
+            els.filterSort.value = state.sort;
+        }
     }
 
     async function fetchFilterOptions() {

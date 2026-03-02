@@ -53,7 +53,14 @@ public class SeriesRepository {
 
             // One-time populate missing slugs for episodes
             jdbcTemplate.execute(
-                    "UPDATE Episode SET slug = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(name, ' ', '-'), 'ı', 'i'), 'ğ', 'g'), 'ü', 'u'), 'ş', 's')) WHERE slug IS NULL OR slug = ''");
+                    "UPDATE Episode SET slug = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(name, ' ', '-'), 'ı', 'i'), 'ğ', 'g'), 'ü', 'u'), 'ş', 's'), 'ö', 'o'), 'ç', 'c'), '?', ''), '!', '')) WHERE slug IS NULL OR slug = ''");
+
+            // Clean up existing slugs (strip SEO suffixes)
+            jdbcTemplate.execute("UPDATE Episode SET slug = LEFT(slug, LEN(slug) - 6) WHERE slug LIKE '%-watch'");
+
+            // Special character cleanup for smart quotes and apostrophes (N' for unicode)
+            jdbcTemplate.execute(
+                    "UPDATE Episode SET slug = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(slug, N'’', ''), N'‘', ''), N'”', ''), N'“', ''), '''', ''), ':', '-'), ';', '-') WHERE slug LIKE N'%’%' OR slug LIKE N'%‘%' OR slug LIKE N'%”%' OR slug LIKE N'%“%' OR slug LIKE '%''%' OR slug LIKE '%:%' OR slug LIKE '%;%'");
 
             jdbcTemplate.execute(
                     "IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Series' AND COLUMN_NAME = 'slug') "
@@ -131,7 +138,13 @@ public class SeriesRepository {
                             "END");
 
             jdbcTemplate.execute(
-                    "UPDATE Series SET slug = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(name, ' ', '-'), 'ı', 'i'), 'ğ', 'g'), 'ü', 'u'), 'ş', 's')) WHERE slug IS NULL OR slug = ''");
+                    "UPDATE Series SET slug = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(name, ' ', '-'), 'ı', 'i'), 'ğ', 'g'), 'ü', 'u'), 'ş', 's'), 'ö', 'o'), 'ç', 'c'), '?', ''), '!', '')) WHERE slug IS NULL OR slug = ''");
+
+            jdbcTemplate.execute("UPDATE Series SET slug = LEFT(slug, LEN(slug) - 6) WHERE slug LIKE '%-watch'");
+
+            // Special character cleanup for smart quotes and apostrophes (N' for unicode)
+            jdbcTemplate.execute(
+                    "UPDATE Series SET slug = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(slug, N'’', ''), N'‘', ''), N'”', ''), N'“', ''), '''', ''), ':', '-'), ';', '-') WHERE slug LIKE N'%’%' OR slug LIKE N'%‘%' OR slug LIKE N'%”%' OR slug LIKE N'%“%' OR slug LIKE '%''%' OR slug LIKE '%:%' OR slug LIKE '%;%'");
 
             jdbcTemplate.execute(
                     "IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Series' AND COLUMN_NAME = 'isAdult') "

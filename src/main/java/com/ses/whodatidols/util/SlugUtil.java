@@ -14,7 +14,18 @@ public class SlugUtil {
             return "";
         }
 
-        String nowhitespace = WHITESPACE.matcher(input).replaceAll("-");
+        // Pre-clean problematic characters (Apostrophes, Quotes, etc.)
+        String precleaned = input
+                .replace("’", "")
+                .replace("‘", "")
+                .replace("”", "")
+                .replace("“", "")
+                .replace("'", "")
+                .replace("\"", "")
+                .replace(":", "-")
+                .replace(";", "-");
+
+        String nowhitespace = WHITESPACE.matcher(precleaned).replaceAll("-");
         String normalized = Normalizer.normalize(nowhitespace, Normalizer.Form.NFD);
         String slug = NONLATIN.matcher(normalized).replaceAll("");
 
