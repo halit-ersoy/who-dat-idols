@@ -242,6 +242,9 @@
                 <a href="#feedback-section" class="nav-link" data-section="feedback-section">
                     <i class="fas fa-comment-dots"></i> Geri Bildirimler
                 </a>
+                <a href="#system-settings-section" class="nav-link" data-section="system-settings-section">
+                    <i class="fas fa-tools"></i> Sistem Ayarları
+                </a>
                 <a href="#security-violations-section" class="nav-link" data-section="security-violations-section">
                     <i class="fas fa-user-shield"></i> Güvenlik Kayıtları
                 </a>
@@ -1476,6 +1479,30 @@
                                 <!-- Raporlar buraya gelecek -->
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </section>
+            <!-- SYSTEM SETTINGS SECTION -->
+            <section id="system-settings-section" class="admin-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-tools"></i> Sistem Ayarları</h2>
+                    </div>
+                    <div class="card-body" style="padding: 25px;">
+                        <div
+                            style="background: rgba(255, 152, 0, 0.1); border-left: 4px solid #ff9800; padding: 15px; border-radius: 4px; margin-bottom: 25px;">
+                            <h4 style="color: #ff9800; margin-bottom: 8px;"><i class="fas fa-exclamation-triangle"></i>
+                                Önbellek Yönetimi</h4>
+                            <p style="color: #eee; font-size: 0.9rem; margin: 0;">Sitede yaptığınız değişiklikler (film
+                                düzenleme, takvim güncelleme vb.) bazen anında görünmeyebilir. Bu durumda aşağıdaki
+                                butonu kullanarak tüm önbelleği manuel olarak sıfırlayabilirsiniz.</p>
+                        </div>
+                        <div class="form-actions" style="justify-content: flex-start;">
+                            <button type="button" id="btnClearCacheBatch" class="btn btn-danger"
+                                style="padding: 12px 25px; font-weight: 600;">
+                                <i class="fas fa-broom"></i> TÜM SİTE ÖNBELLEĞİNİ TEMİZLE
+                            </button>
+                        </div>
                     </div>
                 </div>
             </section>

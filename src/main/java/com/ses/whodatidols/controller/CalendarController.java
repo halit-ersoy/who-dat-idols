@@ -2,6 +2,7 @@ package com.ses.whodatidols.controller;
 
 import com.ses.whodatidols.model.CalendarEvent;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.http.ResponseEntity;
@@ -71,6 +72,7 @@ public class CalendarController {
     }
 
     // Admin API to add event
+    @CacheEvict(value = "calendar", allEntries = true)
     @PostMapping("/admin/calendar/add")
     public ResponseEntity<String> addEvent(@RequestBody CalendarEvent event) {
         try {
@@ -92,6 +94,7 @@ public class CalendarController {
     }
 
     // Admin API to delete event
+    @CacheEvict(value = "calendar", allEntries = true)
     @DeleteMapping("/admin/calendar/delete")
     public ResponseEntity<String> deleteEvent(@RequestParam("id") String id) {
         try {

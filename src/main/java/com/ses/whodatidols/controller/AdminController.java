@@ -32,6 +32,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.cache.CacheManager;
 
 import java.nio.file.*;
 import java.util.HashMap;
@@ -59,6 +60,7 @@ public class AdminController {
     private final SecurityViolationRepository securityViolationRepository;
     private final BannedIpRepository bannedIpRepository;
     private final com.ses.whodatidols.repository.MessageRepository messageRepository;
+    private final CacheManager cacheManager;
 
     @Value("${media.source.trailers.path}")
     private String trailersPath;
@@ -82,7 +84,8 @@ public class AdminController {
             CommentRepository commentRepository, com.ses.whodatidols.repository.HeroRepository heroRepository,
             TranslationService translationService, FeedbackRepository feedbackRepository,
             SecurityViolationRepository securityViolationRepository, BannedIpRepository bannedIpRepository,
-            com.ses.whodatidols.repository.MessageRepository messageRepository) {
+            com.ses.whodatidols.repository.MessageRepository messageRepository,
+            CacheManager cacheManager) {
         this.movieService = movieService;
         this.seriesService = seriesService;
         this.tvMazeService = tvMazeService;
@@ -96,6 +99,7 @@ public class AdminController {
         this.securityViolationRepository = securityViolationRepository;
         this.bannedIpRepository = bannedIpRepository;
         this.messageRepository = messageRepository;
+        this.cacheManager = cacheManager;
     }
 
     @GetMapping("/panel")
@@ -177,6 +181,19 @@ public class AdminController {
         }
     }
 
+    @PostMapping("/clear-cache")
+    public ResponseEntity<Map<String, String>> clearCache() {
+        cacheManager.getCacheNames().forEach(cacheName -> {
+            org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
+            if (cache != null) {
+                cache.clear();
+            }
+        });
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Tüm önbellekler başarıyla temizlendi.");
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/series/check")
     public ResponseEntity<Map<String, Boolean>> checkSeriesExists(@RequestParam("name") String name) {
         boolean exists = seriesService.findSeriesByName(name) != null;
@@ -209,6 +226,14 @@ public class AdminController {
         return ResponseEntity.ok(Map.of("collision", collision, "message", message));
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "recentMovies", allEntries = true),
+            @CacheEvict(value = "featuredMovies", allEntries = true),
+            @CacheEvict(value = "weeklyBestMovies", allEntries = true),
+            @CacheEvict(value = "videoDetails", allEntries = true),
+            @CacheEvict(value = "resolvedSlugs", allEntries = true),
+            @CacheEvict(value = "similarContent", allEntries = true)
+    })
     @PostMapping("/add-movie")
     public ResponseEntity<String> addMovie(
             @ModelAttribute Movie movie,
@@ -232,6 +257,14 @@ public class AdminController {
         }
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "recentMovies", allEntries = true),
+            @CacheEvict(value = "featuredMovies", allEntries = true),
+            @CacheEvict(value = "weeklyBestMovies", allEntries = true),
+            @CacheEvict(value = "videoDetails", allEntries = true),
+            @CacheEvict(value = "resolvedSlugs", allEntries = true),
+            @CacheEvict(value = "similarContent", allEntries = true)
+    })
     @PostMapping("/update-movie")
     public ResponseEntity<Map<String, String>> updateMovie(
             @ModelAttribute Movie movie,
@@ -265,6 +298,14 @@ public class AdminController {
         }
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "recentSeries", allEntries = true),
+            @CacheEvict(value = "featuredTv", allEntries = true),
+            @CacheEvict(value = "weeklyBestSeries", allEntries = true),
+            @CacheEvict(value = "videoDetails", allEntries = true),
+            @CacheEvict(value = "resolvedSlugs", allEntries = true),
+            @CacheEvict(value = "similarContent", allEntries = true)
+    })
     @PostMapping("/update-series")
     public ResponseEntity<Map<String, String>> updateSeries(
             @ModelAttribute Series s,
@@ -294,6 +335,14 @@ public class AdminController {
         }
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "recentSeries", allEntries = true),
+            @CacheEvict(value = "featuredTv", allEntries = true),
+            @CacheEvict(value = "weeklyBestSeries", allEntries = true),
+            @CacheEvict(value = "videoDetails", allEntries = true),
+            @CacheEvict(value = "resolvedSlugs", allEntries = true),
+            @CacheEvict(value = "similarContent", allEntries = true)
+    })
     @PostMapping("/add-series")
     public ResponseEntity<String> addSoapOpera(
             @ModelAttribute Series seriesInfo,
@@ -335,6 +384,14 @@ public class AdminController {
         }
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "recentSeries", allEntries = true),
+            @CacheEvict(value = "featuredTv", allEntries = true),
+            @CacheEvict(value = "weeklyBestSeries", allEntries = true),
+            @CacheEvict(value = "videoDetails", allEntries = true),
+            @CacheEvict(value = "resolvedSlugs", allEntries = true),
+            @CacheEvict(value = "similarContent", allEntries = true)
+    })
     @DeleteMapping("/delete-episode")
     public ResponseEntity<String> deleteEpisode(@RequestParam("id") UUID id) {
         try {
@@ -345,6 +402,14 @@ public class AdminController {
         }
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "recentSeries", allEntries = true),
+            @CacheEvict(value = "featuredTv", allEntries = true),
+            @CacheEvict(value = "weeklyBestSeries", allEntries = true),
+            @CacheEvict(value = "videoDetails", allEntries = true),
+            @CacheEvict(value = "resolvedSlugs", allEntries = true),
+            @CacheEvict(value = "similarContent", allEntries = true)
+    })
     @PostMapping("/update-episode")
     public ResponseEntity<String> updateEpisode(
             @RequestParam("episodeId") UUID episodeId,
@@ -364,6 +429,14 @@ public class AdminController {
         }
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "recentSeries", allEntries = true),
+            @CacheEvict(value = "featuredTv", allEntries = true),
+            @CacheEvict(value = "weeklyBestSeries", allEntries = true),
+            @CacheEvict(value = "videoDetails", allEntries = true),
+            @CacheEvict(value = "resolvedSlugs", allEntries = true),
+            @CacheEvict(value = "similarContent", allEntries = true)
+    })
     @DeleteMapping("/delete-series-by-name")
     public ResponseEntity<String> deleteSeriesByName(@RequestParam("name") String name) {
         try {
@@ -394,6 +467,14 @@ public class AdminController {
         }
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "recentMovies", allEntries = true),
+            @CacheEvict(value = "featuredMovies", allEntries = true),
+            @CacheEvict(value = "weeklyBestMovies", allEntries = true),
+            @CacheEvict(value = "videoDetails", allEntries = true),
+            @CacheEvict(value = "resolvedSlugs", allEntries = true),
+            @CacheEvict(value = "similarContent", allEntries = true)
+    })
     @DeleteMapping("/delete-movie")
     public ResponseEntity<String> deleteMovie(@RequestParam("id") UUID id) {
         try {
@@ -404,6 +485,14 @@ public class AdminController {
         }
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "recentMovies", allEntries = true),
+            @CacheEvict(value = "featuredMovies", allEntries = true),
+            @CacheEvict(value = "weeklyBestMovies", allEntries = true),
+            @CacheEvict(value = "videoDetails", allEntries = true),
+            @CacheEvict(value = "resolvedSlugs", allEntries = true),
+            @CacheEvict(value = "similarContent", allEntries = true)
+    })
     @PostMapping("/delete-movies-bulk")
     public ResponseEntity<String> deleteMoviesBulk(@RequestBody List<UUID> ids) {
         try {
@@ -416,6 +505,14 @@ public class AdminController {
         }
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "recentSeries", allEntries = true),
+            @CacheEvict(value = "featuredTv", allEntries = true),
+            @CacheEvict(value = "weeklyBestSeries", allEntries = true),
+            @CacheEvict(value = "videoDetails", allEntries = true),
+            @CacheEvict(value = "resolvedSlugs", allEntries = true),
+            @CacheEvict(value = "similarContent", allEntries = true)
+    })
     @PostMapping("/delete-series-bulk")
     public ResponseEntity<String> deleteSeriesBulk(@RequestBody List<UUID> ids) {
         try {

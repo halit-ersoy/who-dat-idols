@@ -251,7 +251,7 @@
                     'hero-section', 'calendar-section', 'upcoming-section',
                     'view-management-section', 'comments-section', 'user-section',
                     'announcement-section', 'update-notes-section', 'feedback-section',
-                    'security-violations-section', 'banned-ips-section'
+                    'security-violations-section', 'banned-ips-section', 'system-settings-section'
                 ];
                 translatorHiddenSections.forEach(section => {
                     const navLink = document.querySelector(`.nav-link[data-section="${section}"]`);
@@ -3715,4 +3715,32 @@
             })
             .catch(err => alert("Hata: " + err));
     };
+
+    /* ===========================================================
+       SİSTEM AYARLARI (ÖNBELLEK TEMİZLEME)
+       =========================================================== */
+    const btnClearCacheBatch = document.getElementById('btnClearCacheBatch');
+    if (btnClearCacheBatch) {
+        btnClearCacheBatch.addEventListener('click', function () {
+            if (!confirm("Tüm site önbelleğini temizlemek istediğinize emin misiniz? Bu işlem anlık olarak sunucu yükünü artırabilir.")) return;
+
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> TEMİZLENİYOR...';
+            this.disabled = true;
+
+            fetch('/admin/clear-cache', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message || "Önbellek başarıyla temizlendi.");
+                })
+                .catch(err => {
+                    console.error("Cache clear error:", err);
+                    alert("Önbellek temizlenirken bir hata oluştu.");
+                })
+                .finally(() => {
+                    this.innerHTML = originalText;
+                    this.disabled = false;
+                });
+        });
+    }
 });

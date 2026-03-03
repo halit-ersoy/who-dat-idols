@@ -3,6 +3,7 @@ package com.ses.whodatidols.controller;
 import com.ses.whodatidols.model.UpdateNote;
 import com.ses.whodatidols.repository.UpdateNoteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,6 +30,7 @@ public class UpdateNoteController {
         return updateNoteRepository.findAll();
     }
 
+    @CacheEvict(value = "updateNotes", allEntries = true)
     @PostMapping("/admin/add")
     public ResponseEntity<?> addUpdate(@RequestBody Map<String, String> request) {
         try {
@@ -49,6 +51,7 @@ public class UpdateNoteController {
         }
     }
 
+    @CacheEvict(value = "updateNotes", allEntries = true)
     @PostMapping("/admin/toggle")
     public ResponseEntity<?> toggleUpdate(@RequestBody Map<String, Object> request) {
         try {
@@ -61,6 +64,7 @@ public class UpdateNoteController {
         }
     }
 
+    @CacheEvict(value = "updateNotes", allEntries = true)
     @PostMapping("/admin/delete")
     public ResponseEntity<?> deleteUpdate(@RequestBody Map<String, String> request) {
         try {

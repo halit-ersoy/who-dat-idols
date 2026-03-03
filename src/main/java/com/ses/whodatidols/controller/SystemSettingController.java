@@ -1,6 +1,7 @@
 package com.ses.whodatidols.controller;
 
 import com.ses.whodatidols.repository.SystemSettingRepository;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,6 +33,7 @@ public class SystemSettingController {
      * Note: In a production environment, ensure this is protected by Security
      * Configuration.
      */
+    @CacheEvict(value = "announcements", allEntries = true)
     @PostMapping("/admin/settings/announcement")
     public ResponseEntity<?> updateAnnouncement(@RequestBody Map<String, Object> payload) {
         String text = (String) payload.get("text");
