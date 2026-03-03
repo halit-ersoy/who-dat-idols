@@ -392,6 +392,7 @@
 
     /* Fix 'All' Section Headers (Cramped Layout Fix) */
     .new-soap-operas-all-section .section-header,
+    .new-programs-all-section .section-header,
     .new-movies-all-section .section-header {
         display: grid !important;
         grid-template-columns: 1fr auto !important;
@@ -403,6 +404,7 @@
     }
 
     .new-soap-operas-all-section h2,
+    .new-programs-all-section h2,
     .new-movies-all-section h2 {
         grid-area: title !important;
         width: 100% !important;
@@ -427,6 +429,7 @@
 
     /* 2 Column Grid for All New Sections */
     .new-soap-operas-all-grid,
+    .new-programs-all-grid,
     .new-movies-all-grid {
         display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important;
@@ -435,6 +438,7 @@
     }
 
     .new-soap-operas-all-grid .card,
+    .new-programs-all-grid .card,
     .new-movies-all-grid .card {
         width: 100% !important;
         max-width: none !important;
@@ -443,6 +447,7 @@
     }
 
     .new-soap-operas-all-grid .card-image-container,
+    .new-programs-all-grid .card-image-container,
     .new-movies-all-grid .card-image-container {
         height: auto !important;
         aspect-ratio: 2/3 !important;

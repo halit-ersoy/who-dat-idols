@@ -2,6 +2,7 @@ import { initHeaderScroll } from './headerScroll.js?v=2';
 import { initHeroCarousel } from './heroCarousel.js?v=2';
 import { initContentCarousels } from './contentCarousel.js?v=2';
 import { initNewSoapOperasSection } from './newSoapOperasSection.js?v=2';
+import { initNewProgramsSection } from './newProgramsSection.js?v=2';
 import { initNewMoviesSection } from './newMoviesSection.js?v=2';
 import { initWeeklyBestSection } from './weeklyBestSection.js?v=2';
 import { initLogin } from './login.js?v=2';
@@ -35,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initContentCarousels();
     initFeaturedContent();
     initNewSoapOperasSection();
+    initNewProgramsSection();
     initNewMoviesSection();
     initWeeklyBestSection();
     initLoadedEpisodesSection(); // Add this line

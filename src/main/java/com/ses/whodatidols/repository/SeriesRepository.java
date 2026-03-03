@@ -470,7 +470,9 @@ public class SeriesRepository {
     }
 
     public List<Episode> findRecentEpisodes(int limit) {
-        return jdbcTemplate.query("SELECT TOP (?) * FROM Episode ORDER BY uploadDate DESC, name ASC", episodeRowMapper,
+        return jdbcTemplate.query(
+                "SELECT TOP (?) E.* FROM Episode E JOIN Series S ON E.SeriesId = S.ID WHERE S.SeriesType != 'Program' OR S.SeriesType IS NULL ORDER BY E.uploadDate DESC, E.name ASC",
+                episodeRowMapper,
                 limit);
     }
 
@@ -505,44 +507,98 @@ public class SeriesRepository {
         }
     }
 
-    public int countAllSeries() {
-        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM Series", Integer.class);
+    public int countAllSeries(String seriesType) {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Series S WHERE 1=1");
+        java.util.List<Object> params = new java.util.ArrayList<>();
+
+        if ("Program".equalsIgnoreCase(seriesType)) {
+            sql.append(" AND S.SeriesType = 'Program'");
+        } else if ("Dizi".equalsIgnoreCase(seriesType) || seriesType == null || seriesType.isEmpty()) {
+            sql.append(" AND (S.SeriesType != 'Program' OR S.SeriesType IS NULL)");
+        } else {
+            sql.append(" AND S.SeriesType = ?");
+            params.add(seriesType);
+        }
+
+        Integer count = jdbcTemplate.queryForObject(sql.toString(), Integer.class, params.toArray());
         return count != null ? count : 0;
     }
 
-    public int countSeriesBySearch(String query) {
+    public int countSeriesBySearch(String query, String seriesType) {
         String likeQuery = "%" + query.trim().toLowerCase() + "%";
-        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM Series WHERE LOWER(name) LIKE ?",
-                Integer.class, likeQuery);
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Series S WHERE LOWER(S.name) LIKE ?");
+        java.util.List<Object> params = new java.util.ArrayList<>();
+        params.add(likeQuery);
+
+        if ("Program".equalsIgnoreCase(seriesType)) {
+            sql.append(" AND S.SeriesType = 'Program'");
+        } else if ("Dizi".equalsIgnoreCase(seriesType) || seriesType == null || seriesType.isEmpty()) {
+            sql.append(" AND (S.SeriesType != 'Program' OR S.SeriesType IS NULL)");
+        } else {
+            sql.append(" AND S.SeriesType = ?");
+            params.add(seriesType);
+        }
+
+        Integer count = jdbcTemplate.queryForObject(sql.toString(), Integer.class, params.toArray());
         return count != null ? count : 0;
     }
 
-    public List<Series> findRecentSeriesPaged(int offset, int limit) {
-        String sql = """
-                SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
-                       (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
-                        JOIN SeriesCategories SC ON SC.CategoryID = C.ID
-                        WHERE SC.SeriesID = S.ID) as category
-                FROM Series S
-                ORDER BY S.uploadDate DESC, S.name ASC
-                OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
-                """;
-        return jdbcTemplate.query(sql, seriesRowMapper, offset, limit);
+    public List<Series> findRecentSeriesPaged(String seriesType, int offset, int limit) {
+        StringBuilder sql = new StringBuilder(
+                """
+                        SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
+                               (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                                JOIN SeriesCategories SC ON SC.CategoryID = C.ID
+                                WHERE SC.SeriesID = S.ID) as category
+                        FROM Series S
+                        WHERE 1=1
+                        """);
+        java.util.List<Object> params = new java.util.ArrayList<>();
+
+        if ("Program".equalsIgnoreCase(seriesType)) {
+            sql.append(" AND S.SeriesType = 'Program'");
+        } else if ("Dizi".equalsIgnoreCase(seriesType) || seriesType == null || seriesType.isEmpty()) {
+            sql.append(" AND (S.SeriesType != 'Program' OR S.SeriesType IS NULL)");
+        } else {
+            sql.append(" AND S.SeriesType = ?");
+            params.add(seriesType);
+        }
+
+        sql.append(" ORDER BY S.uploadDate DESC, S.name ASC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        params.add(offset);
+        params.add(limit);
+
+        return jdbcTemplate.query(sql.toString(), seriesRowMapper, params.toArray());
     }
 
-    public List<Series> searchSeriesPaged(String query, int offset, int limit) {
+    public List<Series> searchSeriesPaged(String query, String seriesType, int offset, int limit) {
         String likeQuery = "%" + query.trim().toLowerCase() + "%";
-        String sql = """
-                SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
-                       (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
-                        JOIN SeriesCategories SC ON SC.CategoryID = C.ID
-                        WHERE SC.SeriesID = S.ID) as category
-                FROM Series S
-                WHERE LOWER(S.name) LIKE ?
-                ORDER BY S.uploadDate DESC, S.name ASC
-                OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
-                """;
-        return jdbcTemplate.query(sql, seriesRowMapper, likeQuery, offset, limit);
+        StringBuilder sql = new StringBuilder(
+                """
+                        SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
+                               (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                                JOIN SeriesCategories SC ON SC.CategoryID = C.ID
+                                WHERE SC.SeriesID = S.ID) as category
+                        FROM Series S
+                        WHERE LOWER(S.name) LIKE ?
+                        """);
+        java.util.List<Object> params = new java.util.ArrayList<>();
+        params.add(likeQuery);
+
+        if ("Program".equalsIgnoreCase(seriesType)) {
+            sql.append(" AND S.SeriesType = 'Program'");
+        } else if ("Dizi".equalsIgnoreCase(seriesType) || seriesType == null || seriesType.isEmpty()) {
+            sql.append(" AND (S.SeriesType != 'Program' OR S.SeriesType IS NULL)");
+        } else {
+            sql.append(" AND S.SeriesType = ?");
+            params.add(seriesType);
+        }
+
+        sql.append(" ORDER BY S.uploadDate DESC, S.name ASC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        params.add(offset);
+        params.add(limit);
+
+        return jdbcTemplate.query(sql.toString(), seriesRowMapper, params.toArray());
     }
 
     public List<Episode> findTop6EpisodesByCount() {
@@ -580,11 +636,13 @@ public class SeriesRepository {
         List<Object> params = new java.util.ArrayList<>();
 
         // Default to 'Dizi' if not provided
-        if (seriesType != null && !seriesType.isEmpty()) {
+        if ("Program".equalsIgnoreCase(seriesType)) {
+            sql.append(" AND S.SeriesType = 'Program'");
+        } else if ("Dizi".equalsIgnoreCase(seriesType) || seriesType == null || seriesType.isEmpty()) {
+            sql.append(" AND (S.SeriesType != 'Program' OR S.SeriesType IS NULL)");
+        } else {
             sql.append(" AND S.SeriesType = ?");
             params.add(seriesType);
-        } else {
-            sql.append(" AND (S.SeriesType = 'Dizi' OR S.SeriesType IS NULL)");
         }
 
         if (categoryId != null && categoryId > 0) {
@@ -634,11 +692,13 @@ public class SeriesRepository {
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Series S WHERE 1=1");
         List<Object> params = new java.util.ArrayList<>();
 
-        if (seriesType != null && !seriesType.isEmpty()) {
+        if ("Program".equalsIgnoreCase(seriesType)) {
+            sql.append(" AND S.SeriesType = 'Program'");
+        } else if ("Dizi".equalsIgnoreCase(seriesType) || seriesType == null || seriesType.isEmpty()) {
+            sql.append(" AND (S.SeriesType != 'Program' OR S.SeriesType IS NULL)");
+        } else {
             sql.append(" AND S.SeriesType = ?");
             params.add(seriesType);
-        } else {
-            sql.append(" AND (S.SeriesType = 'Dizi' OR S.SeriesType IS NULL)");
         }
 
         if (categoryId != null && categoryId > 0) {

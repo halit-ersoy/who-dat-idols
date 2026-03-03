@@ -26,15 +26,16 @@ public class SeriesController {
         this.seriesService = seriesService;
     }
 
-    @Cacheable(value = "recentSeries", key = "#page + '-' + #size")
+    @Cacheable(value = "recentSeries", key = "#type + '-' + #page + '-' + #size")
     @GetMapping("/recent")
     public ResponseEntity<PageResponse<VideoViewModel>> getRecentSeriesPaged(
+            @RequestParam(value = "type", defaultValue = "Dizi") String type,
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "18") int size) {
 
         int offset = (page - 1) * size;
-        List<Series> recentSeries = seriesRepository.findRecentSeriesPaged(offset, size);
-        int totalElements = seriesRepository.countAllSeries();
+        List<Series> recentSeries = seriesRepository.findRecentSeriesPaged(type, offset, size);
+        int totalElements = seriesRepository.countAllSeries(type);
         int totalPages = (int) Math.ceil((double) totalElements / size);
 
         List<VideoViewModel> viewModels = recentSeries.stream()
@@ -71,16 +72,17 @@ public class SeriesController {
     @GetMapping("/search")
     public ResponseEntity<PageResponse<VideoViewModel>> searchSeriesPaged(
             @RequestParam(value = "query", defaultValue = "") String query,
+            @RequestParam(value = "type", defaultValue = "Dizi") String type,
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "18") int size) {
 
         if (query.trim().isEmpty()) {
-            return getRecentSeriesPaged(page, size);
+            return getRecentSeriesPaged(type, page, size);
         }
 
         int offset = (page - 1) * size;
-        List<Series> recentSeries = seriesRepository.searchSeriesPaged(query, offset, size);
-        int totalElements = seriesRepository.countSeriesBySearch(query);
+        List<Series> recentSeries = seriesRepository.searchSeriesPaged(query, type, offset, size);
+        int totalElements = seriesRepository.countSeriesBySearch(query, type);
         int totalPages = (int) Math.ceil((double) totalElements / size);
 
         List<VideoViewModel> viewModels = recentSeries.stream()
