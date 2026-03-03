@@ -15,7 +15,7 @@ export function initFeaturedContent() {
 
     let currentMode = 'tv';
     let currentPage = 1;
-    const itemsPerPage = 20;
+    let itemsPerPage = window.innerWidth <= 1024 ? 10 : 20;
     let isLoading = false;
 
     const countryNames = {
@@ -79,13 +79,16 @@ export function initFeaturedContent() {
     async function loadPage(page) {
         isLoading = true;
         currentPage = page;
+        itemsPerPage = window.innerWidth <= 1024 ? 10 : 20;
+        console.log(`[Featured] Loading page ${page}, itemsPerPage: ${itemsPerPage} (innerWidth: ${window.innerWidth})`);
 
         // Match Weekly Best transition: add fade-out and wait
         featuredGrid.classList.add('fade-out');
 
         setTimeout(async () => {
             let skeletonHtml = '';
-            for (let i = 0; i < 20; i++) {
+            // Match skeleton count to itemsPerPage
+            for (let i = 0; i < itemsPerPage; i++) {
                 skeletonHtml += `
                     <div class="featured-item" style="pointer-events: none; opacity: 1;">
                         <div class="item-thumb img-skeleton" style="width: 60px; height: 80px; border-radius: 8px;"></div>
@@ -106,7 +109,9 @@ export function initFeaturedContent() {
                 if (!response.ok) throw new Error('Veri çekilemedi.');
 
                 const data = await response.json();
-                renderFeaturedGrid(data.content, currentMode);
+                // Ensure we only render the requested amount, even if API over-returns
+                const displayItems = data.content ? data.content.slice(0, itemsPerPage) : [];
+                renderFeaturedGrid(displayItems, currentMode);
                 setupPagination(data.totalPages);
 
             } catch (err) {
@@ -229,5 +234,12 @@ export function initFeaturedContent() {
             paginationContainer.appendChild(createButton(page, page === currentPage));
             lastPageAdded = page;
         }
+        window.addEventListener('resize', () => {
+            const newLimit = window.innerWidth <= 1024 ? 10 : 20;
+            if (newLimit !== itemsPerPage && !isLoading) {
+                console.log(`[Featured] Resize detected, new itemsPerPage: ${newLimit}`);
+                loadPage(1);
+            }
+        });
     }
 }

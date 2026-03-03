@@ -27,10 +27,7 @@
 /* 9) Sections */
 @import url('sections.css');
 
-/* 10) Responsive */
-@import url('responsive.css');
-
-/* 11) New Content (new movies) */
+@import url('new-movies.css');
 @import url('new-movies.css');
 
 /* 12) New Soap Operas (series) */
@@ -57,3 +54,6 @@
 /* 17) Notifications */
 @import url('notifications.css');
 @import url('update-notes.css');
+
+/* 18) Final Responsive Priority */
+@import url('responsive.css');

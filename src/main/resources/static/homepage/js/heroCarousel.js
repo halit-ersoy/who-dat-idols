@@ -41,6 +41,7 @@ export function initHeroCarousel() {
             container.dataset.index = index;
 
             const category = hero.category ? hero.category.replace(/,$/, '') : 'Kategori';
+            const typeText = (hero.type || 'YENİ').replace('SOAPOPERA', 'SOAP OPERA');
 
             // Generate container HTML
             container.innerHTML = `
@@ -52,7 +53,7 @@ export function initHeroCarousel() {
                 </video>
                 <div class="hero-overlay"></div>
                 <div class="hero-content animate-fade-in">
-                    <div class="hero-badge animate-slide-up">${hero.type || 'YENİ'}</div>
+                    <div class="hero-badge animate-slide-up">${typeText}</div>
                     <h1 class="animate-slide-up">${hero.name}</h1>
                     <p class="animate-slide-up">${hero._content || 'İçerik açıklaması bulunmuyor'}</p>
                     <div class="hero-info animate-slide-up">
@@ -205,6 +206,30 @@ export function initHeroCarousel() {
         nextHeroBtn.addEventListener('click', () => {
             showHeroSlide(currentHeroIndex + 1);
         });
+
+        // Swipe support for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        heroSection.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        heroSection.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, { passive: true });
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            if (touchEndX < touchStartX - swipeThreshold) {
+                // Swiped left -> next slide
+                showHeroSlide(currentHeroIndex + 1);
+            } else if (touchEndX > touchStartX + swipeThreshold) {
+                // Swiped right -> previous slide
+                showHeroSlide(currentHeroIndex - 1);
+            }
+        }
 
         // Indicator clicks
         heroIndicators.forEach(indicator => {

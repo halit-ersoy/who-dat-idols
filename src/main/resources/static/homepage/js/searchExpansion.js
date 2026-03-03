@@ -20,7 +20,7 @@ export function initSearchExpansion() {
     // For mobile: expand on button click
     if (searchButton) {
         searchButton.addEventListener('click', (e) => {
-            if (window.innerWidth <= 576 && !searchContainer.classList.contains('expanded')) {
+            if (window.innerWidth <= 992 && !searchContainer.classList.contains('expanded')) {
                 e.preventDefault();
                 searchContainer.classList.add('expanded');
                 searchInput.focus();
@@ -35,12 +35,40 @@ export function initHeaderInteractions() {
     // Mobile menu toggle
     const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
     const navMenu = document.querySelector('.nav-menu');
+    const navMenuClose = document.getElementById('nav-menu-close');
 
-    if (mobileMenuToggle) {
+    if (mobileMenuToggle && navMenu) {
         mobileMenuToggle.addEventListener('click', () => {
-            navMenu.classList.toggle('active');
+            navMenu.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent scroll
         });
     }
+
+    if (navMenuClose && navMenu) {
+        navMenuClose.addEventListener('click', () => {
+            navMenu.classList.remove('active');
+            document.body.style.overflow = ''; // Restore scroll
+        });
+    }
+
+    // Close on click outside
+    document.addEventListener('mousedown', (e) => {
+        if (navMenu && navMenu.classList.contains('active')) {
+            if (!navMenu.contains(e.target) && !mobileMenuToggle.contains(e.target)) {
+                navMenu.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+    });
+
+    // Close on link click (for SPA feel or just to clean up)
+    const drawerLinks = navMenu ? navMenu.querySelectorAll('.nav-link') : [];
+    drawerLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            navMenu.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+    });
 
     // Search results display
     const searchInput = document.getElementById('search-input');
@@ -132,9 +160,9 @@ export function initHeaderInteractions() {
 
     // Highlight current page in navigation
     const currentPath = window.location.pathname;
-    const navLinks = document.querySelectorAll('.nav-link');
+    const allNavLinks = document.querySelectorAll('.nav-link');
 
-    navLinks.forEach(link => {
+    allNavLinks.forEach(link => {
         const href = link.getAttribute('href');
         if (href && currentPath.includes(href) && href !== '#') {
             link.classList.add('active');
