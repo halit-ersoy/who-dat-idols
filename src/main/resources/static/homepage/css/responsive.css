@@ -269,9 +269,9 @@
         display: none !important;
     }
 
-    .prev-hero,
-    .next-hero {
-        top: 30%;
+    .hero-overlay {
+        background: rgba(0, 0, 0, 0.6) !important;
+        backdrop-filter: blur(1px) !important;
     }
 
     .hero-indicators {
