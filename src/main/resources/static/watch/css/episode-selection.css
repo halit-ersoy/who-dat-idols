@@ -3,7 +3,7 @@
 /* Episode Selection Drawer Section */
 .episode-selection-section {
     margin: 20px 0;
-    background-color: #222;
+    background-color: var(--bg-card);
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
@@ -14,7 +14,7 @@
 }
 
 .episode-toggle {
-    background-color: #333;
+    background-color: var(--bg-card-hover);
     padding: 15px 20px;
     display: flex;
     justify-content: space-between;
@@ -24,18 +24,18 @@
 }
 
 .episode-toggle:hover {
-    background-color: #444;
+    background-color: var(--border-color);
 }
 
 .episode-toggle span {
     font-weight: 600;
     font-size: 18px;
-    color: #1ed760;
+    color: var(--primary-color);
 }
 
 .episode-toggle i {
     transition: transform 0.4s ease;
-    color: #fff;
+    color: var(--white);
 }
 
 .episode-toggle.active i {
@@ -69,7 +69,7 @@
 .season-tab {
     padding: 10px 20px;
     cursor: pointer;
-    color: #b3b3b3;
+    color: var(--color-b3b3b3);
     transition: all 0.3s ease;
     white-space: nowrap;
     font-weight: 600;
@@ -77,14 +77,14 @@
 }
 
 .season-tab:hover {
-    color: #fff;
+    color: var(--white);
     background: rgba(255, 255, 255, 0.05);
 }
 
 .season-tab.active {
-    color: #1ed760;
-    border-bottom: 2px solid #1ed760;
-    background: rgba(30, 215, 96, 0.05);
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+    background: rgba(var(--primary-rgb), 0.05);
 }
 
 .episodes-grid {
@@ -115,16 +115,16 @@
 }
 
 .episodes-grid::-webkit-scrollbar-thumb {
-    background: #333;
+    background: var(--bg-card-hover);
     border-radius: 3px;
 }
 
 .episodes-grid::-webkit-scrollbar-thumb:hover {
-    background: #444;
+    background: var(--border-color);
 }
 
 .episode-card {
-    background: #282828;
+    background: var(--bg-tertiary);
     border-radius: 12px;
     overflow: hidden;
     cursor: pointer;
@@ -136,22 +136,22 @@
 
 .episode-card:hover {
     transform: translateY(-5px);
-    border-color: rgba(30, 215, 96, 0.5);
-    background: #333;
+    border-color: rgba(var(--primary-rgb), 0.5);
+    background: var(--bg-card-hover);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
 }
 
 .episode-card.active {
-    border-color: #1ed760;
-    background: #333;
+    border-color: var(--primary-color);
+    background: var(--bg-card-hover);
     position: relative;
-    box-shadow: 0 0 15px rgba(30, 215, 96, 0.2);
+    box-shadow: 0 0 15px rgba(var(--primary-rgb), 0.2);
 }
 
 .episode-thumbnail {
     width: 100%;
     aspect-ratio: 16/9;
-    background: #3e3e3e;
+    background: var(--color-3e3e3e);
     position: relative;
     overflow: hidden;
 }
@@ -176,12 +176,12 @@
     height: 100%;
     align-items: center;
     justify-content: center;
-    background: #2a2a2a;
+    background: var(--color-2a2a2a);
 }
 
 .episode-thumbnail-icon i {
     font-size: 3rem;
-    color: #666;
+    color: var(--color-666666);
 }
 
 .episode-duration {
@@ -190,7 +190,7 @@
     right: 8px;
     background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(4px);
-    color: #fff;
+    color: var(--white);
     padding: 3px 8px;
     font-size: 0.7rem;
     border-radius: 4px;
@@ -203,7 +203,7 @@
 
 .episode-number-label {
     font-size: 0.75rem;
-    color: #1ed760;
+    color: var(--primary-color);
     text-transform: uppercase;
     letter-spacing: 1px;
     margin-bottom: 5px;
@@ -212,7 +212,7 @@
 
 .episode-name-label {
     font-size: 0.9rem;
-    color: #fff;
+    color: var(--white);
     font-weight: 500;
     line-height: 1.4;
     overflow: hidden;
@@ -228,18 +228,18 @@
 .error-message {
     text-align: center;
     padding: 40px;
-    color: #999;
+    color: var(--color-999999);
     font-size: 1rem;
 }
 
 .loading-episodes i {
     font-size: 2rem;
-    color: #1ed760;
+    color: var(--primary-color);
     margin-bottom: 10px;
 }
 
 .error-message {
-    color: #ff6b6b;
+    color: var(--color-ff6b6b);
 }
 
 /* Responsive adjustments */

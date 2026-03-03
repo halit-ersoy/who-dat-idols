@@ -38,7 +38,7 @@
 @import url('episode-selection.css');
 
 .back-button {
-    color: #fff;
+    color: var(--white);
     text-decoration: none;
     font-weight: 500;
     display: flex;
@@ -49,12 +49,12 @@
 }
 
 .back-button:hover {
-    color: #1ed760;
+    color: var(--primary-color);
 }
 
 header {
-    background-color: #121212;
-    color: #fff;
+    background-color: var(--bg-input);
+    color: var(--white);
     padding: 15px 20px;
     display: flex;
     justify-content: space-between;
@@ -87,7 +87,7 @@ body {
     font-family: 'Montserrat', sans-serif;
     font-size: 0.85rem;
     font-weight: 700;
-    color: #888;
+    color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 1px;
     display: flex;
@@ -104,7 +104,7 @@ body {
 .source-btn {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #e0e0e0;
+    color: var(--color-e0e0e0);
     padding: 10px 20px;
     border-radius: 12px;
     cursor: pointer;
@@ -123,17 +123,17 @@ body {
 }
 
 .source-btn:hover {
-    background: rgba(30, 215, 96, 0.08);
-    border-color: rgba(30, 215, 96, 0.4);
-    color: #fff;
+    background: rgba(var(--primary-rgb), 0.08);
+    border-color: rgba(var(--primary-rgb), 0.4);
+    color: var(--white);
     transform: translateY(-2px);
 }
 
 .source-btn.active {
-    background: linear-gradient(135deg, #1ed760 0%, #1db954 100%);
-    color: #000;
-    border-color: #1ed760;
-    box-shadow: 0 8px 20px rgba(30, 215, 96, 0.35);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+    color: var(--black);
+    border-color: var(--primary-color);
+    box-shadow: 0 8px 20px rgba(var(--primary-rgb), 0.35);
 }
 
 .source-btn.active i {
@@ -175,9 +175,9 @@ body {
 
 .adult-overlay i {
     font-size: 48px;
-    color: #1ed760;
+    color: var(--primary-color);
     margin-bottom: 15px;
-    filter: drop-shadow(0 0 10px rgba(30, 215, 96, 0.4));
+    filter: drop-shadow(0 0 10px rgba(var(--primary-rgb), 0.4));
 }
 
 .adult-overlay h3 {
@@ -188,26 +188,27 @@ body {
 
 .adult-overlay p {
     font-size: 14px;
-    color: #ccc;
+    color: var(--text-grey);
     margin: 0 0 25px 0;
 }
 
 .btn-remove-blur {
-    background: linear-gradient(135deg, rgba(30, 215, 96, 0.9) 0%, rgba(20, 180, 80, 0.95) 100%);
-    color: white;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+    color: var(--bg-card);
+    /* To ensure contrast */
     border: none;
     padding: 12px 24px;
     font-size: 16px;
     font-weight: 600;
     border-radius: 8px;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(30, 215, 96, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
     transition: all 0.3s ease;
 }
 
 .btn-remove-blur:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(30, 215, 96, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .btn-remove-blur:active {

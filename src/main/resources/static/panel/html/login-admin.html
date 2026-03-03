@@ -2,6 +2,7 @@
 <html lang="tr">
 
 <head>
+    <script src="/elements/theme.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex">
@@ -11,7 +12,7 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <style>
         :root {
-            --primary: #1ed760;
+            --primary: var(--primary-color);
             --primary-hover: #1fdf64;
             --text-main: #ffffff;
             --text-dim: #b3b3b3;
@@ -40,7 +41,7 @@
             width: 100%;
             height: 100%;
             z-index: -1;
-            background: radial-gradient(circle at 15% 50%, rgba(30, 215, 96, 0.08), transparent 25%),
+            background: radial-gradient(circle at 15% 50%, rgba(var(--primary-rgb), 0.08), transparent 25%),
                 radial-gradient(circle at 85% 30%, rgba(138, 43, 226, 0.08), transparent 25%);
             animation: bgShift 15s ease-in-out infinite alternate;
         }
@@ -56,7 +57,7 @@
         .orb-1 {
             width: 300px;
             height: 300px;
-            background: #1ed760;
+            background: var(--primary-color);
             top: -50px;
             left: -50px;
             animation-delay: 0s;
@@ -230,7 +231,7 @@
 
         .btn-login:hover {
             transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(30, 215, 96, 0.3);
+            box-shadow: 0 10px 20px rgba(var(--primary-rgb), 0.3);
         }
 
         .btn-login:hover::after {
@@ -304,6 +305,7 @@
         }
     </style>
     <script src="/homepage/js/devtools-protection.js"></script>
+    <link rel="stylesheet" href="/elements/variables.css">
 </head>
 
 <body>

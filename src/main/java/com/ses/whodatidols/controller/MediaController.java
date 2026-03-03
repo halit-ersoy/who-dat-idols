@@ -93,6 +93,7 @@ public class MediaController {
     }
 
     // --- 1.1 PROFIL FOTOĞRAFI SUNUCUSU ---
+    @SuppressWarnings("null")
     @GetMapping("/profile/{id}")
     public ResponseEntity<Resource> getProfileImage(@PathVariable("id") UUID id) {
         logger.debug("Requesting profile image for id: {}", id);
@@ -115,7 +116,7 @@ public class MediaController {
                     .contentType(mediaType)
                     .lastModified(lastModified)
                     .cacheControl(CacheControl.noCache().mustRevalidate())
-                    .body(new UrlResource(imagePath.toUri()));
+                    .body(new UrlResource(java.util.Objects.requireNonNull(imagePath.toUri())));
         } catch (IOException e) {
             logger.error("Error serving profile image for id {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

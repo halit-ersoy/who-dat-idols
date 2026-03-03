@@ -4,18 +4,18 @@
 @import url('/elements/scrool.css');
 
 :root {
-    --primary: #1ed760;
-    --primary-glow: rgba(30, 215, 96, 0.4);
+    --primary: var(--primary-color);
+    --primary-glow: rgba(var(--primary-rgb), 0.4);
     --glass-bg: rgba(20, 20, 20, 0.7);
     --glass-border: rgba(255, 255, 255, 0.08);
     --card-bg: rgba(255, 255, 255, 0.03);
-    --text: #ffffff;
-    --text-muted: #b3b3b3;
+    --text: var(--white);
+    --text-muted: var(--color-b3b3b3);
 }
 
 body {
-    background-color: #000;
-    background-image: radial-gradient(circle at top center, #1a1a1a 0%, #000 60%);
+    background-color: var(--black);
+    background-image: radial-gradient(circle at top center, var(--bg-secondary-hover) 0%, var(--black) 60%);
     color: var(--text);
     font-family: 'Montserrat', sans-serif;
     min-height: 100vh;
@@ -41,7 +41,7 @@ body {
     font-size: 3rem;
     font-weight: 700;
     margin: 0;
-    background: linear-gradient(45deg, #fff, #b3b3b3);
+    background: linear-gradient(45deg, var(--white), var(--color-b3b3b3));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     letter-spacing: -1px;
@@ -65,7 +65,7 @@ body {
 /* --- Create Button --- */
 .create-list-btn {
     background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    color: var(--white);
     border: 1px solid var(--glass-border);
     padding: 12px 24px;
     border-radius: 30px;
@@ -81,7 +81,7 @@ body {
 .create-list-btn:hover {
     background: var(--primary);
     border-color: var(--primary);
-    color: #000;
+    color: var(--black);
     box-shadow: 0 0 20px var(--primary-glow);
     transform: translateY(-2px);
 }
@@ -127,7 +127,7 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    color: #fff;
+    color: var(--white);
 }
 
 .video-count {
@@ -145,7 +145,7 @@ body {
 
 .list-wrapper.expanded .toggle-indicator {
     transform: rotate(180deg);
-    color: #fff;
+    color: var(--white);
 }
 
 /* List Actions (Edit button) */
@@ -161,7 +161,7 @@ body {
 }
 
 .list-action-btn:hover {
-    color: #fff;
+    color: var(--white);
     background: rgba(255, 255, 255, 0.1);
 }
 
@@ -189,7 +189,7 @@ body {
     overflow: hidden;
     cursor: pointer;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
-    background: #000;
+    background: var(--black);
     aspect-ratio: 2/3;
 }
 
@@ -233,7 +233,7 @@ body {
 }
 
 .content-title {
-    color: #fff;
+    color: var(--white);
     font-size: 1.1rem;
     margin: 0;
     font-weight: 600;
@@ -266,7 +266,7 @@ body {
 }
 
 .play-overlay i {
-    color: #000;
+    color: var(--black);
     font-size: 24px;
     margin-left: 4px;
     /* Optical center */
@@ -283,7 +283,7 @@ body {
     top: 10px;
     right: 10px;
     background: rgba(0, 0, 0, 0.6);
-    color: #fff;
+    color: var(--white);
     border: none;
     width: 32px;
     height: 32px;
@@ -299,7 +299,7 @@ body {
 }
 
 .remove-btn:hover {
-    background: #ff4646;
+    background: var(--danger-color);
     transform: scale(1.1) translateY(0);
 }
 
@@ -343,7 +343,7 @@ body {
 }
 
 .modal-content {
-    background: #1a1a1a;
+    background: var(--bg-secondary-hover);
     border: 1px solid var(--glass-border);
     padding: 30px;
     border-radius: 16px;
@@ -368,7 +368,7 @@ body {
 .modal-header h3 {
     margin: 0;
     font-size: 1.4rem;
-    color: #fff;
+    color: var(--white);
 }
 
 .close-modal {
@@ -379,7 +379,7 @@ body {
 }
 
 .close-modal:hover {
-    color: #fff;
+    color: var(--white);
 }
 
 .input-group label {
@@ -393,7 +393,7 @@ body {
     width: 100%;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--glass-border);
-    color: #fff;
+    color: var(--white);
     padding: 12px 15px;
     border-radius: 8px;
     font-size: 1rem;
@@ -405,7 +405,7 @@ body {
     outline: none;
     border-color: var(--primary);
     background: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 0 0 3px rgba(30, 215, 96, 0.1);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
 }
 
 .modal-actions {
@@ -428,17 +428,17 @@ body {
 
 .btn-cancel {
     background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    color: var(--white);
 }
 
 .btn-save {
     background: var(--primary);
-    color: #000;
+    color: var(--black);
 }
 
 .btn-delete {
-    background: #ff4646;
-    color: #fff;
+    background: var(--danger-color);
+    color: var(--white);
 }
 
 .btn-cancel:hover,

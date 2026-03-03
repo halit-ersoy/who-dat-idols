@@ -41,7 +41,7 @@
 }
 
 .back-button {
-    color: #fff;
+    color: var(--white);
     text-decoration: none;
     font-weight: 500;
     display: flex;
@@ -52,7 +52,7 @@
 }
 
 .back-button:hover {
-    color: #1ed760;
+    color: var(--primary-color);
 }
 
 .privacy-hero-content h1 {
@@ -63,7 +63,7 @@
     letter-spacing: -0.5px;
     line-height: 1.2;
     text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-    color: #ffffff;
+    color: var(--white);
     opacity: 0;
     animation: slideInUp 0.8s ease-out forwards;
 }
@@ -73,7 +73,7 @@
     margin-bottom: 32px;
     line-height: 1.7;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-    color: #f0f0f0;
+    color: var(--color-f0f0f0);
     font-weight: 300;
     opacity: 0;
     animation: slideInUp 0.8s ease-out 0.2s forwards;
@@ -82,8 +82,8 @@
 /* Privacy Content Styles */
 .privacy-section {
     padding: 60px 0;
-    background-color: #121212;
-    color: #ffffff;
+    background-color: var(--bg-input);
+    color: var(--white);
 }
 
 .container {
@@ -117,7 +117,7 @@
 }
 
 .privacy-item h2 {
-    color: #1ed760;
+    color: var(--primary-color);
     font-size: 24px;
     margin-bottom: 20px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -132,7 +132,7 @@
 }
 
 .privacy-item p {
-    color: #e0e0e0;
+    color: var(--color-e0e0e0);
     line-height: 1.7;
     margin-bottom: 15px;
     font-size: 16px;
@@ -162,7 +162,7 @@
 }
 
 .privacy-item li {
-    color: #e0e0e0;
+    color: var(--color-e0e0e0);
     margin-bottom: 10px;
     line-height: 1.6;
     opacity: 0;
@@ -195,7 +195,7 @@
 }
 
 .privacy-item strong {
-    color: #fff;
+    color: var(--white);
 }
 
 /* Contact Items */
@@ -221,7 +221,7 @@
 .contact-item i {
     font-size: 18px;
     width: 30px;
-    color: #1ed760;
+    color: var(--primary-color);
     transition: transform 0.3s ease;
 }
 

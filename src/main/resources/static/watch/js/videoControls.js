@@ -101,7 +101,7 @@ export function initVideoControls(videoId) {
         const pct = volumeControl.value * 100;
         volumeControl.style.background = `
       linear-gradient(to right,
-        #1ed760 0%, #1ed760 ${pct}%,
+        var(--primary-color) 0%, var(--primary-color) ${pct}%,
         #555 ${pct}%, #555 100%)
     `;
     }

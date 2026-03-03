@@ -171,7 +171,7 @@ export function initForgotPass() {
             if (data.success) {
                 this.classList.remove('loading');
                 this.innerHTML = '<i class="fas fa-check"></i> E-posta Gönderildi';
-                this.style.backgroundColor = '#1ed760';
+                this.style.backgroundColor = 'var(--primary-color)';
                 currentEmail = userInput;
                 document.getElementById('forgot-email').readOnly = true;
                 verificationSection.style.display = 'block';
@@ -185,13 +185,13 @@ export function initForgotPass() {
                      <div class="email-text">Doğrulama kodu e-posta adresinize gönderildi. Lütfen gelen kutunuzu kontrol edin.</div>`;
                 emailNotification.style.padding = '15px';
                 emailNotification.style.margin = '15px 0';
-                emailNotification.style.backgroundColor = 'rgba(30, 215, 96, 0.1)';
+                emailNotification.style.backgroundColor = 'rgba(var(--primary-rgb), 0.1)';
                 emailNotification.style.borderRadius = '8px';
                 emailNotification.style.display = 'flex';
                 emailNotification.style.alignItems = 'center';
                 const emailIcon = emailNotification.querySelector('.email-icon');
                 emailIcon.style.fontSize = '24px';
-                emailIcon.style.color = '#1ed760';
+                emailIcon.style.color = 'var(--primary-color)';
                 emailIcon.style.marginRight = '15px';
                 forgotPasswordForm.appendChild(emailNotification);
             } else {
@@ -267,7 +267,7 @@ export function initForgotPass() {
 
                 if (data.success) {
                     this.innerHTML = '<i class="fas fa-check"></i> Şifre güncellendi';
-                    this.style.backgroundColor = '#1ed760';
+                    this.style.backgroundColor = 'var(--primary-color)';
 
                     // Başarılı mesaj overlay'ı
                     const successMessage = document.createElement('div');
@@ -293,7 +293,7 @@ export function initForgotPass() {
                     successMessage.style.animation = 'fadeIn 0.5s ease-in-out';
                     const successIcon = successMessage.querySelector('.success-icon');
                     successIcon.style.fontSize = '60px';
-                    successIcon.style.color = '#1ed760';
+                    successIcon.style.color = 'var(--primary-color)';
                     successIcon.style.marginBottom = '20px';
                     successIcon.style.animation = 'popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards';
                     const successText = successMessage.querySelector('.success-text');
@@ -383,7 +383,7 @@ export function initForgotPass() {
                     if (data.success) {
                         currentCode = code;
                         verifyButton.innerHTML = '<i class="fas fa-check"></i> Doğrulandı';
-                        verifyButton.style.backgroundColor = '#1ed760';
+                        verifyButton.style.backgroundColor = 'var(--primary-color)';
 
                         verificationSection.style.display = 'none';
                         if (passwordResetSection) {

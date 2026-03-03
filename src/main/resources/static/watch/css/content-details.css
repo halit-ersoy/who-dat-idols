@@ -1,7 +1,7 @@
 /* Content Details Section Styles */
 .content-details-section {
     margin: 20px 0;
-    background-color: #222;
+    background-color: var(--bg-card);
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
@@ -12,7 +12,7 @@
 }
 
 .details-toggle {
-    background-color: #333;
+    background-color: var(--bg-card-hover);
     padding: 15px 20px;
     display: flex;
     justify-content: space-between;
@@ -22,13 +22,13 @@
 }
 
 .details-toggle:hover {
-    background-color: #444;
+    background-color: var(--border-color);
 }
 
 .details-toggle span {
     font-weight: 600;
     font-size: 18px;
-    color: #1ed760;
+    color: var(--primary-color);
 }
 
 .details-toggle i {
@@ -90,8 +90,8 @@
     position: absolute;
     bottom: 10px;
     right: 10px;
-    background: linear-gradient(45deg, #1ed760, #1db954);
-    color: #000;
+    background: linear-gradient(45deg, var(--primary-color), var(--primary-hover));
+    color: var(--black);
     border-radius: 20px;
     padding: 5px 10px;
     font-weight: bold;
@@ -106,7 +106,7 @@
 }
 
 .rating-badge i {
-    color: #ffb700;
+    color: var(--color-ffb700);
     animation: starPulse 2s infinite alternate;
 }
 
@@ -123,7 +123,7 @@
 }
 
 .details-info h2 {
-    color: #fff;
+    color: var(--white);
     font-size: 26px;
     margin: 0 0 15px 0;
     display: flex;
@@ -141,8 +141,8 @@
 }
 
 .genre-tag {
-    background: rgba(30, 215, 96, 0.15);
-    color: #1ed760;
+    background: rgba(var(--primary-rgb), 0.15);
+    color: var(--primary-color);
     border-radius: 20px;
     padding: 5px 12px;
     font-size: 12px;
@@ -150,24 +150,24 @@
 }
 
 .genre-tag:hover {
-    background: rgba(30, 215, 96, 0.3);
+    background: rgba(var(--primary-rgb), 0.3);
     transform: translateY(-2px);
 }
 
 .details-meta {
-    color: #bbb;
+    color: var(--color-bbbbbb);
     font-size: 14px;
     margin-bottom: 20px;
 }
 
 .separator {
     margin: 0 8px;
-    color: #666;
+    color: var(--color-666666);
 }
 
 .plot-summary {
     line-height: 1.8;
-    color: #eee;
+    color: var(--text-light);
     margin-bottom: 25px;
 }
 
@@ -182,7 +182,7 @@
 .details-section h3 {
     font-size: 18px;
     margin-bottom: 10px;
-    color: #1ed760;
+    color: var(--primary-color);
 }
 
 .cast-list {
@@ -191,7 +191,7 @@
     gap: 15px;
     padding-bottom: 10px;
     scrollbar-width: thin;
-    scrollbar-color: #1ed760 #333;
+    scrollbar-color: var(--primary-color) var(--bg-card-hover);
 }
 
 .cast-list::-webkit-scrollbar {
@@ -199,12 +199,12 @@
 }
 
 .cast-list::-webkit-scrollbar-thumb {
-    background-color: #1ed760;
+    background-color: var(--primary-color);
     border-radius: 10px;
 }
 
 .cast-list::-webkit-scrollbar-track {
-    background-color: #333;
+    background-color: var(--bg-card-hover);
     border-radius: 10px;
 }
 
@@ -240,7 +240,7 @@
     width: 70px;
     height: 70px;
     border-radius: 50%;
-    background-color: #333;
+    background-color: var(--bg-card-hover);
     margin: 0 auto 10px;
     overflow: hidden;
     position: relative;
@@ -254,20 +254,20 @@
 
 .cast-name {
     font-weight: 500;
-    color: #fff;
+    color: var(--white);
     font-size: 13px;
 }
 
 .cast-role {
-    color: #999;
+    color: var(--color-999999);
     font-size: 12px;
 }
 
 .season-info {
-    color: #ddd;
+    color: var(--text-dark-grey);
     font-size: 14px;
     padding: 10px 15px;
-    background-color: #333;
+    background-color: var(--bg-card-hover);
     border-radius: 8px;
     display: inline-block;
 }

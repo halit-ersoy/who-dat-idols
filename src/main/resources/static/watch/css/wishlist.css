@@ -22,7 +22,7 @@
 }
 
 .modal-content {
-    background-color: #222;
+    background-color: var(--bg-card);
     border-radius: 12px;
     width: 90%;
     max-width: 500px;
@@ -31,7 +31,7 @@
     transform: translateY(-30px) scale(0.95);
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(30, 215, 96, 0.3);
+    border: 1px solid rgba(var(--primary-rgb), 0.3);
 }
 
 .modal.show .modal-content {
@@ -40,7 +40,7 @@
 
 .modal-header {
     padding: 15px 20px;
-    background: linear-gradient(to right, #181818, #282828);
+    background: linear-gradient(to right, var(--bg-secondary), var(--bg-tertiary));
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -49,18 +49,18 @@
 
 .modal-header h3 {
     margin: 0;
-    color: #1ed760;
+    color: var(--primary-color);
 }
 
 .close-modal {
-    color: #aaa;
+    color: var(--text-secondary);
     font-size: 28px;
     cursor: pointer;
     transition: color 0.2s ease;
 }
 
 .close-modal:hover {
-    color: #1ed760;
+    color: var(--primary-color);
 }
 
 .modal-body {
@@ -72,7 +72,7 @@
 }
 
 .lists-container h4, .new-list-form h4 {
-    color: #eee;
+    color: var(--text-light);
     margin-top: 0;
     margin-bottom: 15px;
     font-size: 18px;
@@ -86,7 +86,7 @@
     left: 0;
     width: 50px;
     height: 2px;
-    background-color: #1ed760;
+    background-color: var(--primary-color);
 }
 
 .user-lists {
@@ -98,7 +98,7 @@
 }
 
 .list-item {
-    background-color: #333;
+    background-color: var(--bg-card-hover);
     padding: 15px;
     border-radius: 8px;
     cursor: pointer;
@@ -107,26 +107,26 @@
 }
 
 .list-item:hover {
-    background-color: #3a3a3a;
+    background-color: var(--bg-watch-hover);
     transform: translateY(-3px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .list-item.selected {
-    border-color: #1ed760;
-    background-color: rgba(30, 215, 96, 0.1);
+    border-color: var(--primary-color);
+    background-color: rgba(var(--primary-rgb), 0.1);
 }
 
 .list-item h5 {
     margin: 0 0 5px 0;
     font-size: 16px;
-    color: #fff;
+    color: var(--white);
 }
 
 .list-item p {
     margin: 0;
     font-size: 12px;
-    color: #aaa;
+    color: var(--text-secondary);
 }
 
 .input-group {
@@ -137,23 +137,23 @@
 #newListName {
     flex-grow: 1;
     padding: 10px 15px;
-    background-color: #333;
-    border: 2px solid #444;
+    background-color: var(--bg-card-hover);
+    border: 2px solid var(--border-color);
     border-radius: 8px;
-    color: #fff;
+    color: var(--white);
     font-size: 14px;
     transition: all 0.3s ease;
 }
 
 #newListName:focus {
-    border-color: #1ed760;
+    border-color: var(--primary-color);
     outline: none;
-    box-shadow: 0 0 10px rgba(30, 215, 96, 0.3);
+    box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.3);
 }
 
 .btn-create-list {
-    background: linear-gradient(45deg, #1ed760, #1db954);
-    color: #000;
+    background: linear-gradient(45deg, var(--primary-color), var(--primary-hover));
+    color: var(--black);
     border: none;
     padding: 10px 15px;
     border-radius: 8px;
@@ -167,19 +167,19 @@
 
 .btn-create-list:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(30, 215, 96, 0.4);
+    box-shadow: 0 5px 15px rgba(var(--primary-rgb), 0.4);
 }
 
 .loading-spinner {
     text-align: center;
     padding: 20px;
-    color: #aaa;
+    color: var(--text-secondary);
 }
 
 .empty-list-message {
     text-align: center;
     padding: 20px;
-    color: #aaa;
+    color: var(--text-secondary);
     font-style: italic;
 }
 
@@ -199,18 +199,18 @@
 }
 
 .btn-cancel {
-    background-color: #444;
-    color: #ddd;
+    background-color: var(--border-color);
+    color: var(--text-dark-grey);
     border: none;
 }
 
 .btn-cancel:hover {
-    background-color: #555;
+    background-color: var(--border-light);
 }
 
 .btn-save {
-    background: linear-gradient(45deg, #1ed760, #1db954);
-    color: #000;
+    background: linear-gradient(45deg, var(--primary-color), var(--primary-hover));
+    color: var(--black);
     border: none;
     display: flex;
     align-items: center;
@@ -219,7 +219,7 @@
 
 .btn-save:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(30, 215, 96, 0.4);
+    box-shadow: 0 5px 15px rgba(var(--primary-rgb), 0.4);
 }
 
 /* Message styles */
@@ -233,24 +233,24 @@
 }
 
 .success-message {
-    background-color: rgba(30, 215, 96, 0.1);
-    color: #1ed760;
+    background-color: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary-color);
 }
 
 .error-message {
     background-color: rgba(255, 70, 70, 0.1);
-    color: #ff4646;
+    color: var(--danger-color);
 }
 
 /* Add to your watch.css file */
 .list-item.has-video {
-    background-color: rgba(30, 215, 96, 0.1);
-    border-left: 3px solid #1ed760;
+    background-color: rgba(var(--primary-rgb), 0.1);
+    border-left: 3px solid var(--primary-color);
 }
 
 .in-list-badge {
-    background-color: #1ed760;
-    color: #000;
+    background-color: var(--primary-color);
+    color: var(--black);
     padding: 2px 5px;
     border-radius: 4px;
     font-size: 11px;
@@ -260,19 +260,19 @@
 }
 
 .btn-save i.fa-minus {
-    color: #ff4646;
+    color: var(--danger-color);
 }
 
 .glow-button.in-list {
-    background: linear-gradient(45deg, #ff4646, #d32f2f);
+    background: linear-gradient(45deg, var(--danger-color), var(--danger-hover));
 }
 
 .temp-success-message {
     position: absolute;
     right: 20px;
     top: -40px;
-    background-color: rgba(30, 215, 96, 0.9);
-    color: #000;
+    background-color: rgba(var(--primary-rgb), 0.9);
+    color: var(--black);
     padding: 8px 15px;
     border-radius: 5px;
     display: flex;

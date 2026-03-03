@@ -9,7 +9,7 @@
     font-weight: 700;
     margin-bottom: 25px;
     font-family: 'Montserrat', sans-serif;
-    color: #fff;
+    color: var(--white);
     display: flex;
     align-items: center;
     gap: 12px;
@@ -19,7 +19,7 @@
     content: '';
     width: 4px;
     height: 24px;
-    background: #1ed760;
+    background: var(--primary-color);
     border-radius: 2px;
 }
 
@@ -66,10 +66,10 @@
 }
 
 .carousel-nav:hover {
-    background-color: #1ed760;
-    color: #000;
+    background-color: var(--primary-color);
+    color: var(--black);
     transform: scale(1.1);
-    border-color: #1ed760;
+    border-color: var(--primary-color);
 }
 
 .carousel-nav.disabled {
@@ -127,13 +127,13 @@
 .rec-card:hover {
     background: rgba(255, 255, 255, 0.08);
     transform: translateY(-8px) scale(1.02);
-    border-color: rgba(30, 215, 96, 0.4);
+    border-color: rgba(var(--primary-rgb), 0.4);
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
 }
 
 .rec-image {
     height: 140px;
-    background-color: #1a1a1a;
+    background-color: var(--bg-secondary-hover);
     position: relative;
 }
 
@@ -156,13 +156,13 @@
     overflow: hidden;
     text-overflow: ellipsis;
     font-family: 'Montserrat', sans-serif;
-    color: #fff;
+    color: var(--white);
 }
 
 .rec-meta {
     padding: 0 15px 15px 15px;
     font-size: 0.75rem;
-    color: #1ed760;
+    color: var(--primary-color);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -171,15 +171,15 @@
 /* Skeleton animation if not already defined */
 @keyframes skeleton-loading {
     0% {
-        background-color: #1a1a1a;
+        background-color: var(--bg-secondary-hover);
     }
 
     50% {
-        background-color: #2a2a2a;
+        background-color: var(--color-2a2a2a);
     }
 
     100% {
-        background-color: #1a1a1a;
+        background-color: var(--bg-secondary-hover);
     }
 }
 

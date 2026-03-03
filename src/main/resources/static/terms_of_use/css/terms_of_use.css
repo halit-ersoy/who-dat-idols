@@ -46,7 +46,7 @@
 }
 
 .back-button {
-    color: #fff;
+    color: var(--white);
     text-decoration: none;
     font-weight: 500;
     display: flex;
@@ -57,7 +57,7 @@
 }
 
 .back-button:hover {
-    color: #1ed760;
+    color: var(--primary-color);
 }
 
 .terms-hero-content h1 {
@@ -68,7 +68,7 @@
     letter-spacing: -0.5px;
     line-height: 1.2;
     text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-    color: #ffffff;
+    color: var(--white);
     opacity: 0;
     animation: slideInUp 0.8s ease-out forwards;
 }
@@ -78,7 +78,7 @@
     margin-bottom: 32px;
     line-height: 1.7;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-    color: #f0f0f0;
+    color: var(--color-f0f0f0);
     font-weight: 300;
     opacity: 0;
     animation: slideInUp 0.8s ease-out 0.2s forwards;
@@ -87,8 +87,8 @@
 /* Terms Section */
 .terms-section {
     padding: 60px 0;
-    background-color: #121212;
-    color: #ffffff;
+    background-color: var(--bg-input);
+    color: var(--white);
 }
 
 .container {
@@ -100,7 +100,7 @@
 .section-title {
     font-size: 32px;
     margin-bottom: 30px;
-    color: #1ed760;
+    color: var(--primary-color);
     font-weight: 700;
     position: relative;
     padding-bottom: 15px;
@@ -119,7 +119,7 @@
     left: 0;
     width: 60px;
     height: 3px;
-    background-color: #1ed760;
+    background-color: var(--primary-color);
     transition: width 0.3s ease;
 }
 
@@ -227,7 +227,7 @@
 .contact-item i {
     font-size: 20px;
     width: 30px;
-    color: #1ed760;
+    color: var(--primary-color);
     transition: transform 0.3s ease;
 }
 

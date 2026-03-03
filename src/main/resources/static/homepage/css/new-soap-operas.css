@@ -3,11 +3,11 @@
  * ----------------------- */
 
 .new-soap-operas {
-    background-color: #121212;
+    background-color: var(--bg-input);
 }
 
 .new-soap-operas-all-section {
-    background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+    background: linear-gradient(135deg, var(--bg-secondary-hover) 0%, var(--color-0d0d0d) 100%);
     overflow: hidden;
     -webkit-transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -47,7 +47,7 @@
     background: rgba(255, 255, 255, 0.08);
     /* Slightly lighter */
     border: 1px solid rgba(255, 255, 255, 0.15);
-    color: #fff;
+    color: var(--white);
     padding: 12px 20px 12px 45px;
     border-radius: 50px;
     /* Fully rounded pill shape */
@@ -60,8 +60,8 @@
 .all-section-search input:focus {
     outline: none;
     background: rgba(255, 255, 255, 0.12);
-    border-color: #1ed760;
-    box-shadow: 0 0 20px rgba(30, 215, 96, 0.3), inset 0 0 5px rgba(30, 215, 96, 0.1);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.3), inset 0 0 5px rgba(var(--primary-rgb), 0.1);
     transform: scale(1.02);
 }
 
@@ -77,7 +77,7 @@
 }
 
 .all-section-search input:focus+i {
-    color: #1ed760;
+    color: var(--primary-color);
 }
 
 .new-soap-operas-item {
@@ -86,7 +86,7 @@
     transform: translateY(30px);
     -webkit-animation: fadeInUp 0.3s forwards;
     animation: fadeInUp 0.3s forwards;
-    background-color: #1e1e1e;
+    background-color: var(--color-1e1e1e);
     border-radius: 12px;
     /* More rounded corners */
     overflow: hidden;
@@ -97,12 +97,12 @@
 }
 
 .new-soap-operas-item:hover {
-    background-color: #2a2a2a;
+    background-color: var(--color-2a2a2a);
     -webkit-transform: translateY(-8px) scale(1.02);
     transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4), 0 0 15px rgba(30, 215, 96, 0.2);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4), 0 0 15px rgba(var(--primary-rgb), 0.2);
     /* Brand glow */
-    border-color: rgba(30, 215, 96, 0.4);
+    border-color: rgba(var(--primary-rgb), 0.4);
     z-index: 2;
 }
 
@@ -137,7 +137,7 @@
 
 /* Missing Image Placeholder */
 .card-image-container.image-error {
-    background-color: #1a1a1a;
+    background-color: var(--bg-secondary-hover);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -191,9 +191,9 @@
 }
 
 .close-all-btn:hover {
-    background-color: #ff4757;
+    background-color: var(--color-ff4757);
     /* Nice red for close action */
-    border-color: #ff4757;
+    border-color: var(--color-ff4757);
     -webkit-transform: rotate(90deg) scale(1.1);
     transform: rotate(90deg) scale(1.1);
     box-shadow: 0 0 15px rgba(255, 71, 87, 0.4);
@@ -211,7 +211,7 @@
 
 .pagination-btn {
     background: transparent;
-    color: #fff;
+    color: var(--white);
     border: 1px solid rgba(255, 255, 255, 0.2);
     width: 40px;
     height: 40px;
@@ -226,17 +226,17 @@
 }
 
 .pagination-btn:hover {
-    border-color: #1ed760;
-    color: #1ed760;
+    border-color: var(--primary-color);
+    color: var(--primary-color);
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(30, 215, 96, 0.1);
+    box-shadow: 0 5px 15px rgba(var(--primary-rgb), 0.1);
 }
 
 .pagination-btn.active {
-    background: #1ed760;
-    color: #000;
-    border-color: #1ed760;
-    box-shadow: 0 0 15px rgba(30, 215, 96, 0.4);
+    background: var(--primary-color);
+    color: var(--black);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 15px rgba(var(--primary-rgb), 0.4);
     transform: scale(1.1);
 }
 

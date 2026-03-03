@@ -2,7 +2,7 @@
 
 .upcoming-episodes-section {
     padding: 60px 5% 40px;
-    background-color: #121212;
+    background-color: var(--bg-input);
     position: relative;
     z-index: 1;
     overflow: hidden;
@@ -15,7 +15,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: radial-gradient(circle at 50% 50%, rgba(30, 215, 96, 0.05), transparent 70%);
+    background: radial-gradient(circle at 50% 50%, rgba(var(--primary-rgb), 0.05), transparent 70%);
     z-index: -1;
 }
 
@@ -29,7 +29,7 @@
 .upcoming-episodes-title {
     font-size: 24px;
     font-weight: 700;
-    color: #ffffff;
+    color: var(--white);
     letter-spacing: 1px;
     margin: 0;
     font-family: 'Montserrat', sans-serif;
@@ -52,7 +52,7 @@
 .upcoming-toggle-btn {
     background: transparent;
     border: none;
-    color: #aaa;
+    color: var(--text-secondary);
     padding: 8px 18px 8px 22px;
     border-radius: 25px;
     font-size: 14px;
@@ -66,7 +66,7 @@
 }
 
 .upcoming-toggle-btn.active {
-    color: #000;
+    color: var(--black);
 }
 
 .upcoming-episodes-toggle::after {
@@ -76,7 +76,7 @@
     top: 4px;
     height: calc(100% - 8px);
     width: calc(50% - 4px);
-    background-color: #1ed760;
+    background-color: var(--primary-color);
     border-radius: 25px;
     transition: transform 0.3s ease;
     z-index: 1;
@@ -87,7 +87,7 @@
 }
 
 .upcoming-toggle-btn:hover:not(.active) {
-    color: #fff;
+    color: var(--white);
 }
 
 .upcoming-carousel-container {
@@ -129,10 +129,10 @@
 }
 
 .upcoming-carousel-nav:hover {
-    background-color: #1ed760;
-    color: #000;
+    background-color: var(--primary-color);
+    color: var(--black);
     transform: scale(1.1);
-    border-color: #1ed760;
+    border-color: var(--primary-color);
 }
 
 .upcoming-carousel-nav.disabled {
@@ -156,7 +156,7 @@
 .upcoming-card {
     flex: 0 0 240px;
     min-width: 240px;
-    background-color: #181818;
+    background-color: var(--bg-secondary);
     border-radius: 8px;
     overflow: hidden;
     transition: all 0.3s ease;
@@ -165,7 +165,7 @@
 
 .upcoming-card:hover {
     transform: translateY(-8px);
-    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.4), 0 0 20px rgba(30, 215, 96, 0.2);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.4), 0 0 20px rgba(var(--primary-rgb), 0.2);
 }
 
 .upcoming-card-image {
@@ -186,7 +186,7 @@
 }
 
 .upcoming-card-image.no-image {
-    background: linear-gradient(135deg, #282828 0%, #121212 100%);
+    background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-input) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -209,7 +209,7 @@
     transform: translate(-50%, -50%) scale(0);
     width: 50px;
     height: 50px;
-    background-color: #1ed760;
+    background-color: var(--primary-color);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -219,7 +219,7 @@
 }
 
 .upcoming-play-icon i {
-    color: #000;
+    color: var(--black);
     font-size: 20px;
 }
 
@@ -236,7 +236,7 @@
     font-size: 16px;
     font-weight: 600;
     margin: 0 0 5px;
-    color: #fff;
+    color: var(--white);
 }
 
 .upcoming-loading-spinner {
@@ -244,7 +244,7 @@
     height: 40px;
     border: 3px solid rgba(255, 255, 255, 0.2);
     border-radius: 50%;
-    border-top-color: #1ed760;
+    border-top-color: var(--primary-color);
     animation: upcoming-spin 1s linear infinite;
     margin: 50px auto;
 }
@@ -256,7 +256,7 @@
 }
 
 .upcoming-error-message {
-    color: #ff5252;
+    color: var(--color-ff5252);
     text-align: center;
     padding: 30px;
     font-size: 16px;
@@ -305,7 +305,7 @@
 
 .upcoming-progress-bar {
     height: 100%;
-    background-color: #1ed760;
+    background-color: var(--primary-color);
     border-radius: 4px;
     transition: width 0.3s ease;
 }
@@ -314,7 +314,7 @@
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    color: #fff;
+    color: var(--white);
     font-size: 14px;
     font-weight: 600;
     gap: 6px;
@@ -329,8 +329,8 @@
 }
 
 .upcoming-countdown-value {
-    background-color: rgba(30, 215, 96, 0.2);
-    color: #1ed760;
+    background-color: rgba(var(--primary-rgb), 0.2);
+    color: var(--primary-color);
     padding: 2px 4px;
     border-radius: 3px;
     margin-right: 2px;

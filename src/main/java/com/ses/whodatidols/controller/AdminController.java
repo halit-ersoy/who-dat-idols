@@ -157,7 +157,7 @@ public class AdminController {
 
             return ResponseEntity.ok(stats);
         } catch (Exception e) {
-            stats.put("error", e.getMessage());
+            stats.put("error", e.getMessage() != null ? e.getMessage() : "Unknown error");
             return ResponseEntity.status(500).body(stats);
         }
     }
@@ -181,6 +181,7 @@ public class AdminController {
         }
     }
 
+    @SuppressWarnings("null")
     @PostMapping("/clear-cache")
     public ResponseEntity<Map<String, String>> clearCache() {
         cacheManager.getCacheNames().forEach(cacheName -> {

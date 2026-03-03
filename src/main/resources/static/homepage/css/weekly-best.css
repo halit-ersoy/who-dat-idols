@@ -3,7 +3,7 @@
  * ---------------------------- */
 
 .weekly-best-content {
-    background-color: #121212;
+    background-color: var(--bg-input);
 }
 
 .weekly-best-toggle {
@@ -19,7 +19,7 @@
 .weekly-toggle-btn {
     background: transparent;
     border: none;
-    color: #aaa;
+    color: var(--text-secondary);
     padding: 8px 18px;
     border-radius: 25px;
     font-size: 14px;
@@ -34,7 +34,7 @@
 }
 
 .weekly-toggle-btn.active {
-    color: #000;
+    color: var(--black);
 }
 
 .weekly-best-toggle::after {
@@ -44,7 +44,7 @@
     top: 4px;
     height: calc(100% - 8px);
     width: calc(50% - 4px);
-    background-color: #1ed760;
+    background-color: var(--primary-color);
     border-radius: 25px;
     -webkit-transition: transform 0.3s ease;
     transition: transform 0.3s ease;
@@ -57,7 +57,7 @@
 }
 
 .weekly-toggle-btn:hover:not(.active) {
-    color: #fff;
+    color: var(--white);
 }
 
 .weekly-best-grid.loading {
@@ -87,9 +87,9 @@
     transform: translate(-50%, -50%);
     width: 40px;
     height: 40px;
-    border: 3px solid rgba(30, 215, 96, 0.3);
+    border: 3px solid rgba(var(--primary-rgb), 0.3);
     border-radius: 50%;
-    border-top-color: #1ed760;
+    border-top-color: var(--primary-color);
     -webkit-animation: spin 1s linear infinite;
     animation: spin 1s linear infinite;
     z-index: 3;
@@ -114,14 +114,14 @@
     height: 40px;
     border: 3px solid rgba(255, 255, 255, 0.2);
     border-radius: 50%;
-    border-top-color: #1ed760;
+    border-top-color: var(--primary-color);
     -webkit-animation: spin 1s linear infinite;
     animation: spin 1s linear infinite;
     margin: 50px auto;
 }
 
 .error-message {
-    color: #ff5252;
+    color: var(--color-ff5252);
     text-align: center;
     padding: 30px;
     font-size: 16px;
@@ -140,7 +140,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: radial-gradient(circle at 50% 50%, rgba(30, 215, 96, 0.05), transparent 70%);
+    background: radial-gradient(circle at 50% 50%, rgba(var(--primary-rgb), 0.05), transparent 70%);
     z-index: 0;
 }
 
@@ -169,7 +169,7 @@
 .weekly-card {
     flex: 1;
     position: relative;
-    background-color: #181818;
+    background-color: var(--bg-secondary);
     border-radius: 12px;
     overflow: hidden;
     -webkit-transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -197,12 +197,12 @@
 .weekly-card:hover {
     -webkit-transform: translateY(-8px) scale(1.02);
     transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4), 0 0 30px rgba(30, 215, 96, 0.2);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4), 0 0 30px rgba(var(--primary-rgb), 0.2);
     z-index: 2;
 }
 
 .weekly-card:hover::before {
-    color: rgba(30, 215, 96, 0.15);
+    color: rgba(var(--primary-rgb), 0.15);
     -webkit-transform: scale(1.1);
     transform: scale(1.1);
 }
@@ -264,7 +264,7 @@
     transform: translate(-50%, -50%) scale(0);
     width: 60px;
     height: 60px;
-    background-color: #1ed760;
+    background-color: var(--primary-color);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -273,7 +273,7 @@
     -webkit-transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
     transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
     z-index: 3;
-    box-shadow: 0 0 20px rgba(30, 215, 96, 0.5);
+    box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.5);
 }
 
 .weekly-card:hover .play-icon {
@@ -307,7 +307,7 @@
 }
 
 .weekly-card:hover .card-title {
-    color: #1ed760;
+    color: var(--primary-color);
 }
 
 /* Mobile adjustments */

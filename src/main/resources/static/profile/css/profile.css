@@ -2,11 +2,11 @@
 @import url('/elements/footer.css');
 
 :root {
-    --primary-color: #1ed760;
-    --primary-glow: #1ed760;
-    --bg-dark: #0f1014;
-    --text-primary: #ffffff;
-    --text-secondary: #a0a0ba;
+    --primary-color: var(--primary-color);
+    --primary-glow: var(--primary-color);
+    --bg-dark: var(--color-0f1014);
+    --text-primary: var(--white);
+    --text-secondary: var(--color-a0a0ba);
 }
 
 body {
@@ -23,8 +23,8 @@ body {
 }
 
 header {
-    background-color: #121212;
-    color: #fff;
+    background-color: var(--bg-input);
+    color: var(--white);
     padding: 15px 20px;
     display: flex;
     justify-content: space-between;
@@ -43,11 +43,11 @@ header {
     color: var(--primary-color);
     font-family: 'Montserrat', sans-serif;
     letter-spacing: 0.5px;
-    text-shadow: 0 0 10px rgba(30, 215, 96, 0.4);
+    text-shadow: 0 0 10px rgba(var(--primary-rgb), 0.4);
 }
 
 .back-button {
-    color: #fff;
+    color: var(--white);
     text-decoration: none;
     font-weight: 500;
     display: flex;
@@ -76,7 +76,7 @@ header {
     position: absolute;
     width: 600px;
     height: 600px;
-    background: radial-gradient(circle, rgba(30, 215, 96, 0.15) 0%, rgba(15, 16, 20, 0) 70%);
+    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.15) 0%, rgba(15, 16, 20, 0) 70%);
     border-radius: 50%;
     top: 50%;
     left: 50%;
@@ -115,7 +115,7 @@ header {
     color: var(--primary-color);
     margin-bottom: 20px;
     animation: float 3s ease-in-out infinite;
-    filter: drop-shadow(0 0 20px rgba(30, 215, 96, 0.6));
+    filter: drop-shadow(0 0 20px rgba(var(--primary-rgb), 0.6));
 }
 
 @keyframes float {
@@ -137,7 +137,7 @@ header {
     margin: 0;
     line-height: 1;
     letter-spacing: 5px;
-    background: linear-gradient(to right, #fff, var(--primary-color));
+    background: linear-gradient(to right, var(--white), var(--primary-color));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -155,7 +155,7 @@ header {
 .highlight {
     color: var(--primary-color);
     font-weight: 600;
-    text-shadow: 0 0 10px rgba(30, 215, 96, 0.4);
+    text-shadow: 0 0 10px rgba(var(--primary-rgb), 0.4);
 }
 
 .features-preview {
@@ -184,9 +184,9 @@ header {
 
 .feature-item:hover i {
     color: var(--primary-color);
-    background: rgba(30, 215, 96, 0.1);
+    background: rgba(var(--primary-rgb), 0.1);
     transform: scale(1.1);
-    box-shadow: 0 0 15px rgba(30, 215, 96, 0.3);
+    box-shadow: 0 0 15px rgba(var(--primary-rgb), 0.3);
 }
 
 @media (max-width: 768px) {

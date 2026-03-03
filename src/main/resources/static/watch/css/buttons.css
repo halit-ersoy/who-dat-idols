@@ -1,7 +1,7 @@
 /* Control Button Styles */
 .control-button {
-    background-color: #282828;
-    color: #fff;
+    background-color: var(--bg-tertiary);
+    color: var(--white);
     border: none;
     padding: 8px 15px;
     border-radius: 50px;
@@ -16,8 +16,8 @@
 }
 
 .control-button:hover {
-    background-color: #333;
-    color: #1ed760;
+    background-color: var(--bg-card-hover);
+    color: var(--primary-color);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     transform: translateY(-2px);
 }
@@ -34,7 +34,7 @@
     left: 50%;
     width: 5px;
     height: 5px;
-    background: rgba(30, 215, 96, 0.5);
+    background: rgba(var(--primary-rgb), 0.5);
     opacity: 0;
     border-radius: 100%;
     transform: translate(-50%, -50%) scale(1);
@@ -49,8 +49,8 @@
 
 /* Navigation Button Styles */
 .nav-button {
-    background-color: #282828;
-    color: #fff;
+    background-color: var(--bg-tertiary);
+    color: var(--white);
     border: none;
     padding: 10px 20px;
     border-radius: 50px;
@@ -66,8 +66,8 @@
 }
 
 .nav-button:hover:not([disabled]) {
-    background-color: #333;
-    color: #1ed760;
+    background-color: var(--bg-card-hover);
+    color: var(--primary-color);
     transform: translateY(-3px) scale(1.02);
     box-shadow: 0 7px 15px rgba(0, 0, 0, 0.2);
 }
@@ -92,7 +92,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(45deg, transparent 50%, rgba(30, 215, 96, 0.1) 50%);
+    background: linear-gradient(45deg, transparent 50%, rgba(var(--primary-rgb), 0.1) 50%);
     background-size: 200% 200%;
     background-position: 100% 0;
     transition: background-position 0.5s ease;
@@ -110,8 +110,8 @@
 
 /* Glow Button Animation */
 .glow-button {
-    background: linear-gradient(45deg, #1ed760, #1db954);
-    color: #000;
+    background: linear-gradient(45deg, var(--primary-color), var(--primary-hover));
+    color: var(--black);
     border: none;
     padding: 10px 22px;
     border-radius: 50px;
@@ -124,13 +124,13 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    box-shadow: 0 0 10px rgba(30, 215, 96, 0.4);
+    box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.4);
     z-index: 1;
 }
 
 .glow-button:hover {
     transform: scale(1.05);
-    box-shadow: 0 0 20px rgba(30, 215, 96, 0.7);
+    box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.7);
 }
 
 .glow-button i {
@@ -148,7 +148,7 @@
     left: -2px;
     right: -2px;
     bottom: -2px;
-    background: linear-gradient(45deg, #1ed760, #28d86a, #13a346, #1ed760);
+    background: linear-gradient(45deg, var(--primary-color), var(--color-28d86a), var(--color-13a346), var(--primary-color));
     background-size: 400% 400%;
     border-radius: 50px;
     z-index: -1;
@@ -163,8 +163,8 @@
 
 /* Comment Submit Button */
 .comment-submit-btn {
-    background: linear-gradient(45deg, #1ed760, #1db954);
-    color: #000;
+    background: linear-gradient(45deg, var(--primary-color), var(--primary-hover));
+    color: var(--black);
     border: none;
     padding: 10px 20px;
     border-radius: 30px;
@@ -178,5 +178,5 @@
 
 .comment-submit-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(30, 215, 96, 0.4);
+    box-shadow: 0 5px 15px rgba(var(--primary-rgb), 0.4);
 }

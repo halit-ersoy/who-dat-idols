@@ -166,7 +166,7 @@ export function initRegister() {
             if (response.ok) {
                 this.classList.remove('loading');
                 this.innerHTML = '<i class="fas fa-check"></i> Başarılı';
-                this.style.backgroundColor = '#1ed760';
+                this.style.backgroundColor = 'var(--primary-color)';
 
                 if (data.cookie) {
                     localStorage.setItem('wdiUserToken', data.cookie);

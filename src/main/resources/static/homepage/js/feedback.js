@@ -118,7 +118,7 @@ export function initFeedback() {
             if (response.ok && data.success) {
                 submitBtn.classList.remove('loading');
                 submitBtn.innerHTML = '<i class="fas fa-check"></i> Gönderildi';
-                submitBtn.style.backgroundColor = '#1ed760';
+                submitBtn.style.backgroundColor = 'var(--primary-color)';
 
                 setTimeout(() => {
                     closeFeedbackModal();

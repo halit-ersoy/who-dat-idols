@@ -2,6 +2,7 @@
 <html lang="tr">
 
 <head>
+    <script src="/elements/theme.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Erişim Engellendi - WhoDatIdols</title>
@@ -12,7 +13,7 @@
     <style>
         :root {
             --bg-main: #0f0f0f;
-            --primary: #1ed760;
+            --primary: var(--primary-color);
             --primary-hover: #1fdf64;
             --text-main: #ffffff;
             --text-dim: #b3b3b3;
@@ -40,8 +41,8 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
-            background-image: radial-gradient(circle at 10% 20%, rgba(30, 215, 96, 0.05) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(30, 215, 96, 0.05) 0%, transparent 40%);
+            background-image: radial-gradient(circle at 10% 20%, rgba(var(--primary-rgb), 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(var(--primary-rgb), 0.05) 0%, transparent 40%);
             overflow: hidden;
         }
 
@@ -78,7 +79,7 @@
             color: var(--primary);
             margin-bottom: 40px;
             letter-spacing: -1.5px;
-            text-shadow: 0 0 20px rgba(30, 215, 96, 0.4);
+            text-shadow: 0 0 20px rgba(var(--primary-rgb), 0.4);
             display: inline-block;
         }
 
@@ -189,7 +190,7 @@
             outline: none;
             border-color: var(--primary);
             background: rgba(0, 0, 0, 0.4);
-            box-shadow: 0 0 0 4px rgba(30, 215, 96, 0.1);
+            box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.1);
         }
 
         .char-info {
@@ -219,13 +220,13 @@
             align-items: center;
             justify-content: center;
             gap: 12px;
-            box-shadow: 0 4px 15px rgba(30, 215, 96, 0.3);
+            box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.3);
         }
 
         .btn:hover {
             background: var(--primary-hover);
             transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(30, 215, 96, 0.4);
+            box-shadow: 0 8px 25px rgba(var(--primary-rgb), 0.4);
         }
 
         .btn:active {
@@ -243,10 +244,10 @@
         #success {
             display: none;
             color: var(--primary);
-            background: rgba(30, 215, 96, 0.1);
+            background: rgba(var(--primary-rgb), 0.1);
             padding: 20px;
             border-radius: 16px;
-            border: 1px solid rgba(30, 215, 96, 0.2);
+            border: 1px solid rgba(var(--primary-rgb), 0.2);
             font-weight: 600;
             text-align: center;
             animation: slideUp 0.5s ease;
@@ -264,6 +265,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="/elements/variables.css">
 </head>
 
 <body>

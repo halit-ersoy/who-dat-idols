@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
             initNotificationToggles();
             initMessageToggles(userData.allowMessages);
             setupProfilePhotoUpload(userData);
+            initThemeSelector();
         })
         .catch(error => {
             console.error('Initialization error:', error);
@@ -246,7 +247,7 @@ function initVerification() {
 
                 if (response.ok && data.success) {
                     submitBtn.innerHTML = '<i class="fas fa-check"></i> Doğrulandı';
-                    submitBtn.style.backgroundColor = '#1ed760';
+                    submitBtn.style.backgroundColor = 'var(--primary-color)';
 
                     setTimeout(() => {
                         modal.style.display = 'none';
@@ -358,7 +359,7 @@ function resetPasswordInputs(...inputs) {
     setTimeout(() => {
         const btn = document.getElementById('update-password-btn');
         btn.innerHTML = 'Şifreyi Güncelle';
-        btn.style.backgroundColor = '#1ed760';
+        btn.style.backgroundColor = 'var(--primary-color)';
         btn.disabled = false;
     }, 2000);
 }
@@ -663,4 +664,41 @@ function setupProfilePhotoUpload(userData) {
             }
         });
     }
+}
+
+/**
+ * Initializes the theme selector buttons.
+ */
+function initThemeSelector() {
+    const themeBtns = document.querySelectorAll('.theme-btn');
+    if (themeBtns.length === 0) return;
+
+    // Get current theme from localStorage or default to green
+    const currentTheme = localStorage.getItem('wdi-theme') || 'green';
+
+    // Set initial active state
+    themeBtns.forEach(btn => {
+        if (btn.dataset.themeValue === currentTheme) {
+            btn.classList.add('active');
+        }
+
+        btn.addEventListener('click', () => {
+            const selectedTheme = btn.dataset.themeValue;
+
+            // Remove active class from all buttons
+            themeBtns.forEach(b => b.classList.remove('active'));
+            // Add active class to clicked button
+            btn.classList.add('active');
+
+            // Save to localStorage
+            localStorage.setItem('wdi-theme', selectedTheme);
+
+            // Apply immediately to current document
+            if (selectedTheme === 'green') {
+                document.documentElement.removeAttribute('data-theme');
+            } else {
+                document.documentElement.setAttribute('data-theme', selectedTheme);
+            }
+        });
+    });
 }

@@ -91,9 +91,9 @@
         left: 5% !important;
         width: 90% !important;
         max-height: 70vh !important;
-        background: #111 !important;
+        background: var(--color-111111) !important;
         z-index: 2000 !important;
-        border: 1px solid #333 !important;
+        border: 1px solid var(--bg-card-hover) !important;
         border-radius: 8px !important;
         opacity: 0;
         visibility: hidden;
@@ -125,7 +125,7 @@
         left: 0 !important;
         width: 100% !important;
         height: 100% !important;
-        background: #000 !important;
+        background: var(--black) !important;
         z-index: 1001 !important;
         display: flex !important;
         align-items: center !important;
@@ -138,8 +138,8 @@
         height: 40px !important;
         padding: 0 15px !important;
         border-radius: 20px !important;
-        background: #222 !important;
-        border: 1px solid #333 !important;
+        background: var(--bg-card) !important;
+        border: 1px solid var(--bg-card-hover) !important;
     }
 
     .user-controls {
@@ -229,7 +229,7 @@
         width: 100% !important;
         height: 100% !important;
         margin: 0 !important;
-        background: #111 !important;
+        background: var(--color-111111) !important;
         z-index: 1001 !important;
         display: flex !important;
         align-items: center !important;

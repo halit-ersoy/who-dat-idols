@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -40,10 +39,12 @@ public class CacheService {
 
         logger.info("Evicting content caches for instant update...");
         for (String cacheName : cachesToEvict) {
-            org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
-            if (cache != null) {
-                cache.clear();
-                logger.debug("Cleared cache: {}", cacheName);
+            if (cacheName != null) {
+                org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
+                if (cache != null) {
+                    cache.clear();
+                    logger.debug("Cleared cache: {}", cacheName);
+                }
             }
         }
     }

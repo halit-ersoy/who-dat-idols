@@ -507,6 +507,7 @@ public class SeriesRepository {
         }
     }
 
+    @SuppressWarnings("null")
     public int countAllSeries(String seriesType) {
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Series S WHERE 1=1");
         java.util.List<Object> params = new java.util.ArrayList<>();
@@ -524,6 +525,7 @@ public class SeriesRepository {
         return count != null ? count : 0;
     }
 
+    @SuppressWarnings("null")
     public int countSeriesBySearch(String query, String seriesType) {
         String likeQuery = "%" + query.trim().toLowerCase() + "%";
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Series S WHERE LOWER(S.name) LIKE ?");
@@ -543,6 +545,7 @@ public class SeriesRepository {
         return count != null ? count : 0;
     }
 
+    @SuppressWarnings("null")
     public List<Series> findRecentSeriesPaged(String seriesType, int offset, int limit) {
         StringBuilder sql = new StringBuilder(
                 """
@@ -571,6 +574,7 @@ public class SeriesRepository {
         return jdbcTemplate.query(sql.toString(), seriesRowMapper, params.toArray());
     }
 
+    @SuppressWarnings("null")
     public List<Series> searchSeriesPaged(String query, String seriesType, int offset, int limit) {
         String likeQuery = "%" + query.trim().toLowerCase() + "%";
         StringBuilder sql = new StringBuilder(

@@ -1421,7 +1421,7 @@
                                         <span class="meta-item"><i class="fas fa-globe"></i> ${series.language || '-'}</span>
                                         <span class="meta-item"><i class="fas fa-video"></i> ${episodeCount} Bölüm</span>
                                         ${series.finalStatus === 1 ? '<span class="meta-item" style="color:#ffc107; font-weight:bold;"><i class="fas fa-check-circle"></i> FİNAL</span>' : ''}
-                                        ${series.finalStatus === 2 ? '<span class="meta-item" style="color:#1ed760; font-weight:bold;"><i class="fas fa-play-circle"></i> SEZON FİNALİ</span>' : ''}
+                                        ${series.finalStatus === 2 ? '<span class="meta-item" style="color:var(--primary-color); font-weight:bold;"><i class="fas fa-play-circle"></i> SEZON FİNALİ</span>' : ''}
                                     </div>
                                 </div>
                             </div>
@@ -2386,7 +2386,7 @@
                 data.forEach(item => {
                     const tr = document.createElement('tr');
                     const catBadge = item.Category === 'Translated' ?
-                        '<span class="badge" style="background: #1ed760; color: #fff; padding: 4px 8px; border-radius: 4px; font-weight: 700;">ÇEVRİLEN</span>' :
+                        '<span class="badge" style="background: var(--primary-color); color: #fff; padding: 4px 8px; border-radius: 4px; font-weight: 700;">ÇEVRİLEN</span>' :
                         '<span class="badge" style="background: #6c757d; color: #fff; padding: 4px 8px; border-radius: 4px; font-weight: 700;">BEKLENEN</span>';
 
                     tr.innerHTML = `
@@ -2688,7 +2688,7 @@
                     const isBanned = user.isBanned;
                     const statusBadge = isBanned ?
                         '<span class="badge" style="background:#dc3545; color:#fff; padding:4px 8px; border-radius:4px; font-weight: 700;">Yasaklı</span>' :
-                        '<span class="badge" style="background:#1ed760; color:#fff; padding:4px 8px; border-radius:4px; font-weight: 700;">Aktif</span>';
+                        '<span class="badge" style="background:var(--primary-color); color:#fff; padding:4px 8px; border-radius:4px; font-weight: 700;">Aktif</span>';
 
                     const nicknameDisplay = escapeHtml(user.nickname || '-');
                     const emailDisplay = escapeHtml(user.email || '-');
@@ -2702,7 +2702,7 @@
 
                     tr.innerHTML = `
                         <td>
-                            <div onclick="openProfilePhotoPreview(this, '${avatarUrl}')" data-has-photo="true" style="width: 35px; height: 35px; border-radius: 50%; background-color: #1ed760; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; position: relative; overflow: hidden; font-size: 14px; cursor: pointer; transition: transform 0.2s;" onmouseover="if(this.dataset.hasPhoto==='true') this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                            <div onclick="openProfilePhotoPreview(this, '${avatarUrl}')" data-has-photo="true" style="width: 35px; height: 35px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; position: relative; overflow: hidden; font-size: 14px; cursor: pointer; transition: transform 0.2s;" onmouseover="if(this.dataset.hasPhoto==='true') this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
                                 <span style="pointer-events: none;">${initialLetter}</span>
                                 <img src="${avatarUrl}" onerror="this.style.display='none'; this.parentElement.dataset.hasPhoto='false'; this.parentElement.style.cursor='default'; this.parentElement.style.transform='none';" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; z-index: 1; pointer-events: none;">
                             </div>
@@ -2725,7 +2725,7 @@
                                         <div class="role-option ${user.role === 'GELISTIRICI' ? 'active' : ''}" data-role="GELISTIRICI" onclick="updateUserRoleUnified('${user.id}', 'GELISTIRICI', this)">Gelistirici</div>
                                     </div>
                                 </div>
-                                ${user.isVerified ? '<span title="Doğrulanmış Hesap" style="color: #1ed760; font-size: 1.2rem; cursor: help;"><i class="fas fa-check-circle"></i></span>' : ''}
+                                ${user.isVerified ? '<span title="Doğrulanmış Hesap" style="color: var(--primary-color); font-size: 1.2rem; cursor: help;"><i class="fas fa-check-circle"></i></span>' : ''}
                             </div>
                         </td>
                         <td>${statusBadge}</td>
@@ -2882,7 +2882,7 @@
 
         const statusBadge = mode === 'pending'
             ? `<span class="badge badge-warning">Onay Bekliyor</span>`
-            : `<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(30,215,96,0.12);color:#1ed760;border:1px solid rgba(30,215,96,0.3);"><i class="fas fa-check-circle" style="font-size:10px;"></i> Onaylı</span>`;
+            : `<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(var(--primary-rgb), 0.12);color:var(--primary-color);border:1px solid rgba(var(--primary-rgb), 0.3);"><i class="fas fa-check-circle" style="font-size:10px;"></i> Onaylı</span>`;
 
         tr.innerHTML = `
             <td>
@@ -3130,9 +3130,9 @@
                                 border-radius: 20px;
                                 font-size: 12px;
                                 font-weight: 600;
-                                background: ${note.active ? 'rgba(30, 215, 96, 0.12)' : 'rgba(255,255,255,0.05)'};
-                                color: ${note.active ? '#1ed760' : 'rgba(255,255,255,0.4)'};
-                                border: 1px solid ${note.active ? 'rgba(30, 215, 96, 0.3)' : 'rgba(255,255,255,0.1)'};
+                                background: ${note.active ? 'rgba(var(--primary-rgb), 0.12)' : 'rgba(255,255,255,0.05)'};
+                                color: ${note.active ? 'var(--primary-color)' : 'rgba(255,255,255,0.4)'};
+                                border: 1px solid ${note.active ? 'rgba(var(--primary-rgb), 0.3)' : 'rgba(255,255,255,0.1)'};
                             ">
                                 <i class="fas ${note.active ? 'fa-circle-check' : 'fa-circle-xmark'}" style="font-size: 10px;"></i>
                                 ${note.active ? 'Aktif' : 'Pasif'}
@@ -3146,15 +3146,15 @@
                                     gap: 7px;
                                     padding: 7px 14px;
                                     border-radius: 10px;
-                                    border: 1px solid ${note.active ? 'rgba(255, 180, 0, 0.3)' : 'rgba(30, 215, 96, 0.3)'};
-                                    background: ${note.active ? 'rgba(255, 180, 0, 0.08)' : 'rgba(30, 215, 96, 0.08)'};
-                                    color: ${note.active ? '#f5a623' : '#1ed760'};
+                                    border: 1px solid ${note.active ? 'rgba(255, 180, 0, 0.3)' : 'rgba(var(--primary-rgb), 0.3)'};
+                                    background: ${note.active ? 'rgba(255, 180, 0, 0.08)' : 'rgba(var(--primary-rgb), 0.08)'};
+                                    color: ${note.active ? '#f5a623' : 'var(--primary-color)'};
                                     cursor: pointer;
                                     font-size: 12px;
                                     font-weight: 600;
                                     font-family: inherit;
                                     transition: all 0.2s ease;
-                                " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px ${note.active ? 'rgba(255,180,0,0.2)' : 'rgba(30,215,96,0.2)'}'"
+                                " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px ${note.active ? 'rgba(255,180,0,0.2)' : 'rgba(var(--primary-rgb), 0.2)'}'"
                                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
                                     <i class="fas ${note.active ? 'fa-eye-slash' : 'fa-eye'}" style="font-size: 11px;"></i>
                                     ${note.active ? 'Pasif Yap' : 'Aktif Yap'}

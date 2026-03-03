@@ -60,14 +60,14 @@ export function showReportModal(nickname, context, callback) {
 
         callback(fullReason).then(success => {
             if (success) {
-                overlay.querySelector('.premium-modal-header i').style.color = '#1ed760';
+                overlay.querySelector('.premium-modal-header i').style.color = 'var(--primary-color)';
                 overlay.querySelector('.premium-modal-header i').className = 'fas fa-check-circle';
-                overlay.querySelector('.premium-modal-header i').style.filter = 'drop-shadow(0 0 15px rgba(30, 215, 96, 0.4))';
+                overlay.querySelector('.premium-modal-header i').style.filter = 'drop-shadow(0 0 15px rgba(var(--primary-rgb), 0.4))';
                 overlay.querySelector('.premium-modal-header h2').innerText = 'Bildirim Alındı';
                 overlay.querySelector('.premium-modal-header p').innerHTML = 'Geri bildiriminiz için teşekkürler.<br>Topluluğumuzu birlikte koruyoruz.';
                 overlay.querySelector('.premium-modal-body').style.display = 'none';
                 overlay.querySelector('.premium-modal-footer').innerHTML = `
-                    <button class="premium-btn premium-btn-submit" style="background: #1ed760; color: #000; box-shadow: 0 5px 15px rgba(30, 215, 96, 0.3);">KAPAT</button>
+                    <button class="premium-btn premium-btn-submit" style="background: var(--primary-color); color: #000; box-shadow: 0 5px 15px rgba(var(--primary-rgb), 0.3);">KAPAT</button>
                 `;
                 overlay.querySelector('.premium-btn-submit').onclick = closeModal;
             } else {

@@ -5,7 +5,7 @@
 /* Card Styles */
 .card {
     flex: 0 0 220px;
-    background-color: #181818;
+    background-color: var(--bg-secondary);
     border-radius: 8px;
     overflow: hidden;
     transition: all 0.3s ease;
@@ -13,7 +13,7 @@
 }
 
 .card:hover {
-    background-color: #282828;
+    background-color: var(--bg-tertiary);
     transform: translateY(-10px);
 }
 
@@ -42,7 +42,7 @@
     transform: translate(-50%, -50%) scale(0);
     width: 50px;
     height: 50px;
-    background-color: #1ed760;
+    background-color: var(--primary-color);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -52,7 +52,7 @@
 }
 
 .play-icon i {
-    color: #000;
+    color: var(--black);
     font-size: 20px;
 }
 
@@ -77,7 +77,7 @@
 
 .card-info {
     font-size: 14px;
-    color: #aaa;
+    color: var(--text-secondary);
     margin: 0;
 }
 

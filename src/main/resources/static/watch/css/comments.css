@@ -11,7 +11,7 @@
     font-weight: 600;
     margin-bottom: 10px;
     font-family: 'Montserrat', sans-serif;
-    color: #fff;
+    color: var(--white);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -20,20 +20,20 @@
 .comments-section h3::before {
     content: '\f075';
     font-family: 'Font Awesome 5 Free', serif;
-    color: #1ed760;
+    color: var(--primary-color);
 }
 
 .comment-count {
-    background: rgba(30, 215, 96, 0.2);
+    background: rgba(var(--primary-rgb), 0.2);
     border-radius: 20px;
     padding: 3px 10px;
     font-size: 14px;
     margin-left: 10px;
-    color: #1ed760;
+    color: var(--primary-color);
 }
 
 .comments-container {
-    background-color: #181818;
+    background-color: var(--bg-secondary);
     border-radius: 12px;
     padding: 25px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
@@ -55,11 +55,11 @@
     width: 42px;
     height: 42px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #333, #222);
+    background: linear-gradient(135deg, var(--bg-card-hover), var(--bg-card));
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #1ed760;
+    color: var(--primary-color);
     font-weight: 700;
     font-size: 1.1rem;
     flex-shrink: 0;
@@ -71,9 +71,9 @@
 }
 
 .comment-form:focus-within .user-avatar {
-    border-color: #1ed760;
+    border-color: var(--primary-color);
     transform: scale(1.05) rotate(-5deg);
-    box-shadow: 0 5px 15px rgba(30, 215, 96, 0.3);
+    box-shadow: 0 5px 15px rgba(var(--primary-rgb), 0.3);
 }
 
 #commentForm {
@@ -89,10 +89,10 @@
 #commentText {
     width: 100%;
     min-height: 80px;
-    background-color: #282828;
-    border: 2px solid #333;
+    background-color: var(--bg-tertiary);
+    border: 2px solid var(--bg-card-hover);
     border-radius: 12px;
-    color: #fff;
+    color: var(--white);
     padding: 15px;
     font-family: 'Roboto', sans-serif;
     font-size: 15px;
@@ -104,11 +104,11 @@
 }
 
 #commentText:focus {
-    border-color: #1ed760;
+    border-color: var(--primary-color);
     outline: none;
-    box-shadow: 0 0 20px rgba(30, 215, 96, 0.3);
+    box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.3);
     transform: translateY(-2px);
-    background-color: #2a2a2a;
+    background-color: var(--color-2a2a2a);
 }
 
 .char-counter {
@@ -116,7 +116,7 @@
     right: 15px;
     bottom: 70px;
     font-size: 12px;
-    color: #888;
+    color: var(--text-muted);
     opacity: 0;
     transition: opacity 0.3s ease;
 }
@@ -136,7 +136,7 @@
 }
 
 .comment-card {
-    background-color: #282828;
+    background-color: var(--bg-tertiary);
     border-radius: 12px;
     padding: 18px;
     margin-bottom: 20px;
@@ -150,7 +150,7 @@
 .comment-card:hover {
     transform: translateY(-3px) scale(1.01);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-    background-color: #2d2d2d;
+    background-color: var(--color-2d2d2d);
 }
 
 @keyframes commentSlideIn {
@@ -169,7 +169,7 @@
 
 .comment-user {
     font-weight: 600;
-    color: #1ed760;
+    color: var(--primary-color);
     display: flex;
     align-items: center;
 }
@@ -185,7 +185,7 @@
     left: 0;
     width: 0;
     height: 2px;
-    background: #1ed760;
+    background: var(--primary-color);
     transition: width 0.3s ease;
 }
 
@@ -194,7 +194,7 @@
 }
 
 .comment-date {
-    color: #888;
+    color: var(--text-muted);
     font-size: 12px;
     display: flex;
     align-items: center;
@@ -209,7 +209,7 @@
 }
 
 .comment-content {
-    color: #eee;
+    color: var(--text-light);
     line-height: 1.7;
     font-size: 15px;
     word-wrap: break-word;
@@ -234,7 +234,7 @@
 .action-button {
     background: none;
     border: none;
-    color: #999;
+    color: var(--color-999999);
     display: flex;
     align-items: center;
     gap: 5px;
@@ -246,12 +246,12 @@
 }
 
 .action-button:hover {
-    color: #1ed760;
-    background: rgba(30, 215, 96, 0.1);
+    color: var(--primary-color);
+    background: rgba(var(--primary-rgb), 0.1);
 }
 
 .action-button.liked {
-    color: #1ed760;
+    color: var(--primary-color);
 }
 
 .like-animation {
@@ -273,22 +273,22 @@
 }
 
 .no-comments {
-    color: #888;
+    color: var(--text-muted);
     font-style: italic;
     text-align: center;
     padding: 30px 10px;
-    background: #242424;
+    background: var(--color-242424);
     border-radius: 10px;
     animation: pulse 2s infinite alternate;
 }
 
 @keyframes pulse {
     from {
-        background-color: #242424;
+        background-color: var(--color-242424);
     }
 
     to {
-        background-color: #282828;
+        background-color: var(--bg-tertiary);
     }
 }
 
@@ -366,19 +366,19 @@
 
 /* Reply Section */
 .reply-form-container {
-    background: #222;
+    background: var(--bg-card);
     padding: 15px;
     border-radius: 8px;
     margin-top: 15px;
-    border-left: 3px solid #1ed760;
+    border-left: 3px solid var(--primary-color);
     animation: slideDown 0.3s ease;
 }
 
 .comment-input {
     width: 100%;
-    background: #333;
-    border: 1px solid #444;
-    color: #fff;
+    background: var(--bg-card-hover);
+    border: 1px solid var(--border-color);
+    color: var(--white);
     padding: 10px;
     border-radius: 6px;
     resize: vertical;
@@ -388,7 +388,7 @@
 
 .comment-input:focus {
     outline: none;
-    border-color: #1ed760;
+    border-color: var(--primary-color);
 }
 
 .comment-button-container {
@@ -398,8 +398,8 @@
 }
 
 .submit-comment-btn {
-    background: #1ed760;
-    color: #000;
+    background: var(--primary-color);
+    color: var(--black);
     border: none;
     padding: 8px 20px;
     border-radius: 20px;
@@ -409,16 +409,16 @@
 }
 
 .submit-comment-btn:hover {
-    background: #1fdf64;
+    background: var(--color-1fdf64);
     transform: scale(1.05);
 }
 
 .action-button.liked i {
-    color: #1ed760;
+    color: var(--primary-color);
 }
 
 .action-button.reply-btn:hover {
-    color: #fff;
+    color: var(--white);
 }
 
 /* Spoiler Toggle Styles */
@@ -428,7 +428,7 @@
     gap: 8px;
     cursor: pointer;
     font-size: 13px;
-    color: #888;
+    color: var(--text-muted);
     transition: all 0.3s ease;
     user-select: none;
     padding: 5px 10px;
@@ -438,7 +438,7 @@
 }
 
 .spoiler-toggle:hover {
-    color: #ff3860;
+    color: var(--color-ff3860);
     background: rgba(255, 56, 96, 0.05);
     border-color: rgba(255, 56, 96, 0.2);
 }
@@ -448,7 +448,7 @@
 }
 
 .spoiler-toggle input:checked+.toggle-text {
-    color: #ff3860;
+    color: var(--color-ff3860);
     font-weight: 600;
 }
 
@@ -509,16 +509,16 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(circle at center, rgba(30, 215, 96, 0.05) 0%, transparent 70%);
+    background: radial-gradient(circle at center, rgba(var(--primary-rgb), 0.05) 0%, transparent 70%);
     opacity: 0;
     transition: opacity 0.4s ease;
 }
 
 .spoiler-overlay:hover {
     background: rgba(20, 20, 20, 0.85);
-    border-color: rgba(30, 215, 96, 0.4);
+    border-color: rgba(var(--primary-rgb), 0.4);
     transform: translateY(-2px) scale(1.01);
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(30, 215, 96, 0.1);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(var(--primary-rgb), 0.1);
 }
 
 .spoiler-overlay:hover::before {
@@ -539,14 +539,14 @@
 }
 
 .spoiler-info i {
-    color: #1ed760;
+    color: var(--primary-color);
     font-size: 16px;
-    filter: drop-shadow(0 0 5px rgba(30, 215, 96, 0.5));
+    filter: drop-shadow(0 0 5px rgba(var(--primary-rgb), 0.5));
 }
 
 .btn-reveal {
-    background: linear-gradient(135deg, #1ed760 0%, #1db954 100%);
-    color: #000;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+    color: var(--black);
     border: none;
     padding: 8px 20px;
     border-radius: 50px;
@@ -556,13 +556,13 @@
     letter-spacing: 1.2px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    box-shadow: 0 4px 12px rgba(30, 215, 96, 0.2);
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.2);
 }
 
 .btn-reveal:hover {
-    background: linear-gradient(135deg, #1fdf64 0%, #1ed760 100%);
+    background: linear-gradient(135deg, var(--color-1fdf64) 0%, var(--primary-color) 100%);
     transform: translateY(-1px);
-    box-shadow: 0 6px 15px rgba(30, 215, 96, 0.3);
+    box-shadow: 0 6px 15px rgba(var(--primary-rgb), 0.3);
 }
 
 /* Login Warning for unauthenticated users */
@@ -583,12 +583,12 @@
 
 .login-warning i {
     font-size: 40px;
-    color: #1ed760;
+    color: var(--primary-color);
     opacity: 0.8;
 }
 
 .login-warning p {
-    color: #ccc;
+    color: var(--text-grey);
     font-size: 16px;
     margin: 0;
 }
@@ -622,32 +622,32 @@
 }
 
 .admin-badge {
-    background: linear-gradient(135deg, #00c853 0%, #00e676 50%, #69f0ae 100%);
-    color: #000;
+    background: linear-gradient(135deg, var(--color-00c853) 0%, var(--color-00e676) 50%, var(--color-69f0ae) 100%);
+    color: var(--black);
     box-shadow: 0 0 15px rgba(0, 200, 83, 0.4), inset 0 0 5px rgba(255, 255, 255, 0.5);
 }
 
 .super-admin-badge {
-    background: linear-gradient(135deg, #ffab00 0%, #ffc400 50%, #ffd600 100%);
-    color: #000;
+    background: linear-gradient(135deg, var(--color-ffab00) 0%, var(--color-ffc400) 50%, var(--color-ffd600) 100%);
+    color: var(--black);
     box-shadow: 0 0 15px rgba(255, 171, 0, 0.4), inset 0 0 5px rgba(255, 255, 255, 0.5);
 }
 
 .translator-badge {
-    background: linear-gradient(135deg, #2979ff 0%, #448aff 50%, #82b1ff 100%);
-    color: #fff;
+    background: linear-gradient(135deg, var(--color-2979ff) 0%, var(--color-448aff) 50%, var(--color-82b1ff) 100%);
+    color: var(--white);
     box-shadow: 0 0 15px rgba(41, 121, 255, 0.4), inset 0 0 5px rgba(255, 255, 255, 0.5);
 }
 
 .founder-badge {
-    background: linear-gradient(135deg, #660000 0%, #8b0000 50%, #b22222 100%);
-    color: #fff;
+    background: linear-gradient(135deg, var(--color-660000) 0%, var(--color-8b0000) 50%, var(--color-b22222) 100%);
+    color: var(--white);
     box-shadow: 0 0 15px rgba(139, 0, 0, 0.5), inset 0 0 5px rgba(255, 255, 255, 0.3);
 }
 
 .developer-badge {
-    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2a2a2a 100%);
-    color: #fff;
+    background: linear-gradient(135deg, var(--color-0a0a0a) 0%, var(--bg-secondary-hover) 50%, var(--color-2a2a2a) 100%);
+    color: var(--white);
     border: 1px solid rgba(255, 255, 255, 0.15);
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.8), inset 0 0 5px rgba(255, 255, 255, 0.1);
 }

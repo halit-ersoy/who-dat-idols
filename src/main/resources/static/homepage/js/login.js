@@ -200,7 +200,7 @@ export function initLogin() {
             if (isSuccess) {
                 this.classList.remove('loading');
                 this.innerHTML = '<i class="fas fa-check"></i> Başarılı';
-                this.style.backgroundColor = '#1ed760';
+                this.style.backgroundColor = 'var(--primary-color)';
                 localStorage.setItem('wdiUserToken', data.cookie);
                 localStorage.setItem('wdiUserNickname', data.nickname);
 

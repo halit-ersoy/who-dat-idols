@@ -7,7 +7,7 @@
 
 /* Watch Container Styles */
 .watch-container {
-    background-color: #181818;
+    background-color: var(--bg-secondary);
     border-radius: 12px;
     padding: 25px;
     margin-bottom: 40px;
@@ -21,7 +21,7 @@
     margin-bottom: 30px;
     font-weight: 700;
     font-family: 'Montserrat', sans-serif;
-    color: #fff;
+    color: var(--white);
     opacity: 0;
     animation: fadeInDown 0.8s forwards;
     display: inline-block;
@@ -40,6 +40,6 @@
 }
 
 .info-bar span {
-    color: #aaa;
+    color: var(--text-secondary);
     font-size: 14px;
 }

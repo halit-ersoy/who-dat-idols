@@ -47,10 +47,10 @@
 }
 
 .carousel-nav:hover {
-    background-color: #1ed760;
-    color: #000;
+    background-color: var(--primary-color);
+    color: var(--black);
     transform: scale(1.1);
-    border-color: #1ed760;
+    border-color: var(--primary-color);
 }
 
 .carousel-nav.disabled {
