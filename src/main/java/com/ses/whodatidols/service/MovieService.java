@@ -278,10 +278,10 @@ public class MovieService {
 
         Path finalPath = uploadPath.resolve(id.toString() + ".jpg");
         try {
-            ImageUtils.saveImageFromUrlAsJpg(imageUrl, finalPath);
+            ImageUtils.saveAsJpg(new java.io.ByteArrayInputStream(imageBytes), finalPath);
         } catch (Exception e) {
             System.err.println("JPG dönüşüm hatası (URL): " + e.getMessage());
-            throw new RuntimeException("JPG_CONVERSION_ERROR_URL: " + e.getMessage(), e);
+            Files.write(finalPath, imageBytes);
         }
     }
 

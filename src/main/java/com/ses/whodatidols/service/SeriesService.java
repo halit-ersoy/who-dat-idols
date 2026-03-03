@@ -392,10 +392,10 @@ public class SeriesService {
         }
         Path finalPath = uploadPath.resolve(id.toString() + ".jpg");
         try {
-            ImageUtils.saveImageFromUrlAsJpg(imageUrl, finalPath);
+            ImageUtils.saveAsJpg(new java.io.ByteArrayInputStream(imageBytes), finalPath);
         } catch (Exception e) {
             System.err.println("JPG dönüşüm hatası (URL): " + e.getMessage());
-            Files.write(uploadPath.resolve(id.toString() + ".jpg"), imageBytes);
+            Files.write(finalPath, imageBytes);
         }
     }
 

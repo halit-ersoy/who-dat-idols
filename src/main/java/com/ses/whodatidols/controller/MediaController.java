@@ -109,9 +109,12 @@ public class MediaController {
                 mediaType = MediaType.IMAGE_JPEG;
             }
 
+            long lastModified = Files.getLastModifiedTime(imagePath).toMillis();
+
             return ResponseEntity.ok()
                     .contentType(mediaType)
-                    .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(1)))
+                    .lastModified(lastModified)
+                    .cacheControl(CacheControl.noCache().mustRevalidate())
                     .body(new UrlResource(imagePath.toUri()));
         } catch (IOException e) {
             logger.error("Error serving profile image for id {}: {}", id, e.getMessage());
@@ -277,9 +280,12 @@ public class MediaController {
                 mediaType = MediaType.IMAGE_JPEG;
             }
 
+            long lastModified = Files.getLastModifiedTime(imagePath).toMillis();
+
             return ResponseEntity.ok()
                     .contentType(mediaType)
-                    .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(1)))
+                    .lastModified(lastModified)
+                    .cacheControl(CacheControl.noCache().mustRevalidate())
                     .body(new UrlResource(imagePath.toUri()));
 
         } catch (IOException e) {

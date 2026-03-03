@@ -970,6 +970,7 @@
     }
 
     window.editMovie = function (movie, event) {
+        lastFetchedPosterUrl = ""; // Reset stale URL
         if (event && (event.shiftKey || event.ctrlKey || event.metaKey)) {
             const url = new URL(window.location.href);
             url.searchParams.set('editMovie', movie.id);
@@ -1555,6 +1556,7 @@
     };
 
     window.editSeriesMetadata = function (series, event) {
+        lastFetchedPosterUrl = ""; // Reset stale URL
         if (event && (event.shiftKey || event.ctrlKey || event.metaKey)) {
             const url = new URL(window.location.href);
             url.searchParams.set('editSeries', series.id);
