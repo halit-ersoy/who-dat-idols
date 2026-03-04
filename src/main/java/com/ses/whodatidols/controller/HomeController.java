@@ -103,7 +103,9 @@ public class HomeController {
         }
 
         PageResponse<FeaturedItem> response = new PageResponse<>(movieItems, totalPages, page, totalElements);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok()
+                .cacheControl(org.springframework.http.CacheControl.noCache().mustRevalidate())
+                .body(response);
     }
 
     @Cacheable(value = "featuredTv", key = "#page + '-' + #size")
@@ -175,7 +177,9 @@ public class HomeController {
         }
 
         PageResponse<FeaturedItem> response = new PageResponse<>(tvItems, totalPages, page, totalElements);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok()
+                .cacheControl(org.springframework.http.CacheControl.noCache().mustRevalidate())
+                .body(response);
     }
 
     /**
