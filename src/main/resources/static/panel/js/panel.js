@@ -3810,4 +3810,65 @@
                 fetchMaintenanceStatus(); // Revert on error
             });
     };
+
+    /* ===========================================================
+       KAYIT YÖNETİMİ
+       =========================================================== */
+    function fetchRegistrationStatus() {
+        const toggle = document.getElementById('registrationActiveToggle');
+        const statusText = document.getElementById('registrationStatusText');
+        if (!toggle || !statusText) return;
+
+        fetch('/admin/settings/registration')
+            .then(res => res.json())
+            .then(data => {
+                toggle.checked = data.registrationEnabled === true;
+                statusText.innerText = data.registrationEnabled ? "AÇIK" : "KAPALI";
+                statusText.className = "status-badge " + (data.registrationEnabled ? "status-active" : "status-inactive");
+            })
+            .catch(err => {
+                console.error("Kayıt modu durumu alınamadı:", err);
+                statusText.innerText = "HATA";
+                statusText.className = "status-badge status-checking";
+            });
+    }
+
+    window.toggleRegistrationStatus = function () {
+        const toggle = document.getElementById('registrationActiveToggle');
+        const statusText = document.getElementById('registrationStatusText');
+        if (!toggle || !statusText) return;
+
+        const isActive = toggle.checked;
+        const confirmMsg = isActive
+            ? "Yeni üye alımını AÇIYORSUNUZ. Kullanıcılar siteye tekrar kayıt olabilecek. Devam edilsin mi?"
+            : "Yeni üye alımını KAPATIYORSUNUZ. Siteye artık hiç kimse MİSAFİR veya ÜYE olarak kayıt olamayacak. Devam edilsin mi?";
+
+        if (!confirm(confirmMsg)) {
+            toggle.checked = !isActive; // Revert visually
+            return;
+        }
+
+        statusText.innerText = "Bekleniyor...";
+        statusText.className = "status-badge status-checking";
+
+        const formData = new URLSearchParams();
+        formData.append('active', isActive);
+
+        fetch('/admin/settings/registration', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formData.toString()
+        })
+            .then(res => res.text())
+            .then(msg => {
+                alert(msg);
+                fetchRegistrationStatus();
+            })
+            .catch(err => {
+                alert("Kayıt ayarları güncellenirken hata oluştu.");
+                fetchRegistrationStatus(); // Revert on error
+            });
+    };
 });

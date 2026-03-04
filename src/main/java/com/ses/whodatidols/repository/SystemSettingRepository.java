@@ -58,6 +58,11 @@ public class SystemSettingRepository {
             // Default to false (production active)
             setValue("maintenance_mode", "false");
         }
+
+        if (getValue("registration_enabled") == null) {
+            // Default to true (registration open)
+            setValue("registration_enabled", "true");
+        }
     }
 
     public String getValue(String key) {
@@ -106,11 +111,20 @@ public class SystemSettingRepository {
     }
 
     public boolean isMaintenanceMode() {
-        String mode = getValue("maintenance_mode");
-        return "true".equalsIgnoreCase(mode);
+        String val = getValue("maintenance_mode");
+        return "true".equalsIgnoreCase(val);
     }
 
     public void setMaintenanceMode(boolean active) {
         setValue("maintenance_mode", String.valueOf(active));
+    }
+
+    public boolean isRegistrationEnabled() {
+        String val = getValue("registration_enabled");
+        return "true".equalsIgnoreCase(val);
+    }
+
+    public void setRegistrationEnabled(boolean active) {
+        setValue("registration_enabled", String.valueOf(active));
     }
 }

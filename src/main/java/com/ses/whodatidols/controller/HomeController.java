@@ -42,16 +42,19 @@ public class HomeController {
     private final MovieService movieService;
     private final SeriesService seriesService;
     private final MovieRepository movieRepository;
+    private final com.ses.whodatidols.repository.SystemSettingRepository systemSettingRepository;
 
     @org.springframework.beans.factory.annotation.Value("${media.profile.images.path}")
     private String profileImagesPath;
 
     public HomeController(PersonRepository personRepository, MovieService movieService,
-            SeriesService seriesService, MovieRepository movieRepository) {
+            SeriesService seriesService, MovieRepository movieRepository,
+            com.ses.whodatidols.repository.SystemSettingRepository systemSettingRepository) {
         this.personRepository = personRepository;
         this.movieService = movieService;
         this.seriesService = seriesService;
         this.movieRepository = movieRepository;
+        this.systemSettingRepository = systemSettingRepository;
     }
 
     @GetMapping("/")
@@ -365,6 +368,13 @@ public class HomeController {
     @ResponseBody
     public ResponseEntity<?> registerUser(@RequestBody Person person) {
         try {
+            if (!systemSettingRepository.isRegistrationEnabled()) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "Şu anda yeni üye alımı kapalıdır.");
+                return ResponseEntity.badRequest().body(error);
+            }
+
             // 1. Mandatory Fields Validation
             if (person.getName() == null || person.getName().trim().isEmpty() ||
                     person.getSurname() == null || person.getSurname().trim().isEmpty() ||

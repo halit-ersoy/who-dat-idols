@@ -1012,4 +1012,19 @@ public class AdminController {
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
         }
     }
+
+    @GetMapping("/settings/registration")
+    public ResponseEntity<Map<String, Boolean>> getRegistrationStatus() {
+        return ResponseEntity.ok(Map.of("registrationEnabled", systemSettingRepository.isRegistrationEnabled()));
+    }
+
+    @PostMapping("/settings/registration")
+    public ResponseEntity<String> setRegistrationStatus(@RequestParam("active") boolean active) {
+        try {
+            systemSettingRepository.setRegistrationEnabled(active);
+            return ResponseEntity.ok(active ? "Yeni üye alımı AÇILDI." : "Yeni üye alımı KAPATILDI.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+        }
+    }
 }

@@ -1529,6 +1529,38 @@
                         </div>
                     </div>
 
+                    <!-- Registration Toggle Card -->
+                    <div class="card"
+                        style="padding: 30px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; border: 1px solid rgba(156, 39, 176, 0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+                        <div style="position: absolute; top:0; left:0; width: 4px; height: 100%; background: #9c27b0;">
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                                <div
+                                    style="width: 50px; height: 50px; border-radius: 12px; background: rgba(156, 39, 176, 0.1); color: #9c27b0; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                                    <i class="fas fa-user-plus"></i>
+                                </div>
+                                <h2 style="font-size: 1.3rem; margin: 0; color: #fff;">Kayıt Yönetimi</h2>
+                            </div>
+                            <p style="color: #bbb; font-size: 0.95rem; line-height: 1.6; margin-bottom: 30px;">
+                                Siteye yeni üye kayıtlarını açıp kapatmanızı sağlar. Yeni üye alımı kapalıyken
+                                misafirler kayıt formunu doldursa bile üye olamazlar.
+                            </p>
+                        </div>
+
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 18px 25px; border-radius: 12px; border: 1px solid rgba(156, 39, 176, 0.15);">
+                            <span id="registrationStatusText"
+                                style="font-weight: 700; letter-spacing: 1px; color: #9c27b0; font-size: 0.9rem; text-transform: uppercase;">Kontrol
+                                Ediliyor...</span>
+                            <label class="switch" style="margin: 0; transform: scale(1.15);">
+                                <input type="checkbox" id="registrationActiveToggle"
+                                    onchange="toggleRegistrationStatus()">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+
                     <!-- Cache Management Card -->
                     <div class="card"
                         style="padding: 30px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; border: 1px solid rgba(255, 152, 0, 0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
