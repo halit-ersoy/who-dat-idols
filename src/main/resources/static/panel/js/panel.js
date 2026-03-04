@@ -56,6 +56,10 @@
                 fetchUserReports();
             } else if (targetId === 'update-notes-section') {
                 fetchUpdateNotes();
+            } else if (targetId === 'system-settings-section') {
+                if (typeof fetchMaintenanceStatus === 'function') {
+                    fetchMaintenanceStatus();
+                }
             }
 
             // Scroll to top of main content
@@ -3745,4 +3749,65 @@
                 });
         });
     }
+
+    /* ===========================================================
+       BAKIM MODU YÖNETİMİ
+       =========================================================== */
+    function fetchMaintenanceStatus() {
+        const toggle = document.getElementById('maintenanceActiveToggle');
+        const statusText = document.getElementById('maintenanceStatusText');
+        if (!toggle || !statusText) return;
+
+        fetch('/admin/settings/maintenance')
+            .then(res => res.json())
+            .then(data => {
+                toggle.checked = data.maintenanceMode === true;
+                statusText.innerText = data.maintenanceMode ? "AKTİF" : "PASİF";
+                statusText.className = "status-badge " + (data.maintenanceMode ? "status-active" : "status-inactive");
+            })
+            .catch(err => {
+                console.error("Bakım modu durumu alınamadı:", err);
+                statusText.innerText = "HATA";
+                statusText.className = "status-badge status-checking";
+            });
+    }
+
+    window.toggleMaintenanceMode = function () {
+        const toggle = document.getElementById('maintenanceActiveToggle');
+        const statusText = document.getElementById('maintenanceStatusText');
+        if (!toggle || !statusText) return;
+
+        const isActive = toggle.checked;
+        const confirmMsg = isActive
+            ? "Siteyi BAKIM MODUNA almak üzeresiniz. Admin olmayan tüm ziyaretçiler siteye erişemeyecek. Onaylıyor musunuz?"
+            : "Bakım modunu kapatmak üzeresiniz. Site tekrar tüm kullanıcılara açılacak. Onaylıyor musunuz?";
+
+        if (!confirm(confirmMsg)) {
+            toggle.checked = !isActive; // Revert visually
+            return;
+        }
+
+        statusText.innerText = "Bekleniyor...";
+        statusText.className = "status-badge status-checking";
+
+        const formData = new URLSearchParams();
+        formData.append('active', isActive);
+
+        fetch('/admin/settings/maintenance', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formData.toString()
+        })
+            .then(res => res.text())
+            .then(msg => {
+                alert(msg);
+                fetchMaintenanceStatus(); // Re-fetch to ensure sync with server
+            })
+            .catch(err => {
+                alert("Bakım modu güncellenirken hata oluştu.");
+                fetchMaintenanceStatus(); // Revert on error
+            });
+    };
 });

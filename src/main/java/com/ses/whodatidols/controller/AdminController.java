@@ -60,6 +60,7 @@ public class AdminController {
     private final SecurityViolationRepository securityViolationRepository;
     private final BannedIpRepository bannedIpRepository;
     private final com.ses.whodatidols.repository.MessageRepository messageRepository;
+    private final com.ses.whodatidols.repository.SystemSettingRepository systemSettingRepository;
     private final CacheManager cacheManager;
 
     @Value("${media.source.trailers.path}")
@@ -85,6 +86,7 @@ public class AdminController {
             TranslationService translationService, FeedbackRepository feedbackRepository,
             SecurityViolationRepository securityViolationRepository, BannedIpRepository bannedIpRepository,
             com.ses.whodatidols.repository.MessageRepository messageRepository,
+            com.ses.whodatidols.repository.SystemSettingRepository systemSettingRepository,
             CacheManager cacheManager) {
         this.movieService = movieService;
         this.seriesService = seriesService;
@@ -99,6 +101,7 @@ public class AdminController {
         this.securityViolationRepository = securityViolationRepository;
         this.bannedIpRepository = bannedIpRepository;
         this.messageRepository = messageRepository;
+        this.systemSettingRepository = systemSettingRepository;
         this.cacheManager = cacheManager;
     }
 
@@ -992,5 +995,21 @@ public class AdminController {
     public ResponseEntity<Void> resolveReport(@PathVariable("id") UUID id) {
         messageRepository.resolveReport(id);
         return ResponseEntity.ok().build();
+    }
+
+    // SYSTEM SETTINGS
+    @GetMapping("/settings/maintenance")
+    public ResponseEntity<Map<String, Boolean>> getMaintenanceMode() {
+        return ResponseEntity.ok(Map.of("maintenanceMode", systemSettingRepository.isMaintenanceMode()));
+    }
+
+    @PostMapping("/settings/maintenance")
+    public ResponseEntity<String> setMaintenanceMode(@RequestParam("active") boolean active) {
+        try {
+            systemSettingRepository.setMaintenanceMode(active);
+            return ResponseEntity.ok(active ? "Bakım modu AKTİF edildi." : "Bakım modu KAPATILDI.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+        }
     }
 }

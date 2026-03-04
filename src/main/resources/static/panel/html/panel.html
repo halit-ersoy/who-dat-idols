@@ -1486,26 +1486,77 @@
             </section>
             <!-- SYSTEM SETTINGS SECTION -->
             <section id="system-settings-section" class="admin-section" style="display: none;">
-                <div class="card">
-                    <div class="card-header">
-                        <h2><i class="fas fa-tools"></i> Sistem Ayarları</h2>
+                <div class="main-header" style="margin-bottom: 30px;">
+                    <div class="welcome">
+                        <h1 style="font-size: 1.8rem; margin-bottom: 5px;"><i class="fas fa-tools"
+                                style="color: var(--primary-color, #1fdf64); margin-right: 12px;"></i>Sistem Ayarları
+                        </h1>
+                        <p>Sitenin temel çalışma kurallarını, bakım ve bellek durumunu buradan yönetin.</p>
                     </div>
-                    <div class="card-body" style="padding: 25px;">
+                </div>
+
+                <div class="form-grid" style="grid-template-columns: repeat(2, 1fr); gap: 30px;">
+
+                    <!-- Maintenance Mode Card -->
+                    <div class="card"
+                        style="padding: 30px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; border: 1px solid rgba(255, 51, 102, 0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+                        <div style="position: absolute; top:0; left:0; width: 4px; height: 100%; background: #ff3366;">
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                                <div
+                                    style="width: 50px; height: 50px; border-radius: 12px; background: rgba(255, 51, 102, 0.1); color: #ff3366; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                                    <i class="fas fa-hard-hat"></i>
+                                </div>
+                                <h2 style="font-size: 1.3rem; margin: 0; color: #fff;">Bakım Modu</h2>
+                            </div>
+                            <p style="color: #bbb; font-size: 0.95rem; line-height: 1.6; margin-bottom: 30px;">
+                                Ziyaretçi erişimini sistem genelinde geçici olarak durdurur. Misafirler özel bir
+                                "Bakımdayız" ekranı görürken, yönetici hesabı olanlar siteyi kullanmaya ve test etmeye
+                                devam edebilir.
+                            </p>
+                        </div>
+
                         <div
-                            style="background: rgba(255, 152, 0, 0.1); border-left: 4px solid #ff9800; padding: 15px; border-radius: 4px; margin-bottom: 25px;">
-                            <h4 style="color: #ff9800; margin-bottom: 8px;"><i class="fas fa-exclamation-triangle"></i>
-                                Önbellek Yönetimi</h4>
-                            <p style="color: #eee; font-size: 0.9rem; margin: 0;">Sitede yaptığınız değişiklikler (film
-                                düzenleme, takvim güncelleme vb.) bazen anında görünmeyebilir. Bu durumda aşağıdaki
-                                butonu kullanarak tüm önbelleği manuel olarak sıfırlayabilirsiniz.</p>
-                        </div>
-                        <div class="form-actions" style="justify-content: flex-start;">
-                            <button type="button" id="btnClearCacheBatch" class="btn btn-danger"
-                                style="padding: 12px 25px; font-weight: 600;">
-                                <i class="fas fa-broom"></i> TÜM SİTE ÖNBELLEĞİNİ TEMİZLE
-                            </button>
+                            style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 18px 25px; border-radius: 12px; border: 1px solid rgba(255, 51, 102, 0.15);">
+                            <span id="maintenanceStatusText"
+                                style="font-weight: 700; letter-spacing: 1px; color: #ff3366; font-size: 0.9rem; text-transform: uppercase;">Kontrol
+                                Ediliyor...</span>
+                            <label class="switch" style="margin: 0; transform: scale(1.15);">
+                                <input type="checkbox" id="maintenanceActiveToggle" onchange="toggleMaintenanceMode()">
+                                <span class="slider round"></span>
+                            </label>
                         </div>
                     </div>
+
+                    <!-- Cache Management Card -->
+                    <div class="card"
+                        style="padding: 30px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; border: 1px solid rgba(255, 152, 0, 0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+                        <div style="position: absolute; top:0; left:0; width: 4px; height: 100%; background: #ff9800;">
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                                <div
+                                    style="width: 50px; height: 50px; border-radius: 12px; background: rgba(255, 152, 0, 0.1); color: #ff9800; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                                    <i class="fas fa-database"></i>
+                                </div>
+                                <h2 style="font-size: 1.3rem; margin: 0; color: #fff;">Önbellek (Cache) Yönetimi</h2>
+                            </div>
+                            <p style="color: #bbb; font-size: 0.95rem; line-height: 1.6; margin-bottom: 30px;">
+                                Performansı artırmak için site içerikleri bellekte tutulur. Takvimde dizi güncelleme,
+                                yeni film ekleme gibi değişiklikler anında siteye yansımazsa tek tuşla belleği
+                                sıfırlayabilirsiniz.
+                            </p>
+                        </div>
+
+                        <button type="button" id="btnClearCacheBatch" class="btn"
+                            style="width: 100%; justify-content: center; padding: 18px; font-size: 0.95rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; background: rgba(255, 152, 0, 0.1); color: #ff9800; border: 1px solid rgba(255, 152, 0, 0.3); border-radius: 12px; cursor: pointer; transition: all 0.3s;"
+                            onmouseover="this.style.background='#ff9800'; this.style.color='#fff';"
+                            onmouseout="this.style.background='rgba(255, 152, 0, 0.1)'; this.style.color='#ff9800';">
+                            <i class="fas fa-broom" style="margin-right: 8px;"></i> Tüm Önbelleği Temizle
+                        </button>
+                    </div>
+
                 </div>
             </section>
         </main>

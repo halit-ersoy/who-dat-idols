@@ -53,6 +53,11 @@ public class SystemSettingRepository {
             // Default to true (active)
             setValue("announcement_active", "true");
         }
+
+        if (getValue("maintenance_mode") == null) {
+            // Default to false (production active)
+            setValue("maintenance_mode", "false");
+        }
     }
 
     public String getValue(String key) {
@@ -98,5 +103,14 @@ public class SystemSettingRepository {
     public void updateAnnouncement(String text, boolean active) {
         setValue("announcement_text", text);
         setValue("announcement_active", String.valueOf(active));
+    }
+
+    public boolean isMaintenanceMode() {
+        String mode = getValue("maintenance_mode");
+        return "true".equalsIgnoreCase(mode);
+    }
+
+    public void setMaintenanceMode(boolean active) {
+        setValue("maintenance_mode", String.valueOf(active));
     }
 }
