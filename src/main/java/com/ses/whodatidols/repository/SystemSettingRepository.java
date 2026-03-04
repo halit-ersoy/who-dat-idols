@@ -7,18 +7,32 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Repository
 public class SystemSettingRepository {
     private static final Logger logger = LoggerFactory.getLogger(SystemSettingRepository.class);
     private final JdbcTemplate jdbcTemplate;
+    private final Map<String, String> settingsCache = new ConcurrentHashMap<>();
 
     public SystemSettingRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
         ensureSchema();
         initDefaults();
+        refreshCache();
+    }
+
+    public void refreshCache() {
+        try {
+            jdbcTemplate.query("SELECT SettingKey, SettingValue FROM SystemSettings", rs -> {
+                settingsCache.put(rs.getString("SettingKey"),
+                        rs.getString("SettingValue") != null ? rs.getString("SettingValue") : "");
+            });
+            logger.info("System settings cache refreshed. Total items: {}", settingsCache.size());
+        } catch (Exception e) {
+            logger.error("Failed to refresh system settings cache", e);
+        }
     }
 
     private void ensureSchema() {
@@ -66,17 +80,7 @@ public class SystemSettingRepository {
     }
 
     public String getValue(String key) {
-        try {
-            // Use queryForList to avoid EmptyResultDataAccessException if not found (safer)
-            List<String> results = jdbcTemplate.query(
-                    "SELECT SettingValue FROM SystemSettings WHERE SettingKey = ?",
-                    (rs, rowNum) -> rs.getString("SettingValue"),
-                    key);
-            return results.isEmpty() ? null : results.get(0);
-        } catch (Exception e) {
-            logger.error("Error fetching setting: " + key, e);
-            return null;
-        }
+        return settingsCache.get(key);
     }
 
     public void setValue(String key, String value) {
@@ -89,6 +93,9 @@ public class SystemSettingRepository {
             if (updated == 0) {
                 jdbcTemplate.update("INSERT INTO SystemSettings (SettingKey, SettingValue) VALUES (?, ?)", key, value);
             }
+
+            // Critical: Update cache immediately
+            settingsCache.put(key, value != null ? value : "");
         } catch (Exception e) {
             logger.error("Error setting value for: " + key, e);
         }
