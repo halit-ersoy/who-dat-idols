@@ -471,7 +471,7 @@ public class SeriesRepository {
 
     public List<Episode> findRecentEpisodes(int limit) {
         return jdbcTemplate.query(
-                "SELECT TOP (?) E.* FROM Episode E JOIN Series S ON E.SeriesId = S.ID WHERE S.SeriesType != 'Program' OR S.SeriesType IS NULL ORDER BY E.uploadDate DESC, E.name ASC",
+                "SELECT TOP (?) E.* FROM Episode E ORDER BY E.uploadDate DESC, E.name ASC",
                 episodeRowMapper,
                 limit);
     }

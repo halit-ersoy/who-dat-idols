@@ -104,9 +104,8 @@ export function initFeaturedContent() {
             featuredGrid.classList.add('fade-in');
 
             try {
-                const timestamp = new Date().getTime();
-                const url = `/api/featured-content/${currentMode}?page=${page}&size=${itemsPerPage}&t=${timestamp}`;
-                const response = await fetch(url, { cache: 'no-store' });
+                const url = `/api/featured-content/${currentMode}?page=${page}&size=${itemsPerPage}`;
+                const response = await fetch(url);
                 if (!response.ok) throw new Error('Veri çekilemedi.');
 
                 const data = await response.json();
