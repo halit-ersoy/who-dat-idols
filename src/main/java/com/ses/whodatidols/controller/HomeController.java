@@ -116,115 +116,38 @@ public class HomeController {
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "20") int size) {
 
-        // Fetch more to ensure diversity after condensing
-        List<Episode> rawEpisodes = seriesService.getRecentEpisodesWithMetadata(1000);
-        List<Episode> condensedEpisodes = condenseConsecutiveEpisodes(rawEpisodes);
+        int offset = (page - 1) * size;
 
-        int totalElements = condensedEpisodes.size();
+        int totalElements = seriesService.countRecentCondensedEpisodes();
         int totalPages = (int) Math.ceil((double) totalElements / size);
 
-        int offset = (page - 1) * size;
-        List<Episode> paginatedEpisodes = condensedEpisodes.stream()
-                .skip(offset)
-                .limit(size)
-                .collect(java.util.stream.Collectors.toList());
+        List<com.ses.whodatidols.viewmodel.FeaturedTvItemDto> dtos = seriesService
+                .getRecentCondensedEpisodesPaged(offset, size);
 
         List<FeaturedItem> tvItems = new java.util.ArrayList<>();
-        for (Episode ep : paginatedEpisodes) {
+        for (com.ses.whodatidols.viewmodel.FeaturedTvItemDto dto : dtos) {
             FeaturedItem item = new FeaturedItem();
-            item.id = ep.getSlug() != null ? ep.getSlug() : ep.getId().toString();
+            item.id = dto.getId();
+            item.title = dto.getTitle();
+            item.season = dto.getSeason();
+            item.episode = dto.getEpisode();
+            item.isNew = dto.isNew();
+            item.isFinal = dto.isFinal();
+            item.image = dto.getImage();
+            item.finalStatus = dto.getFinalStatus();
+            item.seriesType = dto.getSeriesType();
 
-            String title = ep.getName();
-            String language = "kr";
-            String country = null;
-            boolean isFinal = false;
-            String imageId = ep.getId().toString();
-
-            if (ep.getSeriesId() != null) {
-                Series series = seriesService.getSeriesById(ep.getSeriesId());
-                if (series != null) {
-                    title = series.getName();
-                    language = series.getLanguage();
-                    country = series.getCountry();
-                    imageId = series.getId().toString();
-                    item.seriesType = series.getSeriesType();
-
-                    UUID latestEpisodeId = seriesService.getLatestEpisodeIdBySeriesId(ep.getSeriesId());
-                    if (latestEpisodeId != null && latestEpisodeId.equals(ep.getId())) {
-                        isFinal = series.getFinalStatus() > 0;
-                        item.finalStatus = series.getFinalStatus();
-                    } else {
-                        isFinal = false;
-                        item.finalStatus = 0;
-                    }
-                }
-            }
-
-            item.title = title;
-            item.image = "/media/image/" + imageId;
-
-            if (country != null && !country.isEmpty()) {
-                item.country = country;
+            if (dto.getCountry() != null && !dto.getCountry().isEmpty()) {
+                item.country = dto.getCountry();
             } else {
-                item.country = mapLanguageToCode(language);
+                item.country = mapLanguageToCode(dto.getLanguage());
             }
-
-            item.isNew = isRecent(ep.getUploadDate());
-            item.isFinal = isFinal;
-            item.season = ep.getSeasonNumber();
-            item.episode = ep.getEpisodeNumber();
 
             tvItems.add(item);
         }
 
         PageResponse<FeaturedItem> response = new PageResponse<>(tvItems, totalPages, page, totalElements);
         return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Condenses contiguous blocks of episodes from the same series.
-     * Only the first (most recent) and last (oldest in the run) are kept.
-     */
-    private List<Episode> condenseConsecutiveEpisodes(List<Episode> episodes) {
-        if (episodes == null || episodes.isEmpty())
-            return episodes;
-
-        List<Episode> result = new java.util.ArrayList<>();
-        int i = 0;
-        int n = episodes.size();
-
-        while (i < n) {
-            Episode current = episodes.get(i);
-            UUID seriesId = current.getSeriesId();
-
-            if (seriesId == null) {
-                result.add(current);
-                i++;
-                continue;
-            }
-
-            // Find contiguous block end
-            int j = i + 1;
-            while (j < n) {
-                Episode next = episodes.get(j);
-                if (seriesId.equals(next.getSeriesId())) {
-                    j++;
-                } else {
-                    break;
-                }
-            }
-
-            // Kepp first of run
-            result.add(episodes.get(i));
-
-            // If block has more than 1, keep last of run too
-            if (j - i > 1) {
-                result.add(episodes.get(j - 1));
-            }
-
-            i = j;
-        }
-        return result;
     }
 
     private String mapLanguageToCode(String lang) {

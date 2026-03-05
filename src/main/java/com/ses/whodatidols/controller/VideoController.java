@@ -43,7 +43,7 @@ public class VideoController {
 
         // 1. Try Episode
         Episode episode = seriesRepository.findEpisodeById(id);
-        if (episode != null) {
+        if (episode != null && !episode.isHidden()) {
             response.put("title", episode.getName());
             response.put("duration", episode.getDurationMinutes() > 0 ? episode.getDurationMinutes() + " dk" : "");
             response.put("year", episode.getReleaseYear());
@@ -83,7 +83,7 @@ public class VideoController {
 
         // 2. Try Movie
         Movie movie = movieRepository.findMovieById(id);
-        if (movie != null) {
+        if (movie != null && !movie.isHidden()) {
             response.put("title", movie.getName());
             response.put("duration", movie.getDurationMinutes() > 0 ? movie.getDurationMinutes() + " dk" : "");
             response.put("year", movie.getReleaseYear());
@@ -118,22 +118,25 @@ public class VideoController {
 
             // Check episode by ID
             Episode ep = seriesRepository.findEpisodeById(id);
-            if (ep != null) {
+            if (ep != null && !ep.isHidden()) {
                 return ResponseEntity.ok(Map.of("id", ep.getId().toString(), "type", "episode"));
             }
 
             // Check series by ID → return first episode
             Series s = seriesRepository.findSeriesById(id);
-            if (s != null) {
+            if (s != null && !s.isHidden()) {
                 UUID firstEpId = seriesRepository.findFirstEpisodeIdBySeriesId(s.getId());
                 if (firstEpId != null) {
-                    return ResponseEntity.ok(Map.of("id", firstEpId.toString(), "type", "episode"));
+                    Episode firstEp = seriesRepository.findEpisodeById(firstEpId);
+                    if (firstEp != null && !firstEp.isHidden()) {
+                        return ResponseEntity.ok(Map.of("id", firstEpId.toString(), "type", "episode"));
+                    }
                 }
             }
 
             // Check movie by ID
             Movie m = movieRepository.findMovieById(id);
-            if (m != null) {
+            if (m != null && !m.isHidden()) {
                 return ResponseEntity.ok(Map.of("id", m.getId().toString(), "type", "movie"));
             }
 

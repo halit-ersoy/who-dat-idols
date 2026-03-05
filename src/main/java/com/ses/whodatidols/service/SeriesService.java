@@ -574,4 +574,13 @@ public class SeriesService {
     public boolean isValidSlug(String slug) {
         return repository.findEpisodeBySlug(slug) != null || repository.findSeriesBySlug(slug) != null;
     }
+
+    public List<com.ses.whodatidols.viewmodel.FeaturedTvItemDto> getRecentCondensedEpisodesPaged(int offset,
+            int limit) {
+        return repository.findRecentCondensedEpisodesPaged(offset, limit);
+    }
+
+    public int countRecentCondensedEpisodes() {
+        return repository.countRecentCondensedEpisodes();
+    }
 }

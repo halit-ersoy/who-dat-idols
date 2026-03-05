@@ -15,6 +15,7 @@ public class Movie {
     private Instant uploadDate;
     private String slug;
     private boolean isAdult;
+    private boolean isHidden;
 
     // Constructors
     public Movie() {
@@ -123,5 +124,13 @@ public class Movie {
 
     public void setIsAdult(boolean isAdult) {
         this.isAdult = isAdult;
+    }
+
+    public boolean isHidden() {
+        return isHidden;
+    }
+
+    public void setHidden(boolean hidden) {
+        isHidden = hidden;
     }
 }

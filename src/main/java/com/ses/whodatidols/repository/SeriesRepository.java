@@ -194,6 +194,11 @@ public class SeriesRepository {
         } else {
             s.setFinalStatus(fs != null ? Integer.parseInt(fs.toString()) : 0);
         }
+
+        try {
+            s.setHidden(rs.getBoolean("IsHidden"));
+        } catch (Exception e) {
+        }
         s.setEpisodeMetadataXml(rs.getString("EpisodeMetadataXml"));
         try {
             java.sql.Timestamp ts = rs.getTimestamp("uploadDate");
@@ -236,12 +241,31 @@ public class SeriesRepository {
         } catch (Exception ex) {
         }
 
+        try {
+            e.setHidden(rs.getBoolean("IsHidden"));
+        } catch (Exception ex) {
+        }
+
         return e;
     };
 
     public List<Series> findAllSeries() {
         String sql = """
-                SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
+                SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden,
+                       (SELECT COUNT(*) FROM Episode E WHERE E.SeriesId = S.ID AND E.IsHidden = 0) as episodeCount,
+                       (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                        JOIN SeriesCategories SC ON SC.CategoryID = C.ID
+                        WHERE SC.SeriesID = S.ID) as category
+                FROM Series S
+                WHERE S.IsHidden = 0
+                ORDER BY S.name ASC
+                """;
+        return jdbcTemplate.query(sql, seriesRowMapper);
+    }
+
+    public List<Series> findAllSeriesForAdmin() {
+        String sql = """
+                SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden,
                        (SELECT COUNT(*) FROM Episode E WHERE E.SeriesId = S.ID) as episodeCount,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN SeriesCategories SC ON SC.CategoryID = C.ID
@@ -255,12 +279,12 @@ public class SeriesRepository {
     public Series findSeriesByName(String name) {
         try {
             String sql = """
-                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                             WHERE SC.SeriesID = S.ID) as category
                     FROM Series S
-                    WHERE S.name = ?
+                    WHERE S.name = ? AND S.IsHidden = 0
                     """;
             return jdbcTemplate.queryForObject(sql, seriesRowMapper, name);
         } catch (Exception e) {
@@ -271,7 +295,7 @@ public class SeriesRepository {
     public Series findSeriesById(UUID id) {
         try {
             String sql = """
-                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                             WHERE SC.SeriesID = S.ID) as category
@@ -294,7 +318,7 @@ public class SeriesRepository {
 
     public void createSeries(Series series) {
         jdbcTemplate.update(
-                "INSERT INTO Series (ID, name, Summary, Language, Country, SeriesType, finalStatus, EpisodeMetadataXml, uploadDate, slug) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO Series (ID, name, Summary, Language, Country, SeriesType, finalStatus, EpisodeMetadataXml, uploadDate, slug, IsHidden) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 series.getId().toString(),
                 series.getName(),
                 series.getSummary(),
@@ -304,7 +328,8 @@ public class SeriesRepository {
                 series.getFinalStatus(),
                 series.getEpisodeMetadataXml(),
                 Timestamp.from(series.getUploadDate()),
-                series.getSlug());
+                series.getSlug(),
+                series.isHidden());
 
         updateSeriesCategories(series.getId(), series.getCategory());
     }
@@ -315,13 +340,14 @@ public class SeriesRepository {
 
     public void updateSeriesMetadata(Series series) {
         jdbcTemplate.update(
-                "UPDATE Series SET name=?, Summary=?, Language=?, Country=?, SeriesType=?, finalStatus=? WHERE ID=?",
+                "UPDATE Series SET name=?, Summary=?, Language=?, Country=?, SeriesType=?, finalStatus=?, IsHidden=? WHERE ID=?",
                 series.getName(),
                 series.getSummary(),
                 series.getLanguage(),
                 series.getCountry(),
                 series.getSeriesType(),
                 series.getFinalStatus(),
+                series.isHidden(),
                 series.getId().toString());
 
         updateSeriesCategories(series.getId(), series.getCategory());
@@ -329,7 +355,7 @@ public class SeriesRepository {
 
     public UUID findFirstEpisodeIdBySeriesId(UUID seriesId) {
         try {
-            String sql = "SELECT TOP 1 ID FROM Episode WHERE SeriesId = ? ORDER BY SeasonNumber ASC, EpisodeNumber ASC";
+            String sql = "SELECT TOP 1 E.ID FROM Episode E JOIN Series S ON E.SeriesId = S.ID WHERE E.SeriesId = ? AND E.IsHidden = 0 AND S.IsHidden = 0 ORDER BY E.SeasonNumber ASC, E.EpisodeNumber ASC";
             String idStr = jdbcTemplate.queryForObject(sql, String.class, seriesId.toString());
             return idStr != null ? UUID.fromString(idStr) : null;
         } catch (Exception e) {
@@ -339,7 +365,7 @@ public class SeriesRepository {
 
     public UUID findLatestEpisodeIdBySeriesId(UUID seriesId) {
         try {
-            String sql = "SELECT TOP 1 ID FROM Episode WHERE SeriesId = ? ORDER BY SeasonNumber DESC, EpisodeNumber DESC";
+            String sql = "SELECT TOP 1 E.ID FROM Episode E JOIN Series S ON E.SeriesId = S.ID WHERE E.SeriesId = ? AND E.IsHidden = 0 AND S.IsHidden = 0 ORDER BY E.SeasonNumber DESC, E.EpisodeNumber DESC";
             String idStr = jdbcTemplate.queryForObject(sql, String.class, seriesId.toString());
             return idStr != null ? UUID.fromString(idStr) : null;
         } catch (Exception e) {
@@ -372,7 +398,7 @@ public class SeriesRepository {
 
     public void saveEpisode(Episode episode) {
         jdbcTemplate.update(
-                "INSERT INTO Episode (ID, name, DurationMinutes, ReleaseYear, uploadDate, SeriesId, SeasonNumber, EpisodeNumber, slug, isAdult) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO Episode (ID, name, DurationMinutes, ReleaseYear, uploadDate, SeriesId, SeasonNumber, EpisodeNumber, slug, isAdult, IsHidden) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 episode.getId().toString(),
                 episode.getName(),
                 episode.getDurationMinutes(),
@@ -382,18 +408,20 @@ public class SeriesRepository {
                 episode.getSeasonNumber(),
                 episode.getEpisodeNumber(),
                 episode.getSlug(),
-                episode.isAdult());
+                episode.isAdult(),
+                episode.isHidden());
     }
 
     public void updateEpisode(Episode episode) {
         jdbcTemplate.update(
-                "UPDATE Episode SET DurationMinutes = ?, ReleaseYear = ?, SeasonNumber = ?, EpisodeNumber = ?, slug = ?, isAdult = ? WHERE ID = ?",
+                "UPDATE Episode SET DurationMinutes = ?, ReleaseYear = ?, SeasonNumber = ?, EpisodeNumber = ?, slug = ?, isAdult = ?, IsHidden = ? WHERE ID = ?",
                 episode.getDurationMinutes(),
                 episode.getReleaseYear(),
                 episode.getSeasonNumber(),
                 episode.getEpisodeNumber(),
                 episode.getSlug(),
                 episode.isAdult(),
+                episode.isHidden(),
                 episode.getId().toString());
     }
 
@@ -439,6 +467,12 @@ public class SeriesRepository {
     }
 
     public List<Episode> findEpisodesBySeriesId(UUID seriesId) {
+        return jdbcTemplate.query(
+                "SELECT E.* FROM Episode E JOIN Series S ON E.SeriesId = S.ID WHERE E.SeriesId = ? AND E.IsHidden = 0 AND S.IsHidden = 0 ORDER BY E.SeasonNumber, E.EpisodeNumber",
+                episodeRowMapper, seriesId.toString());
+    }
+
+    public List<Episode> findEpisodesBySeriesIdForAdmin(UUID seriesId) {
         return jdbcTemplate.query("SELECT * FROM Episode WHERE SeriesId = ? ORDER BY SeasonNumber, EpisodeNumber",
                 episodeRowMapper, seriesId.toString());
     }
@@ -446,7 +480,7 @@ public class SeriesRepository {
     public Episode findEpisodeBySlug(String slug) {
         try {
             return jdbcTemplate.queryForObject(
-                    "SELECT TOP 1 * FROM Episode WHERE slug = ?",
+                    "SELECT TOP 1 E.* FROM Episode E JOIN Series S ON E.SeriesId = S.ID WHERE E.slug = ? AND E.IsHidden = 0 AND S.IsHidden = 0",
                     episodeRowMapper, slug);
         } catch (Exception e) {
             return null;
@@ -456,12 +490,12 @@ public class SeriesRepository {
     public Series findSeriesBySlug(String slug) {
         try {
             String sql = """
-                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                             WHERE SC.SeriesID = S.ID) as category
                     FROM Series S
-                    WHERE S.slug = ?
+                    WHERE S.slug = ? AND S.IsHidden = 0
                     """;
             return jdbcTemplate.queryForObject(sql, seriesRowMapper, slug);
         } catch (Exception e) {
@@ -471,7 +505,7 @@ public class SeriesRepository {
 
     public List<Episode> findRecentEpisodes(int limit) {
         return jdbcTemplate.query(
-                "SELECT TOP (?) E.* FROM Episode E ORDER BY E.uploadDate DESC, E.name ASC",
+                "SELECT TOP (?) E.* FROM Episode E JOIN Series S ON E.SeriesId = S.ID WHERE E.IsHidden = 0 AND S.IsHidden = 0 ORDER BY E.uploadDate DESC, E.name ASC",
                 episodeRowMapper,
                 limit);
     }
@@ -486,21 +520,23 @@ public class SeriesRepository {
         String sql;
         if (limit > 0) {
             sql = """
-                    SELECT TOP (?) S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
+                    SELECT TOP (?) S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                             WHERE SC.SeriesID = S.ID) as category
                     FROM Series S
+                    WHERE S.IsHidden = 0
                     ORDER BY S.uploadDate DESC, S.name ASC
                     """;
             return jdbcTemplate.query(sql, seriesRowMapper, limit);
         } else {
             sql = """
-                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                             WHERE SC.SeriesID = S.ID) as category
                     FROM Series S
+                    WHERE S.IsHidden = 0
                     ORDER BY S.uploadDate DESC, S.name ASC
                     """;
             return jdbcTemplate.query(sql, seriesRowMapper);
@@ -509,7 +545,7 @@ public class SeriesRepository {
 
     @SuppressWarnings("null")
     public int countAllSeries(String seriesType) {
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Series S WHERE 1=1");
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Series S WHERE S.IsHidden = 0");
         java.util.List<Object> params = new java.util.ArrayList<>();
 
         if ("Program".equalsIgnoreCase(seriesType)) {
@@ -528,7 +564,8 @@ public class SeriesRepository {
     @SuppressWarnings("null")
     public int countSeriesBySearch(String query, String seriesType) {
         String likeQuery = "%" + query.trim().toLowerCase() + "%";
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Series S WHERE LOWER(S.name) LIKE ?");
+        StringBuilder sql = new StringBuilder(
+                "SELECT COUNT(*) FROM Series S WHERE LOWER(S.name) LIKE ? AND S.IsHidden = 0");
         java.util.List<Object> params = new java.util.ArrayList<>();
         params.add(likeQuery);
 
@@ -549,12 +586,12 @@ public class SeriesRepository {
     public List<Series> findRecentSeriesPaged(String seriesType, int offset, int limit) {
         StringBuilder sql = new StringBuilder(
                 """
-                        SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
+                        SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden,
                                (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                                 JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                                 WHERE SC.SeriesID = S.ID) as category
                         FROM Series S
-                        WHERE 1=1
+                        WHERE S.IsHidden = 0
                         """);
         java.util.List<Object> params = new java.util.ArrayList<>();
 
@@ -579,12 +616,12 @@ public class SeriesRepository {
         String likeQuery = "%" + query.trim().toLowerCase() + "%";
         StringBuilder sql = new StringBuilder(
                 """
-                        SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
+                        SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden,
                                (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                                 JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                                 WHERE SC.SeriesID = S.ID) as category
                         FROM Series S
-                        WHERE LOWER(S.name) LIKE ?
+                        WHERE LOWER(S.name) LIKE ? AND S.IsHidden = 0
                         """);
         java.util.List<Object> params = new java.util.ArrayList<>();
         params.add(likeQuery);
@@ -606,18 +643,19 @@ public class SeriesRepository {
     }
 
     public List<Episode> findTop6EpisodesByCount() {
-        String sql = "SELECT TOP 6 * FROM Episode ORDER BY viewCount DESC";
+        String sql = "SELECT TOP 6 E.* FROM Episode E JOIN Series S ON E.SeriesId = S.ID WHERE E.IsHidden = 0 AND S.IsHidden = 0 ORDER BY E.viewCount DESC";
         return jdbcTemplate.query(sql, episodeRowMapper);
     }
 
     public List<Series> findTop6SeriesByCount() {
         String sql = """
-                SELECT TOP 6 S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
-                       (SELECT COUNT(*) FROM Episode E WHERE E.SeriesId = S.ID) as episodeCount,
+                SELECT TOP 6 S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden,
+                       (SELECT COUNT(*) FROM Episode E WHERE E.SeriesId = S.ID AND E.IsHidden = 0) as episodeCount,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                         WHERE SC.SeriesID = S.ID) as category
                 FROM Series S
+                WHERE S.IsHidden = 0
                 ORDER BY S.viewCount DESC, S.name ASC
                 """;
         return jdbcTemplate.query(sql, seriesRowMapper);
@@ -628,13 +666,13 @@ public class SeriesRepository {
             String country, String sort, int offset, int limit) {
         StringBuilder sql = new StringBuilder(
                 """
-                            SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug,
-                                   (SELECT COUNT(*) FROM Episode E WHERE E.SeriesId = S.ID) as episodeCount,
+                            SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden,
+                                   (SELECT COUNT(*) FROM Episode E WHERE E.SeriesId = S.ID AND E.IsHidden=0) as episodeCount,
                                    (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                                     JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                                     WHERE SC.SeriesID = S.ID) as category
                             FROM Series S
-                            WHERE 1=1
+                            WHERE S.IsHidden = 0
                         """);
 
         List<Object> params = new java.util.ArrayList<>();
@@ -693,7 +731,7 @@ public class SeriesRepository {
     @SuppressWarnings("null")
     public int countSeriesWithFilters(String seriesType, Integer categoryId, Integer finalStatus, Integer year,
             String country) {
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Series S WHERE 1=1");
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Series S WHERE S.IsHidden = 0");
         List<Object> params = new java.util.ArrayList<>();
 
         if ("Program".equalsIgnoreCase(seriesType)) {
@@ -731,4 +769,105 @@ public class SeriesRepository {
         return count != null ? count : 0;
     }
 
+    public RowMapper<com.ses.whodatidols.viewmodel.FeaturedTvItemDto> featuredTvMapper = (rs, rowNum) -> {
+        com.ses.whodatidols.viewmodel.FeaturedTvItemDto dto = new com.ses.whodatidols.viewmodel.FeaturedTvItemDto();
+
+        String slug = rs.getString("slug");
+        String episodeId = rs.getString("EpisodeId");
+        dto.setId(slug != null && !slug.isEmpty() ? slug : episodeId);
+
+        String epName = rs.getString("name");
+        String sName = rs.getString("SeriesName");
+        dto.setTitle(sName != null && !sName.isEmpty() ? sName : epName);
+
+        dto.setSeason(rs.getInt("SeasonNumber"));
+        dto.setEpisode(rs.getInt("EpisodeNumber"));
+
+        java.sql.Timestamp uploadDate = rs.getTimestamp("uploadDate");
+        if (uploadDate != null) {
+            dto.setNew(uploadDate.toInstant()
+                    .isAfter(java.time.Instant.now().minus(24, java.time.temporal.ChronoUnit.HOURS)));
+        } else {
+            dto.setNew(false);
+        }
+
+        dto.setImage("/media/image/" + rs.getString("SeriesId"));
+        dto.setCountry(rs.getString("Country"));
+        dto.setLanguage(rs.getString("Language"));
+        dto.setSeriesType(rs.getString("SeriesType"));
+
+        int isLatest = rs.getInt("latest_in_series_rn");
+        if (isLatest == 1) {
+            int finalSt = rs.getInt("finalStatus");
+            dto.setFinalStatus(finalSt);
+            dto.setFinal(finalSt > 0);
+        } else {
+            dto.setFinalStatus(0);
+            dto.setFinal(false);
+        }
+
+        return dto;
+    };
+
+    public List<com.ses.whodatidols.viewmodel.FeaturedTvItemDto> findRecentCondensedEpisodesPaged(int offset,
+            int limit) {
+        String sql = """
+                WITH OrderedEpisodes AS (
+                    SELECT E.ID as EpisodeId, E.SeriesId as SeriesId, E.uploadDate, E.name, E.slug, E.SeasonNumber, E.EpisodeNumber,
+                           S.name AS SeriesName, S.Language, S.Country, S.SeriesType, S.finalStatus,
+                           ROW_NUMBER() OVER(ORDER BY E.uploadDate DESC, E.name ASC, E.ID ASC) as rn1,
+                           ROW_NUMBER() OVER(PARTITION BY E.SeriesId ORDER BY E.uploadDate DESC, E.name ASC, E.ID ASC) as rn2,
+                           ROW_NUMBER() OVER(PARTITION BY E.SeriesId ORDER BY E.SeasonNumber DESC, E.EpisodeNumber DESC) as latest_in_series_rn
+                    FROM Episode E
+                    JOIN Series S ON E.SeriesId = S.ID
+                    WHERE E.IsHidden = 0 AND S.IsHidden = 0
+                ),
+                GroupedEpisodes AS (
+                    SELECT *, (rn1 - rn2) as island_id
+                    FROM OrderedEpisodes
+                ),
+                RankedInIsland AS (
+                    SELECT *,
+                           ROW_NUMBER() OVER(PARTITION BY SeriesId, island_id ORDER BY uploadDate DESC, name ASC, EpisodeId ASC) as island_rn_desc,
+                           ROW_NUMBER() OVER(PARTITION BY SeriesId, island_id ORDER BY uploadDate ASC, name DESC, EpisodeId DESC) as island_rn_asc
+                    FROM GroupedEpisodes
+                ),
+                FilteredIslands AS (
+                    SELECT *
+                    FROM RankedInIsland
+                    WHERE island_rn_desc = 1 OR island_rn_asc = 1
+                )
+                SELECT * FROM FilteredIslands
+                ORDER BY uploadDate DESC, name ASC, EpisodeId ASC
+                OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+                """;
+        return jdbcTemplate.query(sql, featuredTvMapper, offset, limit);
+    }
+
+    public int countRecentCondensedEpisodes() {
+        String sql = """
+                WITH OrderedEpisodes AS (
+                    SELECT E.ID as EpisodeId, E.SeriesId as SeriesId, E.uploadDate, E.name,
+                           ROW_NUMBER() OVER(ORDER BY E.uploadDate DESC, E.name ASC, E.ID ASC) as rn1,
+                           ROW_NUMBER() OVER(PARTITION BY E.SeriesId ORDER BY E.uploadDate DESC, E.name ASC, E.ID ASC) as rn2
+                    FROM Episode E
+                    JOIN Series S ON E.SeriesId = S.ID
+                    WHERE E.IsHidden = 0 AND S.IsHidden = 0
+                ),
+                GroupedEpisodes AS (
+                    SELECT SeriesId, (rn1 - rn2) as island_id, rn1, uploadDate, name, EpisodeId
+                    FROM OrderedEpisodes
+                ),
+                RankedInIsland AS (
+                    SELECT *,
+                           ROW_NUMBER() OVER(PARTITION BY SeriesId, island_id ORDER BY rn1 ASC) as island_rn_desc,
+                           ROW_NUMBER() OVER(PARTITION BY SeriesId, island_id ORDER BY rn1 DESC) as island_rn_asc
+                    FROM GroupedEpisodes
+                )
+                SELECT COUNT(*) FROM RankedInIsland
+                WHERE island_rn_desc = 1 OR island_rn_asc = 1
+                """;
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
+        return count != null ? count : 0;
+    }
 }

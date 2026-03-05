@@ -2,11 +2,13 @@ package com.ses.whodatidols.controller;
 
 import com.ses.whodatidols.model.Movie;
 import com.ses.whodatidols.model.Series;
+import com.ses.whodatidols.model.Episode;
 import com.ses.whodatidols.model.Person;
 import com.ses.whodatidols.model.VideoSource;
 import com.ses.whodatidols.model.SecurityViolation;
 import com.ses.whodatidols.model.BannedIp;
 import com.ses.whodatidols.repository.PersonRepository;
+import com.ses.whodatidols.repository.SeriesRepository;
 import com.ses.whodatidols.repository.VideoSourceRepository;
 import com.ses.whodatidols.repository.CommentRepository;
 import com.ses.whodatidols.repository.FeedbackRepository;
@@ -62,6 +64,7 @@ public class AdminController {
     private final com.ses.whodatidols.repository.MessageRepository messageRepository;
     private final com.ses.whodatidols.repository.SystemSettingRepository systemSettingRepository;
     private final CacheManager cacheManager;
+    private final SeriesRepository seriesRepository;
 
     @Value("${media.source.trailers.path}")
     private String trailersPath;
@@ -87,7 +90,7 @@ public class AdminController {
             SecurityViolationRepository securityViolationRepository, BannedIpRepository bannedIpRepository,
             com.ses.whodatidols.repository.MessageRepository messageRepository,
             com.ses.whodatidols.repository.SystemSettingRepository systemSettingRepository,
-            CacheManager cacheManager) {
+            CacheManager cacheManager, SeriesRepository seriesRepository) {
         this.movieService = movieService;
         this.seriesService = seriesService;
         this.tvMazeService = tvMazeService;
@@ -98,6 +101,7 @@ public class AdminController {
         this.heroRepository = heroRepository;
         this.translationService = translationService;
         this.feedbackRepository = feedbackRepository;
+        this.seriesRepository = seriesRepository;
         this.securityViolationRepository = securityViolationRepository;
         this.bannedIpRepository = bannedIpRepository;
         this.messageRepository = messageRepository;
@@ -187,15 +191,19 @@ public class AdminController {
     @SuppressWarnings("null")
     @PostMapping("/clear-cache")
     public ResponseEntity<Map<String, String>> clearCache() {
+        evictAllCaches();
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Tüm önbellekler başarıyla temizlendi.");
+        return ResponseEntity.ok(response);
+    }
+
+    private void evictAllCaches() {
         cacheManager.getCacheNames().forEach(cacheName -> {
             org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
             if (cache != null) {
                 cache.clear();
             }
         });
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Tüm önbellekler başarıyla temizlendi.");
-        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/series/check")
@@ -526,6 +534,51 @@ public class AdminController {
             return ResponseEntity.ok(ids.size() + " dizi başarıyla silindi.");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Toplu silme hatası: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/toggle-movie-hidden")
+    public ResponseEntity<String> toggleMovieHidden(@RequestParam("id") UUID id,
+            @RequestParam("isHidden") boolean isHidden) {
+        try {
+            int hiddenVal = isHidden ? 1 : 0;
+            jdbcTemplate.update("UPDATE Movie SET IsHidden = ? WHERE ID = ?", hiddenVal, id.toString());
+            evictAllCaches();
+            return ResponseEntity.ok("Film gizlilik durumu güncellendi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Gizlilik durumu değiştirilemedi: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/toggle-series-hidden")
+    public ResponseEntity<String> toggleSeriesHidden(@RequestParam("id") UUID id,
+            @RequestParam("isHidden") boolean isHidden) {
+        try {
+            int hiddenVal = isHidden ? 1 : 0;
+            jdbcTemplate.update("UPDATE Series SET IsHidden = ? WHERE ID = ?", hiddenVal, id.toString());
+            evictAllCaches();
+            return ResponseEntity.ok("Dizi gizlilik durumu güncellendi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Gizlilik durumu değiştirilemedi: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/episodes-by-series")
+    @ResponseBody
+    public ResponseEntity<List<Episode>> getEpisodesBySeries(@RequestParam("seriesId") UUID seriesId) {
+        return ResponseEntity.ok(seriesRepository.findEpisodesBySeriesIdForAdmin(seriesId));
+    }
+
+    @PostMapping("/toggle-episode-hidden")
+    public ResponseEntity<String> toggleEpisodeHidden(@RequestParam("id") UUID id,
+            @RequestParam("isHidden") boolean isHidden) {
+        try {
+            int hiddenVal = isHidden ? 1 : 0;
+            jdbcTemplate.update("UPDATE Episode SET IsHidden = ? WHERE ID = ?", hiddenVal, id.toString());
+            evictAllCaches();
+            return ResponseEntity.ok("Bölüm gizlilik durumu güncellendi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Gizlilik durumu değiştirilemedi: " + e.getMessage());
         }
     }
 

@@ -300,16 +300,51 @@
         })
         .catch(err => console.error("Admin info error:", err));
 
+    // Archive Filters State
+    let archiveSearchQueryMovie = '';
+    let archiveSearchQuerySeries = '';
+    let currentVisibilityFilter = 'all';
+
+    function applyArchiveFilters() {
+        // filter movies
+        const movieRows = document.querySelectorAll('#movieTable tbody tr');
+        movieRows.forEach(row => {
+            if (!row.cells || row.cells.length < 2) return;
+            const name = row.cells[1].innerText.toLowerCase();
+            const matchesSearch = name.includes(archiveSearchQueryMovie);
+
+            const isHiddenBtn = row.querySelector('.toggle-btn.btn-success');
+            const isHidden = !!isHiddenBtn;
+            const matchesVis = currentVisibilityFilter === 'all' ||
+                (currentVisibilityFilter === 'hidden' && isHidden) ||
+                (currentVisibilityFilter === 'visible' && !isHidden);
+
+            row.style.display = (matchesSearch && matchesVis) ? '' : 'none';
+        });
+
+        // filter series
+        const seriesGroups = document.querySelectorAll('#seriesAccordion .series-group');
+        seriesGroups.forEach(group => {
+            const h3 = group.querySelector('h3');
+            const name = h3 ? h3.innerText.toLowerCase() : '';
+            const matchesSearch = name.includes(archiveSearchQuerySeries);
+
+            const isHiddenBtn = group.querySelector('.series-header .toggle-btn.btn-success');
+            const isHidden = !!isHiddenBtn;
+            const matchesVis = currentVisibilityFilter === 'all' ||
+                (currentVisibilityFilter === 'hidden' && isHidden) ||
+                (currentVisibilityFilter === 'visible' && !isHidden);
+
+            group.style.display = (matchesSearch && matchesVis) ? '' : 'none';
+        });
+    }
+
     // Archive Search for Movies
     const movieSearchInput = document.getElementById('movieArchiveSearch');
     if (movieSearchInput) {
         movieSearchInput.addEventListener('input', function () {
-            const query = this.value.toLowerCase().trim();
-            const rows = document.querySelectorAll('#movieTable tbody tr');
-            rows.forEach(row => {
-                const name = row.cells[1].innerText.toLowerCase();
-                row.style.display = name.includes(query) ? '' : 'none';
-            });
+            archiveSearchQueryMovie = this.value.toLowerCase().trim();
+            applyArchiveFilters();
         });
     }
 
@@ -317,20 +352,13 @@
     const seriesArchiveSearchInput = document.getElementById('seriesArchiveSearch');
     if (seriesArchiveSearchInput) {
         seriesArchiveSearchInput.addEventListener('input', function () {
-            const query = this.value.toLowerCase().trim();
-            const groups = document.querySelectorAll('#seriesAccordion .series-group');
-            groups.forEach(group => {
-                const h3 = group.querySelector('h3');
-                if (h3) {
-                    const name = h3.innerText.toLowerCase();
-                    group.style.display = name.includes(query) ? '' : 'none';
-                }
-            });
+            archiveSearchQuerySeries = this.value.toLowerCase().trim();
+            applyArchiveFilters();
         });
     }
 
     /* ===========================================================
-       CONTENT FILTER SWITCH (ARCHIVE)
+       CONTENT FILTER SWITCHES (ARCHIVE)
        =========================================================== */
     const filterRadios = document.querySelectorAll('input[name="archiveFilter"]');
     const heroCard = document.getElementById('heroArchiveCard');
@@ -338,39 +366,39 @@
     const seriesCard = document.getElementById('seriesArchiveCard');
 
     if (filterRadios.length > 0 && heroCard && movieCard && seriesCard) {
-        // Function to update visibility
         function updateArchiveView(selectedVal) {
-            // Hide all
             heroCard.style.display = 'none';
             movieCard.style.display = 'none';
             seriesCard.style.display = 'none';
 
-            // Show selected
-            if (selectedVal === 'hero') {
-                heroCard.style.display = 'block';
-                // Trigger slider animation adjustment if needed
-            } else if (selectedVal === 'movies') {
-                movieCard.style.display = 'block';
-            } else if (selectedVal === 'series') {
-                seriesCard.style.display = 'block';
-            }
+            if (selectedVal === 'hero') heroCard.style.display = 'block';
+            else if (selectedVal === 'movies') movieCard.style.display = 'block';
+            else if (selectedVal === 'series') seriesCard.style.display = 'block';
         }
 
-        // Add event listeners
         filterRadios.forEach(radio => {
             radio.addEventListener('change', function () {
-                if (this.checked) {
-                    updateArchiveView(this.value);
-                }
+                if (this.checked) updateArchiveView(this.value);
             });
         });
 
-        // Initialize view based on checked input
         const checkedRadio = document.querySelector('input[name="archiveFilter"]:checked');
-        if (checkedRadio) {
-            updateArchiveView(checkedRadio.value);
-        }
+        if (checkedRadio) updateArchiveView(checkedRadio.value);
     }
+
+    const visRadios = document.querySelectorAll('input[name="visibilityFilter"]');
+    if (visRadios.length > 0) {
+        visRadios.forEach(radio => {
+            radio.addEventListener('change', function () {
+                if (this.checked) {
+                    currentVisibilityFilter = this.value;
+                    applyArchiveFilters();
+                }
+            });
+        });
+    }
+
+    window.applyArchiveFilters = applyArchiveFilters;
 
     /* ===========================================================
        TOPLU SİLME (BULK DELETE) YÖNETİMİ
@@ -959,19 +987,27 @@
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td><input type="checkbox" class="movie-checkbox" value="${movie.id}" onchange="toggleMovieSelection('${movie.id}', this.checked)"></td>
-                        <td style="font-weight: 600;">${movie.name}</td>
+                        <td style="font-weight: 600;" class="movie-name-cell">
+                            ${movie.name}
+                        </td>
                         <td>${movie.releaseYear}</td>
                         <td style="color: var(--text-dim);">${movie.category}</td>
                         <td>
+                            <button class="btn btn-sm toggle-btn ${movie.hidden ? 'btn-success' : 'btn-secondary'}" onclick='toggleMovieHidden("${movie.id}", ${movie.hidden}, this)'>
+                                <i class="fas ${movie.hidden ? 'fa-eye' : 'fa-eye-slash'}"></i> <span>${movie.hidden ? 'GÖSTER' : 'GİZLE'}</span>
+                            </button>
                             <button class="btn btn-sm btn-edit" onclick='editMovie(${JSON.stringify(movie).replace(/'/g, "&#39;")}, event)'><i class="fas fa-edit"></i> DÜZENLE</button>
                             <button class="btn btn-sm btn-danger" onclick='deleteMovie("${movie.id}", "${movie.name.replace(/'/g, "\\'")}")'><i class="fas fa-trash"></i> SİL</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
                 });
+                if (window.applyArchiveFilters) window.applyArchiveFilters();
             })
             .catch(err => console.error("Film listesi hatası:", err));
     }
+
+
 
     window.editMovie = function (movie, event) {
         lastFetchedPosterUrl = ""; // Reset stale URL
@@ -1407,8 +1443,6 @@
                     cardGrid.appendChild(card);
 
                     // Populate Accordion
-                    // TODO: Fetch episodes via API instead of XML parsing for the list
-                    const episodes = parseEpisodesFromXML(series.episodeMetadataXml, series.name, series.category, series.summary, series.language, series.year);
                     const episodeCount = series.episodeCount || 0;
 
                     const groupDiv = document.createElement('div');
@@ -1430,27 +1464,20 @@
                                 </div>
                             </div>
                             <div class="series-actions" onclick="event.stopPropagation()">
+                                <button class="btn btn-sm toggle-btn ${series.hidden ? 'btn-success' : 'btn-secondary'}" onclick='toggleSeriesHidden("${series.id}", ${series.hidden}, this)'>
+                                    <i class="fas ${series.hidden ? 'fa-eye' : 'fa-eye-slash'}"></i> <span>${series.hidden ? 'GÖSTER' : 'GİZLE'}</span>
+                                </button>
                                 <button class="btn btn-sm btn-edit" onclick='editSeriesMetadata(${JSON.stringify(series).replace(/'/g, "&#39;")}, event)'><i class="fas fa-edit"></i> DÜZENLE</button>
                                 <button class="btn btn-sm btn-danger" onclick='deleteSeriesByName("${series.name}")'><i class="fas fa-trash"></i> SİL</button>
                             </div>
                         </div>
                         <div class="episodes-list">
-                            ${episodes.length > 0 ? episodes.map(ep => `
-                                <div class="episode-item">
-                                    <div class="episode-title">
-                                        <strong>Sezon ${ep.season} - Bölüm ${ep.episode}</strong>
-                                    </div>
-                                    <div class="episode-actions">
-                                         <button class="btn btn-sm btn-edit" onclick='editEpisode(${JSON.stringify(ep).replace(/'/g, "&#39;")}, event)'><i class="fas fa-edit"></i> DÜZENLE</button>
-                                        <button class="btn btn-sm btn-edit" style="background:#6c757d;" onclick='preloadEpisodeForm(${JSON.stringify(ep).replace(/'/g, "&#39;")})'><i class="fas fa-copy"></i> KOPYALA</button>
-                                        <button class="btn btn-sm btn-danger" onclick='deleteEpisode("${ep.id}")'><i class="fas fa-trash"></i> SİL</button>
-                                    </div>
-                                </div>
-                            `).join('') : '<div style="padding:15px; color:#666;">Bölüm bulunamadı.</div>'}
+                            <div style="padding:15px; color:#666;"><i class="fas fa-spinner fa-spin"></i> Tıklayarak bölümleri yükleyin...</div>
                         </div>
                     `;
                     container.appendChild(groupDiv);
                 });
+                if (window.applyArchiveFilters) window.applyArchiveFilters();
             })
             .catch(err => {
                 console.error("Dizi listesi hatası:", err);
@@ -1463,18 +1490,27 @@
         if (searchInput) {
             searchInput.oninput = function () {
                 const query = this.value.toLowerCase().trim();
-                const cards = document.querySelectorAll('.series-card');
+                const cards = document.querySelectorAll('#seriesCardGrid .series-card');
                 cards.forEach(card => {
-                    const name = card.dataset.name;
-                    if (name.includes(query)) {
-                        card.classList.remove('hidden');
-                    } else {
-                        card.classList.add('hidden');
+                    const name = card.dataset.name || '';
+                    if (name.includes(query)) card.style.display = 'block';
+                    else card.style.display = 'none';
+                });
+
+                const groups = document.querySelectorAll('#seriesAccordion .series-group');
+                groups.forEach(group => {
+                    const title = group.querySelector('.series-title-wrapper h3');
+                    if (title) {
+                        const name = title.innerText.toLowerCase();
+                        if (name.includes(query)) group.style.display = 'block';
+                        else group.style.display = 'none';
                     }
                 });
             };
         }
     }
+
+
 
     window.toggleSeriesMode = function () {
         const mode = document.querySelector('input[name="seriesMode"]:checked').value;
@@ -1546,16 +1582,51 @@
     window.toggleAccordion = function (element) {
         const panel = element.nextElementSibling;
         const isActive = panel.classList.contains('active');
+        const seriesId = element.querySelector('.series-checkbox').value;
 
         // Close others
         document.querySelectorAll('.episodes-list').forEach(p => {
-            p.classList.remove('active');
-            p.style.maxHeight = null;
+            if (p !== panel && p.classList.contains('active')) {
+                p.classList.remove('active');
+                p.style.maxHeight = null;
+            }
         });
 
         if (!isActive) {
             panel.classList.add('active');
-            panel.style.maxHeight = "500px";
+            panel.innerHTML = '<div style="padding:15px; color:#666;"><i class="fas fa-spinner fa-spin"></i> Bölümler yükleniyor...</div>';
+            panel.style.maxHeight = "auto";
+
+            fetch(`/admin/episodes-by-series?seriesId=${seriesId}`)
+                .then(r => r.json())
+                .then(episodes => {
+                    if (episodes.length === 0) {
+                        panel.innerHTML = '<div style="padding:15px; color:#666;">Bölüm bulunamadı.</div>';
+                    } else {
+                        panel.innerHTML = episodes.map(ep => `
+                            <div class="episode-item">
+                                <div class="episode-title">
+                                    <strong>Sezon ${ep.seasonNumber || ep.season || '-'} - Bölüm ${ep.episodeNumber || ep.episode || '-'}</strong>
+                                </div>
+                                <div class="episode-actions">
+                                    <button class="btn btn-sm toggle-btn ${ep.hidden ? 'btn-success' : 'btn-secondary'}" onclick='window.toggleEpisodeHidden("${ep.id}", ${ep.hidden}, "${seriesId}", this)'>
+                                        <i class="fas ${ep.hidden ? 'fa-eye' : 'fa-eye-slash'}"></i> <span>${ep.hidden ? 'GÖSTER' : 'GİZLE'}</span>
+                                    </button>
+                                    <button class="btn btn-sm btn-edit" onclick='editEpisode(${JSON.stringify(ep).replace(/'/g, "&#39;")}, event)'><i class="fas fa-edit"></i> DÜZENLE</button>
+                                    <button class="btn btn-sm btn-edit" style="background:#6c757d;" onclick='preloadEpisodeForm(${JSON.stringify(ep).replace(/'/g, "&#39;")})'><i class="fas fa-copy"></i> KOPYALA</button>
+                                    <button class="btn btn-sm btn-danger" onclick='deleteEpisode("${ep.id}")'><i class="fas fa-trash"></i> SİL</button>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                    panel.style.maxHeight = panel.scrollHeight + "px";
+                })
+                .catch(err => {
+                    panel.innerHTML = '<div style="padding:15px; color:red;">Bölümler yüklenirken hata oluştu.</div>';
+                });
+        } else {
+            panel.classList.remove('active');
+            panel.style.maxHeight = null;
         }
     };
 
@@ -3749,6 +3820,71 @@
                 });
         });
     }
+
+    /* ===========================================================
+       GİZLİLİK YÖNETİMİ
+       =========================================================== */
+    window.toggleMovieHidden = function (id, isCurrentlyHidden, btnEl) {
+        if (!confirm(isCurrentlyHidden ? "Filmi görünür yapmak istediğinize emin misiniz?" : "Filmi GİZLEMEK istediğinize emin misiniz?")) return;
+        fetch(`/admin/toggle-movie-hidden?id=${id}&isHidden=${!isCurrentlyHidden}`, { method: 'POST' })
+            .then(res => {
+                if (!res.ok) throw new Error("Sunucu hatası! Veri kaydedilemedi.");
+                return res.text();
+            })
+            .then(msg => {
+                if (btnEl) {
+                    const newHiddenState = !isCurrentlyHidden;
+                    btnEl.className = `btn btn-sm toggle-btn ${newHiddenState ? 'btn-success' : 'btn-secondary'}`;
+                    btnEl.innerHTML = `<i class="fas ${newHiddenState ? 'fa-eye' : 'fa-eye-slash'}"></i> <span>${newHiddenState ? 'GÖSTER' : 'GİZLE'}</span>`;
+                    btnEl.setAttribute('onclick', `toggleMovieHidden("${id}", ${newHiddenState}, this)`);
+                    if (window.applyArchiveFilters) window.applyArchiveFilters();
+                } else if (window.fetchMovies) {
+                    fetchMovies();
+                }
+            })
+            .catch(err => alert("Hata oluştu: " + err));
+    };
+
+    window.toggleSeriesHidden = function (id, isCurrentlyHidden, btnEl) {
+        if (!confirm(isCurrentlyHidden ? "Diziyi görünür yapmak istediğinize emin misiniz?" : "Diziyi GİZLEMEK istediğinize emin misiniz? (Dizi gizlendiğinde tüm bölümleri de gizlenmiş olur)")) return;
+        fetch(`/admin/toggle-series-hidden?id=${id}&isHidden=${!isCurrentlyHidden}`, { method: 'POST' })
+            .then(res => {
+                if (!res.ok) throw new Error("Sunucu hatası! Veri kaydedilemedi.");
+                return res.text();
+            })
+            .then(msg => {
+                if (btnEl) {
+                    const newHiddenState = !isCurrentlyHidden;
+                    btnEl.className = `btn btn-sm toggle-btn ${newHiddenState ? 'btn-success' : 'btn-secondary'}`;
+                    btnEl.innerHTML = `<i class="fas ${newHiddenState ? 'fa-eye' : 'fa-eye-slash'}"></i> <span>${newHiddenState ? 'GÖSTER' : 'GİZLE'}</span>`;
+                    btnEl.setAttribute('onclick', `toggleSeriesHidden("${id}", ${newHiddenState}, this)`);
+                    if (window.applyArchiveFilters) window.applyArchiveFilters();
+                } else if (window.fetchSeries) {
+                    fetchSeries();
+                }
+            })
+            .catch(err => alert("Hata oluştu: " + err));
+    };
+
+    window.toggleEpisodeHidden = function (id, isCurrentlyHidden, seriesIdStr, btnEl) {
+        if (!confirm(isCurrentlyHidden ? "Bölümü görünür yapmak istediğinize emin misiniz?" : "Bölümü GİZLEMEK istediğinize emin misiniz?")) return;
+        fetch(`/admin/toggle-episode-hidden?id=${id}&isHidden=${!isCurrentlyHidden}`, { method: 'POST' })
+            .then(res => {
+                if (!res.ok) throw new Error("Sunucu hatası! Veri kaydedilemedi.");
+                return res.text();
+            })
+            .then(msg => {
+                if (btnEl) {
+                    const newHiddenState = !isCurrentlyHidden;
+                    btnEl.className = `btn btn-sm toggle-btn ${newHiddenState ? 'btn-success' : 'btn-secondary'}`;
+                    btnEl.innerHTML = `<i class="fas ${newHiddenState ? 'fa-eye' : 'fa-eye-slash'}"></i> <span>${newHiddenState ? 'GÖSTER' : 'GİZLE'}</span>`;
+                    btnEl.setAttribute('onclick', `window.toggleEpisodeHidden("${id}", ${newHiddenState}, "${seriesIdStr}", this)`);
+                    // Note: Episodes are not dynamically listed in archive search natively, but applying the general filter won't hurt.
+                    if (window.applyArchiveFilters) window.applyArchiveFilters();
+                }
+            })
+            .catch(err => alert("Hata oluştu: " + err));
+    };
 
     /* ===========================================================
        BAKIM MODU YÖNETİMİ

@@ -90,8 +90,9 @@ public class MovieRepository {
     // --- KAYIT (INSERT) İŞLEMİ ---
     public void save(Movie movie) {
         String sql = "INSERT INTO [WhoDatIdols].[dbo].[Movie] " +
-                "(ID, name, Summary, DurationMinutes, language, Country, ReleaseYear, uploadDate, slug, isAdult) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "(ID, name, Summary, DurationMinutes, language, Country, ReleaseYear, uploadDate, slug, isAdult, IsHidden) "
+                +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         jdbcTemplate.update(sql,
                 movie.getId().toString(),
@@ -101,9 +102,10 @@ public class MovieRepository {
                 movie.getLanguage(),
                 movie.getCountry(),
                 movie.getReleaseYear(),
-                java.sql.Timestamp.from(movie.getUploadDate()),
+                movie.getUploadDate() != null ? java.sql.Timestamp.from(movie.getUploadDate()) : null,
                 movie.getSlug(),
-                movie.isAdult());
+                movie.isAdult(),
+                movie.isHidden());
 
         // Update categories in junction table
         updateMovieCategories(movie.getId(), movie.getCategory());
@@ -112,7 +114,20 @@ public class MovieRepository {
     // --- LİSTELEME (TÜM FİLMLER) ---
     public List<Movie> findAll() {
         String sql = """
-                SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult,
+                SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden,
+                       (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
+                        JOIN MovieCategories MC ON MC.CategoryID = C.ID
+                        WHERE MC.MovieID = M.ID) as category
+                FROM [WhoDatIdols].[dbo].[Movie] M
+                ORDER BY M.name ASC
+                """;
+        return jdbcTemplate.query(sql, new MovieRowMapper());
+    }
+
+    // --- LİSTELEME (ADMİN İÇİN TÜM FİLMLER) ---
+    public List<Movie> findAllForAdmin() {
+        String sql = """
+                SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN MovieCategories MC ON MC.CategoryID = C.ID
                         WHERE MC.MovieID = M.ID) as category
@@ -125,12 +140,12 @@ public class MovieRepository {
     public Movie findMovieBySlug(String slug) {
         try {
             String sql = """
-                    SELECT TOP 1 M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult,
+                    SELECT TOP 1 M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN MovieCategories MC ON MC.CategoryID = C.ID
                             WHERE MC.MovieID = M.ID) as category
                     FROM [WhoDatIdols].[dbo].[Movie] M
-                    WHERE M.slug = ?
+                    WHERE M.slug = ? AND M.IsHidden = 0
                     """;
             return jdbcTemplate.queryForObject(sql, new MovieRowMapper(), slug);
         } catch (Exception e) {
@@ -141,7 +156,8 @@ public class MovieRepository {
     // --- GÜNCELLEME (UPDATE) ---
     public void update(Movie movie) {
         String sql = "UPDATE [WhoDatIdols].[dbo].[Movie] SET " +
-                "name = ?, Summary = ?, ReleaseYear = ?, language = ?, Country = ?, slug = ?, isAdult = ? " +
+                "name = ?, Summary = ?, ReleaseYear = ?, language = ?, Country = ?, slug = ?, isAdult = ?, IsHidden = ? "
+                +
                 "WHERE ID = ?";
 
         jdbcTemplate.update(sql,
@@ -152,6 +168,7 @@ public class MovieRepository {
                 movie.getCountry(),
                 movie.getSlug(),
                 movie.isAdult(),
+                movie.isHidden(),
                 movie.getId().toString());
 
         // Update categories in junction table
@@ -190,12 +207,12 @@ public class MovieRepository {
     // --- OKUMA İŞLEMLERİ ---
     public Movie findMovieByName(String name) {
         String sql = """
-                SELECT TOP 1 M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult,
+                SELECT TOP 1 M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN MovieCategories MC ON MC.CategoryID = C.ID
                         WHERE MC.MovieID = M.ID) as category
                 FROM [WhoDatIdols].[dbo].[Movie] M
-                WHERE M.name = ?
+                WHERE M.name = ? AND M.IsHidden = 0
                 """;
         try {
             return jdbcTemplate.queryForObject(sql, new MovieRowMapper(), name);
@@ -208,21 +225,23 @@ public class MovieRepository {
         String sql;
         if (limit > 0) {
             sql = """
-                    SELECT TOP (?) M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult,
+                    SELECT TOP (?) M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN MovieCategories MC ON MC.CategoryID = C.ID
                             WHERE MC.MovieID = M.ID) as category
                     FROM [WhoDatIdols].[dbo].[Movie] M
+                    WHERE M.IsHidden = 0
                     ORDER BY M.uploadDate DESC, M.name ASC
                     """;
             return jdbcTemplate.query(sql, new MovieRowMapper(), limit);
         } else {
             sql = """
-                    SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult,
+                    SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN MovieCategories MC ON MC.CategoryID = C.ID
                             WHERE MC.MovieID = M.ID) as category
                     FROM [WhoDatIdols].[dbo].[Movie] M
+                    WHERE M.IsHidden = 0
                     ORDER BY M.uploadDate DESC, M.name ASC
                     """;
             return jdbcTemplate.query(sql, new MovieRowMapper());
@@ -231,24 +250,27 @@ public class MovieRepository {
 
     // --- PAGINATION OKUMA İŞLEMLERİ ---
     public int countAllMovies() {
-        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Movie]", Integer.class);
+        Integer count = jdbcTemplate
+                .queryForObject("SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Movie] WHERE IsHidden = 0", Integer.class);
         return count != null ? count : 0;
     }
 
     public int countMoviesBySearch(String query) {
         String likeQuery = "%" + query.trim().toLowerCase() + "%";
         Integer count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Movie] WHERE LOWER(name) LIKE ?", Integer.class, likeQuery);
+                "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Movie] WHERE LOWER(name) LIKE ? AND IsHidden = 0",
+                Integer.class, likeQuery);
         return count != null ? count : 0;
     }
 
     public List<Movie> findRecentMoviesPaged(int offset, int limit) {
         String sql = """
-                SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult,
+                SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN MovieCategories MC ON MC.CategoryID = C.ID
                         WHERE MC.MovieID = M.ID) as category
                 FROM [WhoDatIdols].[dbo].[Movie] M
+                WHERE M.IsHidden = 0
                 ORDER BY M.uploadDate DESC, M.name ASC
                 OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
                 """;
@@ -258,12 +280,12 @@ public class MovieRepository {
     public List<Movie> searchMoviesPaged(String query, int offset, int limit) {
         String likeQuery = "%" + query.trim().toLowerCase() + "%";
         String sql = """
-                SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult,
+                SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN MovieCategories MC ON MC.CategoryID = C.ID
                         WHERE MC.MovieID = M.ID) as category
                 FROM [WhoDatIdols].[dbo].[Movie] M
-                WHERE LOWER(M.name) LIKE ?
+                WHERE LOWER(M.name) LIKE ? AND M.IsHidden = 0
                 ORDER BY M.uploadDate DESC, M.name ASC
                 OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
                 """;
@@ -272,11 +294,12 @@ public class MovieRepository {
 
     public List<Movie> findTop6MoviesByCount() {
         String sql = """
-                SELECT TOP 6 M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult,
+                SELECT TOP 6 M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN MovieCategories MC ON MC.CategoryID = C.ID
                         WHERE MC.MovieID = M.ID) as category
                 FROM [WhoDatIdols].[dbo].[Movie] M
+                WHERE M.IsHidden = 0
                 ORDER BY M.viewCount DESC, M.name ASC
                 """;
         return jdbcTemplate.query(sql, new MovieRowMapper());
@@ -285,12 +308,14 @@ public class MovieRepository {
     public Movie findMovieById(UUID id) {
         try {
             String sql = """
-                    SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult,
+                    SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN MovieCategories MC ON MC.CategoryID = C.ID
                             WHERE MC.MovieID = M.ID) as category
                     FROM [WhoDatIdols].[dbo].[Movie] M
                     WHERE M.ID = ?
+                    -- Not checking IsHidden here because if they have the ID, it could be for admin editing.
+                    -- Let the controller decide if access is allowed.
                     """;
             return jdbcTemplate.queryForObject(sql, new MovieRowMapper(), id.toString());
         } catch (EmptyResultDataAccessException e) {
@@ -303,12 +328,12 @@ public class MovieRepository {
             int limit) {
         StringBuilder sql = new StringBuilder(
                 """
-                            SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult,
+                            SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden,
                                    (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                                     JOIN MovieCategories MC ON MC.CategoryID = C.ID
                                     WHERE MC.MovieID = M.ID) as category
                             FROM [WhoDatIdols].[dbo].[Movie] M
-                            WHERE 1=1
+                            WHERE M.IsHidden = 0
                         """);
 
         List<Object> params = new java.util.ArrayList<>();
@@ -350,7 +375,8 @@ public class MovieRepository {
 
     @SuppressWarnings("null")
     public int countMoviesWithFilters(Integer categoryId, Integer year, String country) {
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Movie] M WHERE 1=1");
+        StringBuilder sql = new StringBuilder(
+                "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Movie] M WHERE M.IsHidden = 0");
         List<Object> params = new java.util.ArrayList<>();
 
         if (categoryId != null && categoryId > 0) {
@@ -419,6 +445,12 @@ public class MovieRepository {
 
             try {
                 movie.setAdult(rs.getBoolean("isAdult"));
+            } catch (SQLException e) {
+                // Ignore if not fetched
+            }
+
+            try {
+                movie.setHidden(rs.getBoolean("IsHidden"));
             } catch (SQLException e) {
                 // Ignore if not fetched
             }
