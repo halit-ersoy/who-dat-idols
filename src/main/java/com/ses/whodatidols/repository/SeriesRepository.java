@@ -45,6 +45,20 @@ public class SeriesRepository {
                             "END");
 
             jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Series' AND COLUMN_NAME = 'IsHidden') "
+                            +
+                            "BEGIN " +
+                            "    ALTER TABLE Series ADD IsHidden BIT DEFAULT 0 NOT NULL; " +
+                            "END");
+
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Episode' AND COLUMN_NAME = 'IsHidden') "
+                            +
+                            "BEGIN " +
+                            "    ALTER TABLE Episode ADD IsHidden BIT DEFAULT 0 NOT NULL; " +
+                            "END");
+
+            jdbcTemplate.execute(
                     "IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_episode_slug' AND object_id = OBJECT_ID('Episode')) "
                             +
                             "BEGIN " +

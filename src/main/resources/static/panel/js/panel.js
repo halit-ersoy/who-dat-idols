@@ -60,6 +60,9 @@
                 if (typeof fetchMaintenanceStatus === 'function') {
                     fetchMaintenanceStatus();
                 }
+                if (typeof fetchRegistrationStatus === 'function') {
+                    fetchRegistrationStatus();
+                }
             }
 
             // Scroll to top of main content
