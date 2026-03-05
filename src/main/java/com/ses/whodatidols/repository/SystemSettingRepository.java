@@ -54,6 +54,38 @@ public class SystemSettingRepository {
         } catch (Exception e) {
             logger.error("Failed to ensure SystemSettings schema", e);
         }
+
+        try {
+            // Ensure GetUpcoming Stored Procedure exists and returns the Correct Slugs
+            jdbcTemplate.execute("""
+                        CREATE OR ALTER PROCEDURE [dbo].[GetUpcoming]
+                            @Category NVARCHAR(50) = NULL,
+                            @ActiveOnly BIT = 1
+                        AS
+                        BEGIN
+                            SET NOCOUNT ON;
+                            SELECT
+                                u.ID AS upcomingId,
+                                COALESCE(u.ReferenceId, u.ID) AS ID,
+                                u.Name AS [name],
+                                u.[Type] AS [type],
+                                u.[Status] AS [status],
+                                u.[Datetime] AS [datetime],
+                                u.Category,
+                                u.active,
+                                COALESCE(s.slug, m.slug, e.slug) AS slug
+                            FROM Upcoming u
+                            LEFT JOIN Series s ON u.ReferenceId = s.ID
+                            LEFT JOIN Movie m ON u.ReferenceId = m.ID
+                            LEFT JOIN Episode e ON u.ReferenceId = e.ID
+                            WHERE (@Category IS NULL OR u.Category = @Category)
+                              AND (@ActiveOnly = 0 OR u.active = 1)
+                            ORDER BY u.[datetime] ASC;
+                        END
+                    """);
+        } catch (Exception e) {
+            logger.error("Failed to ensure GetUpcoming procedure schema", e);
+        }
     }
 
     private void initDefaults() {
