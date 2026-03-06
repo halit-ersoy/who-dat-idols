@@ -17,15 +17,18 @@ import java.util.Optional;
 public class BannedController {
 
     private final BannedIpRepository bannedIpRepository;
+    private final com.ses.whodatidols.service.LoginAttemptService loginAttemptService;
 
-    public BannedController(BannedIpRepository bannedIpRepository) {
+    public BannedController(BannedIpRepository bannedIpRepository,
+            com.ses.whodatidols.service.LoginAttemptService loginAttemptService) {
         this.bannedIpRepository = bannedIpRepository;
+        this.loginAttemptService = loginAttemptService;
     }
 
     @GetMapping("/banned")
     public ResponseEntity<Object> getBannedPage(HttpServletRequest request) {
         String ip = getClientIp(request);
-        if (!bannedIpRepository.isBanned(ip)) {
+        if (!bannedIpRepository.isBanned(ip) && !loginAttemptService.isBlocked(ip)) {
             return ResponseEntity.status(302).header("Location", "/").build();
         }
         try {
@@ -51,8 +54,18 @@ public class BannedController {
             return ResponseEntity.ok(Map.of(
                     "reason", ban.getReason() != null ? ban.getReason() : "Güvenlik ihlali nedeniyle yasaklandınız.",
                     "hasAppealed",
-                    ban.getAppealMessage() != null && !ban.getAppealMessage().isEmpty() ? "true" : "false"));
+                    ban.getAppealMessage() != null && !ban.getAppealMessage().isEmpty() ? "true" : "false",
+                    "type", "permanent"));
         }
+
+        if (loginAttemptService.isBlocked(ip)) {
+            return ResponseEntity.ok(Map.of(
+                    "reason",
+                    "Çok fazla hatalı giriş denemesi nedeniyle geçici olarak engellendiniz. Lütfen 5 dakika sonra tekrar deneyiniz.",
+                    "hasAppealed", "false",
+                    "type", "temporary"));
+        }
+
         return ResponseEntity.notFound().build();
     }
 

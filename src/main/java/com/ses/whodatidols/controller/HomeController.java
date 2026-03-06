@@ -43,18 +43,24 @@ public class HomeController {
     private final SeriesService seriesService;
     private final MovieRepository movieRepository;
     private final com.ses.whodatidols.repository.SystemSettingRepository systemSettingRepository;
+    private final com.ses.whodatidols.service.LoginAttemptService loginAttemptService;
+    private final jakarta.servlet.http.HttpServletRequest request;
 
     @org.springframework.beans.factory.annotation.Value("${media.profile.images.path}")
     private String profileImagesPath;
 
     public HomeController(PersonRepository personRepository, MovieService movieService,
             SeriesService seriesService, MovieRepository movieRepository,
-            com.ses.whodatidols.repository.SystemSettingRepository systemSettingRepository) {
+            com.ses.whodatidols.repository.SystemSettingRepository systemSettingRepository,
+            com.ses.whodatidols.service.LoginAttemptService loginAttemptService,
+            jakarta.servlet.http.HttpServletRequest request) {
         this.personRepository = personRepository;
         this.movieService = movieService;
         this.seriesService = seriesService;
         this.movieRepository = movieRepository;
         this.systemSettingRepository = systemSettingRepository;
+        this.loginAttemptService = loginAttemptService;
+        this.request = request;
     }
 
     @GetMapping("/")
@@ -449,6 +455,15 @@ public class HomeController {
     @PostMapping("/login")
     @ResponseBody
     public ResponseEntity<?> loginUser(@RequestBody Map<String, String> loginRequest, HttpServletResponse response) {
+        String clientIp = getClientIp();
+        if (loginAttemptService.isBlocked(clientIp)) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message",
+                    "Çok fazla hatalı giriş denemesi yaptınız. Lütfen 5 dakika sonra tekrar deneyiniz.");
+            return ResponseEntity.status(429).body(errorResponse);
+        }
+
         try {
             String usernameOrEmail = loginRequest.get("usernameOrEmail");
             if (usernameOrEmail == null) {
@@ -467,6 +482,7 @@ public class HomeController {
             }
 
             if (isSuccess) {
+                loginAttemptService.loginSucceeded(clientIp);
                 Object cookieObj = result.get("cookie");
                 if (cookieObj != null) {
                     Cookie authCookie = new Cookie("wdiAuth", cookieObj.toString());
@@ -478,6 +494,14 @@ public class HomeController {
                 }
                 return ResponseEntity.ok(result);
             } else {
+                loginAttemptService.loginFailed(clientIp);
+                if (loginAttemptService.isBlocked(clientIp)) {
+                    Map<String, Object> errorResponse = new HashMap<>();
+                    errorResponse.put("success", false);
+                    errorResponse.put("message",
+                            "Çok fazla hatalı giriş denemesi yaptınız. Lütfen 5 dakika sonra tekrar deneyiniz.");
+                    return ResponseEntity.status(429).body(errorResponse);
+                }
                 return ResponseEntity.status(401).body(result);
             }
         } catch (Exception e) {
@@ -486,6 +510,14 @@ public class HomeController {
             errorResponse.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(errorResponse);
         }
+    }
+
+    private String getClientIp() {
+        String xfHeader = request.getHeader("X-Forwarded-For");
+        if (xfHeader == null) {
+            return request.getRemoteAddr();
+        }
+        return xfHeader.split(",")[0];
     }
 
     @GetMapping("/login-admin")

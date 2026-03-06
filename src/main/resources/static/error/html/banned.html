@@ -315,6 +315,17 @@
             .then(data => {
                 reason.textContent = data.reason;
                 if (data.hasAppealed === "true") showSent();
+                
+                if (data.type === "temporary") {
+                    document.querySelector('h1').textContent = "Erişim Askıya Alındı";
+                    document.querySelector('.desc').textContent = "Güvenlik sistemimiz, mevcut IP adresinizden çok fazla hatalı giriş denemesi tespit etti. Güvenliğiniz için erişiminiz geçici olarak askıya alınmıştır.";
+                    document.querySelector('.icon-circle').style.color = "#ff9800";
+                    document.querySelector('.icon-circle').style.background = "rgba(255, 152, 0, 0.1)";
+                    document.querySelector('.icon-circle').style.borderColor = "rgba(255, 152, 0, 0.2)";
+                    document.querySelector('.icon-circle').style.boxShadow = "0 0 20px rgba(255, 152, 0, 0.2)";
+                    document.querySelector('.icon-circle i').className = "fas fa-clock";
+                    section.style.display = "none";
+                }
             })
             .catch(() => reason.textContent = "Güvenlik protokolü ihlali.");
 

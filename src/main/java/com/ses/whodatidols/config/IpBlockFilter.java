@@ -16,10 +16,13 @@ import java.io.IOException;
 public class IpBlockFilter extends OncePerRequestFilter {
 
     private final BannedIpRepository bannedIpRepository;
+    private final com.ses.whodatidols.service.LoginAttemptService loginAttemptService;
 
     @Autowired
-    public IpBlockFilter(BannedIpRepository bannedIpRepository) {
+    public IpBlockFilter(BannedIpRepository bannedIpRepository,
+            com.ses.whodatidols.service.LoginAttemptService loginAttemptService) {
         this.bannedIpRepository = bannedIpRepository;
+        this.loginAttemptService = loginAttemptService;
     }
 
     @Override
@@ -49,7 +52,14 @@ public class IpBlockFilter extends OncePerRequestFilter {
             clientIp = clientIp.split(",")[0].trim();
         }
 
-        if (bannedIpRepository.isBanned(clientIp)) {
+        if (bannedIpRepository.isBanned(clientIp) || loginAttemptService.isBlocked(clientIp)) {
+            // For AJAX/API requests, return 429 so the frontend can handle the reload
+            if (path.startsWith("/api/") || path.equals("/login")) {
+                response.setStatus(429);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"success\":false,\"message\":\"Blocked\"}");
+                return;
+            }
             response.sendRedirect("/banned");
             return;
         }

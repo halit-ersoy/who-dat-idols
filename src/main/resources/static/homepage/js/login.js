@@ -192,6 +192,11 @@ export function initLogin() {
                 body: JSON.stringify(loginData)
             });
 
+            if (response.status === 429) {
+                window.location.reload();
+                return;
+            }
+
             const data = await response.json();
 
             // Backend'den gelen 'success' değeri boolean veya 1/0 olabilir
