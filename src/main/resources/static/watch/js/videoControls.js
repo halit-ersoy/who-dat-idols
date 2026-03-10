@@ -506,7 +506,7 @@ export function initVideoControls(videoId) {
                     webkitallowfullscreen
                     mozallowfullscreen
                     allow="autoplay; encrypted-media; fullscreen *; picture-in-picture; screen-wake-lock; accelerometer; gyroscope" 
-                    sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation allow-presentation allow-modals">
+                    sandbox="allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation allow-presentation allow-modals allow-downloads allow-popups">
             </iframe>`;
 
         document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('active'));
