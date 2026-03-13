@@ -19,6 +19,7 @@ import com.ses.whodatidols.service.MovieService;
 import com.ses.whodatidols.service.SeriesService;
 import com.ses.whodatidols.service.TvMazeService;
 import com.ses.whodatidols.service.TranslationService;
+import com.ses.whodatidols.service.TrafficStatsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -65,6 +66,7 @@ public class AdminController {
     private final com.ses.whodatidols.repository.SystemSettingRepository systemSettingRepository;
     private final CacheManager cacheManager;
     private final SeriesRepository seriesRepository;
+    private final TrafficStatsService trafficStatsService;
 
     @Value("${media.source.trailers.path}")
     private String trailersPath;
@@ -90,7 +92,7 @@ public class AdminController {
             SecurityViolationRepository securityViolationRepository, BannedIpRepository bannedIpRepository,
             com.ses.whodatidols.repository.MessageRepository messageRepository,
             com.ses.whodatidols.repository.SystemSettingRepository systemSettingRepository,
-            CacheManager cacheManager, SeriesRepository seriesRepository) {
+            CacheManager cacheManager, SeriesRepository seriesRepository, TrafficStatsService trafficStatsService) {
         this.movieService = movieService;
         this.seriesService = seriesService;
         this.tvMazeService = tvMazeService;
@@ -101,12 +103,13 @@ public class AdminController {
         this.heroRepository = heroRepository;
         this.translationService = translationService;
         this.feedbackRepository = feedbackRepository;
-        this.seriesRepository = seriesRepository;
         this.securityViolationRepository = securityViolationRepository;
         this.bannedIpRepository = bannedIpRepository;
         this.messageRepository = messageRepository;
         this.systemSettingRepository = systemSettingRepository;
         this.cacheManager = cacheManager;
+        this.seriesRepository = seriesRepository;
+        this.trafficStatsService = trafficStatsService;
     }
 
     @GetMapping("/panel")
@@ -161,6 +164,7 @@ public class AdminController {
             stats.put("ramPercent", Math.round(((double) physicalUsedMem / physicalTotalMem) * 100.0 * 100.0) / 100.0);
 
             stats.put("cpuCores", Runtime.getRuntime().availableProcessors());
+            stats.put("bandwidthMbps", trafficStatsService.getCurrentMbps());
 
             return ResponseEntity.ok(stats);
         } catch (Exception e) {
@@ -1076,6 +1080,21 @@ public class AdminController {
         try {
             systemSettingRepository.setRegistrationEnabled(active);
             return ResponseEntity.ok(active ? "Yeni üye alımı AÇILDI." : "Yeni üye alımı KAPATILDI.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/settings/main-source")
+    public ResponseEntity<Map<String, Boolean>> getMainSourceStatus() {
+        return ResponseEntity.ok(Map.of("mainSourceEnabled", systemSettingRepository.isMainVideoSourceEnabled()));
+    }
+
+    @PostMapping("/settings/main-source")
+    public ResponseEntity<String> setMainSourceStatus(@RequestParam("active") boolean active) {
+        try {
+            systemSettingRepository.setMainVideoSourceEnabled(active);
+            return ResponseEntity.ok(active ? "Ana video kaynağı ETKİNLEŞTİRİLDİ." : "Ana video kaynağı DEVRE DIŞI bırakıldı.");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
         }

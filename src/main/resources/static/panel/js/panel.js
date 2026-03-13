@@ -1,4 +1,4 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
 
     const escapeHtml = (unsafe) => {
         if (!unsafe) return '';
@@ -63,6 +63,9 @@
                 if (typeof fetchRegistrationStatus === 'function') {
                     fetchRegistrationStatus();
                 }
+                if (typeof fetchMainSourceStatus === 'function') {
+                    fetchMainSourceStatus();
+                }
             }
 
             // Scroll to top of main content
@@ -90,7 +93,8 @@
     fetchDashboardStats();
 
     let cpuChart, ramChart;
-    const maxDataPoints = 20;
+    let bandwidthChart;
+    const maxDataPoints = 60;
 
     initSystemResourceCharts();
 
@@ -148,8 +152,9 @@
         try {
             const cpuCtx = document.getElementById('cpuChart');
             const ramCtx = document.getElementById('ramChart');
+            const bwCtx = document.getElementById('bandwidthChart');
 
-            if (!cpuCtx || !ramCtx || typeof Chart === 'undefined') {
+            if (!cpuCtx || !ramCtx || !bwCtx || typeof Chart === 'undefined') {
                 console.warn("Chart.js is not loaded or canvas elements are missing.");
                 return;
             }
@@ -202,6 +207,34 @@
                 options: commonOptions
             });
 
+            bandwidthChart = new Chart(bwCtx, {
+                type: 'line',
+                data: {
+                    labels: Array(maxDataPoints).fill(''),
+                    datasets: [{
+                        label: 'Trafik (Mbps)',
+                        data: Array(maxDataPoints).fill(0),
+                        borderColor: '#e67e22',
+                        backgroundColor: 'rgba(230, 126, 34, 0.2)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    ...commonOptions,
+                    scales: {
+                        ...commonOptions.scales,
+                        y: {
+                            min: 0,
+                            border: { dash: [4, 4] },
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            title: { display: true, text: 'Mbps', color: '#666', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+
             fetchSystemStats();
             setInterval(fetchSystemStats, 500);
         } catch (error) {
@@ -237,6 +270,15 @@
                 ramChart.data.datasets[0].data.shift();
                 ramChart.data.datasets[0].data.push(data.ramPercent);
                 ramChart.update();
+
+                // Update Bandwidth
+                const bwInfo = document.getElementById('bandwidth-info');
+                if (bwInfo && data.bandwidthMbps !== undefined) {
+                    bwInfo.textContent = `${data.bandwidthMbps.toFixed(2)} Mbps`;
+                    bandwidthChart.data.datasets[0].data.shift();
+                    bandwidthChart.data.datasets[0].data.push(data.bandwidthMbps);
+                    bandwidthChart.update();
+                }
             })
             .catch(err => console.error("System stat error:", err));
     }
@@ -4008,6 +4050,67 @@
             .catch(err => {
                 alert("Kayıt ayarları güncellenirken hata oluştu.");
                 fetchRegistrationStatus(); // Revert on error
+            });
+    };
+
+    /* ===========================================================
+       ANA VİDEO KAYNAĞI YÖNETİMİ
+       =========================================================== */
+    function fetchMainSourceStatus() {
+        const toggle = document.getElementById('mainSourceActiveToggle');
+        const statusText = document.getElementById('mainSourceStatusText');
+        if (!toggle || !statusText) return;
+
+        fetch('/admin/settings/main-source')
+            .then(res => res.json())
+            .then(data => {
+                toggle.checked = data.mainSourceEnabled === true;
+                statusText.innerText = data.mainSourceEnabled ? "ETKİN" : "DEVRE DIŞI";
+                statusText.className = "status-badge " + (data.mainSourceEnabled ? "status-active" : "status-inactive");
+            })
+            .catch(err => {
+                console.error("Ana kaynak durumu alınamadı:", err);
+                statusText.innerText = "HATA";
+                statusText.className = "status-badge status-checking";
+            });
+    }
+
+    window.toggleMainSourceStatus = function () {
+        const toggle = document.getElementById('mainSourceActiveToggle');
+        const statusText = document.getElementById('mainSourceStatusText');
+        if (!toggle || !statusText) return;
+
+        const isActive = toggle.checked;
+        const confirmMsg = isActive
+            ? "Ana video kaynağını (HLS) AKTİF etmek üzeresiniz. Site trafiği artabilir. Onaylıyor musunuz?"
+            : "Ana video kaynağını (HLS) DEVRE DIŞI bırakmak üzeresiniz. Ziyaretçiler sadece harici kaynakları görebilecek. Onaylıyor musunuz?";
+
+        if (!confirm(confirmMsg)) {
+            toggle.checked = !isActive; // Revert visually
+            return;
+        }
+
+        statusText.innerText = "Bekleniyor...";
+        statusText.className = "status-badge status-checking";
+
+        const formData = new URLSearchParams();
+        formData.append('active', isActive);
+
+        fetch('/admin/settings/main-source', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formData.toString()
+        })
+            .then(res => res.text())
+            .then(msg => {
+                alert(msg);
+                fetchMainSourceStatus();
+            })
+            .catch(err => {
+                alert("Ana kaynak ayarı güncellenirken hata oluştu.");
+                fetchMainSourceStatus(); // Revert on error
             });
     };
 });

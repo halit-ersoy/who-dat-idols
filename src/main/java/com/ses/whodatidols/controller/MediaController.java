@@ -3,6 +3,8 @@ package com.ses.whodatidols.controller;
 import com.ses.whodatidols.model.VideoSource;
 
 import com.ses.whodatidols.repository.VideoSourceRepository;
+import com.ses.whodatidols.repository.SystemSettingRepository;
+import com.ses.whodatidols.service.TrafficStatsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,13 +58,18 @@ public class MediaController {
     private final JdbcTemplate jdbcTemplate;
 
     private final VideoSourceRepository videoSourceRepository;
+    private final SystemSettingRepository systemSettingRepository;
+    private final TrafficStatsService trafficStatsService;
 
     // Cache to avoid repeated content type probing
     private final Map<String, MediaType> mediaTypeCache = new ConcurrentHashMap<>();
 
-    public MediaController(JdbcTemplate jdbcTemplate, VideoSourceRepository videoSourceRepository) {
+    public MediaController(JdbcTemplate jdbcTemplate, VideoSourceRepository videoSourceRepository,
+            SystemSettingRepository systemSettingRepository, TrafficStatsService trafficStatsService) {
         this.jdbcTemplate = jdbcTemplate;
         this.videoSourceRepository = videoSourceRepository;
+        this.systemSettingRepository = systemSettingRepository;
+        this.trafficStatsService = trafficStatsService;
     }
 
     // --- 1. STATİK RESİM SUNUCUSU ---
@@ -132,6 +139,10 @@ public class MediaController {
 
         logger.debug("Requesting video for id={}", id);
 
+        if (!systemSettingRepository.isMainVideoSourceEnabled()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         try {
             String category = getContentTypeFromDatabase(id);
             Path basePath = getBasePathForCategory(category);
@@ -159,6 +170,7 @@ public class MediaController {
             UrlResource videoResource = new UrlResource(videoPath.toUri());
             long contentLength = videoResource.contentLength();
             ResourceRegion region = getResourceRegion(videoResource, headers, contentLength);
+            trafficStatsService.recordBytes(region.getCount());
 
             MediaType mediaType = MediaTypeFactory.getMediaType(videoResource)
                     .orElse(MediaType.APPLICATION_OCTET_STREAM);
@@ -192,6 +204,9 @@ public class MediaController {
     @SuppressWarnings("null")
     @GetMapping("/video/{id}/playlist.m3u8")
     public ResponseEntity<Resource> getHlsPlaylist(@PathVariable("id") UUID id) {
+        if (!systemSettingRepository.isMainVideoSourceEnabled()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         try {
             String category = getContentTypeFromDatabase(id);
             Path basePath = getBasePathForCategory(category);
@@ -206,6 +221,7 @@ public class MediaController {
             }
 
             Resource resource = new UrlResource(hlsPath.toUri());
+            trafficStatsService.recordBytes(resource.contentLength());
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType("application/vnd.apple.mpegurl"))
                     .body(resource);
@@ -219,6 +235,9 @@ public class MediaController {
     public ResponseEntity<Resource> getHlsSegment(
             @PathVariable("id") UUID id,
             @PathVariable("segment") String segment) {
+        if (!systemSettingRepository.isMainVideoSourceEnabled()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         try {
             String category = getContentTypeFromDatabase(id);
             Path basePath = getBasePathForCategory(category);
@@ -232,6 +251,7 @@ public class MediaController {
             }
 
             Resource resource = new UrlResource(segmentPath.toUri());
+            trafficStatsService.recordBytes(resource.contentLength());
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType("video/MP2T"))
                     .body(resource);

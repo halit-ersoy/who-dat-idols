@@ -109,6 +109,11 @@ public class SystemSettingRepository {
             // Default to true (registration open)
             setValue("registration_enabled", "true");
         }
+
+        if (getValue("main_video_source_enabled") == null) {
+            // Default to true (enabled)
+            setValue("main_video_source_enabled", "true");
+        }
     }
 
     public String getValue(String key) {
@@ -165,5 +170,14 @@ public class SystemSettingRepository {
 
     public void setRegistrationEnabled(boolean active) {
         setValue("registration_enabled", String.valueOf(active));
+    }
+
+    public boolean isMainVideoSourceEnabled() {
+        String val = getValue("main_video_source_enabled");
+        return "true".equalsIgnoreCase(val);
+    }
+
+    public void setMainVideoSourceEnabled(boolean enabled) {
+        setValue("main_video_source_enabled", String.valueOf(enabled));
     }
 }
