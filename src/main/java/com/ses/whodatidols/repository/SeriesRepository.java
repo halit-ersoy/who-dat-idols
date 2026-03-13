@@ -783,7 +783,7 @@ public class SeriesRepository {
         return count != null ? count : 0;
     }
 
-    public RowMapper<com.ses.whodatidols.viewmodel.FeaturedTvItemDto> featuredTvMapper = (rs, rowNum) -> {
+    public final @NonNull RowMapper<com.ses.whodatidols.viewmodel.FeaturedTvItemDto> featuredTvMapper = (rs, rowNum) -> {
         com.ses.whodatidols.viewmodel.FeaturedTvItemDto dto = new com.ses.whodatidols.viewmodel.FeaturedTvItemDto();
 
         String slug = rs.getString("slug");

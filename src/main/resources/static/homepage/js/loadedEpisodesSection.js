@@ -290,7 +290,20 @@ export function initLoadedEpisodesSection() {
             // Add navigation functionality
             setupCarouselNavigation();
         } else {
-            carousel.innerHTML = '<div class="upcoming-error-message">Veri bulunamadı.</div>';
+            carousel.innerHTML = `
+                <div class="upcoming-no-data">
+                    <div class="upcoming-no-data-icon">
+                        <i class="far fa-clock"></i>
+                    </div>
+                    <div class="upcoming-no-data-text">
+                        <h4>Yeni İçerikler Hazırlanıyor</h4>
+                        <p>Ekibimiz sizin için en güncel bölümleri ve çevirileri hazırlamak üzere arka planda çalışmaya devam ediyor.</p>
+                    </div>
+                </div>
+            `;
+            setTimeout(() => {
+                carousel.style.opacity = '1';
+            }, 100);
         }
     }
 
@@ -355,7 +368,20 @@ export function initLoadedEpisodesSection() {
             // Add navigation functionality
             setupCarouselNavigation();
         } else {
-            carousel.innerHTML = '<div class="upcoming-error-message">Veri bulunamadı.</div>';
+            carousel.innerHTML = `
+                <div class="upcoming-no-data">
+                    <div class="upcoming-no-data-icon">
+                        <i class="fas fa-language"></i>
+                    </div>
+                    <div class="upcoming-no-data-text">
+                        <h4>Çeviriler Yolda</h4>
+                        <p>Favori dizilerinizin çevirileri büyük bir titizlikle hazırlanıyor. Yeni bölümler eklendiğinde burada görebileceksiniz.</p>
+                    </div>
+                </div>
+            `;
+            setTimeout(() => {
+                carousel.style.opacity = '1';
+            }, 100);
         }
     }
 

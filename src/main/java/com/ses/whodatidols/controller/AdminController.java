@@ -192,7 +192,6 @@ public class AdminController {
         }
     }
 
-    @SuppressWarnings("null")
     @PostMapping("/clear-cache")
     public ResponseEntity<Map<String, String>> clearCache() {
         evictAllCaches();
@@ -203,9 +202,11 @@ public class AdminController {
 
     private void evictAllCaches() {
         cacheManager.getCacheNames().forEach(cacheName -> {
-            org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
-            if (cache != null) {
-                cache.clear();
+            if (cacheName != null) {
+                org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
+                if (cache != null) {
+                    cache.clear();
+                }
             }
         });
     }

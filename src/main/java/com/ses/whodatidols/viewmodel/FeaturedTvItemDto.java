@@ -1,6 +1,5 @@
 package com.ses.whodatidols.viewmodel;
 
-import java.util.UUID;
 
 public class FeaturedTvItemDto {
     private String id;

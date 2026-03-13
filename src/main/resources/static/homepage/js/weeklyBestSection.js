@@ -115,7 +115,21 @@ export function initWeeklyBestSection() {
                 }, 500);
             }, 100);
         } else {
-            weeklyBestContainer.innerHTML = '<div class="error-message">Veri bulunamadı.</div>';
+            weeklyBestContainer.innerHTML = `
+                <div class="weekly-no-data">
+                    <div class="weekly-no-data-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="weekly-no-data-text">
+                        <h4>Haftanın En İyileri Yakında</h4>
+                        <p>Bu haftanın en popüler içerikleri analiz ediliyor. Çok yakında listenin zirvesini burada keşfedeceksiniz!</p>
+                    </div>
+                </div>
+            `;
+            setTimeout(() => {
+                weeklyBestContainer.classList.remove('fade-out');
+                weeklyBestContainer.classList.add('fade-in');
+            }, 100);
         }
     }
 
