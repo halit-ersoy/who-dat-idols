@@ -167,6 +167,12 @@ public class FilterController {
             case "nl":
             case "nld":
                 return "Hollanda";
+            case "ie":
+                return "İrlanda";
+            case "ar":
+                return "Arjantin";
+            case "br":
+                return "Brezilya";
             default:
                 return code.toUpperCase();
         }
