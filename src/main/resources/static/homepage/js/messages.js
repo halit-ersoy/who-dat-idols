@@ -14,6 +14,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastConversationsJson = null;
     let lastMessagesCount = 0;
 
+    let stompClient = null;
+    let socket = null;
+    let reconnectTimeout = null;
+
     const popularEmojis = [
         '😀', '😂', '😍', '😊', '🥰', '😎', '😜', '🤔', '🙄', '😴',
         '😭', '😱', '😡', '👍', '👎', '❤️', '🔥', '✨', '🙌', '👏',
@@ -51,8 +55,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Initial Load
     fetchConversations();
 
-    // Global interval to refresh conversations list (sidebar)
-    setInterval(fetchConversations, 5000);
+    // Global interval to refresh conversations list (sidebar) - kept as a slow fallback
+    setInterval(fetchConversations, 20000);
+
+    // Connect to WebSocket for real-time messaging
+    connectWebSocket();
 
     // 2. User Search Logic
     let searchTimeout = null;
@@ -267,15 +274,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         loadChatHistory(nickname);
 
-        // Setup interval for real-time-like updates
+        // Send WebSocket read notification to mark previous messages as read
+        sendReadNotification(nickname);
+
+        // Active chat is now handled in real-time by WebSocket. 
+        // We only maintain a slow 20s recovery loop in the background.
         clearInterval(chatInterval);
         chatInterval = setInterval(() => {
             if (currentReceiver === nickname) {
                 loadChatHistory(nickname, true);
-                // Also refresh sidebar during active chat to update last message/status
                 fetchConversations();
             }
-        }, 5000);
+        }, 20000);
 
         // Setup input event
         const input = document.getElementById('message-input');
@@ -410,6 +420,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
         sendBtn.disabled = true;
 
+        if (stompClient && stompClient.connected) {
+            try {
+                stompClient.send("/app/chat.send", {}, JSON.stringify({
+                    receiverNickname: nickname,
+                    content: content
+                }));
+                // Snappy UI clearing
+                input.value = '';
+                input.style.height = 'auto';
+            } catch (e) {
+                console.error("Error sending WebSocket message, trying HTTP fallback:", e);
+                sendViaHttp(nickname, content, sendBtn, input);
+            }
+        } else {
+            sendViaHttp(nickname, content, sendBtn, input);
+        }
+    }
+
+    function sendViaHttp(nickname, content, sendBtn, input) {
         fetch('/api/messages/send', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -426,6 +455,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     alert("Mesaj gönderilemedi: " + data.message);
                     sendBtn.disabled = false;
                 }
+            })
+            .catch(err => {
+                alert("Mesaj gönderilemedi (Ağ Hatası)");
+                sendBtn.disabled = false;
             });
     }
 
@@ -498,5 +531,176 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ nickname, reason, context: 'Chat' })
             }).then(res => res.ok);
         });
+    }
+
+    /* WebSocket Helpers for Real-time Messaging */
+    function connectWebSocket() {
+        const nickname = localStorage.getItem('wdiUserNickname');
+        if (!nickname) return;
+
+        if (stompClient && stompClient.connected) return;
+
+        socket = new SockJS('/ws');
+        stompClient = Stomp.over(socket);
+        stompClient.debug = null;
+
+        stompClient.connect({}, function (frame) {
+            stompClient.subscribe('/topic/messages/' + nickname, function (messageOutput) {
+                try {
+                    const data = JSON.parse(messageOutput.body);
+                    handleIncomingWebSocketMessage(data);
+                } catch (e) {
+                    console.error("Error processing incoming WebSocket message:", e);
+                }
+            });
+        }, function (error) {
+            clearTimeout(reconnectTimeout);
+            reconnectTimeout = setTimeout(connectWebSocket, 5000);
+        });
+    }
+
+    function sendReadNotification(otherNickname) {
+        if (stompClient && stompClient.connected && otherNickname) {
+            stompClient.send("/app/chat.read", {}, JSON.stringify({
+                otherNickname: otherNickname
+            }));
+        }
+    }
+
+    function handleIncomingWebSocketMessage(data) {
+        const myNickname = localStorage.getItem('wdiUserNickname');
+
+        if (data.type === 'READ_EVENT') {
+            if (data.readBy === currentReceiver) {
+                const ticks = document.querySelectorAll('.message-bubble.sent .message-status-tick');
+                ticks.forEach(tick => {
+                    tick.className = 'fas fa-check-double message-status-tick read';
+                });
+            }
+            return;
+        }
+
+        // Check if message belongs to the active conversation
+        const isForActiveChat = (data.senderNickname === currentReceiver || data.receiverNickname === currentReceiver);
+
+        if (isForActiveChat) {
+            appendIncomingMessage(data);
+            if (data.senderNickname === currentReceiver) {
+                playNotificationSound();
+                sendReadNotification(currentReceiver);
+            }
+        } else if (data.senderNickname !== myNickname) {
+            playNotificationSound();
+            showToast(data);
+        }
+
+        // Instantly refresh sidebar to show last message & unread state
+        fetchConversations();
+    }
+
+    function appendIncomingMessage(m) {
+        const container = document.getElementById('chat-messages-container');
+        if (!container) return;
+
+        // Skip if message already exists
+        if (container.querySelector(`[data-id="${m.id}"]`)) return;
+
+        const myNickname = localStorage.getItem('wdiUserNickname');
+        const isSent = m.senderNickname === myNickname;
+
+        let statusIcon = '';
+        if (isSent) {
+            if (m.read) {
+                statusIcon = '<i class="fas fa-check-double message-status-tick read"></i>';
+            } else if (m.delivered) {
+                statusIcon = '<i class="fas fa-check-double message-status-tick"></i>';
+            } else {
+                statusIcon = '<i class="fas fa-check message-status-tick"></i>';
+            }
+        }
+
+        const emojiInfo = isOnlyEmojis(m.content);
+        let bubbleClass = isSent ? 'sent' : 'received';
+        if (emojiInfo.only && emojiInfo.count <= 2) {
+            bubbleClass += ' only-emoji';
+            if (emojiInfo.count === 1) bubbleClass += ' large';
+            else if (emojiInfo.count === 2) bubbleClass += ' medium';
+        }
+
+        const html = `
+            <div class="message-bubble ${bubbleClass}" data-id="${m.id}">
+                ${m.content}
+                <div class="message-footer">
+                    <span class="message-time">${formatTime(new Date(m.timestamp))}</span>
+                    ${isSent ? statusIcon : ''}
+                </div>
+            </div>
+        `;
+
+        container.insertAdjacentHTML('beforeend', html);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    let audioContext = null;
+    function playNotificationSound() {
+        try {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+
+            const playTone = (freq, startTime, duration) => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(freq, startTime);
+                gainNode.gain.setValueAtTime(0, startTime);
+                gainNode.gain.linearRampToValueAtTime(0.2, startTime + 0.02);
+                gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
+                oscillator.start(startTime);
+                oscillator.stop(startTime + duration);
+            };
+
+            const now = audioContext.currentTime;
+            playTone(660, now, 0.15);      // E5
+            playTone(880, now + 0.1, 0.2); // A5
+        } catch (e) {
+            console.debug("Audio play failed:", e);
+        }
+    }
+
+    function showToast(conv) {
+        let container = document.querySelector('.toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification';
+        toast.innerHTML = `
+            <div class="toast-icon"><i class="fas fa-message"></i></div>
+            <div class="toast-content">
+                <div class="toast-title">${conv.senderNickname}</div>
+                <div class="toast-message">${conv.content}</div>
+            </div>
+        `;
+
+        toast.onclick = () => {
+            startConversation(conv.senderNickname);
+            toast.remove();
+        };
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.add('hide');
+            setTimeout(() => toast.remove(), 400);
+        }, 4000);
     }
 });

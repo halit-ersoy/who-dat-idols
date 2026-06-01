@@ -22,10 +22,8 @@ export function initMessagingManager() {
     // Initial sync
     updateMessageBadge(true);
 
-    const isMessagesPage = window.location.pathname.includes('/messages');
-    const pollInterval = isMessagesPage ? 5000 : 10000;
-
-    setInterval(updateMessageBadge, pollInterval);
+    // Connect to WebSocket for real-time notifications
+    connectWebSocket();
 }
 
 function getNotifiedMessages() {
@@ -189,3 +187,47 @@ function showToast(conv) {
         setTimeout(() => toast.remove(), 400);
     }, 4000);
 }
+
+let stompClient = null;
+let socket = null;
+let reconnectTimeout = null;
+
+function connectWebSocket() {
+    const nickname = localStorage.getItem('wdiUserNickname');
+    if (!nickname) return;
+
+    if (stompClient && stompClient.connected) return;
+
+    socket = new SockJS('/ws');
+    stompClient = Stomp.over(socket);
+    stompClient.debug = null; // Suppress STOMP console logs
+
+    stompClient.connect({}, function (frame) {
+        stompClient.subscribe('/topic/messages/' + nickname, function (messageOutput) {
+            try {
+                const data = JSON.parse(messageOutput.body);
+                
+                // Skip read receipt events for main notifications
+                if (data.type === 'READ_EVENT') {
+                    return;
+                }
+
+                // Play sound notification
+                playNotificationSound();
+
+                // Show desktop-like toast
+                showToast(data);
+
+                // Instantly sync the badge with database
+                updateMessageBadge(false);
+            } catch (e) {
+                console.error("Error processing incoming WebSocket message:", e);
+            }
+        });
+    }, function (error) {
+        // Automatically reconnect after 5 seconds
+        clearTimeout(reconnectTimeout);
+        reconnectTimeout = setTimeout(connectWebSocket, 5000);
+    });
+}
+
