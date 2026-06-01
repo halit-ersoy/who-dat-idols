@@ -139,21 +139,21 @@
                     <h2 class="login-title">Hoşgeldiniz</h2>
                     <p class="login-subtitle">Hesabınıza giriş yapın</p>
                 </div>
-                <div class="login-form">
+                <form class="login-form" id="login-form-element" action="javascript:void(0);">
                     <div class="form-group">
                         <label for="email">E-posta veya kullanıcı adı</label>
-                        <input type="text" class="form-control" id="email" placeholder="E-posta veya kullanıcı adı">
+                        <input type="text" class="form-control" id="email" name="username" autocomplete="username" placeholder="E-posta veya kullanıcı adı" required>
                         <span class="highlight"></span>
                     </div>
                     <div class="form-group">
                         <label for="password">Şifre</label>
-                        <input type="password" class="form-control" id="password" placeholder="Şifreniz">
+                        <input type="password" class="form-control" id="password" name="password" autocomplete="current-password" placeholder="Şifreniz" required>
                         <span class="highlight"></span>
                     </div>
                     <div class="forgot-password">
                         <a href="#">Şifremi unuttum</a>
                     </div>
-                    <button class="login-btn-page" id="login-submit">Giriş Yap</button>
+                    <button type="submit" class="login-btn-page" id="login-submit">Giriş Yap</button>
                     <div class="login-divider">veya</div>
                     <div class="social-login">
                         <button class="social-btn">
@@ -172,7 +172,7 @@
                     <div class="register-link">
                         Hesabınız yok mu? <a href="#">Hesap oluştur</a>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
         <div class="login-modal-overlay" id="register-modal">

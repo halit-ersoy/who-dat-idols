@@ -6,6 +6,34 @@ export function initNotifications() {
 
     if (!notificationsBtn || !notificationsDropdown) return;
 
+    let currentNotifications = [];
+
+    // Namespace viewed notifications per logged-in user
+    const myNickname = localStorage.getItem('wdiUserNickname') || 'anonymous';
+    const storageKey = `wdi_viewed_notifications_${myNickname}`;
+
+    function getViewedNotificationIds() {
+        try {
+            return JSON.parse(localStorage.getItem(storageKey) || '[]');
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function markAllLoadedAsViewed(notifications) {
+        const viewedIds = getViewedNotificationIds();
+        let updated = false;
+        notifications.forEach(n => {
+            if (n.id && !viewedIds.includes(n.id)) {
+                viewedIds.push(n.id);
+                updated = true;
+            }
+        });
+        if (updated) {
+            localStorage.setItem(storageKey, JSON.stringify(viewedIds));
+        }
+    }
+
     // Fetch notifications on load
     fetchNotifications();
 
@@ -13,6 +41,15 @@ export function initNotifications() {
     notificationsBtn.addEventListener('click', (e) => {
         // Prevent closing when clicking inside the dropdown
         if (e.target.closest('.notifications-dropdown')) return;
+
+        const isOpening = !notificationsBtn.classList.contains('active');
+        if (isOpening) {
+            markAllLoadedAsViewed(currentNotifications);
+            notificationBadge.style.display = 'none';
+            // Instantly clear unread visual highlight from items
+            const unreadItems = notificationsList.querySelectorAll('.notification-item.unread');
+            unreadItems.forEach(item => item.classList.remove('unread'));
+        }
 
         notificationsBtn.classList.toggle('active');
         notificationsDropdown.classList.toggle('active');
@@ -38,26 +75,36 @@ export function initNotifications() {
     }
 
     function updateNotificationUI(notifications) {
-        if (!notifications || notifications.length === 0) {
+        currentNotifications = notifications || [];
+
+        if (currentNotifications.length === 0) {
             notificationsList.innerHTML = '<div class="notification-empty">Henüz bildirim yok.</div>';
             notificationBadge.style.display = 'none';
             return;
         }
 
-        // We still show the badge for all notifications for now, but user said "just notifications"
-        // I'll keep the unread count logic for the badge but removing the "mark as read" feature
-        const unreadCount = notifications.filter(n => !n.read).length;
-        if (unreadCount > 0) {
-            notificationBadge.textContent = unreadCount;
-            notificationBadge.style.display = 'flex';
-        } else {
+        const viewedIds = getViewedNotificationIds();
+        const unreadCount = currentNotifications.filter(n => !viewedIds.includes(n.id)).length;
+        
+        const isDropdownOpen = notificationsDropdown.classList.contains('active');
+
+        if (isDropdownOpen) {
+            markAllLoadedAsViewed(currentNotifications);
             notificationBadge.style.display = 'none';
+        } else {
+            if (unreadCount > 0) {
+                notificationBadge.textContent = unreadCount;
+                notificationBadge.style.display = 'flex';
+            } else {
+                notificationBadge.style.display = 'none';
+            }
         }
 
         notificationsList.innerHTML = '';
-        notifications.forEach(notification => {
+        currentNotifications.forEach(notification => {
             const item = document.createElement('div');
-            item.className = 'notification-item'; // Simple item class
+            const isUnread = !viewedIds.includes(notification.id);
+            item.className = 'notification-item' + (isUnread ? ' unread' : '');
 
             const timeStr = formatTime(new Date(notification.createdAt));
             const icon = notification.type === 'Movie' ? 'fas fa-film' : 'fas fa-tv';
@@ -75,15 +122,20 @@ export function initNotifications() {
             `;
 
             item.addEventListener('click', () => {
+                // Instantly record click
+                if (notification.id) {
+                    const ids = getViewedNotificationIds();
+                    if (!ids.includes(notification.id)) {
+                        ids.push(notification.id);
+                        localStorage.setItem(storageKey, JSON.stringify(ids));
+                    }
+                }
                 window.location.href = link;
             });
 
             notificationsList.appendChild(item);
         });
     }
-
-    // Removed markAsRead function
-
 
     function formatTime(date) {
         const now = new Date();

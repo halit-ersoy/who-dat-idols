@@ -162,3 +162,19 @@
         max-height: calc(100vh - 100px);
     }
 }
+
+/* Premium styled unread states */
+.notification-item.unread {
+    background: rgba(255, 255, 255, 0.02);
+    border-left: 3px solid var(--primary-color, #ff4d4d);
+    padding-left: 17px; /* compensate for border width */
+}
+
+.notification-item.unread .notification-title {
+    font-weight: 700;
+}
+
+.notification-item.unread .notification-icon {
+    background: rgba(255, 77, 77, 0.15);
+    box-shadow: 0 0 10px rgba(255, 77, 77, 0.2);
+}
