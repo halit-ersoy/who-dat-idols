@@ -61,6 +61,14 @@ document.addEventListener('DOMContentLoaded', () => {
         parseUrlParams();
         loadContent(true);
         setupEventListeners();
+
+        // Initialize calendar modal for the "Takvim" link in the navigation menu
+        try {
+            const calendarModule = await import('/homepage/js/calendar.js?v=2');
+            calendarModule.initCalendar();
+        } catch (error) {
+            console.error('Failed to initialize calendar:', error);
+        }
     }
 
     function parseUrlParams() {

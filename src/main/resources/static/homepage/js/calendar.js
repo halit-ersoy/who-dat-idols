@@ -1,8 +1,5 @@
 // calendar.js
 export function initCalendar() {
-    const calendarModal = document.getElementById('calendar-modal');
-    const closeCalendarButton = document.getElementById('close-calendar-modal');
-
     // Find the Takvim link
     const navLinks = document.querySelectorAll('a.nav-link');
     let takvimLink;
@@ -13,14 +10,36 @@ export function initCalendar() {
         }
     });
 
-    if (takvimLink) {
-        takvimLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            loadCalendarData();
-            calendarModal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        });
+    if (!takvimLink) return;
+
+    let calendarModal = document.getElementById('calendar-modal');
+    if (!calendarModal) {
+        calendarModal = document.createElement('div');
+        calendarModal.className = 'calendar-modal-overlay';
+        calendarModal.id = 'calendar-modal';
+        calendarModal.style.display = 'none';
+        calendarModal.innerHTML = `
+            <div class="calendar-modal">
+                <button class="close-modal" id="close-calendar-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="calendar-header">
+                    <h2>Takvim</h2>
+                </div>
+                <div class="weekly-calendar"></div>
+            </div>
+        `;
+        document.body.appendChild(calendarModal);
     }
+
+    const closeCalendarButton = document.getElementById('close-calendar-modal');
+
+    takvimLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        loadCalendarData();
+        calendarModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    });
 
     if (closeCalendarButton) {
         closeCalendarButton.addEventListener('click', () => {

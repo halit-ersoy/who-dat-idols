@@ -73,6 +73,7 @@ header.at-top .search-button {
 .nav-menu {
     display: flex;
     margin-left: 2.5rem;
+    margin-right: auto;
     transition: all 0.3s ease;
     align-items: center;
 }
