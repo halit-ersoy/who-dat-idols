@@ -43,24 +43,52 @@ public class SearchController {
         try {
             List<Map<String, Object>> results = contentRepository.searchContent(q, year, type, category);
 
-            for (Map<String, Object> map : results) {
-                String idStr = (String) map.get("ID");
-                String itemType = (String) map.get("Type");
-                if (idStr != null) {
-                    try {
-                        UUID uuid = UUID.fromString(idStr);
-                        if ("Movie".equalsIgnoreCase(itemType)) {
-                            Movie m = movieRepository.findMovieById(uuid);
-                            if (m != null)
-                                map.put("slug", m.getSlug());
-                        } else if ("SoapOpera".equalsIgnoreCase(itemType) || "Series".equalsIgnoreCase(itemType)
-                                || "soap_opera".equalsIgnoreCase(itemType)) {
-                            List<Episode> eps = seriesRepository.findEpisodesBySeriesId(uuid);
-                            if (!eps.isEmpty())
-                                map.put("slug", eps.get(0).getSlug());
+            if (!results.isEmpty()) {
+                List<UUID> movieIds = new java.util.ArrayList<>();
+                List<UUID> seriesIds = new java.util.ArrayList<>();
+
+                for (Map<String, Object> map : results) {
+                    String idStr = (String) map.get("ID");
+                    String itemType = (String) map.get("Type");
+                    if (idStr != null) {
+                        try {
+                            UUID uuid = UUID.fromString(idStr);
+                            if ("Movie".equalsIgnoreCase(itemType)) {
+                                movieIds.add(uuid);
+                            } else if ("SoapOpera".equalsIgnoreCase(itemType) || "Series".equalsIgnoreCase(itemType)
+                                    || "soap_opera".equalsIgnoreCase(itemType)) {
+                                seriesIds.add(uuid);
+                            }
+                        } catch (Exception ex) {
+                            // ignore UUID parsing error
                         }
-                    } catch (Exception ex) {
-                        // ignore UUID parsing error
+                    }
+                }
+
+                java.util.Map<UUID, String> movieSlugs = movieRepository.findSlugsByMovieIds(movieIds);
+                java.util.Map<UUID, String> seriesSlugs = seriesRepository.findFirstEpisodeSlugsBySeriesIds(seriesIds);
+
+                for (Map<String, Object> map : results) {
+                    String idStr = (String) map.get("ID");
+                    String itemType = (String) map.get("Type");
+                    if (idStr != null) {
+                        try {
+                            UUID uuid = UUID.fromString(idStr);
+                            if ("Movie".equalsIgnoreCase(itemType)) {
+                                String slug = movieSlugs.get(uuid);
+                                if (slug != null) {
+                                    map.put("slug", slug);
+                                }
+                            } else if ("SoapOpera".equalsIgnoreCase(itemType) || "Series".equalsIgnoreCase(itemType)
+                                    || "soap_opera".equalsIgnoreCase(itemType)) {
+                                String slug = seriesSlugs.get(uuid);
+                                if (slug != null) {
+                                    map.put("slug", slug);
+                                }
+                            }
+                        } catch (Exception ex) {
+                            // ignore UUID parsing error
+                        }
                     }
                 }
             }

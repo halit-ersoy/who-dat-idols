@@ -884,4 +884,80 @@ public class SeriesRepository {
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
         return count != null ? count : 0;
     }
+
+    public java.util.Map<UUID, String> findFirstEpisodeSlugsBySeriesIds(List<UUID> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return java.util.Collections.emptyMap();
+        }
+        StringBuilder placeholders = new StringBuilder();
+        for (int i = 0; i < ids.size(); i++) {
+            placeholders.append("?");
+            if (i < ids.size() - 1) placeholders.append(",");
+        }
+        String sql = """
+                WITH RankedEpisodes AS (
+                    SELECT SeriesId, slug,
+                           ROW_NUMBER() OVER (PARTITION BY SeriesId ORDER BY SeasonNumber ASC, EpisodeNumber ASC) as rn
+                    FROM Episode
+                    WHERE SeriesId IN (%s) AND IsHidden = 0
+                )
+                SELECT CAST(SeriesId AS NVARCHAR(36)) AS SeriesId, slug
+                FROM RankedEpisodes
+                WHERE rn = 1
+                """.formatted(placeholders.toString());
+        Object[] params = ids.stream().map(UUID::toString).toArray();
+        java.util.Map<UUID, String> result = new java.util.HashMap<>();
+        try {
+            jdbcTemplate.query(sql, rs -> {
+                String seriesIdStr = rs.getString("SeriesId");
+                String slug = rs.getString("slug");
+                if (seriesIdStr != null && slug != null) {
+                    result.put(UUID.fromString(seriesIdStr), slug);
+                }
+            }, params);
+        } catch (Exception e) {
+            System.err.println("Failed to fetch series first episode slugs in batch: " + e.getMessage());
+        }
+        return result;
+    }
+
+    public java.util.Map<UUID, com.ses.whodatidols.viewmodel.EpisodeViewModel> findLatestEpisodesBySeriesIds(List<UUID> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return java.util.Collections.emptyMap();
+        }
+        StringBuilder placeholders = new StringBuilder();
+        for (int i = 0; i < ids.size(); i++) {
+            placeholders.append("?");
+            if (i < ids.size() - 1) placeholders.append(",");
+        }
+        String sql = """
+                WITH RankedEpisodes AS (
+                    SELECT SeriesId, ID, slug,
+                           ROW_NUMBER() OVER (PARTITION BY SeriesId ORDER BY SeasonNumber DESC, EpisodeNumber DESC) as rn
+                    FROM Episode
+                    WHERE SeriesId IN (%s) AND IsHidden = 0
+                )
+                SELECT CAST(SeriesId AS NVARCHAR(36)) AS SeriesId, CAST(ID AS NVARCHAR(36)) AS EpisodeId, slug
+                FROM RankedEpisodes
+                WHERE rn = 1
+                """.formatted(placeholders.toString());
+        Object[] params = ids.stream().map(UUID::toString).toArray();
+        java.util.Map<UUID, com.ses.whodatidols.viewmodel.EpisodeViewModel> result = new java.util.HashMap<>();
+        try {
+            jdbcTemplate.query(sql, rs -> {
+                String seriesIdStr = rs.getString("SeriesId");
+                String episodeIdStr = rs.getString("EpisodeId");
+                String slug = rs.getString("slug");
+                if (seriesIdStr != null && episodeIdStr != null) {
+                    com.ses.whodatidols.viewmodel.EpisodeViewModel evm = new com.ses.whodatidols.viewmodel.EpisodeViewModel();
+                    evm.setId(UUID.fromString(episodeIdStr));
+                    evm.setSlug(slug);
+                    result.put(UUID.fromString(seriesIdStr), evm);
+                }
+            }, params);
+        } catch (Exception e) {
+            System.err.println("Failed to fetch latest episodes in batch: " + e.getMessage());
+        }
+        return result;
+    }
 }

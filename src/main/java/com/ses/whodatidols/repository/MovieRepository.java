@@ -417,6 +417,32 @@ public class MovieRepository {
         }
     }
 
+    public java.util.Map<UUID, String> findSlugsByMovieIds(List<UUID> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return java.util.Collections.emptyMap();
+        }
+        StringBuilder placeholders = new StringBuilder();
+        for (int i = 0; i < ids.size(); i++) {
+            placeholders.append("?");
+            if (i < ids.size() - 1) placeholders.append(",");
+        }
+        String sql = "SELECT CAST(ID AS NVARCHAR(36)) AS ID, slug FROM [WhoDatIdols].[dbo].[Movie] WHERE ID IN (" + placeholders + ")";
+        Object[] params = ids.stream().map(UUID::toString).toArray();
+        java.util.Map<UUID, String> result = new java.util.HashMap<>();
+        try {
+            jdbcTemplate.query(sql, rs -> {
+                String idStr = rs.getString("ID");
+                String slug = rs.getString("slug");
+                if (idStr != null && slug != null) {
+                    result.put(UUID.fromString(idStr), slug);
+                }
+            }, params);
+        } catch (Exception e) {
+            System.err.println("Failed to fetch movie slugs in batch: " + e.getMessage());
+        }
+        return result;
+    }
+
     // --- ROW MAPPER (Sütun Eşleştirici) ---
     private static class MovieRowMapper implements RowMapper<Movie> {
         @Override

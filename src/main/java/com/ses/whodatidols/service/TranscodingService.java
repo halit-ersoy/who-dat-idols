@@ -15,12 +15,14 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
 
 @Service
 public class TranscodingService {
-    private final Map<String, String> transcodedCache = new HashMap<>();
+    private final Map<String, String> transcodedCache = new ConcurrentHashMap<>();
+    private final Semaphore transcodeSemaphore = new Semaphore(2); // Sunucuda en fazla 2 eşzamanlı dönüştürme
     private final FFmpegUtils ffmpegUtils;
 
     public TranscodingService(FFmpegUtils ffmpegUtils) {
@@ -67,18 +69,26 @@ public class TranscodingService {
             String transcodedPath = transcodedCache.get(cacheKey);
 
             if (transcodedPath == null || !Files.exists(Paths.get(transcodedPath))) {
-                String tempDir = System.getProperty("java.io.tmpdir");
-                String outFile = tempDir + File.separator + "transcoded_" + videoId + "_" + actualTargetRes + ".mp4";
+                synchronized (cacheKey.intern()) {
+                    transcodedPath = transcodedCache.get(cacheKey);
+                    if (transcodedPath == null || !Files.exists(Paths.get(transcodedPath))) {
+                        String tempDir = System.getProperty("java.io.tmpdir");
+                        String outFile = tempDir + File.separator + "transcoded_" + videoId + "_" + actualTargetRes + ".mp4";
 
-                try {
-                    ffmpegUtils.transcodeVideo(originalVideoPath, outFile, newWidth, newHeight);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return ResponseEntity.status(500).body(null);
+                        transcodeSemaphore.acquire();
+                        try {
+                            ffmpegUtils.transcodeVideo(originalVideoPath, outFile, newWidth, newHeight);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            return ResponseEntity.status(500).body(null);
+                        } finally {
+                            transcodeSemaphore.release();
+                        }
+
+                        transcodedCache.put(cacheKey, outFile);
+                        transcodedPath = outFile;
+                    }
                 }
-
-                transcodedCache.put(cacheKey, outFile);
-                transcodedPath = outFile;
             }
 
             FileSystemResource videoResource = new FileSystemResource(transcodedPath);

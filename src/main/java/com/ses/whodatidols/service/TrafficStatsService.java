@@ -1,5 +1,6 @@
 package com.ses.whodatidols.service;
 
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -117,6 +118,7 @@ public class TrafficStatsService {
         return currentMbps;
     }
     
+    @PreDestroy
     public void shutdown() {
         scheduler.shutdown();
     }

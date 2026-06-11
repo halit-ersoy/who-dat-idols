@@ -583,4 +583,8 @@ public class SeriesService {
     public int countRecentCondensedEpisodes() {
         return repository.countRecentCondensedEpisodes();
     }
+
+    public java.util.Map<UUID, EpisodeViewModel> getLatestEpisodesForSeriesList(List<UUID> seriesIds) {
+        return repository.findLatestEpisodesBySeriesIds(seriesIds);
+    }
 }

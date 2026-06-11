@@ -64,6 +64,10 @@ public class MediaController {
     // Cache to avoid repeated content type probing
     private final Map<String, MediaType> mediaTypeCache = new ConcurrentHashMap<>();
 
+    // Cache to avoid repeated database lookups for static content types and relationships
+    private final Map<UUID, String> contentTypeCache = new ConcurrentHashMap<>();
+    private final Map<UUID, UUID> parentSeriesIdCache = new ConcurrentHashMap<>();
+
     public MediaController(JdbcTemplate jdbcTemplate, VideoSourceRepository videoSourceRepository,
             SystemSettingRepository systemSettingRepository, TrafficStatsService trafficStatsService) {
         this.jdbcTemplate = jdbcTemplate;
@@ -359,56 +363,72 @@ public class MediaController {
     }
 
     private String getContentTypeFromDatabase(UUID id) {
+        if (id == null) {
+            return "unknown";
+        }
+        String cached = contentTypeCache.get(id);
+        if (cached != null) {
+            return cached;
+        }
         try {
+            String type = "unknown";
             // SQL Function might be broken due to renaming, so we prioritize direct checks
             // or assume it's updated.
             // For robustness, let's try the function first, but if it fails or returns
             // unknown, we check tables.
             try {
                 String sql = "SELECT [dbo].[GetContentTypeById](?);";
-                String type = jdbcTemplate.queryForObject(sql, String.class, id.toString());
-                if (type != null && !"unknown".equalsIgnoreCase(type))
-                    return type;
+                String queryType = jdbcTemplate.queryForObject(sql, String.class, id.toString());
+                if (queryType != null && !"unknown".equalsIgnoreCase(queryType)) {
+                    type = queryType;
+                }
             } catch (Exception e) {
                 // Function might be missing or broken
             }
 
-            // Check Series (formerly SoapOperas)
-            Integer isSeries = jdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM Series WHERE ID = ?", Integer.class,
-                    id.toString());
-            if (isSeries != null && isSeries > 0)
-                return "soap_opera";
-
-            // Check Episode (formerly SoapOpera)
-            Integer isEpisode = jdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM Episode WHERE ID = ?", Integer.class,
-                    id.toString());
-            if (isEpisode != null && isEpisode > 0)
-                return "soap_opera";
-
-            // Check Movie
-            Integer isMovie = jdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM Movie WHERE ID = ?", Integer.class,
-                    id.toString());
-            if (isMovie != null && isMovie > 0)
-                return "movie";
-
-            // Check Upcoming
-            Integer isUpcoming = jdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM Upcoming WHERE ID = ? OR ReferenceId = ?", Integer.class,
-                    id.toString(), id.toString());
-            if (isUpcoming != null && isUpcoming > 0)
-                return "upcoming";
-
-            // Check Hero (Trailers)
-            Integer isHero = jdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM Hero WHERE ID = ?", Integer.class,
-                    id.toString());
-            if (isHero != null && isHero > 0)
-                return "trailer";
-
-            return "unknown";
+            if ("unknown".equalsIgnoreCase(type)) {
+                // Check Series (formerly SoapOperas)
+                Integer isSeries = jdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM Series WHERE ID = ?", Integer.class,
+                        id.toString());
+                if (isSeries != null && isSeries > 0) {
+                    type = "soap_opera";
+                } else {
+                    // Check Episode (formerly SoapOpera)
+                    Integer isEpisode = jdbcTemplate.queryForObject(
+                            "SELECT COUNT(*) FROM Episode WHERE ID = ?", Integer.class,
+                            id.toString());
+                    if (isEpisode != null && isEpisode > 0) {
+                        type = "soap_opera";
+                    } else {
+                        // Check Movie
+                        Integer isMovie = jdbcTemplate.queryForObject(
+                                "SELECT COUNT(*) FROM Movie WHERE ID = ?", Integer.class,
+                                id.toString());
+                        if (isMovie != null && isMovie > 0) {
+                            type = "movie";
+                        } else {
+                            // Check Upcoming
+                            Integer isUpcoming = jdbcTemplate.queryForObject(
+                                    "SELECT COUNT(*) FROM Upcoming WHERE ID = ? OR ReferenceId = ?", Integer.class,
+                                    id.toString(), id.toString());
+                            if (isUpcoming != null && isUpcoming > 0) {
+                                type = "upcoming";
+                            } else {
+                                // Check Hero (Trailers)
+                                Integer isHero = jdbcTemplate.queryForObject(
+                                        "SELECT COUNT(*) FROM Hero WHERE ID = ?", Integer.class,
+                                        id.toString());
+                                if (isHero != null && isHero > 0) {
+                                    type = "trailer";
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            contentTypeCache.put(id, type);
+            return type;
         } catch (Exception e) {
             logger.error("DB Error retrieving content type for id {}: {}", id, e.getMessage());
             return "unknown";
@@ -416,21 +436,37 @@ public class MediaController {
     }
 
     private UUID findParentSeriesId(UUID episodeId) {
+        if (episodeId == null) {
+            return null;
+        }
+        if (parentSeriesIdCache.containsKey(episodeId)) {
+            return parentSeriesIdCache.get(episodeId);
+        }
         try {
+            UUID parentId = null;
             // Try FK first
             try {
                 String sqlFK = "SELECT CAST(SeriesId AS NVARCHAR(36)) FROM Episode WHERE ID = ?";
                 String parentIdStr = jdbcTemplate.queryForObject(sqlFK, String.class, episodeId.toString());
-                if (parentIdStr != null)
-                    return UUID.fromString(parentIdStr);
+                if (parentIdStr != null) {
+                    parentId = UUID.fromString(parentIdStr);
+                }
             } catch (Exception e) {
             }
 
-            // Fallback to XML search (Legacy)
-            String sql = "SELECT CAST(ID AS NVARCHAR(36)) FROM Series WHERE EpisodeMetadataXml LIKE ?";
-            String searchTerm = "%" + episodeId.toString() + "%";
-            String parentIdStr = jdbcTemplate.queryForObject(sql, String.class, searchTerm);
-            return parentIdStr != null ? UUID.fromString(parentIdStr) : null;
+            if (parentId == null) {
+                // Fallback to XML search (Legacy)
+                String sql = "SELECT CAST(ID AS NVARCHAR(36)) FROM Series WHERE EpisodeMetadataXml LIKE ?";
+                String searchTerm = "%" + episodeId.toString() + "%";
+                String parentIdStr = jdbcTemplate.queryForObject(sql, String.class, searchTerm);
+                if (parentIdStr != null) {
+                    parentId = UUID.fromString(parentIdStr);
+                }
+            }
+            if (parentId != null) {
+                parentSeriesIdCache.put(episodeId, parentId);
+            }
+            return parentId;
         } catch (Exception e) {
             return null;
         }
@@ -538,5 +574,12 @@ public class MediaController {
 
         mediaTypeCache.put(pathStr, mediaType);
         return mediaType;
+    }
+
+    public void clearCaches() {
+        contentTypeCache.clear();
+        parentSeriesIdCache.clear();
+        mediaTypeCache.clear();
+        logger.info("MediaController caches successfully cleared.");
     }
 }

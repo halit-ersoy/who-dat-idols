@@ -1,5 +1,6 @@
 package com.ses.whodatidols.service;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -15,6 +16,7 @@ public class TranslationService {
     private final String API_URL = "https://api.mymemory.translated.net/get";
     private final RestTemplate restTemplate = new RestTemplate();
 
+    @Cacheable(value = "translatedTexts", key = "#text", unless = "#result.startsWith('Çeviri hatası:')")
     public String translateToTurkish(String text) {
         if (text == null || text.trim().isEmpty()) {
             return "";

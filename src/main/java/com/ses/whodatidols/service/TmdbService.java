@@ -1,5 +1,6 @@
 package com.ses.whodatidols.service;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -17,6 +18,7 @@ public class TmdbService {
     private final String IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
     private final RestTemplate restTemplate = new RestTemplate();
 
+    @Cacheable(value = "tmdbSearch", key = "#query + '-' + #type", unless = "#result.isEmpty()")
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> search(String query, String type) {
         String endpoint = type.equalsIgnoreCase("movie") ? "/search/movie" : "/search/tv";
@@ -38,6 +40,7 @@ public class TmdbService {
         return Collections.emptyList();
     }
 
+    @Cacheable(value = "tmdbDetails", key = "#id + '-' + #type", unless = "#result.isEmpty()")
     @SuppressWarnings("unchecked")
     public Map<String, Object> getDetails(Integer id, String type) {
         String endpoint = type.equalsIgnoreCase("movie") ? "/movie/" : "/tv/";
