@@ -188,10 +188,12 @@ public class AdminController {
             Integer totalMovies = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM Movie", Integer.class);
             Integer totalSeries = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM Series", Integer.class);
             Integer totalEpisodes = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM Episode", Integer.class);
+            Integer totalUsers = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM Person", Integer.class);
 
             stats.put("movies", totalMovies != null ? totalMovies : 0);
             stats.put("series", totalSeries != null ? totalSeries : 0);
             stats.put("episodes", totalEpisodes != null ? totalEpisodes : 0);
+            stats.put("users", totalUsers != null ? totalUsers : 0);
 
             return ResponseEntity.ok(stats);
         } catch (Exception e) {

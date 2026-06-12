@@ -57,6 +57,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 fetchAdminConversations();
             } else if (targetId === 'user-reports-section') {
                 fetchUserReports();
+            } else if (targetId === 'user-section') {
+                fetchUsers();
             } else if (targetId === 'update-notes-section') {
                 fetchUpdateNotes();
             } else if (targetId === 'system-settings-section') {
@@ -336,10 +338,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const reportsNavLink = document.getElementById('nav-user-reports');
             if (reportsNavLink && !canMonitorSafety) {
                 reportsNavLink.style.display = 'none';
-            }
-
-            if (isSuperAdmin) {
-                fetchUsers();
             }
 
             // Update welcome message
@@ -2368,6 +2366,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 const epEl = document.getElementById('statTotalEpisodes');
                 if (epEl) epEl.innerText = data.episodes || 0;
+
+                const usersEl = document.getElementById('statTotalUsers');
+                if (usersEl) usersEl.innerText = data.users || 0;
             })
             .catch(err => console.error("Dashboard stats error:", err));
     }
