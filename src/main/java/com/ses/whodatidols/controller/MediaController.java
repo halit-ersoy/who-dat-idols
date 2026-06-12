@@ -55,6 +55,9 @@ public class MediaController {
     @Value("${media.source.upcoming.path}")
     private String upcomingPath;
 
+    @Value("${media.source.ads.path}")
+    private String adsPath;
+
     private final JdbcTemplate jdbcTemplate;
 
     private final VideoSourceRepository videoSourceRepository;
@@ -357,6 +360,8 @@ public class MediaController {
                 return Paths.get(trailersPath).toAbsolutePath().normalize();
             case "upcoming":
                 return Paths.get(upcomingPath).toAbsolutePath().normalize();
+            case "ad":
+                return Paths.get(adsPath).toAbsolutePath().normalize();
             default:
                 return null;
         }
@@ -421,6 +426,14 @@ public class MediaController {
                                         id.toString());
                                 if (isHero != null && isHero > 0) {
                                     type = "trailer";
+                                } else {
+                                    // Check Ad
+                                    Integer isAd = jdbcTemplate.queryForObject(
+                                            "SELECT COUNT(*) FROM Ad WHERE ID = ?", Integer.class,
+                                            id.toString());
+                                    if (isAd != null && isAd > 0) {
+                                        type = "ad";
+                                    }
                                 }
                             }
                         }

@@ -292,6 +292,9 @@
                 <a href="#hero-section" class="nav-link" data-section="hero-section">
                     <i class="fas fa-star"></i> Hero Yönetimi
                 </a>
+                <a href="#ad-section" class="nav-link" data-section="ad-section">
+                    <i class="fas fa-ad"></i> Reklam Yönetimi
+                </a>
                 <a href="#movie-section" class="nav-link" data-section="movie-section">
                     <i class="fas fa-film"></i> Film Yönetimi
                 </a>
@@ -475,6 +478,69 @@
                             </button>
                         </div>
                     </form>
+                </div>
+            </section>
+
+            <!-- AD SECTION -->
+            <section id="ad-section" class="admin-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-ad"></i> Reklam Videosu Ekle</h2>
+                    </div>
+                    <form id="adForm" class="admin-form">
+                        <div class="form-grid">
+                            <div class="form-group full-width">
+                                <label for="adName">Reklam Adı</label>
+                                <input type="text" id="adName" required placeholder="Reklam adını giriniz...">
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="adFile">Reklam Videosu (.mp4)</label>
+                                <div class="premium-file-input" id="adFileContainer">
+                                    <input type="file" id="adFile" accept="video/mp4" required
+                                        onchange="handleFileSelect(this)">
+                                    <label for="adFile" class="file-label">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <span class="file-text">Reklam Dosyasını Seç veya Sürükle</span>
+                                        <span class="file-name">Dosya seçilmedi</span>
+                                    </label>
+                                    <div class="file-info">* Sadece MP4 formatı desteklenir. Video HLS'e (2 saniyelik parçalar) dönüştürülecektir.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="progress-wrapper" id="progressWrapperAd" style="display: none;">
+                            <div class="progress-status">Yükleniyor... <span id="percentAd">0%</span></div>
+                            <div class="progress-container">
+                                <div class="progress-bar" id="progressBarAd"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="adSubmitBtn">
+                                <i class="fas fa-save"></i> REKLAM KAYDET
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card" style="margin-top: 30px;">
+                    <div class="card-header">
+                        <h2><i class="fas fa-list"></i> Mevcut Reklamlar</h2>
+                    </div>
+                    <div style="overflow-x: auto; padding: 20px;">
+                        <table class="admin-table" id="adTable">
+                            <thead>
+                                <tr>
+                                    <th>Reklam Adı</th>
+                                    <th>Yüklenme Tarihi</th>
+                                    <th>İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dinamik doldurulacak -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 

@@ -8,8 +8,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # Commit mesajinda "-live-" varsa calisir
-    if: contains(github.event.head_commit.message, '-live-')
 
     steps:
       - name: Sunucuya Baglan ve Guncelle
@@ -38,3 +36,10 @@ jobs:
             
             # 6. Durum Raporu Ver
             systemctl status whodatidols --no-pager
+
+      - name: Purge Cloudflare Cache
+        run: |
+          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+          -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          --data '{"purge_everything":true}'

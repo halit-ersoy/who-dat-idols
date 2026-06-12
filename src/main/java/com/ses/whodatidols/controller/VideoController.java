@@ -8,6 +8,8 @@ import com.ses.whodatidols.model.Series;
 import com.ses.whodatidols.repository.MovieRepository;
 import com.ses.whodatidols.repository.SeriesRepository;
 import com.ses.whodatidols.repository.ContentRepository;
+import com.ses.whodatidols.repository.AdRepository;
+import com.ses.whodatidols.model.Ad;
 import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,15 +27,17 @@ public class VideoController {
     private final MovieRepository movieRepository;
     private final SeriesRepository seriesRepository;
     private final ContentRepository contentRepository;
+    private final AdRepository adRepository;
 
     public VideoController(VideoService videoService, TranscodingService transcodingService,
             MovieRepository movieRepository, SeriesRepository seriesRepository,
-            ContentRepository contentRepository) {
+            ContentRepository contentRepository, AdRepository adRepository) {
         this.videoService = videoService;
         this.transcodingService = transcodingService;
         this.movieRepository = movieRepository;
         this.seriesRepository = seriesRepository;
         this.contentRepository = contentRepository;
+        this.adRepository = adRepository;
     }
 
     @GetMapping("/details")
@@ -201,5 +205,19 @@ public class VideoController {
 
         List<Map<String, Object>> similar = contentRepository.findSimilarContent(contentIdForSearch, 12);
         return ResponseEntity.ok(similar);
+    }
+
+    @GetMapping("/ad/random")
+    public ResponseEntity<Map<String, Object>> getRandomAd() {
+        List<Ad> ads = adRepository.findAll();
+        if (ads.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        int randomIndex = new java.util.Random().nextInt(ads.size());
+        Ad selectedAd = ads.get(randomIndex);
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", selectedAd.getId());
+        response.put("name", selectedAd.getName());
+        return ResponseEntity.ok(response);
     }
 }

@@ -7,6 +7,7 @@ import com.ses.whodatidols.model.Person;
 import com.ses.whodatidols.model.VideoSource;
 import com.ses.whodatidols.model.SecurityViolation;
 import com.ses.whodatidols.model.BannedIp;
+import com.ses.whodatidols.model.Ad;
 import com.ses.whodatidols.repository.PersonRepository;
 import com.ses.whodatidols.repository.SeriesRepository;
 import com.ses.whodatidols.repository.VideoSourceRepository;
@@ -20,6 +21,7 @@ import com.ses.whodatidols.service.SeriesService;
 import com.ses.whodatidols.service.TvMazeService;
 import com.ses.whodatidols.service.TranslationService;
 import com.ses.whodatidols.service.TrafficStatsService;
+import com.ses.whodatidols.service.AdService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -69,6 +71,7 @@ public class AdminController {
     private final SeriesRepository seriesRepository;
     private final TrafficStatsService trafficStatsService;
     private final com.ses.whodatidols.util.FFmpegUtils ffmpegUtils;
+    private final AdService adService;
 
     @Value("${media.source.trailers.path}")
     private String trailersPath;
@@ -95,7 +98,7 @@ public class AdminController {
             com.ses.whodatidols.repository.MessageRepository messageRepository,
             com.ses.whodatidols.repository.SystemSettingRepository systemSettingRepository,
             CacheManager cacheManager, SeriesRepository seriesRepository, TrafficStatsService trafficStatsService,
-            com.ses.whodatidols.util.FFmpegUtils ffmpegUtils) {
+            com.ses.whodatidols.util.FFmpegUtils ffmpegUtils, AdService adService) {
         this.movieService = movieService;
         this.seriesService = seriesService;
         this.tvMazeService = tvMazeService;
@@ -114,6 +117,7 @@ public class AdminController {
         this.seriesRepository = seriesRepository;
         this.trafficStatsService = trafficStatsService;
         this.ffmpegUtils = ffmpegUtils;
+        this.adService = adService;
     }
 
     @GetMapping("/panel")
@@ -735,6 +739,38 @@ public class AdminController {
             return ResponseEntity.ok("Tüm kaynaklar silindi.");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+        }
+    }
+
+    // AD MANAGEMENT
+    @GetMapping("/ads")
+    public ResponseEntity<List<Ad>> getAds() {
+        return ResponseEntity.ok(adService.getAllAds());
+    }
+
+    @PostMapping("/add-ad")
+    public ResponseEntity<String> addAd(
+            @RequestParam("name") String name,
+            @RequestParam("file") MultipartFile file) {
+        try {
+            if (file == null || file.isEmpty()) {
+                return ResponseEntity.badRequest().body("Hata: Dosya yüklenmelidir.");
+            }
+            adService.saveAd(name, file);
+            return ResponseEntity.ok("Reklam başarıyla eklendi.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/delete-ad")
+    public ResponseEntity<String> deleteAd(@RequestParam("id") UUID id) {
+        try {
+            adService.deleteAd(id);
+            return ResponseEntity.ok("Reklam ve ilgili dosyaları silindi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Silme hatası: " + e.getMessage());
         }
     }
 

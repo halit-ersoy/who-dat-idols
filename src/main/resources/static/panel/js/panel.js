@@ -34,12 +34,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 fetchDashboardStats();
             } else if (targetId === 'hero-section') {
                 fetchHeroVideos();
+            } else if (targetId === 'ad-section') {
+                fetchAds();
             } else if (targetId === 'movie-section') {
                 fetchMovies();
             } else if (targetId === 'series-section') {
                 fetchSeries();
             } else if (targetId === 'archive-section') {
                 fetchHeroVideos();
+                fetchAds();
                 fetchMovies();
                 fetchSeries();
             } else if (targetId === 'view-management-section') {
@@ -297,7 +300,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // Hide sections based on role
             if (isTranslator) {
                 const translatorHiddenSections = [
-                    'hero-section', 'calendar-section', 'upcoming-section',
+                    'hero-section', 'ad-section', 'calendar-section', 'upcoming-section',
                     'view-management-section', 'comments-section', 'user-section',
                     'announcement-section', 'update-notes-section', 'feedback-section',
                     'security-violations-section', 'banned-ips-section', 'system-settings-section'
@@ -876,6 +879,74 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(res => {
                 if (res.ok) { alert("Başarıyla silindi."); fetchHeroVideos(); }
                 else alert("Hata oluştu.");
+            });
+    };
+
+    /* ===========================================================
+       REKLAM YÖNETİMİ
+       =========================================================== */
+    const adForm = document.getElementById('adForm');
+    if (adForm) {
+        adForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const name = document.getElementById('adName').value;
+            const file = document.getElementById('adFile').files[0];
+
+            if (!file) {
+                alert("Lütfen bir video dosyası seçin!");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('file', file);
+
+            uploadDataWithProgress('/admin/add-ad', formData, 'adForm', 'progressWrapperAd', 'progressBarAd', 'percentAd', () => {
+                fetchAds();
+                document.getElementById('adName').value = '';
+                const fileContainer = document.getElementById('adFileContainer');
+                if (fileContainer) {
+                    fileContainer.querySelector('.file-name').innerText = 'Dosya seçilmedi';
+                    fileContainer.querySelector('input[type="file"]').value = '';
+                }
+            });
+        });
+    }
+
+    function fetchAds() {
+        const adTable = document.getElementById('adTable');
+        if (!adTable) return;
+        fetch('/admin/ads')
+            .then(res => res.json())
+            .then(ads => {
+                const tbody = adTable.querySelector('tbody');
+                tbody.innerHTML = '';
+                ads.forEach(ad => {
+                    const tr = document.createElement('tr');
+                    const uploadDate = ad.uploadDate ? new Date(ad.uploadDate).toLocaleString('tr-TR') : '-';
+                    tr.innerHTML = `
+                        <td style="font-weight: 600;">${ad.name}</td>
+                        <td>${uploadDate}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick='deleteAd("${ad.id}", "${ad.name.replace(/'/g, "\\'")}")'><i class="fas fa-trash"></i> SİL</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(err => console.error("Reklam listesi hatası:", err));
+    }
+
+    window.deleteAd = function (id, name) {
+        if (!confirm(`'${name}' reklamını silmek istediğinize emin misiniz?`)) return;
+        fetch(`/admin/delete-ad?id=${id}`, { method: 'DELETE' })
+            .then(res => {
+                if (res.ok) {
+                    alert("Başarıyla silindi.");
+                    fetchAds();
+                } else {
+                    alert("Silinirken hata oluştu.");
+                }
             });
     };
 

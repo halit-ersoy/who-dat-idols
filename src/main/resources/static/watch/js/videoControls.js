@@ -1,6 +1,8 @@
 // videoControls.js
 export function initVideoControls(videoId) {
     const SKIP_SECONDS = 10;
+    let isAdPlaying = false;
+    let activeHls = null;
     const videoPlayer = document.getElementById('videoPlayer');
     const videoSource = document.getElementById('videoSource');
     const volumeControl = document.getElementById('volumeControl');
@@ -199,6 +201,7 @@ export function initVideoControls(videoId) {
         videoPlayer.addEventListener('loadedmetadata', updateProgress);
 
         progressContainer.addEventListener('click', (e) => {
+            if (isAdPlaying) return;
             const rect = progressContainer.getBoundingClientRect();
             const pos = (e.clientX - rect.left) / rect.width;
             videoPlayer.currentTime = pos * videoPlayer.duration;
@@ -206,10 +209,13 @@ export function initVideoControls(videoId) {
 
         // Optional: Dragging functionality
         let isDragging = false;
-        progressContainer.addEventListener('mousedown', () => isDragging = true);
+        progressContainer.addEventListener('mousedown', () => {
+            if (isAdPlaying) return;
+            isDragging = true;
+        });
         window.addEventListener('mouseup', () => isDragging = false);
         window.addEventListener('mousemove', (e) => {
-            if (isDragging) {
+            if (isDragging && !isAdPlaying) {
                 const rect = progressContainer.getBoundingClientRect();
                 let pos = (e.clientX - rect.left) / rect.width;
                 pos = Math.max(0, Math.min(1, pos));
@@ -259,6 +265,7 @@ export function initVideoControls(videoId) {
     }
 
     function skipVideo(sec) {
+        if (isAdPlaying) return;
         if (isNaN(videoPlayer.duration)) return;
         videoPlayer.currentTime = Math.max(0,
             Math.min(videoPlayer.duration, videoPlayer.currentTime + sec)
@@ -267,6 +274,7 @@ export function initVideoControls(videoId) {
 
     function setupKeyboardShortcuts() {
         window.addEventListener('keydown', e => {
+            if (isAdPlaying) return;
             const tag = document.activeElement.tagName;
             if (tag === 'INPUT' || tag === 'TEXTAREA') return;
             if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
@@ -321,6 +329,16 @@ export function initVideoControls(videoId) {
     }
 
     function loadVideo(id) {
+        // Stop current playback, destroy previous HLS instance and reset player
+        videoPlayer.pause();
+        if (activeHls) {
+            activeHls.destroy();
+            activeHls = null;
+        }
+        videoPlayer.src = "";
+        videoPlayer.removeAttribute('src');
+        videoPlayer.load();
+
         if (!id) {
             playPauseWrapper.classList.add('loaded'); // ID yoksa skeleton'ı kaldır
             if (titleEl) titleEl.innerText = 'Video bulunamadı';
@@ -333,35 +351,48 @@ export function initVideoControls(videoId) {
         const mp4Url = `/media/video/${id}`;
 
         if (Hls.isSupported()) {
-            const hls = new Hls({
+            activeHls = new Hls({
                 maxBufferLength: 30, // 30 seconds buffer
                 maxMaxBufferLength: 60,
             });
-            hls.loadSource(hlsUrl);
-            hls.attachMedia(videoPlayer);
-            hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                // HLS successfully loaded
+            activeHls.loadSource(hlsUrl);
+            activeHls.attachMedia(videoPlayer);
+            activeHls.on(Hls.Events.MANIFEST_PARSED, () => {
+                // HLS successfully loaded and attached
                 console.log('HLS loaded successfully');
+                videoPlayer.play().catch(e => console.log("Auto-play blocked:", e));
             });
-            hls.on(Hls.Events.ERROR, (event, data) => {
+            activeHls.on(Hls.Events.ERROR, (event, data) => {
                 if (data.fatal) {
                     console.warn('HLS fatal error, falling back to MP4:', data.type);
-                    hls.destroy();
+                    if (activeHls) {
+                        activeHls.destroy();
+                        activeHls = null;
+                    }
                     fallbackToMp4(mp4Url);
                 }
             });
         } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
             // Native HLS support (Safari)
             videoPlayer.src = hlsUrl;
+            const onMetadata = () => {
+                videoPlayer.removeEventListener('loadedmetadata', onMetadata);
+                videoPlayer.play().catch(e => console.log("Auto-play blocked:", e));
+            };
+            videoPlayer.addEventListener('loadedmetadata', onMetadata);
         } else {
             fallbackToMp4(mp4Url);
         }
-
     }
 
     function fallbackToMp4(url) {
         videoSource.src = url;
         videoPlayer.load();
+        const onMetadata = () => {
+            videoPlayer.removeEventListener('loadedmetadata', onMetadata);
+            videoPlayer.play().catch(e => console.log("Auto-play blocked:", e));
+        };
+        videoPlayer.addEventListener('loadedmetadata', onMetadata);
     }
 
 
@@ -392,10 +423,82 @@ export function initVideoControls(videoId) {
             return;
         }
 
+        // 30% probability check
+        if (Math.random() < 0.3) {
+            try {
+                const adRes = await fetch('/api/video/ad/random');
+                if (adRes.ok) {
+                    const adData = await adRes.json();
+                    if (adData && adData.id) {
+                        playAd(adData.id, id);
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.warn("Failed to check or play ad:", err);
+            }
+        }
+
         let hasMainSource = await checkMainSourceAvailability(id);
 
         // If main source check fails (e.g. 404), maybe we still want to try loading external sources
         await loadSources(id, hasMainSource);
+    }
+
+    function playAd(adId, originalId) {
+        isAdPlaying = true;
+        
+        // Hide source switcher container during ad
+        const switcherContainer = document.querySelector('.source-switcher-container');
+        if (switcherContainer) {
+            switcherContainer.style.display = 'none';
+        }
+
+        // Add ad badge
+        const adBadge = document.createElement('div');
+        adBadge.id = 'playerAdBadge';
+        adBadge.innerText = 'Reklam';
+        adBadge.style.position = 'absolute';
+        adBadge.style.top = '20px';
+        adBadge.style.left = '20px';
+        adBadge.style.background = 'rgba(0, 0, 0, 0.7)';
+        adBadge.style.color = '#fff';
+        adBadge.style.padding = '8px 16px';
+        adBadge.style.borderRadius = '4px';
+        adBadge.style.fontSize = '14px';
+        adBadge.style.fontWeight = 'bold';
+        adBadge.style.zIndex = '100';
+        adBadge.style.pointerEvents = 'none';
+        adBadge.style.fontFamily = 'Montserrat, sans-serif';
+        adBadge.style.borderLeft = '3px solid var(--primary-color, #e50914)';
+        
+        // Append to player wrapper
+        const wrapper = document.querySelector('.video-wrapper');
+        if (wrapper) {
+            wrapper.appendChild(adBadge);
+        }
+
+        // Load and play the ad video
+        loadVideo(adId);
+        
+        const onAdEnded = async () => {
+            videoPlayer.removeEventListener('ended', onAdEnded);
+            
+            // Clean up ad state
+            isAdPlaying = false;
+            if (adBadge.parentNode) {
+                adBadge.parentNode.removeChild(adBadge);
+            }
+            if (switcherContainer) {
+                switcherContainer.style.display = '';
+            }
+
+            // Load original video content
+            let hasMainSource = await checkMainSourceAvailability(originalId);
+            await loadSources(originalId, hasMainSource);
+        };
+        
+        videoPlayer.addEventListener('ended', onAdEnded);
     }
 
     async function loadSources(id, hasMainSource) {
@@ -472,6 +575,14 @@ export function initVideoControls(videoId) {
 
     function switchToSource(source, btn) {
         videoPlayer.pause();
+        if (activeHls) {
+            activeHls.destroy();
+            activeHls = null;
+        }
+        videoPlayer.src = "";
+        videoPlayer.removeAttribute('src');
+        videoPlayer.load();
+
         videoPlayer.style.display = 'none';
 
         // Force hide skeleton for external sources

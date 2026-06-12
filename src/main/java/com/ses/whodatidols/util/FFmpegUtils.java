@@ -101,6 +101,10 @@ public class FFmpegUtils {
     }
 
     public void convertToHls(String inputPath, String outputFolder) throws IOException, InterruptedException {
+        convertToHls(inputPath, outputFolder, 10);
+    }
+
+    public void convertToHls(String inputPath, String outputFolder, int segmentTimeSeconds) throws IOException, InterruptedException {
         java.nio.file.Files.createDirectories(java.nio.file.Paths.get(outputFolder));
 
         String playlistFile = java.nio.file.Paths.get(outputFolder, "playlist.m3u8").toString();
@@ -110,7 +114,7 @@ public class FFmpegUtils {
                 "-i", inputPath,
                 "-codec:", "copy",
                 "-start_number", "0",
-                "-hls_time", "10",
+                "-hls_time", String.valueOf(segmentTimeSeconds),
                 "-hls_list_size", "0",
                 "-f", "hls",
                 playlistFile);
