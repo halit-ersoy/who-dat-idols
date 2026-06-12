@@ -767,6 +767,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     const type = hero.type || hero.Type || '-';
                     const id = hero.ID || hero.id;
                     const category = hero.category || hero.Category || '-';
+                    
+                    const isImageValue = hero.isImage !== undefined ? hero.isImage : (hero.IsImage !== undefined ? hero.IsImage : hero.ISIMAGE);
+                    const isImage = isImageValue === true || isImageValue === 1 || isImageValue === "1" || isImageValue === "true";
+                    const mediaType = isImage ? 'Resim' : 'Video';
+                    const typeText = `${type === 'Movie' ? 'Film' : 'Dizi'} (${mediaType})`;
 
                     const isFirst = index === 0;
                     const isLast = index === heroes.length - 1;
@@ -785,7 +790,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         </td>
                         <td style="font-weight: 600;">${name}</td>
                         <td>${category}</td>
-                        <td>${type}</td>
+                        <td>${typeText}</td>
                         <td>
                             <button class="btn btn-sm btn-danger" onclick='deleteHero("${id}", "${name.replace(/'/g, "\\'")}")'><i class="fas fa-trash"></i> SİL</button>
                         </td>
@@ -834,6 +839,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const id = hero.ID || hero.id;
             const category = hero.category || hero.Category || '-';
 
+            const isImageValue = hero.isImage !== undefined ? hero.isImage : (hero.IsImage !== undefined ? hero.IsImage : hero.ISIMAGE);
+            const isImage = isImageValue === true || isImageValue === 1 || isImageValue === "1" || isImageValue === "true";
+            const mediaType = isImage ? 'Resim' : 'Video';
+            const typeText = `${type === 'Movie' ? 'Film' : 'Dizi'} (${mediaType})`;
+
             const isFirst = index === 0;
             const isLast = index === heroes.length - 1;
 
@@ -851,7 +861,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 </td>
                 <td style="font-weight: 600;">${name}</td>
                 <td>${category}</td>
-                <td>${type}</td>
+                <td>${typeText}</td>
                 <td>
                     <button class="btn btn-sm btn-danger" onclick='deleteHero("${id}", "${name.replace(/'/g, "\\'")}")'><i class="fas fa-trash"></i> SİL</button>
                 </td>

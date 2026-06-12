@@ -477,13 +477,18 @@
         transform: translateY(0) translateX(-50%);
     }
 
-    40% {
-        -webkit-transform: translateY(-15px) translateX(-50%);
-        transform: translateY(-15px) translateX(-50%);
-    }
-
     60% {
         -webkit-transform: translateY(-7px) translateX(-50%);
         transform: translateY(-7px) translateX(-50%);
     }
+}
+
+/* Image-only hero slide background adjustments */
+.hero-video-container .img-skeleton {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
 }

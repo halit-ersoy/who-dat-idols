@@ -13,7 +13,9 @@ export function initHeroCarousel() {
     let currentHeroIndex = 0;
     let heroInterval = null;
     let currentTrailerButton = null; // Store reference to the current trailer button
-    const autoPlayDuration = 30000; // 30 seconds
+    let heroList = [];
+    let activeHlsInstances = {}; // Store active Hls.js instances keyed by slide index
+    const autoPlayDuration = 30000; // Default 30 seconds for videos
 
     // Fetch hero data from API
     async function fetchHeroData() {
@@ -43,14 +45,35 @@ export function initHeroCarousel() {
             const category = hero.category ? hero.category.replace(/,$/, '') : 'Kategori';
             const typeText = (hero.type || 'YENİ').replace('SOAPOPERA', 'SOAP OPERA');
 
-            // Generate container HTML
-            container.innerHTML = `
-                <video class="hero-bg-video" ${index === 0 ? 'autoplay' : ''} muted playsinline>
-                    <source src="/media/video/${hero.ID}" type="video/mp4">
+            const isImageValue = hero.isImage !== undefined ? hero.isImage : 
+                                 (hero.IsImage !== undefined ? hero.IsImage : 
+                                 (hero.ISIMAGE !== undefined ? hero.ISIMAGE : 
+                                 (hero.isimage !== undefined ? hero.isimage : 
+                                 (hero.is_image !== undefined ? hero.is_image : undefined))));
+            const isImage = isImageValue === true || isImageValue === 1 || isImageValue === "1" || isImageValue === "true" ||
+                            hero.mediaType === 'image' || hero.mediatype === 'image' || hero.media_type === 'image';
+
+            const mediaHtml = !isImage ? `
+                <video class="hero-bg-video" data-hero-id="${hero.ID}" data-index="${index}" muted playsinline loop>
                     <div class="img-skeleton">
                         <img class="hero-bg" src="/media/image/${hero.ID}" alt="${hero.name}">
                     </div>
                 </video>
+            ` : `
+                <div class="img-skeleton">
+                    <img class="hero-bg" src="/media/image/${hero.ID}" alt="${hero.name}">
+                </div>
+            `;
+
+            const trailerButtonHtml = !isImage ? `
+                        <button class="glow-button trailer-btn" data-index="${index}">
+                            <i class="fas fa-film"></i> FRAGMANI İZLE
+                        </button>
+            ` : '';
+
+            // Generate container HTML
+            container.innerHTML = `
+                ${mediaHtml}
                 <div class="hero-overlay"></div>
                 <div class="hero-content animate-fade-in">
                     <div class="hero-badge animate-slide-up">${typeText}</div>
@@ -63,9 +86,7 @@ export function initHeroCarousel() {
                         <button onclick="window.location.href='${hero.slug ? '/' + hero.slug : '/' + hero.ReferenceId}'" class="pulse-button">
                             <i class="fas fa-play"></i> ŞİMDİ İZLE
                         </button>
-                        <button class="glow-button trailer-btn" data-index="${index}">
-                            <i class="fas fa-film"></i> FRAGMANI İZLE
-                        </button>
+                        ${trailerButtonHtml}
                     </div>
                 </div>
             `;
@@ -92,6 +113,9 @@ export function initHeroCarousel() {
                 return;
             }
 
+            heroList = heroVideos;
+            console.log('[Hero Autoplay] Hero List loaded:', heroList);
+
             // Clear existing content
             heroVideosContainer.innerHTML = '';
             heroIndicatorsContainer.innerHTML = '';
@@ -114,7 +138,7 @@ export function initHeroCarousel() {
 
             // Setup event listeners after elements are created
             setupEventListeners();
-            startAutoPlay();
+            showHeroSlide(0); // Trigger HLS initialization and autoplay for slide 0
 
         } catch (error) {
             console.error('Failed to initialize hero section:', error);
@@ -133,13 +157,22 @@ export function initHeroCarousel() {
         // Update current index
         currentHeroIndex = index;
 
-        // Remove active class from all containers and reset videos
-        heroContainers.forEach(container => {
+        // Remove active class from all containers and destroy videos
+        heroContainers.forEach((container, idx) => {
             container.classList.remove('active');
             const video = container.querySelector('video');
             if (video) {
                 video.pause();
-                video.currentTime = 0; // Reset time when changing slides
+                
+                // Destroy HLS instance for inactive slides to save resources
+                if (activeHlsInstances[idx]) {
+                    console.log(`[Hero Autoplay] Destroying HLS instance for slide ${idx}`);
+                    activeHlsInstances[idx].destroy();
+                    delete activeHlsInstances[idx];
+                }
+                video.src = '';
+                video.removeAttribute('src');
+                video.dataset.hlsInitialized = 'false';
                 video.muted = true;
             }
 
@@ -156,17 +189,36 @@ export function initHeroCarousel() {
         heroContainers[index].classList.add('active');
         heroIndicators[index].classList.add('active');
 
-        // Play the video for current slide
+        // Play the video for current slide using HLS
         const currentVideo = heroContainers[index].querySelector('video');
         if (currentVideo) {
-            // Check if the video is already playing or about to play
-            const playPromise = currentVideo.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(e => {
-                    if (e.name !== 'AbortError') {
-                        // console.log('Auto-play prevented:', e);
-                    }
-                });
+            const heroId = currentVideo.dataset.heroId;
+            const playlistUrl = `/media/video/${heroId}/playlist.m3u8`;
+
+            if (currentVideo.dataset.hlsInitialized !== 'true') {
+                console.log(`[Hero Autoplay] Initializing HLS.js for active slide ${index}, playlist: ${playlistUrl}`);
+                if (window.Hls && Hls.isSupported()) {
+                    const hls = new Hls({
+                        maxMaxBufferLength: 10,
+                        enableWorker: true
+                    });
+                    hls.loadSource(playlistUrl);
+                    hls.attachMedia(currentVideo);
+                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                        currentVideo.play().catch(e => {
+                            if (e.name !== 'AbortError') console.warn('HLS autoplay failed:', e);
+                        });
+                    });
+                    activeHlsInstances[index] = hls;
+                } else if (currentVideo.canPlayType('application/vnd.apple.mpegurl')) {
+                    currentVideo.src = playlistUrl;
+                    currentVideo.play().catch(e => {
+                        if (e.name !== 'AbortError') console.warn('Native HLS autoplay failed:', e);
+                    });
+                }
+                currentVideo.dataset.hlsInitialized = 'true';
+            } else {
+                currentVideo.play().catch(e => {});
             }
         }
 
@@ -175,13 +227,35 @@ export function initHeroCarousel() {
     }
 
     function startAutoPlay() {
-        heroInterval = setInterval(() => {
+        if (heroInterval) clearTimeout(heroInterval);
+
+        const currentHero = heroList[currentHeroIndex];
+        let duration = autoPlayDuration; // 30 seconds for videos
+
+        if (currentHero) {
+            const isImageValue = currentHero.isImage !== undefined ? currentHero.isImage : 
+                                 (currentHero.IsImage !== undefined ? currentHero.IsImage : 
+                                 (currentHero.ISIMAGE !== undefined ? currentHero.ISIMAGE : 
+                                 (currentHero.isimage !== undefined ? currentHero.isimage : 
+                                 (currentHero.is_image !== undefined ? currentHero.is_image : undefined))));
+            const isImage = isImageValue === true || isImageValue === 1 || isImageValue === "1" || isImageValue === "true" ||
+                            currentHero.mediaType === 'image' || currentHero.mediatype === 'image' || currentHero.media_type === 'image';
+
+            if (isImage) {
+                duration = 8000; // 8 seconds for images
+            }
+            console.log(`[Hero Autoplay] Slide Index: ${currentHeroIndex}, Name: ${currentHero.name}, Duration: ${duration}ms, isImage: ${isImage}`, currentHero);
+        } else {
+            console.log(`[Hero Autoplay] Slide Index: ${currentHeroIndex} - currentHero is undefined!`);
+        }
+
+        heroInterval = setTimeout(() => {
             showHeroSlide(currentHeroIndex + 1);
-        }, autoPlayDuration);
+        }, duration);
     }
 
     function resetAutoPlay() {
-        clearInterval(heroInterval);
+        if (heroInterval) clearTimeout(heroInterval);
         startAutoPlay();
     }
 
@@ -271,7 +345,7 @@ export function initHeroCarousel() {
             video.play();
 
             // Pause autoplay while trailer is playing
-            clearInterval(heroInterval);
+            clearTimeout(heroInterval);
         }
     }
 

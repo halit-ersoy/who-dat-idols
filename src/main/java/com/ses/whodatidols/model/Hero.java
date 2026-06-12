@@ -7,6 +7,7 @@ public class Hero {
     private UUID referenceId;
     private String customSummary;
     private int sortOrder;
+    private boolean isImage;
 
     public UUID getId() {
         return id;
@@ -38,5 +39,13 @@ public class Hero {
 
     public void setSortOrder(int sortOrder) {
         this.sortOrder = sortOrder;
+    }
+
+    public boolean isImage() {
+        return isImage;
+    }
+
+    public void setImage(boolean isImage) {
+        this.isImage = isImage;
     }
 }

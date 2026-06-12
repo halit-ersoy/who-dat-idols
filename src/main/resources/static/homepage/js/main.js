@@ -1,5 +1,5 @@
 import { initHeaderScroll } from './headerScroll.js?v=2';
-import { initHeroCarousel } from './heroCarousel.js?v=2';
+import { initHeroCarousel } from './heroCarousel.js?v=3';
 import { initContentCarousels } from './contentCarousel.js?v=2';
 import { initNewSoapOperasSection } from './newSoapOperasSection.js?v=2';
 import { initNewProgramsSection } from './newProgramsSection.js?v=2';

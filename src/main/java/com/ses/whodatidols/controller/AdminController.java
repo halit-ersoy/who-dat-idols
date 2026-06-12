@@ -36,6 +36,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.cache.CacheManager;
+import java.io.IOException;
 
 import java.nio.file.*;
 import java.util.HashMap;
@@ -67,6 +68,7 @@ public class AdminController {
     private final CacheManager cacheManager;
     private final SeriesRepository seriesRepository;
     private final TrafficStatsService trafficStatsService;
+    private final com.ses.whodatidols.util.FFmpegUtils ffmpegUtils;
 
     @Value("${media.source.trailers.path}")
     private String trailersPath;
@@ -92,7 +94,8 @@ public class AdminController {
             SecurityViolationRepository securityViolationRepository, BannedIpRepository bannedIpRepository,
             com.ses.whodatidols.repository.MessageRepository messageRepository,
             com.ses.whodatidols.repository.SystemSettingRepository systemSettingRepository,
-            CacheManager cacheManager, SeriesRepository seriesRepository, TrafficStatsService trafficStatsService) {
+            CacheManager cacheManager, SeriesRepository seriesRepository, TrafficStatsService trafficStatsService,
+            com.ses.whodatidols.util.FFmpegUtils ffmpegUtils) {
         this.movieService = movieService;
         this.seriesService = seriesService;
         this.tvMazeService = tvMazeService;
@@ -110,6 +113,7 @@ public class AdminController {
         this.cacheManager = cacheManager;
         this.seriesRepository = seriesRepository;
         this.trafficStatsService = trafficStatsService;
+        this.ffmpegUtils = ffmpegUtils;
     }
 
     @GetMapping("/panel")
@@ -605,7 +609,7 @@ public class AdminController {
             @RequestParam("contentId") UUID contentId,
             @RequestParam("type") String type,
             @RequestParam("content") String content,
-            @RequestParam("file") MultipartFile file) {
+            @RequestParam(value = "file", required = false) MultipartFile file) {
         try {
             if ("Film".equalsIgnoreCase(type) || "Movie".equalsIgnoreCase(type)) {
                 type = "Movie";
@@ -613,19 +617,50 @@ public class AdminController {
                 type = "SoapOpera";
             }
 
-            UUID heroId = heroRepository.addHero(contentId, content, type);
+            boolean isImage = true;
+            if (file != null && !file.isEmpty()) {
+                String contentType = file.getContentType();
+                if (contentType != null && contentType.startsWith("video/")) {
+                    isImage = false;
+                }
+            }
 
-            copyHeroImage(contentId, heroId, type);
+            UUID heroId = heroRepository.addHero(contentId, content, type, isImage);
 
             if (file != null && !file.isEmpty()) {
                 Path uploadPath = Paths.get(heroVideosPath).toAbsolutePath().normalize();
                 if (!Files.exists(uploadPath))
                     Files.createDirectories(uploadPath);
-                Path filePath = uploadPath.resolve(heroId.toString() + ".mp4");
-                Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+                if (!isImage) {
+                    Path filePath = uploadPath.resolve(heroId.toString() + ".mp4");
+                    Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+                    copyHeroImage(contentId, heroId, type);
+
+                    // Automate HLS Conversion for Hero video
+                    final String input = filePath.toString();
+                    final String output = uploadPath.resolve("hls").resolve(heroId.toString()).toString();
+                    java.util.concurrent.CompletableFuture.runAsync(() -> {
+                        try {
+                            ffmpegUtils.convertToHls(input, output);
+                        } catch (Exception e) {
+                            System.err.println("Hero HLS auto-conversion failed: " + e.getMessage());
+                        }
+                    });
+                } else {
+                    String ext = ".jpg";
+                    String originalName = file.getOriginalFilename();
+                    if (originalName != null && originalName.lastIndexOf(".") > 0) {
+                        ext = originalName.substring(originalName.lastIndexOf(".")).toLowerCase();
+                    }
+                    Path filePath = uploadPath.resolve(heroId.toString() + ext);
+                    Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+                }
+            } else {
+                copyHeroImage(contentId, heroId, type);
             }
 
-            return ResponseEntity.ok("Hero video başarıyla eklendi.");
+            return ResponseEntity.ok("Hero başarıyla eklendi.");
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
@@ -653,6 +688,12 @@ public class AdminController {
             String[] extensions = { ".jpg", ".jpeg", ".png", ".webp" };
             for (String ext : extensions) {
                 Files.deleteIfExists(uploadPath.resolve(id.toString() + ext));
+            }
+
+            try {
+                deleteDirectory(uploadPath.resolve("hls").resolve(id.toString()));
+            } catch (Exception e) {
+                System.err.println("Failed to delete Hero HLS directory: " + e.getMessage());
             }
 
             heroRepository.deleteHero(id);
@@ -1098,6 +1139,15 @@ public class AdminController {
             return ResponseEntity.ok(active ? "Ana video kaynağı ETKİNLEŞTİRİLDİ." : "Ana video kaynağı DEVRE DIŞI bırakıldı.");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+        }
+    }
+
+    private void deleteDirectory(Path path) throws IOException {
+        if (Files.exists(path)) {
+            Files.walk(path)
+                    .sorted(java.util.Comparator.reverseOrder())
+                    .map(Path::toFile)
+                    .forEach(java.io.File::delete);
         }
     }
 }
