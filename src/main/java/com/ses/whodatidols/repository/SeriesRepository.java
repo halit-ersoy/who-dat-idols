@@ -885,6 +885,7 @@ public class SeriesRepository {
         return count != null ? count : 0;
     }
 
+    @SuppressWarnings("null")
     public java.util.Map<UUID, String> findFirstEpisodeSlugsBySeriesIds(List<UUID> ids) {
         if (ids == null || ids.isEmpty()) {
             return java.util.Collections.emptyMap();
@@ -921,6 +922,7 @@ public class SeriesRepository {
         return result;
     }
 
+    @SuppressWarnings("null")
     public java.util.Map<UUID, com.ses.whodatidols.viewmodel.EpisodeViewModel> findLatestEpisodesBySeriesIds(List<UUID> ids) {
         if (ids == null || ids.isEmpty()) {
             return java.util.Collections.emptyMap();

@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -38,7 +39,7 @@ public class AdRepository {
         }
     }
 
-    private final RowMapper<Ad> rowMapper = (rs, rowNum) -> {
+    private final @NonNull RowMapper<Ad> rowMapper = (rs, rowNum) -> {
         Ad ad = new Ad();
         String idStr = rs.getString("ID");
         ad.setId(idStr != null ? UUID.fromString(idStr) : null);

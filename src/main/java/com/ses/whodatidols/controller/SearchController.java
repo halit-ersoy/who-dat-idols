@@ -3,8 +3,6 @@ package com.ses.whodatidols.controller;
 import com.ses.whodatidols.repository.ContentRepository;
 import com.ses.whodatidols.repository.MovieRepository;
 import com.ses.whodatidols.repository.SeriesRepository;
-import com.ses.whodatidols.model.Movie;
-import com.ses.whodatidols.model.Episode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

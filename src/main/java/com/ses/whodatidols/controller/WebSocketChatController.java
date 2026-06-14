@@ -63,10 +63,12 @@ public class WebSocketChatController {
             List<Message> history = messageRepository.getChatHistory(senderId, receiver.get().getId());
             if (!history.isEmpty()) {
                 Message savedMessage = history.get(history.size() - 1);
-
-                // Publish message to both receiver and sender topics
-                messagingTemplate.convertAndSend("/topic/messages/" + receiverNickname, savedMessage);
-                messagingTemplate.convertAndSend("/topic/messages/" + senderNickname, savedMessage);
+                if (savedMessage != null) {
+                    Object msgObj = savedMessage;
+                    // Publish message to both receiver and sender topics
+                    messagingTemplate.convertAndSend("/topic/messages/" + receiverNickname, msgObj);
+                    messagingTemplate.convertAndSend("/topic/messages/" + senderNickname, msgObj);
+                }
             }
         } catch (Exception e) {
             System.err.println("Error processing WebSocket send message: " + e.getMessage());
@@ -96,10 +98,11 @@ public class WebSocketChatController {
                 messageRepository.markAsRead(otherUser.get().getId(), myId);
 
                 // Send real-time read event notification to the other user's topic
-                messagingTemplate.convertAndSend("/topic/messages/" + otherNickname, Map.of(
+                Object readEventPayload = Map.of(
                         "type", "READ_EVENT",
                         "readBy", myNickname
-                ));
+                );
+                messagingTemplate.convertAndSend("/topic/messages/" + otherNickname, readEventPayload);
             }
         } catch (Exception e) {
             System.err.println("Error processing WebSocket read status: " + e.getMessage());
