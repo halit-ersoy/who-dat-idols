@@ -3574,18 +3574,13 @@ document.addEventListener('DOMContentLoaded', function () {
             const date = fb.CreatedAt ? new Date(fb.CreatedAt).toLocaleString('tr-TR') : '-';
             const fullMessage = (fb.Message || '');
 
-            const safeNickname = escapeHtml(fb.nickname || '-');
-            const safeEmail = escapeHtml(fb.email || '');
-            const safeSubject = escapeHtml(fb.Subject || '-');
-            const safeMessage = escapeHtml(fullMessage);
-
             tr.innerHTML = `
                 <td>
-                    <div style="font-weight:600; color:#fff;">${safeNickname}</div>
-                    <div style="font-size:0.78rem; color:rgba(255,255,255,0.4); margin-top:2px;">${safeEmail}</div>
+                    <div style="font-weight:600; color:#fff;">${fb.nickname || '-'}</div>
+                    <div style="font-size:0.78rem; color:rgba(255,255,255,0.4); margin-top:2px;">${fb.email || ''}</div>
                 </td>
-                <td style="font-weight:500; color:rgba(255,255,255,0.85);">${safeSubject}</td>
-                <td style="font-size:0.88rem; color:rgba(255,255,255,0.65); max-width:320px; line-height:1.5; white-space:pre-wrap; word-break: break-all; word-wrap: break-word;">${safeMessage}</td>
+                <td style="font-weight:500; color:rgba(255,255,255,0.85);">${fb.Subject || '-'}</td>
+                <td style="font-size:0.88rem; color:rgba(255,255,255,0.65); max-width:320px; line-height:1.5; white-space:pre-wrap; word-break: break-all; word-wrap: break-word;">${fullMessage}</td>
                 <td style="font-size:0.82rem; color:rgba(255,255,255,0.4); white-space:nowrap;">${date}</td>
                 <td>
                     <button class="btn btn-sm btn-danger" onclick="window.deleteFeedback('${fb.ID}')" title="Sil"
@@ -3668,17 +3663,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 violations.forEach(v => {
                     const date = new Date(v.timestamp).toLocaleString('tr-TR');
                     const tr = document.createElement('tr');
-                    
-                    const safeIp = escapeHtml(v.ipAddress || '');
-                    const safeUrl = escapeHtml(v.pageUrl || '');
-                    const safeUserAgent = escapeHtml(v.userAgent || '');
-
                     tr.innerHTML = `
                         <td><input type="checkbox" class="violation-checkbox" value="${v.id}" ${selectedViolationIds.has(v.id.toString()) ? 'checked' : ''} onclick="event.stopPropagation(); toggleViolationSelection('${v.id}', this.checked)"></td>
                         <td>${date}</td>
-                        <td style="color:var(--danger); font-family:monospace;">${safeIp}</td>
-                        <td><a href="${safeUrl}" target="_blank" style="color:var(--primary); font-size:12px; max-width:150px; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeUrl}</a></td>
-                        <td style="font-size:11px; color:#888; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${safeUserAgent}">${safeUserAgent}</td>
+                        <td style="color:var(--danger); font-family:monospace;">${v.ipAddress}</td>
+                        <td><a href="${v.pageUrl}" target="_blank" style="color:var(--primary); font-size:12px; max-width:150px; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${v.pageUrl}</a></td>
+                        <td style="font-size:11px; color:#888; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${v.userAgent}">${v.userAgent}</td>
                         <td>
                             <div class="btn-group">
                                 <button class="btn btn-sm btn-danger" onclick="deleteSecurityViolation(${v.id})">
@@ -3883,17 +3873,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit'
             });
 
-            const safeSender = escapeHtml(conv.senderNickname || '');
-            const safeReceiver = escapeHtml(conv.receiverNickname || '');
-            const safeContent = escapeHtml(conv.content || '');
-
             item.innerHTML = `
                 <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                    <span style="font-weight:600; font-size:0.85rem; color:#eee;">${safeSender} & ${safeReceiver}</span>
+                    <span style="font-weight:600; font-size:0.85rem; color:#eee;">${conv.senderNickname} & ${conv.receiverNickname}</span>
                     <span style="font-size:0.65rem; color:#666;">${timestamp}</span>
                 </div>
                 <div style="font-size:0.75rem; color:#888; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                    ${safeContent}
+                    ${conv.content}
                 </div>
             `;
 
@@ -3927,14 +3913,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     const time = new Date(msg.timestamp).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 
-                    const safeSenderName = escapeHtml(msg.senderNickname || '');
-                    const safeMsgContent = escapeHtml(msg.content || '');
-
                     bubble.innerHTML = `
                         <div style="font-weight:600; font-size:0.7rem; margin-bottom:2px; color:${isSender1 ? '#ff9800' : 'rgba(0,0,0,0.7)'}">
-                            ${safeSenderName}
+                            ${msg.senderNickname}
                         </div>
-                        <div>${safeMsgContent}</div>
+                        <div>${msg.content}</div>
                         <div class="monitoring-info">${time} ${msg.isRead ? '• Görüldü' : ''}</div>
                     `;
                     messagesContainer.appendChild(bubble);

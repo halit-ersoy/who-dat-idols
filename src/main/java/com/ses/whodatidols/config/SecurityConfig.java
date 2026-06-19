@@ -30,10 +30,7 @@ public class SecurityConfig {
                 http
                                 .addFilterBefore(ipBlockFilter,
                                                 org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
-                                .csrf(csrf -> csrf
-                                                .csrfTokenRepository(org.springframework.security.web.csrf.CookieCsrfTokenRepository.withHttpOnlyFalse())
-                                                .csrfTokenRequestHandler(new org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler()))
-                                .addFilterAfter(new CsrfCookieFilter(), org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
+                                .csrf(csrf -> csrf.disable())
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers("/sitemap.xml", "/robots.txt").permitAll()
                                                 .requestMatchers("/admin/users", "/admin/ban-user",
