@@ -209,7 +209,7 @@ public class VideoController {
 
     @GetMapping("/ad/random")
     public ResponseEntity<Map<String, Object>> getRandomAd() {
-        List<Ad> ads = adRepository.findAll();
+        List<Ad> ads = adRepository.findVisible();
         if (ads.isEmpty()) {
             return ResponseEntity.notFound().build();
         }

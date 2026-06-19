@@ -776,6 +776,18 @@ public class AdminController {
         }
     }
 
+    @PostMapping("/toggle-ad-hidden")
+    public ResponseEntity<String> toggleAdHidden(
+            @RequestParam("id") UUID id,
+            @RequestParam("isHidden") boolean isHidden) {
+        try {
+            adService.toggleAdHidden(id, isHidden);
+            return ResponseEntity.ok("Reklam gizlilik durumu güncellendi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Gizlilik durumu değiştirilemedi: " + e.getMessage());
+        }
+    }
+
     private void copyHeroImage(UUID contentId, UUID heroId, String type) {
         try {
             Path sourceBase = Paths.get("Movie".equalsIgnoreCase(type) ? moviesPath : soapOperasPath).toAbsolutePath()

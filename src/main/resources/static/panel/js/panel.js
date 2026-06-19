@@ -922,10 +922,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 ads.forEach(ad => {
                     const tr = document.createElement('tr');
                     const uploadDate = ad.uploadDate ? new Date(ad.uploadDate).toLocaleString('tr-TR') : '-';
+                    const hiddenClass = ad.hidden ? 'btn-success' : 'btn-secondary';
+                    const hiddenIcon = ad.hidden ? 'fa-eye' : 'fa-eye-slash';
+                    const hiddenText = ad.hidden ? 'GÖSTER' : 'GİZLE';
                     tr.innerHTML = `
                         <td style="font-weight: 600;">${ad.name}</td>
                         <td>${uploadDate}</td>
                         <td>
+                            <button class="btn btn-sm toggle-btn ${hiddenClass}" onclick='toggleAdHidden("${ad.id}", ${ad.hidden}, this)'>
+                                <i class="fas ${hiddenIcon}"></i> <span>${hiddenText}</span>
+                            </button>
                             <button class="btn btn-sm btn-danger" onclick='deleteAd("${ad.id}", "${ad.name.replace(/'/g, "\\'")}")'><i class="fas fa-trash"></i> SİL</button>
                         </td>
                     `;
@@ -4080,6 +4086,24 @@ document.addEventListener('DOMContentLoaded', function () {
                     btnEl.setAttribute('onclick', `window.toggleEpisodeHidden("${id}", ${newHiddenState}, "${seriesIdStr}", this)`);
                     // Note: Episodes are not dynamically listed in archive search natively, but applying the general filter won't hurt.
                     if (window.applyArchiveFilters) window.applyArchiveFilters();
+                }
+            })
+            .catch(err => alert("Hata oluştu: " + err));
+    };
+
+    window.toggleAdHidden = function (id, isCurrentlyHidden, btnEl) {
+        if (!confirm(isCurrentlyHidden ? "Reklamı görünür yapmak istediğinize emin misiniz?" : "Reklamı GİZLEMEK istediğinize emin misiniz?")) return;
+        fetch(`/admin/toggle-ad-hidden?id=${id}&isHidden=${!isCurrentlyHidden}`, { method: 'POST' })
+            .then(res => {
+                if (!res.ok) throw new Error("Sunucu hatası! Veri kaydedilemedi.");
+                return res.text();
+            })
+            .then(msg => {
+                if (btnEl) {
+                    const newHiddenState = !isCurrentlyHidden;
+                    btnEl.className = `btn btn-sm toggle-btn ${newHiddenState ? 'btn-success' : 'btn-secondary'}`;
+                    btnEl.innerHTML = `<i class="fas ${newHiddenState ? 'fa-eye' : 'fa-eye-slash'}"></i> <span>${newHiddenState ? 'GÖSTER' : 'GİZLE'}</span>`;
+                    btnEl.setAttribute('onclick', `toggleAdHidden("${id}", ${newHiddenState}, this)`);
                 }
             })
             .catch(err => alert("Hata oluştu: " + err));

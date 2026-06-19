@@ -67,6 +67,10 @@ public class AdService {
         adRepository.save(ad);
     }
 
+    public void toggleAdHidden(UUID id, boolean isHidden) {
+        adRepository.updateHidden(id, isHidden);
+    }
+
     public void deleteAd(UUID id) {
         // Delete metadata
         adRepository.deleteById(id);
