@@ -89,6 +89,49 @@ public class MovieRepository {
             // Special character cleanup for smart quotes and apostrophes (N' for unicode)
             jdbcTemplate.execute(
                     "UPDATE Movie SET slug = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(slug, N'’', ''), N'‘', ''), N'”', ''), N'“', ''), '''', ''), ':', '-'), ';', '-') WHERE slug LIKE N'%’%' OR slug LIKE N'%‘%' OR slug LIKE N'%”%' OR slug LIKE N'%“%' OR slug LIKE '%''%' OR slug LIKE '%:%' OR slug LIKE '%;%'");
+
+            // Create ContentViewLog table for weekly view tracking
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[ContentViewLog]') AND type in (N'U')) " +
+                    "BEGIN " +
+                    "    CREATE TABLE [dbo].[ContentViewLog] ( " +
+                    "        [ID] UNIQUEIDENTIFIER DEFAULT NEWID() PRIMARY KEY, " +
+                    "        [ContentId] UNIQUEIDENTIFIER NOT NULL, " +
+                    "        [ViewedAt] DATETIME DEFAULT GETDATE() NOT NULL " +
+                    "    ); " +
+                    "END");
+
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_contentviewlog_viewedat' AND object_id = OBJECT_ID('ContentViewLog')) " +
+                    "BEGIN " +
+                    "    CREATE NONCLUSTERED INDEX idx_contentviewlog_viewedat ON [dbo].[ContentViewLog]([ViewedAt] DESC, [ContentId]); " +
+                    "END");
+
+            // Create/Alter IncrementViewCount stored procedure
+            jdbcTemplate.execute(
+                    "CREATE OR ALTER PROCEDURE [dbo].[IncrementViewCount] " +
+                    "    @ID UNIQUEIDENTIFIER " +
+                    "AS " +
+                    "BEGIN " +
+                    "    SET NOCOUNT ON; " +
+                    "    UPDATE [dbo].[Movie] SET viewCount = ISNULL(viewCount, 0) + 1 WHERE ID = @ID; " +
+                    "    IF @@ROWCOUNT = 0 " +
+                    "    BEGIN " +
+                    "        UPDATE [dbo].[Episode] SET viewCount = ISNULL(viewCount, 0) + 1 WHERE ID = @ID; " +
+                    "        IF @@ROWCOUNT > 0 " +
+                    "        BEGIN " +
+                    "            DECLARE @ParentId UNIQUEIDENTIFIER; " +
+                    "            SELECT @ParentId = SeriesId FROM [dbo].[Episode] WHERE ID = @ID; " +
+                    "            IF @ParentId IS NOT NULL " +
+                    "                UPDATE [dbo].[Series] SET viewCount = ISNULL(viewCount, 0) + 1 WHERE ID = @ParentId; " +
+                    "        END " +
+                    "        ELSE " +
+                    "        BEGIN " +
+                    "            UPDATE [dbo].[Series] SET viewCount = ISNULL(viewCount, 0) + 1 WHERE ID = @ID; " +
+                    "        END " +
+                    "    END; " +
+                    "    INSERT INTO [dbo].[ContentViewLog] (ContentId) VALUES (@ID); " +
+                    "END");
         } catch (Exception e) {
             System.err.println("Schema update failed: " + e.getMessage());
         }
@@ -306,8 +349,14 @@ public class MovieRepository {
                         JOIN MovieCategories MC ON MC.CategoryID = C.ID
                         WHERE MC.MovieID = M.ID) as category
                 FROM [WhoDatIdols].[dbo].[Movie] M
+                LEFT JOIN (
+                    SELECT ContentId, COUNT(*) as WeeklyViews
+                    FROM [dbo].[ContentViewLog]
+                    WHERE [ViewedAt] >= DATEADD(day, -7, GETDATE())
+                    GROUP BY ContentId
+                ) V ON M.ID = V.ContentId
                 WHERE M.IsHidden = 0
-                ORDER BY M.viewCount DESC, M.name ASC
+                ORDER BY ISNULL(V.WeeklyViews, 0) DESC, M.viewCount DESC, M.name ASC
                 """;
         return jdbcTemplate.query(sql, new MovieRowMapper());
     }

@@ -232,6 +232,120 @@
             box-shadow: 0 4px 12px rgba(30, 215, 96, 0.3);
             pointer-events: none;
         }
+
+        /* Weekly Best Modern Admin Styles */
+        .weekly-best-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            border: var(--glass-border);
+            max-height: 420px;
+            overflow-y: auto;
+        }
+
+        .weekly-best-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            transition: var(--transition);
+        }
+
+        .weekly-best-item:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(var(--primary-rgb), 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .weekly-best-rank {
+            font-size: 1.1rem;
+            font-weight: 800;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-dim);
+            font-family: var(--font-heading);
+            flex-shrink: 0;
+        }
+
+        .weekly-best-rank.rank-1 {
+            background: linear-gradient(135deg, #ffd700, #ffa500);
+            color: #000;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .weekly-best-rank.rank-2 {
+            background: linear-gradient(135deg, #c0c0c0, #a9a9a9);
+            color: #000;
+            box-shadow: 0 0 8px rgba(192, 192, 192, 0.3);
+        }
+
+        .weekly-best-rank.rank-3 {
+            background: linear-gradient(135deg, #cd7f32, #8b4513);
+            color: #fff;
+            box-shadow: 0 0 8px rgba(205, 127, 50, 0.3);
+        }
+
+        .weekly-best-poster {
+            width: 40px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+            transition: var(--transition);
+        }
+
+        .weekly-best-item:hover .weekly-best-poster {
+            transform: scale(1.05);
+            border-color: rgba(var(--primary-rgb), 0.4);
+        }
+
+        .weekly-best-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .weekly-best-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+        }
+
+        .weekly-best-views {
+            flex-shrink: 0;
+        }
+
+        .weekly-best-views-badge {
+            background: rgba(var(--primary-rgb), 0.1);
+            color: var(--primary);
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(var(--primary-rgb), 0.2);
+            box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.05);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
     </style>
     <script src="/homepage/js/devtools-protection.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -1314,9 +1428,30 @@
             </section>
             <!-- VIEW MANAGEMENT SECTION -->
             <section id="view-management-section" class="admin-section" style="display: none;">
+                <!-- Haftanın En İyileri (Haftalık Özet Kartları) -->
+                <div class="card" style="margin-bottom: 30px;">
+                    <div class="card-header">
+                        <h2><i class="fas fa-trophy" style="color: #ffc107;"></i> Haftanın En İyileri (Güncel Liste)</h2>
+                    </div>
+                    <div class="weekly-best-admin-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; padding: 20px;">
+                        <div>
+                            <h3 style="margin-bottom: 15px; font-size: 16px; border-bottom: 2px solid var(--primary-color); padding-bottom: 8px; color: #fff;"><i class="fas fa-film" style="color: var(--primary-color); margin-right: 8px;"></i> Haftanın En İyi Filmleri</h3>
+                            <div class="weekly-best-list" id="weeklyBestMoviesList">
+                                <!-- Dinamik olarak yüklenecek -->
+                            </div>
+                        </div>
+                        <div>
+                            <h3 style="margin-bottom: 15px; font-size: 16px; border-bottom: 2px solid var(--primary-color); padding-bottom: 8px; color: #fff;"><i class="fas fa-tv" style="color: var(--primary-color); margin-right: 8px;"></i> Haftanın En İyi Dizileri</h3>
+                            <div class="weekly-best-list" id="weeklyBestSeriesList">
+                                <!-- Dinamik olarak yüklenecek -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card">
                     <div class="card-header">
-                        <h2><i class="fas fa-eye"></i> İzlenme Yönetimi</h2>
+                        <h2><i class="fas fa-eye"></i> İzlenme Yönetimi (Tüm İçerikler)</h2>
                         <!-- Content Filter Switch -->
                         <div class="filter-switch-container" style="margin-bottom: 0;">
                             <div class="filter-switch">
@@ -1343,7 +1478,8 @@
                                 <tr>
                                     <th>İçerik Adı</th>
                                     <th>Tip</th>
-                                    <th>İzlenme Sayısı</th>
+                                    <th style="text-align: center;">Haftalık İzlenme</th>
+                                    <th>Toplam İzlenme Sayısı</th>
                                     <th>İşlem</th>
                                 </tr>
                             </thead>

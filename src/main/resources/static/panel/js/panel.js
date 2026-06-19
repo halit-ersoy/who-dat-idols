@@ -2816,6 +2816,64 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function fetchViewStats() {
+        // Fetch weekly best stats for the side-by-side tables
+        fetch('/admin/weekly-best-stats')
+            .then(res => res.json())
+            .then(data => {
+                const moviesList = document.getElementById('weeklyBestMoviesList');
+                const seriesList = document.getElementById('weeklyBestSeriesList');
+                
+                if (moviesList) {
+                    moviesList.innerHTML = '';
+                    if (!data.movies || data.movies.length === 0) {
+                        moviesList.innerHTML = '<div class="loading-state" style="color: rgba(255,255,255,0.4);">İzlenme verisi yok</div>';
+                    } else {
+                        data.movies.forEach((item, index) => {
+                            const rank = index + 1;
+                            const el = document.createElement('div');
+                            el.className = 'weekly-best-item';
+                            el.innerHTML = `
+                                <div class="weekly-best-rank rank-${rank <= 3 ? rank : 'other'}">${rank}</div>
+                                <img src="/media/image/${item.ID}" class="weekly-best-poster" onerror="this.onerror=null; this.src='/images/placeholder.webp'">
+                                <div class="weekly-best-details">
+                                    <span class="weekly-best-name" title="${item.name}">${item.name}</span>
+                                </div>
+                                <div class="weekly-best-views">
+                                    <span class="weekly-best-views-badge"><i class="fas fa-play" style="font-size:0.75rem; margin-right:3px;"></i> ${item.weeklyViewCount || 0} izlenme</span>
+                                </div>
+                            `;
+                            moviesList.appendChild(el);
+                        });
+                    }
+                }
+                
+                if (seriesList) {
+                    seriesList.innerHTML = '';
+                    if (!data.series || data.series.length === 0) {
+                        seriesList.innerHTML = '<div class="loading-state" style="color: rgba(255,255,255,0.4);">İzlenme verisi yok</div>';
+                    } else {
+                        data.series.forEach((item, index) => {
+                            const rank = index + 1;
+                            const el = document.createElement('div');
+                            el.className = 'weekly-best-item';
+                            el.innerHTML = `
+                                <div class="weekly-best-rank rank-${rank <= 3 ? rank : 'other'}">${rank}</div>
+                                <img src="/media/image/${item.ID}" class="weekly-best-poster" onerror="this.onerror=null; this.src='/images/placeholder.webp'">
+                                <div class="weekly-best-details">
+                                    <span class="weekly-best-name" title="${item.name}">${item.name}</span>
+                                </div>
+                                <div class="weekly-best-views">
+                                    <span class="weekly-best-views-badge"><i class="fas fa-play" style="font-size:0.75rem; margin-right:3px;"></i> ${item.weeklyViewCount || 0} izlenme</span>
+                                </div>
+                            `;
+                            seriesList.appendChild(el);
+                        });
+                    }
+                }
+            })
+            .catch(err => console.error("Weekly best stats error:", err));
+
+        // Fetch main view stats
         fetch('/admin/view-stats')
             .then(res => res.json())
             .then(stats => {
@@ -2829,6 +2887,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     tr.innerHTML = `
                         <td style="font-weight: 600;">${item.Name}</td>
                         <td><span class="item-type">${isMovie ? 'Film' : 'Dizi'}</span></td>
+                        <td style="text-align: center;"><span class="badge" style="background: var(--primary-dim); color: var(--primary); font-weight: 700; padding: 6px 12px; border-radius: 6px;">${item.weeklyViewCount || 0}</span></td>
                         <td>
                             <div class="premium-counter">
                                 <button class="spin-btn minus" onclick="stepViewCount('${item.ID}', -1)"><i class="fas fa-minus"></i></button>

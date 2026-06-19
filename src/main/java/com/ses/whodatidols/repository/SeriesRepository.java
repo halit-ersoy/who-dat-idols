@@ -669,8 +669,23 @@ public class SeriesRepository {
                         JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                         WHERE SC.SeriesID = S.ID) as category
                 FROM Series S
+                LEFT JOIN (
+                    SELECT SeriesId, COUNT(*) as WeeklyViews
+                    FROM (
+                        SELECT E.SeriesId
+                        FROM Episode E
+                        JOIN [dbo].[ContentViewLog] VL ON E.ID = VL.ContentId
+                        WHERE VL.ViewedAt >= DATEADD(day, -7, GETDATE())
+                        UNION ALL
+                        SELECT VL.ContentId as SeriesId
+                        FROM [dbo].[ContentViewLog] VL
+                        WHERE VL.ViewedAt >= DATEADD(day, -7, GETDATE())
+                          AND EXISTS (SELECT 1 FROM Series WHERE ID = VL.ContentId)
+                    ) Combined
+                    GROUP BY SeriesId
+                ) V ON S.ID = V.SeriesId
                 WHERE S.IsHidden = 0
-                ORDER BY S.viewCount DESC, S.name ASC
+                ORDER BY ISNULL(V.WeeklyViews, 0) DESC, S.viewCount DESC, S.name ASC
                 """;
         return jdbcTemplate.query(sql, seriesRowMapper);
     }

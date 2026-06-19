@@ -906,17 +906,87 @@ public class AdminController {
         }
     }
 
+    @GetMapping("/weekly-best-stats")
+    public ResponseEntity<Map<String, Object>> getWeeklyBestStats() {
+        String moviesSql = """
+                SELECT TOP 6 M.ID, M.name, ISNULL(V.WeeklyViews, 0) as weeklyViewCount
+                FROM [WhoDatIdols].[dbo].[Movie] M
+                LEFT JOIN (
+                    SELECT ContentId, COUNT(*) as WeeklyViews
+                    FROM [dbo].[ContentViewLog]
+                    WHERE [ViewedAt] >= DATEADD(day, -7, GETDATE())
+                    GROUP BY ContentId
+                ) V ON M.ID = V.ContentId
+                WHERE M.IsHidden = 0
+                ORDER BY ISNULL(V.WeeklyViews, 0) DESC, M.viewCount DESC, M.name ASC
+                """;
+
+        String seriesSql = """
+                SELECT TOP 6 S.ID, S.name, ISNULL(V.WeeklyViews, 0) as weeklyViewCount
+                FROM Series S
+                LEFT JOIN (
+                    SELECT SeriesId, COUNT(*) as WeeklyViews
+                    FROM (
+                        SELECT E.SeriesId
+                        FROM Episode E
+                        JOIN [dbo].[ContentViewLog] VL ON E.ID = VL.ContentId
+                        WHERE VL.ViewedAt >= DATEADD(day, -7, GETDATE())
+                        UNION ALL
+                        SELECT VL.ContentId as SeriesId
+                        FROM [dbo].[ContentViewLog] VL
+                        WHERE VL.ViewedAt >= DATEADD(day, -7, GETDATE())
+                          AND EXISTS (SELECT 1 FROM Series WHERE ID = VL.ContentId)
+                    ) Combined
+                    GROUP BY SeriesId
+                ) V ON S.ID = V.SeriesId
+                WHERE S.IsHidden = 0
+                ORDER BY ISNULL(V.WeeklyViews, 0) DESC, S.viewCount DESC, S.name ASC
+                """;
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("movies", jdbcTemplate.queryForList(moviesSql));
+        response.put("series", jdbcTemplate.queryForList(seriesSql));
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/view-stats")
     public ResponseEntity<List<Map<String, Object>>> getViewStats() {
         String sql = """
-                SELECT ID, Name, 'Movie' as Type, viewCount FROM Movie
+                SELECT M.ID, M.Name, 'Movie' as Type, M.viewCount, ISNULL(V.WeeklyViews, 0) as weeklyViewCount
+                FROM Movie M
+                LEFT JOIN (
+                    SELECT ContentId, COUNT(*) as WeeklyViews
+                    FROM [dbo].[ContentViewLog]
+                    WHERE [ViewedAt] >= DATEADD(day, -7, GETDATE())
+                    GROUP BY ContentId
+                ) V ON M.ID = V.ContentId
                 UNION ALL
-                SELECT ID, Name, 'SoapOpera' as Type, viewCount FROM Series
-                ORDER BY Name ASC
+                SELECT S.ID, S.Name, 'SoapOpera' as Type, S.viewCount, ISNULL(V.WeeklyViews, 0) as weeklyViewCount
+                FROM Series S
+                LEFT JOIN (
+                    SELECT SeriesId, COUNT(*) as WeeklyViews
+                    FROM (
+                        SELECT E.SeriesId
+                        FROM Episode E
+                        JOIN [dbo].[ContentViewLog] VL ON E.ID = VL.ContentId
+                        WHERE VL.ViewedAt >= DATEADD(day, -7, GETDATE())
+                        UNION ALL
+                        SELECT VL.ContentId as SeriesId
+                        FROM [dbo].[ContentViewLog] VL
+                        WHERE VL.ViewedAt >= DATEADD(day, -7, GETDATE())
+                          AND EXISTS (SELECT 1 FROM Series WHERE ID = VL.ContentId)
+                    ) Combined
+                    GROUP BY SeriesId
+                ) V ON S.ID = V.SeriesId
+                ORDER BY weeklyViewCount DESC, viewCount DESC, Name ASC
                 """;
         return ResponseEntity.ok(jdbcTemplate.queryForList(sql));
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "weeklyBestMovies", allEntries = true),
+            @CacheEvict(value = "weeklyBestSeries", allEntries = true)
+    })
     @PostMapping("/update-view-count")
     public ResponseEntity<String> updateViewCount(
             @RequestParam("id") UUID id,

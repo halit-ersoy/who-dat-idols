@@ -14,6 +14,7 @@ import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -183,6 +184,7 @@ public class VideoController {
         return transcodingService.getTranscodedVideo(originalPath, String.valueOf(id), resolution, rangeHeader);
     }
 
+    @CacheEvict(value = { "weeklyBestMovies", "weeklyBestSeries" }, allEntries = true)
     @PostMapping("/increment-view")
     public ResponseEntity<?> incrementViewCount(@RequestParam("id") UUID id) {
         try {

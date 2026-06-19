@@ -15,6 +15,7 @@ import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.http.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.cache.annotation.CacheEvict;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -323,6 +324,7 @@ public class MediaController {
     }
 
     // --- 4. İZLENME SAYISI ARTIRMA ---
+    @CacheEvict(value = { "weeklyBestMovies", "weeklyBestSeries" }, allEntries = true)
     @PostMapping("/{id}/increment-view")
     public ResponseEntity<Void> incrementViewCount(@PathVariable("id") UUID id) {
         try {
