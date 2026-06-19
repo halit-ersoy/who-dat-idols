@@ -3,6 +3,11 @@ import { showReportModal } from '../../elements/premium-modals.js';
 
 
 document.addEventListener('DOMContentLoaded', () => {
+    const escapeHtml = (unsafe) => {
+        if (!unsafe) return '';
+        return String(unsafe).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    };
+
     const userSearchInput = document.getElementById('user-search-input');
     const userSearchResults = document.getElementById('user-search-results');
     const conversationsList = document.getElementById('conversations-list');
@@ -88,19 +93,22 @@ document.addEventListener('DOMContentLoaded', () => {
             userSearchResults.innerHTML = users.map(user => {
                 const initial = user.nickname[0].toUpperCase();
                 const avatarUrl = `/media/profile/${user.id}`;
+                const safeNickname = escapeHtml(user.nickname || '');
+                const safeName = escapeHtml(user.name || '');
+                const safeSurname = escapeHtml(user.surname || '');
                 return `
-                <div class="search-item" data-nickname="${user.nickname}" data-role="${user.role || ''}" data-id="${user.id}" data-verified="${user.isVerified || false}">
+                <div class="search-item" data-nickname="${safeNickname}" data-role="${user.role || ''}" data-id="${user.id}" data-verified="${user.isVerified || false}">
                     <div class="avatar" style="position: relative; overflow: hidden; color: white;">
                         ${initial}
                         <img src="${avatarUrl}" onerror="this.style.display='none'" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                     </div>
                     <div class="info">
                         <div style="display:flex; align-items:center; gap:5px;">
-                            <div class="nickname">${user.nickname}</div>
+                            <div class="nickname">${safeNickname}</div>
                             ${user.isVerified ? '<i class="fas fa-check-circle" style="color: #1DA1F2; font-size: 0.8rem;" title="Doğrulanmış Hesap"></i>' : ''}
                             ${getRoleBadge(user.role)}
                         </div>
-                        <div class="name" style="font-size: 0.75rem; color: #888;">${user.name} ${user.surname}</div>
+                        <div class="name" style="font-size: 0.75rem; color: #888;">${safeName} ${safeSurname}</div>
                     </div>
                 </div>
             `;
@@ -169,9 +177,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const initial = otherUser[0].toUpperCase();
             const avatarUrl = `/media/profile/${otherUserId}`;
+            const safeOtherUser = escapeHtml(otherUser || '');
+            const safeContent = escapeHtml(c.content || '');
 
             return `
-                <div class="conversation-item ${isActive ? 'active' : ''} ${isUnread ? 'unread' : ''}" data-nickname="${otherUser}" data-id="${otherUserId}" data-verified="${isSentByMe ? c.receiverVerified : c.senderVerified}">
+                <div class="conversation-item ${isActive ? 'active' : ''} ${isUnread ? 'unread' : ''}" data-nickname="${safeOtherUser}" data-id="${otherUserId}" data-verified="${isSentByMe ? c.receiverVerified : c.senderVerified}">
                     <div class="avatar" style="position: relative; overflow: hidden; color: white;">
                         ${initial}
                         <img src="${avatarUrl}" onerror="this.style.display='none'" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
@@ -179,13 +189,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="conversation-info">
                         <div class="conversation-top">
                             <div style="display: flex; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; flex: 1;">
-                                <span class="nickname" style="flex-shrink: 0;">${otherUser}</span>
+                                <span class="nickname" style="flex-shrink: 0;">${safeOtherUser}</span>
                                 ${(isSentByMe ? c.receiverVerified : c.senderVerified) ? '<i class="fas fa-check-circle" style="color: #1DA1F2; font-size: 0.75rem;" title="Doğrulanmış Hesap"></i>' : ''}
                                 ${getRoleBadge(isSentByMe ? c.receiverRole : c.senderRole)}
                             </div>
                             <span class="time" style="flex-shrink: 0; margin-left: 8px;">${time}</span>
                         </div>
-                        <div class="last-message">${statusIcon}${c.content}</div>
+                        <div class="last-message">${statusIcon}${safeContent}</div>
                     </div>
                 </div>
             `;
@@ -219,6 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const avatarUrl = receiverId ? `/media/profile/${receiverId}` : '';
 
         // Update UI
+        const safeNickname = escapeHtml(nickname || '');
         chatArea.innerHTML = `
             <div class="chat-header">
                 <div class="receiver-avatar" style="position: relative; overflow: hidden; color: white;">
@@ -227,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="receiver-info">
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <h3 style="margin: 0; font-size: 1.1rem;">${nickname}</h3>
+                        <h3 style="margin: 0; font-size: 1.1rem;">${safeNickname}</h3>
                         ${verified ? '<i class="fas fa-check-circle" style="color: #1DA1F2;" title="Doğrulanmış Hesap"></i>' : ''}
                         ${getRoleBadge(role)}
                     </div>
@@ -395,9 +406,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         else if (emojiInfo.count === 2) bubbleClass += ' medium';
                     }
 
+                    const safeMsgContent = escapeHtml(m.content || '');
                     return `
                         <div class="message-bubble ${bubbleClass}" data-id="${m.id}">
-                            ${m.content}
+                            ${safeMsgContent}
                             <div class="message-footer">
                                 <span class="message-time">${formatTime(new Date(m.timestamp))}</span>
                                 ${isSent ? statusIcon : ''}
@@ -627,9 +639,10 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (emojiInfo.count === 2) bubbleClass += ' medium';
         }
 
+        const safeMsgContent = escapeHtml(m.content || '');
         const html = `
             <div class="message-bubble ${bubbleClass}" data-id="${m.id}">
-                ${m.content}
+                ${safeMsgContent}
                 <div class="message-footer">
                     <span class="message-time">${formatTime(new Date(m.timestamp))}</span>
                     ${isSent ? statusIcon : ''}
@@ -683,11 +696,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const toast = document.createElement('div');
         toast.className = 'toast-notification';
+        const safeSender = escapeHtml(conv.senderNickname || '');
+        const safeMsgContent = escapeHtml(conv.content || '');
         toast.innerHTML = `
             <div class="toast-icon"><i class="fas fa-message"></i></div>
             <div class="toast-content">
-                <div class="toast-title">${conv.senderNickname}</div>
-                <div class="toast-message">${conv.content}</div>
+                <div class="toast-title">${safeSender}</div>
+                <div class="toast-message">${safeMsgContent}</div>
             </div>
         `;
 
