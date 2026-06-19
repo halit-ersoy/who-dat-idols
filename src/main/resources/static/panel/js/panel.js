@@ -2608,6 +2608,50 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
 
+    function getSourceNameFromUrl(urlStr) {
+        if (!urlStr) return '';
+        let url = urlStr.trim();
+        if (url.includes('<iframe') && url.includes('src=')) {
+            const match = url.match(/src=["']([^"']+)["']/);
+            if (match && match[1]) {
+                url = match[1];
+            }
+        }
+        if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('//')) {
+            url = 'https://' + url;
+        }
+        try {
+            const parsedUrl = new URL(url.startsWith('//') ? 'https:' + url : url);
+            const hostname = parsedUrl.hostname.toLowerCase();
+            if (hostname.includes('vidmoly')) return 'VID';
+            if (hostname.includes('ok.ru') || hostname.includes('odnoklassniki')) return 'OKRU';
+            if (hostname.includes('vk.com') || hostname.includes('vkvideo.ru') || hostname.includes('vk.ru')) return 'VK';
+            if (hostname.includes('abyssplayer') || hostname.includes('short.icu')) return 'ABS';
+            if (hostname.includes('videa.hu') || hostname.includes('videa')) return 'VIDEA';
+            if (hostname.includes('filemoon')) return 'FM';
+            if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) return 'YOUTUBE';
+            
+            let cleanHost = hostname.replace(/^www\./, '');
+            let parts = cleanHost.split('.');
+            if (parts.length > 1) {
+                let domainIndex = parts.length - 2;
+                if (parts.length >= 3) {
+                    const secondToLast = parts[parts.length - 2];
+                    if (['co', 'com', 'net', 'org', 'gov', 'edu', 'web', 'com-tr'].includes(secondToLast)) {
+                        domainIndex = parts.length - 3;
+                    }
+                }
+                if (domainIndex >= 0) {
+                    return parts[domainIndex].toUpperCase();
+                }
+                return parts[0].toUpperCase();
+            }
+            return hostname.toUpperCase();
+        } catch (err) {
+            return '';
+        }
+    }
+
     window.addSourceField = function (type, name = '', url = '') {
         const container = document.getElementById(`${type}SourcesList`);
         if (!container) return;
@@ -2630,8 +2674,23 @@ document.addEventListener('DOMContentLoaded', function () {
             </button>
         `;
 
-        // Extract URL from iframe on paste
         const urlInput = row.querySelector('.source-url');
+        const nameInput = row.querySelector('.source-name');
+
+        function autoFillName(urlInp, nameInp) {
+            const urlVal = urlInp.value.trim();
+            if (!urlVal) return;
+            const detectedName = getSourceNameFromUrl(urlVal);
+            if (detectedName) {
+                const previousAutoValue = nameInp.dataset.autoValue || '';
+                if (!nameInp.value.trim() || nameInp.value.trim() === previousAutoValue) {
+                    nameInp.value = detectedName;
+                    nameInp.dataset.autoValue = detectedName;
+                }
+            }
+        }
+
+        // Extract URL from iframe on paste
         urlInput.addEventListener('paste', function (e) {
             const pastedText = (e.clipboardData || window.clipboardData).getData('text');
             if (pastedText.includes('<iframe') && pastedText.includes('src=')) {
@@ -2644,8 +2703,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                     this.value = extractedUrl;
                     updateVideoRequirement(type);
+                    autoFillName(this, nameInput);
                 }
+            } else {
+                setTimeout(() => {
+                    autoFillName(this, nameInput);
+                }, 50);
             }
+        });
+
+        urlInput.addEventListener('input', function () {
+            updateVideoRequirement(type);
+            autoFillName(this, nameInput);
         });
 
         container.appendChild(row);

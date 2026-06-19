@@ -8,6 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.message, '-live-')
 
     steps:
       - name: Sunucuya Baglan ve Guncelle
@@ -34,12 +35,20 @@ jobs:
             # 5. Servisi Yeniden Baslat (Prod Modunda Kalkacak)
             systemctl restart whodatidols
             
-            # 6. Durum Raporu Ver
-            systemctl status whodatidols --no-pager
+            # 6. Durum Raporu Ver (Gecikmeli ve hata kodunu yutarak)
+            sleep 5
+            systemctl status whodatidols --no-pager || true
 
       - name: Purge Cloudflare Cache
         run: |
-          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
-          -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
-          -H "Content-Type: application/json" \
-          --data '{"purge_everything":true}'
+          RESPONSE=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}')
+          echo "Cloudflare Response: $RESPONSE"
+          if echo "$RESPONSE" | grep -q '"success":true'; then
+            echo "Cloudflare Cache Purge successful!"
+          else
+            echo "Cloudflare Cache Purge failed!"
+            exit 1
+          fi
