@@ -244,7 +244,28 @@ function getCountryName(code) {
         'ph': 'Filipinler',
         'id': 'Endonezya',
         'my': 'Malezya',
-        'sg': 'Singapur'
+        'sg': 'Singapur',
+        'be': 'Belçika',
+        'us': 'USA',
+        'ch': 'İsviçre',
+        'hk': 'Hong Kong',
+        'ca': 'Kanada',
+        'es': 'İspanya',
+        'in': 'Hindistan',
+        'vn': 'Vietnam',
+        'kh': 'Kamboçya',
+        'ee': 'Estonya',
+        'de': 'Almanya',
+        'fr': 'Fransa',
+        'hr': 'Hırvatistan',
+        'nl': 'Hollanda',
+        'gb': 'UK',
+        'at': 'Avusturya',
+        'it': 'İtalya',
+        'pl': 'Polonya',
+        'ar': 'Arjantin',
+        'br': 'Brezilya',
+        'ie': 'İrlanda'
     };
     return countries[code.toLowerCase()] || code;
 }

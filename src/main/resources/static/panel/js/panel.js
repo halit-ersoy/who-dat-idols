@@ -2235,11 +2235,12 @@ document.addEventListener('DOMContentLoaded', function () {
         lastFetchedPosterUrl = image;
 
         const countryMap = {
-            'KR': 'Korea', 'TH': 'Thailand', 'CN': 'China', 'JP': 'Japan', 'TR': 'Turkey',
-            'US': 'USA', 'BE': 'Belgium', 'CH': 'Switzerland', 'HK': 'Hong Kong',
-            'CA': 'Canada', 'ES': 'Spain', 'IN': 'India', 'VN': 'Vietnam',
-            'KH': 'Cambodia', 'EE': 'Estonia', 'DE': 'Germany', 'FR': 'France',
-            'HR': 'Croatia', 'NL': 'Netherlands', 'GB': 'UK', 'AT': 'Austria', 'IT': 'Italy', 'PL': 'pl'
+            'KR': 'kr', 'TH': 'th', 'CN': 'cn', 'JP': 'jp', 'TR': 'tr',
+            'US': 'us', 'BE': 'be', 'CH': 'ch', 'HK': 'hk',
+            'CA': 'ca', 'ES': 'es', 'IN': 'in', 'VN': 'vn',
+            'KH': 'kh', 'EE': 'ee', 'DE': 'de', 'FR': 'fr',
+            'HR': 'hr', 'NL': 'nl', 'GB': 'gb', 'AT': 'at', 'IT': 'it',
+            'PL': 'pl', 'AR': 'ar', 'BR': 'br', 'IE': 'ie'
         };
         const mappedCountry = countryMap[countryCode] || countryCode;
         const langMap = {
@@ -2259,7 +2260,9 @@ document.addEventListener('DOMContentLoaded', function () {
             'Khmer': 'Kmerce', 'km': 'Kmerce',
             'Croatian': 'Hırvatça', 'hr': 'Hırvatça',
             'Italian': 'İtalyanca', 'it': 'İtalyanca',
-            'Polish': 'Lehçe', 'pl': 'Lehçe'
+            'Polish': 'Lehçe', 'pl': 'Lehçe',
+            'Portuguese': 'Portekizce', 'pt': 'Portekizce',
+            'Irish': 'İrlandaca', 'ga': 'İrlandaca'
         };
         const mappedLang = langMap[language] || 'Korece';
 

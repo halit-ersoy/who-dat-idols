@@ -44,7 +44,11 @@ export function initFeaturedContent() {
         nl: 'Hollanda',
         gb: 'UK',
         at: 'Avusturya',
-        it: 'İtalya'
+        it: 'İtalya',
+        pl: 'Polonya',
+        ar: 'Arjantin',
+        br: 'Brezilya',
+        ie: 'İrlanda'
     };
 
     updateToggleState();

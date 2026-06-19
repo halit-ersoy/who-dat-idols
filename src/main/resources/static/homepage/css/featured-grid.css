@@ -468,6 +468,22 @@
     background-image: url('https://flagcdn.com/h240/it.webp');
 }
 
+.pl {
+    background-image: url('https://flagcdn.com/h240/pl.webp');
+}
+
+.ar {
+    background-image: url('https://flagcdn.com/h240/ar.webp');
+}
+
+.br {
+    background-image: url('https://flagcdn.com/h240/br.webp');
+}
+
+.ie {
+    background-image: url('https://flagcdn.com/h240/ie.webp');
+}
+
 .title-container {
     display: flex;
     align-items: center;
