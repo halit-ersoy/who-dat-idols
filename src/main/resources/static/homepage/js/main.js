@@ -15,6 +15,7 @@ import { initCalendar } from "./calendar.js?v=2";
 import { initNotifications } from "./notifications.js?v=2";
 import { initFeedback } from "./feedback.js?v=2";
 import { initMessagingManager } from "./messagingManager.js?v=2";
+import { initAiSearch } from "./aiSearch.js?v=1";
 
 window.addEventListener('load', () => {
     const loadingScreen = document.getElementById('loading-screen');
@@ -48,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initFeedback();
     initMessagingManager();
     initAnnouncement();
+    initAiSearch();
 });
 
 function initAnnouncement() {
@@ -63,25 +65,30 @@ function initAnnouncement() {
             if (data.active && data.text) {
                 textSpan.textContent = data.text;
                 bar.style.display = 'block';
-            } else {
-                bar.style.display = 'none';
+                return;
             }
-            return;
         } catch (e) {
-            console.error('Failed to parse cached announcement:', e);
+            console.error('Cached announcement parse error:', e);
         }
     }
 
-    fetch('/api/settings/announcement')
-        .then(res => res.json())
+    fetch('/api/announcements/active')
+        .then(res => {
+            if (!res.ok) throw new Error('No active announcement');
+            return res.json();
+        })
         .then(data => {
-            sessionStorage.setItem('announcementData', JSON.stringify(data));
-            if (data.active && data.text) {
+            if (data && data.text) {
                 textSpan.textContent = data.text;
                 bar.style.display = 'block';
+                sessionStorage.setItem('announcementData', JSON.stringify({ active: true, text: data.text }));
             } else {
                 bar.style.display = 'none';
+                sessionStorage.setItem('announcementData', JSON.stringify({ active: false }));
             }
         })
-        .catch(err => console.error('Failed to load announcement:', err));
+        .catch(err => {
+            bar.style.display = 'none';
+            sessionStorage.setItem('announcementData', JSON.stringify({ active: false }));
+        });
 }

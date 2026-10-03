@@ -33,7 +33,7 @@
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <link rel="stylesheet" href="/homepage/css/main.css">
+    <link rel="stylesheet" href="/homepage/css/main.css?v=4">
     <script src="/homepage/js/devtools-protection.js"></script>
     <script type="application/ld+json">
     {
@@ -101,6 +101,12 @@
                 </button>
                 <div class="search-results" id="search-results"></div>
             </div>
+
+            <!-- AI Vibe Search Button -->
+            <button class="ai-vibe-btn" id="ai-vibe-btn" title="✨ Yapay Zeka ile Moduna Göre Film Bul" aria-label="AI Vibe Arama">
+                <i class="fas fa-wand-magic-sparkles"></i>
+                <span class="ai-btn-text">AI Vibe</span>
+            </button>
 
             <div class="user-controls">
                 <div class="update-notes-wrapper" id="update-notes-wrapper">
@@ -544,8 +550,91 @@
         </div>
     </div>
 
+    <!-- AI Disclaimer (Beta / Deneme Asamasi) Modal -->
+    <div class="ai-modal-backdrop" id="ai-disclaimer-backdrop" style="display: none;">
+        <div class="ai-modal-dialog ai-disclaimer-dialog">
+            <div class="ai-modal-header">
+                <div class="ai-modal-title">
+                    <i class="fas fa-flask ai-flask-icon"></i>
+                    <span>Deneysel Özellik</span>
+                    <span class="ai-disclaimer-pill">Beta</span>
+                </div>
+                <button class="ai-modal-close" id="ai-disclaimer-close" aria-label="Kapat">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="ai-modal-body ai-disclaimer-body">
+                <div class="ai-disclaimer-icon-wrapper">
+                    <i class="fas fa-triangle-exclamation ai-disclaimer-warn-icon"></i>
+                </div>
+                <h3 class="ai-disclaimer-heading">Yapay Zeka ile Öneri Sistemi</h3>
+                <div class="ai-disclaimer-text">
+                    <p>
+                        Bu özellik henüz <strong>deneme aşamasındadır</strong>. Yapay zeka modelleri ve öneri algoritmalarımız sürekli olarak geliştirilmektedir.
+                    </p>
+                    <div class="ai-disclaimer-highlight">
+                        <i class="fas fa-circle-exclamation"></i>
+                        <span>Sistem deneme sürecinde olduğu için zaman zaman <strong>sık sık hatalar alınabilir, beklenmeyen sonuçlar çıkabilir</strong> veya yanıt gecikebilir.</span>
+                    </div>
+                    <p class="ai-disclaimer-subnote">
+                        Aklınızdaki hissi veya modu yazarak arama yapabilirsiniz.
+                    </p>
+                </div>
+                <div class="ai-disclaimer-actions">
+                    <button type="button" class="ai-disclaimer-btn-cancel" id="ai-disclaimer-cancel">Vazgeç</button>
+                    <button type="button" class="ai-disclaimer-btn-confirm" id="ai-disclaimer-confirm">
+                        <i class="fas fa-check"></i>
+                        <span>Tamam</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Vibe Search Modal -->
+    <div class="ai-modal-backdrop" id="ai-modal-backdrop" style="display: none;">
+        <div class="ai-modal-dialog">
+            <div class="ai-modal-header">
+                <div class="ai-modal-title">
+                    <i class="fas fa-wand-magic-sparkles ai-sparkle-icon"></i>
+                    <span>AI Mood & Vibe Arama</span>
+                    <span class="ai-beta-tag">BETA</span>
+                </div>
+                <button class="ai-modal-close" id="ai-modal-close" aria-label="Kapat">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="ai-modal-body">
+                <p class="ai-modal-subtitle">Aklındaki hissi, ruh halini veya izlemek istediğin atmosferi yaz; yapay zeka senin için en uygun yapımları seçsin.</p>
+                
+                <div class="ai-vibe-chips">
+                    <button type="button" class="ai-chip" data-vibe="Yağmurlu ve melankolik bir gecede battaniye altında izlenecek gizemli dizi/film">🌧️ Melankolik Gece</button>
+                    <button type="button" class="ai-chip" data-vibe="Beyin yakan, son ana kadar ters köşe yapan şaşırtıcı bir yapım">🤯 Beyin Yakan / Ters Köşe</button>
+                    <button type="button" class="ai-chip" data-vibe="Kafamı hiç yormayacak, kahkaha attıracak sıcacık bir çerezlik">🍕 Kafa Dağıtmalık Komedi</button>
+                    <button type="button" class="ai-chip" data-vibe="Dün sevgilimden ayrıldım, içimi ısıtacak ve umut aşılayacak bir yapım">💔 Ayrılık Sonrası İyi Hisset</button>
+                    <button type="button" class="ai-chip" data-vibe="Nefesimi kesecek, baştan sona adrenalin dolu gerilim">⚡ Saf Adrenalin</button>
+                </div>
+
+                <div class="ai-input-wrapper">
+                    <textarea id="ai-vibe-input" rows="3" placeholder="Örn: 'Bugün çok yoruldum, bana sakin, huzurlu ama içine çeken bir dizi öner...'"></textarea>
+                    <button id="ai-vibe-submit" class="ai-submit-btn">
+                        <i class="fas fa-wand-magic-sparkles"></i>
+                        <span>Önerileri Bul</span>
+                    </button>
+                </div>
+
+                <div id="ai-loading" class="ai-loading-container" style="display: none;">
+                    <div class="ai-loader-pulse"></div>
+                    <p>Yapay zeka arşivimizi tarıyor ve senin için en uygun yapımları seçiyor...</p>
+                </div>
+
+                <div id="ai-results" class="ai-results-grid"></div>
+            </div>
+        </div>
+    </div>
+
     <script src="/elements/heartbeat.js"></script>
-    <script type="module" src="/homepage/js/main.js?v=3"></script>
+    <script type="module" src="/homepage/js/main.js?v=6"></script>
     <script src="/homepage/js/updateNotes.js?v=1"></script>
 </body>
 

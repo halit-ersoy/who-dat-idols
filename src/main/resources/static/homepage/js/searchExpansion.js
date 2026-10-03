@@ -119,7 +119,21 @@ export function initHeaderInteractions() {
         container.innerHTML = '';
 
         if (!Array.isArray(results) || results.length === 0) {
-            container.innerHTML = '<div class="no-results">Sonuç bulunamadı</div>';
+            container.innerHTML = `
+                <div class=\"no-results\">Sonuç bulunamadı</div>
+                <div class=\"search-ai-shortcut\" id=\"trigger-ai-notfound\">
+                    <i class=\"fas fa-wand-magic-sparkles\"></i>
+                    <span>Moduna göre mi arıyorsun? <strong>AI Vibe Arama</strong>'yı dene!</span>
+                </div>
+            `;
+            const aiShortcut = container.querySelector('#trigger-ai-notfound');
+            if (aiShortcut) {
+                aiShortcut.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    const aiBtn = document.getElementById('ai-vibe-btn');
+                    if (aiBtn) aiBtn.click();
+                });
+            }
             container.classList.add('active');
             return;
         }
@@ -139,9 +153,9 @@ export function initHeaderInteractions() {
             const yearInfo = year ? `(${year})` : '';
 
             resultItem.innerHTML = `
-                <div class="result-info">
-                    <div class="result-name">${name} ${yearInfo}</div>
-                    <div class="result-meta">${typeLabel} • ${category}</div>
+                <div class=\"result-info\">
+                    <div class=\"result-name\">${name} ${yearInfo}</div>
+                    <div class=\"result-meta\">${typeLabel} • ${category}</div>
                 </div>
             `;
 
@@ -154,6 +168,20 @@ export function initHeaderInteractions() {
 
             container.appendChild(resultItem);
         });
+
+        // Add a subtle footer inside dropdown offering AI search
+        const aiFooter = document.createElement('div');
+        aiFooter.className = 'search-ai-shortcut';
+        aiFooter.innerHTML = `
+            <i class=\"fas fa-wand-magic-sparkles\"></i>
+            <span>Hislerine göre film bulmak için <strong>AI Vibe</strong>'a tıkla</span>
+        `;
+        aiFooter.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            const aiBtn = document.getElementById('ai-vibe-btn');
+            if (aiBtn) aiBtn.click();
+        });
+        container.appendChild(aiFooter);
 
         container.classList.add('active');
     }
