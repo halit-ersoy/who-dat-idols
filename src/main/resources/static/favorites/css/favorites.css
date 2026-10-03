@@ -1,7 +1,7 @@
-@import url('/elements/footer.css');
-@import url('/elements/header.css');
-@import url('/elements/base.css');
-@import url('/elements/scrool.css');
+@import url('../../elements/footer.css');
+@import url('../../elements/header.css');
+@import url('../../elements/base.css');
+@import url('../../elements/scrool.css');
 
 :root {
     --primary: var(--primary-color);
@@ -189,28 +189,59 @@ body {
     overflow: hidden;
     cursor: pointer;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
-    background: var(--black);
+    background: #141414;
     aspect-ratio: 2/3;
+    border: 1px solid var(--glass-border);
+}
+
+/* Film Icon Placeholder when no image or image fails to load */
+.no-image-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at center, #262626 0%, #121212 100%);
+    color: rgba(255, 255, 255, 0.25);
+    z-index: 1;
+}
+
+.no-image-placeholder i {
+    font-size: 3rem;
+    color: rgba(255, 255, 255, 0.2);
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.content-item:hover .no-image-placeholder i {
+    color: var(--primary);
+    transform: scale(1.15);
 }
 
 .content-item img {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
     transition: transform 0.5s ease, filter 0.3s ease;
     opacity: 0.85;
+    z-index: 2;
 }
 
 .content-item:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    z-index: 2;
+    z-index: 5;
 }
 
 .content-item:hover img {
     transform: scale(1.05);
     opacity: 0.4;
-    /* Darken for overlay readability */
     filter: blur(2px);
 }
 
@@ -225,6 +256,7 @@ body {
     transform: translateY(10px);
     opacity: 0;
     transition: all 0.3s ease;
+    z-index: 3;
 }
 
 .content-item:hover .content-overlay {
@@ -263,13 +295,13 @@ body {
     opacity: 0;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     box-shadow: 0 0 20px var(--primary-glow);
+    z-index: 4;
 }
 
 .play-overlay i {
     color: var(--black);
     font-size: 24px;
     margin-left: 4px;
-    /* Optical center */
 }
 
 .content-item:hover .play-overlay {
@@ -296,6 +328,7 @@ body {
     transform: translateY(-10px);
     transition: all 0.3s ease;
     backdrop-filter: blur(4px);
+    z-index: 6;
 }
 
 .remove-btn:hover {

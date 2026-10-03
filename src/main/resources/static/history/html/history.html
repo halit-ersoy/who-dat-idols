@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <script src="/elements/theme.js"></script>
+    <!-- Google AdSense (Auto Ads) -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8903433157602253"
+        crossorigin="anonymous"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İzleme Geçmişim - Who Dat Idols?</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/history/css/history.css">
+    <script src="/homepage/js/devtools-protection.js"></script>
+    <link rel="stylesheet" href="/elements/variables.css">
+</head>
+
+<body>
+    <header>
+        <a href="/" class="logo" style="text-decoration: none;">WDI</a>
+    </header>
+
+    <div class="content-wrapper">
+        <div class="page-title">
+            <div class="title-wrapper">
+                <h1><i class="fas fa-clock-rotate-left"></i> İzleme Geçmişim</h1>
+                <p>İzlediğiniz dizi, film ve bölümler</p>
+            </div>
+            <button id="clearHistoryBtn" class="clear-history-btn" style="display: none;">
+                <i class="fas fa-trash-can"></i> Tüm Geçmişi Temizle
+            </button>
+        </div>
+
+        <div class="history-container">
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+                <p>İzleme geçmişiniz yükleniyor...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-triangle-exclamation"></i> Geçmişi Temizle</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Tüm izleme geçmişinizi silmek istediğinize emin misiniz? Bu işlem geri alınamaz.</p>
+                <div class="modal-actions">
+                    <button class="btn-cancel">Vazgeç</button>
+                    <button class="btn-confirm-delete">Evet, Temizle</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-links">
+            <a href="/">Anasayfa</a>
+            <a href="/about">Hakkımızda</a>
+            <a href="/privacy_policy">Gizlilik Politikası</a>
+            <a href="/terms_of_use">Kullanım Şartları</a>
+            <a href="/sss">SSS</a>
+        </div>
+        <p>&copy;
+            <script>document.write(new Date().getFullYear())</script> Who Dat Idols? Tüm hakları saklıdır.
+        </p>
+    </footer>
+    <script type="module" src="/history/js/history.js"></script>
+</body>
+
+</html>

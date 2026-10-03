@@ -547,6 +547,21 @@ public class HomeController {
         }
     }
 
+    @GetMapping("/history")
+    public ResponseEntity<Resource> getHistoryPage() {
+        try {
+            Resource htmlPage = new ClassPathResource("static/history/html/history.html");
+            if (!htmlPage.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
+                    .body(htmlPage);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
     @GetMapping("/api/user/profile")
     @ResponseBody
     public ResponseEntity<?> getUserProfile(@CookieValue(name = "wdiAuth", required = false) String cookie) {

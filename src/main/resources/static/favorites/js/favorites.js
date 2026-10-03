@@ -323,7 +323,7 @@
                 map[item.ListName].videos.push({
                     id: item.VideoID,
                     title: item.VideoName || 'Başlıksız Video',
-                    image: '/media/image/' + item.VideoID, // Düzeltildi: absolute path
+                    image: '/media/image/' + item.VideoID,
                     year: item.Year || '',
                     type: (item.Category || '').split(',')[0] || '',
                     slug: item.slug || ''
@@ -408,7 +408,10 @@
         }
         return videos.map(v => `
       <div class="content-item" data-id="${v.id}" data-slug="${v.slug}">
-        <img src="${v.image}" loading="lazy" alt="${escapeHtml(v.title)}" onerror="this.src='/elements/img/default_movie.jpg'">
+        <div class="no-image-placeholder">
+          <i class="fas fa-film"></i>
+        </div>
+        ${v.image ? `<img src="${v.image}" loading="lazy" alt="${escapeHtml(v.title)}" onerror="this.remove();">` : ''}
         
         <div class="play-overlay"><i class="fas fa-play"></i></div>
         <button class="remove-btn" title="Listeden Kaldır"><i class="fas fa-times"></i></button>

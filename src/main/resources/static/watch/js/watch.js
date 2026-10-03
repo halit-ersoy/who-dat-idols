@@ -35,6 +35,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Increment view count on page open (works for both native player and external sources)
     incrementViewCount(videoId);
 
+    // Record user watch history if authenticated
+    recordWatchHistory(videoId);
+
     initVideoControls(videoId);
     initListModal(videoId);
     initCommentsSection(videoId);
@@ -54,5 +57,18 @@ async function incrementViewCount(id) {
         if (!res.ok) console.error('View count artırılamadı');
     } catch (err) {
         console.error('View count hatası:', err);
+    }
+}
+
+async function recordWatchHistory(id) {
+    try {
+        const token = localStorage.getItem('wdiUserToken');
+        if (!token) return; // Only authenticated users have watch history
+        await fetch(`/api/history/record?contentId=${encodeURIComponent(id)}`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+    } catch (err) {
+        console.error('Watch history hatası:', err);
     }
 }
