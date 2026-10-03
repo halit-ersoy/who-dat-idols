@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/media")
+@SuppressWarnings({"SqlResolve", "SqlNoDataSourceInspection"})
 public class MediaController {
 
     private static final Logger logger = LoggerFactory.getLogger(MediaController.class);
@@ -298,6 +299,45 @@ public class MediaController {
                 }
             }
 
+            // Fallback for upcoming items:
+            if (imagePath == null && upcomingPath != null) {
+                Path upcomingDir = Paths.get(upcomingPath).toAbsolutePath().normalize();
+
+                // 1) Direkt upcoming klasöründe ara (id dosya adı olarak kullanılmışsa)
+                imagePath = findExistingImage(upcomingDir, id);
+
+                // 2) Eğer istek yapılan id bir film/dizi (ReferenceId) ise, Upcoming tablosundaki kaydının ID'sini bulup upcoming klasöründe ara
+                if (imagePath == null) {
+                    try {
+                        String upcomingIdStr = jdbcTemplate.queryForObject(
+                                "SELECT TOP 1 CAST(ID AS NVARCHAR(36)) FROM Upcoming WHERE ReferenceId = ? ORDER BY [Datetime] DESC",
+                                String.class, id.toString());
+                        if (upcomingIdStr != null) {
+                            imagePath = findExistingImage(upcomingDir, UUID.fromString(upcomingIdStr));
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
+
+                // 3) Eğer istek yapılan id bir Upcoming ID ise ve resmi bulunamadıysa, referans verdiği film veya dizinin klasöründeki resmi ara
+                if (imagePath == null) {
+                    try {
+                        String refIdStr = jdbcTemplate.queryForObject(
+                                "SELECT TOP 1 CAST(ReferenceId AS NVARCHAR(36)) FROM Upcoming WHERE ID = ? AND ReferenceId IS NOT NULL",
+                                String.class, id.toString());
+                        if (refIdStr != null) {
+                            UUID refId = UUID.fromString(refIdStr);
+                            String refCategory = getContentTypeFromDatabase(refId);
+                            Path refBasePath = getBasePathForCategory(refCategory);
+                            if (refBasePath != null) {
+                                imagePath = findExistingImage(refBasePath, refId);
+                            }
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+
             if (imagePath == null) {
                 logger.warn("Image file not found for id: {} (Category: {})", id, category);
                 return ResponseEntity.notFound().build();
@@ -326,7 +366,7 @@ public class MediaController {
     // --- 4. İZLENME SAYISI ARTIRMA ---
     @CacheEvict(value = { "weeklyBestMovies", "weeklyBestSeries" }, allEntries = true)
     @PostMapping("/{id}/increment-view")
-    public ResponseEntity<Void> incrementViewCount(@PathVariable("id") UUID id) {
+    public ResponseEntity<Void> incrementViewCount(@PathVariable(name = "id") UUID id) {
         try {
             // Stored Procedure çağrısı
             int updatedRows = jdbcTemplate.update("EXEC IncrementViewCount @ID = ?", id.toString());
@@ -350,23 +390,14 @@ public class MediaController {
         // Veritabanından dönen string değerlerine göre eşleştirme
         // Not: DB'den dönen değerlerin 'movie', 'soap_opera', 'trailer' olduğu
         // varsayılmıştır.
-        switch (category.toLowerCase()) {
-            case "movie":
-                return Paths.get(moviesPath).toAbsolutePath().normalize();
-            case "soap_opera": // DB'den 'soap-opera' veya 'soap_opera' dönebilir, kontrol edin
-            case "soap-opera":
-            case "soapopera":
-            case "series":
-                return Paths.get(soapOperasPath).toAbsolutePath().normalize();
-            case "trailer":
-                return Paths.get(trailersPath).toAbsolutePath().normalize();
-            case "upcoming":
-                return Paths.get(upcomingPath).toAbsolutePath().normalize();
-            case "ad":
-                return Paths.get(adsPath).toAbsolutePath().normalize();
-            default:
-                return null;
-        }
+        return switch (category.toLowerCase()) {
+            case "movie" -> Paths.get(moviesPath).toAbsolutePath().normalize();
+            case "soap_opera", "soap-opera", "soapopera", "series" -> Paths.get(soapOperasPath).toAbsolutePath().normalize();
+            case "trailer" -> Paths.get(trailersPath).toAbsolutePath().normalize();
+            case "upcoming" -> Paths.get(upcomingPath).toAbsolutePath().normalize();
+            case "ad" -> Paths.get(adsPath).toAbsolutePath().normalize();
+            default -> null;
+        };
     }
 
     private String getContentTypeFromDatabase(UUID id) {
@@ -466,13 +497,13 @@ public class MediaController {
                 if (parentIdStr != null) {
                     parentId = UUID.fromString(parentIdStr);
                 }
-            } catch (Exception e) {
+            } catch (Exception ignored) {
             }
 
             if (parentId == null) {
                 // Fallback to XML search (Legacy)
                 String sql = "SELECT CAST(ID AS NVARCHAR(36)) FROM Series WHERE EpisodeMetadataXml LIKE ?";
-                String searchTerm = "%" + episodeId.toString() + "%";
+                String searchTerm = "%" + episodeId + "%";
                 String parentIdStr = jdbcTemplate.queryForObject(sql, String.class, searchTerm);
                 if (parentIdStr != null) {
                     parentId = UUID.fromString(parentIdStr);
@@ -499,7 +530,7 @@ public class MediaController {
                 String idStr = jdbcTemplate.queryForObject(sql, String.class, seriesId.toString());
                 if (idStr != null)
                     return UUID.fromString(idStr);
-            } catch (Exception e) {
+            } catch (Exception ignored) {
             }
 
             // Fallback
@@ -542,8 +573,7 @@ public class MediaController {
     }
 
     @SuppressWarnings("null")
-    private ResourceRegion getResourceRegion(UrlResource resource, HttpHeaders headers, long contentLength)
-            throws IOException {
+    private ResourceRegion getResourceRegion(UrlResource resource, HttpHeaders headers, long contentLength) {
         String range = headers.getFirst(HttpHeaders.RANGE);
         if (range == null || range.isEmpty()) {
             return new ResourceRegion(resource, 0, Math.min(VIDEO_CHUNK_SIZE, contentLength));
@@ -591,6 +621,7 @@ public class MediaController {
         return mediaType;
     }
 
+    @SuppressWarnings("unused")
     public void clearCaches() {
         contentTypeCache.clear();
         parentSeriesIdCache.clear();

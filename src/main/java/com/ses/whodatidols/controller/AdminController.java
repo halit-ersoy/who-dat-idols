@@ -1,1273 +1,2562 @@
 package com.ses.whodatidols.controller;
 
+
+
 import com.ses.whodatidols.model.Movie;
+
 import com.ses.whodatidols.model.Series;
+
 import com.ses.whodatidols.model.Episode;
+
 import com.ses.whodatidols.model.Person;
+
 import com.ses.whodatidols.model.VideoSource;
+
 import com.ses.whodatidols.model.SecurityViolation;
+
 import com.ses.whodatidols.model.BannedIp;
+
 import com.ses.whodatidols.model.Ad;
+
 import com.ses.whodatidols.repository.PersonRepository;
+
 import com.ses.whodatidols.repository.SeriesRepository;
+
 import com.ses.whodatidols.repository.VideoSourceRepository;
+
 import com.ses.whodatidols.repository.CommentRepository;
+
 import com.ses.whodatidols.repository.FeedbackRepository;
+
 import com.ses.whodatidols.repository.SecurityViolationRepository;
+
 import com.ses.whodatidols.repository.BannedIpRepository;
+
 import com.ses.whodatidols.viewmodel.CommentViewModel;
+
 import com.ses.whodatidols.service.MovieService;
+
 import com.ses.whodatidols.service.SeriesService;
+
 import com.ses.whodatidols.service.TvMazeService;
+
 import com.ses.whodatidols.service.TranslationService;
+
 import com.ses.whodatidols.service.TrafficStatsService;
+
 import com.ses.whodatidols.service.AdService;
+
 import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.core.io.ClassPathResource;
+
 import org.springframework.core.io.Resource;
+
 import org.springframework.cache.annotation.CacheEvict;
+
 import org.springframework.cache.annotation.Caching;
+
 import org.springframework.http.HttpHeaders;
+
 import org.springframework.http.HttpStatus;
+
 import org.springframework.http.MediaType;
+
 import org.springframework.http.ResponseEntity;
+
 import org.springframework.web.bind.annotation.*;
+
 import org.springframework.web.multipart.MultipartFile;
+
 import org.springframework.jdbc.core.JdbcTemplate;
+
 import org.springframework.beans.factory.annotation.Value;
+
 import org.springframework.security.core.Authentication;
+
 import org.springframework.security.core.GrantedAuthority;
+
 import org.springframework.cache.CacheManager;
+
 import java.io.IOException;
 
+
+
 import java.nio.file.*;
+
 import java.util.HashMap;
+
 import java.util.List;
+
 import java.util.Map;
+
 import java.util.UUID;
+
 import java.util.stream.Collectors;
+
 import java.lang.management.ManagementFactory;
+
 import com.sun.management.OperatingSystemMXBean;
 
+
+
 @RestController
+
 @RequestMapping("/admin")
+
+@SuppressWarnings({"SqlResolve", "SqlNoDataSourceInspection"})
+
 public class AdminController {
 
+
+
     private final MovieService movieService;
+
     private final SeriesService seriesService;
+
     private final TvMazeService tvMazeService;
+
     private final JdbcTemplate jdbcTemplate;
+
     private final VideoSourceRepository videoSourceRepository;
+
     private final PersonRepository personRepository;
+
     private final CommentRepository commentRepository;
+
     private final com.ses.whodatidols.repository.HeroRepository heroRepository;
+
     private final TranslationService translationService;
+
     private final FeedbackRepository feedbackRepository;
+
     private final SecurityViolationRepository securityViolationRepository;
+
     private final BannedIpRepository bannedIpRepository;
+
     private final com.ses.whodatidols.repository.MessageRepository messageRepository;
+
     private final com.ses.whodatidols.repository.SystemSettingRepository systemSettingRepository;
+
     private final CacheManager cacheManager;
+
     private final SeriesRepository seriesRepository;
+
     private final TrafficStatsService trafficStatsService;
+
     private final com.ses.whodatidols.util.FFmpegUtils ffmpegUtils;
+
     private final AdService adService;
 
+
+
+    @SuppressWarnings("unused")
     @Value("${media.source.trailers.path}")
+
     private String trailersPath;
 
+
+
     @Value("${media.source.trailers.path}")
+
     private String heroVideosPath;
 
+
+
     @Value("${media.source.upcoming.path}")
+
     private String upcomingPath;
 
+
+
     @Value("${media.source.movies.path}")
+
     private String moviesPath;
 
+
+
     @Value("${media.source.soap_operas.path}")
+
     private String soapOperasPath;
 
+
+
     @Autowired
+
     public AdminController(MovieService movieService, SeriesService seriesService,
+
             TvMazeService tvMazeService, JdbcTemplate jdbcTemplate,
+
             VideoSourceRepository videoSourceRepository, PersonRepository personRepository,
+
             CommentRepository commentRepository, com.ses.whodatidols.repository.HeroRepository heroRepository,
+
             TranslationService translationService, FeedbackRepository feedbackRepository,
+
             SecurityViolationRepository securityViolationRepository, BannedIpRepository bannedIpRepository,
+
             com.ses.whodatidols.repository.MessageRepository messageRepository,
+
             com.ses.whodatidols.repository.SystemSettingRepository systemSettingRepository,
+
             CacheManager cacheManager, SeriesRepository seriesRepository, TrafficStatsService trafficStatsService,
+
             com.ses.whodatidols.util.FFmpegUtils ffmpegUtils, AdService adService) {
+
         this.movieService = movieService;
+
         this.seriesService = seriesService;
+
         this.tvMazeService = tvMazeService;
+
         this.jdbcTemplate = jdbcTemplate;
+
         this.videoSourceRepository = videoSourceRepository;
+
         this.personRepository = personRepository;
+
         this.commentRepository = commentRepository;
+
         this.heroRepository = heroRepository;
+
         this.translationService = translationService;
+
         this.feedbackRepository = feedbackRepository;
+
         this.securityViolationRepository = securityViolationRepository;
+
         this.bannedIpRepository = bannedIpRepository;
+
         this.messageRepository = messageRepository;
+
         this.systemSettingRepository = systemSettingRepository;
+
         this.cacheManager = cacheManager;
+
         this.seriesRepository = seriesRepository;
+
         this.trafficStatsService = trafficStatsService;
+
         this.ffmpegUtils = ffmpegUtils;
+
         this.adService = adService;
+
     }
+
+
 
     @GetMapping("/panel")
+
     public ResponseEntity<Resource> getAdminPanel() {
+
         try {
+
             Resource htmlPage = new ClassPathResource("static/panel/html/panel.html");
+
             if (!htmlPage.exists()) {
+
                 return ResponseEntity.notFound().build();
+
             }
+
             return ResponseEntity.ok()
+
                     .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
+
                     .body(htmlPage);
+
         } catch (Exception e) {
+
             e.printStackTrace();
+
             return ResponseEntity.status(500).build();
+
         }
+
     }
+
+
 
     @GetMapping({ "", "/" })
+
     public ResponseEntity<Void> redirectToPanel() {
+
         return ResponseEntity.status(HttpStatus.FOUND)
+
                 .header(HttpHeaders.LOCATION, "/admin/panel")
+
                 .build();
+
     }
+
+
 
     @GetMapping("/movies")
+
     public ResponseEntity<List<Movie>> getMovies() {
+
         return ResponseEntity.ok(movieService.getAllMovies());
+
     }
+
+
 
     @GetMapping("/series")
+
     public ResponseEntity<List<Series>> getSeriesList() {
+
         return ResponseEntity.ok(seriesService.getAllSeries());
+
     }
+
+
 
     @GetMapping("/system-stats")
+
     public ResponseEntity<Map<String, Object>> getSystemStats() {
+
         Map<String, Object> stats = new HashMap<>();
+
         try {
+
             OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
+
             double cpuLoad = osBean.getCpuLoad();
+
             if (cpuLoad < 0)
+
                 cpuLoad = 0;
+
             stats.put("cpu", Math.round(cpuLoad * 100.0 * 100.0) / 100.0);
 
+
+
             long physicalTotalMem = osBean.getTotalMemorySize();
+
             long physicalFreeMem = osBean.getFreeMemorySize();
+
             long physicalUsedMem = physicalTotalMem - physicalFreeMem;
 
+
+
             stats.put("ramTotal", physicalTotalMem);
+
             stats.put("ramUsed", physicalUsedMem);
+
             stats.put("ramPercent", Math.round(((double) physicalUsedMem / physicalTotalMem) * 100.0 * 100.0) / 100.0);
 
+
+
             stats.put("cpuCores", Runtime.getRuntime().availableProcessors());
+
             stats.put("bandwidthMbps", trafficStatsService.getCurrentMbps());
 
+
+
             return ResponseEntity.ok(stats);
+
         } catch (Exception e) {
+
             stats.put("error", e.getMessage() != null ? e.getMessage() : "Unknown error");
+
             return ResponseEntity.status(500).body(stats);
+
         }
+
     }
+
+
 
     @GetMapping("/dashboard-stats")
+
     public ResponseEntity<Map<String, Object>> getDashboardStats() {
+
         Map<String, Object> stats = new HashMap<>();
+
         try {
+
             Integer totalMovies = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM Movie", Integer.class);
+
             Integer totalSeries = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM Series", Integer.class);
+
             Integer totalEpisodes = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM Episode", Integer.class);
+
             Integer totalUsers = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM Person", Integer.class);
 
+
+
             stats.put("movies", totalMovies != null ? totalMovies : 0);
+
             stats.put("series", totalSeries != null ? totalSeries : 0);
+
             stats.put("episodes", totalEpisodes != null ? totalEpisodes : 0);
+
             stats.put("users", totalUsers != null ? totalUsers : 0);
 
+
+
             return ResponseEntity.ok(stats);
+
         } catch (Exception e) {
+
             stats.put("error", e.getMessage());
+
             return ResponseEntity.status(500).body(stats);
+
         }
+
     }
+
+
 
     @PostMapping("/clear-cache")
+
     public ResponseEntity<Map<String, String>> clearCache() {
+
         evictAllCaches();
+
         Map<String, String> response = new HashMap<>();
+
         response.put("message", "Tüm önbellekler başarıyla temizlendi.");
+
         return ResponseEntity.ok(response);
+
     }
+
+
 
     private void evictAllCaches() {
+
         cacheManager.getCacheNames().forEach(cacheName -> {
+
             if (cacheName != null) {
+
                 org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
+
                 if (cache != null) {
+
                     cache.clear();
+
                 }
+
             }
+
         });
+
     }
+
+
 
     @GetMapping("/series/check")
+
     public ResponseEntity<Map<String, Boolean>> checkSeriesExists(@RequestParam("name") String name) {
+
         boolean exists = seriesService.findSeriesByName(name) != null;
+
         return ResponseEntity.ok(Map.of("exists", exists));
+
     }
+
+
 
     @GetMapping("/check-episode-collision")
+
     public ResponseEntity<Map<String, Object>> checkEpisodeCollision(
+
             @RequestParam("seriesId") UUID seriesId,
+
             @RequestParam("season") int season,
+
             @RequestParam("episodeNum") int episodeNum,
+
             @RequestParam(value = "excludeId", required = false) UUID excludeId) {
+
         boolean collision = seriesService.hasEpisodeCollision(seriesId, season, episodeNum, excludeId);
+
         String message = collision
+
                 ? "Bu dizi için " + season + ". Sezon " + episodeNum
+
                         + ". Bölüm zaten mevcut. Üzerine yazıp eski videoyu silmek istediğinize emin misiniz?"
+
                 : "";
+
         return ResponseEntity.ok(Map.of("collision", collision, "message", message));
+
     }
+
+
 
     @GetMapping("/check-movie-collision")
+
     public ResponseEntity<Map<String, Object>> checkMovieCollision(
+
             @RequestParam("name") String name,
+
             @RequestParam(value = "excludeId", required = false) UUID excludeId) {
+
         boolean collision = movieService.hasMovieCollision(name, excludeId);
+
         String message = collision
+
                 ? "Bu isimde bir film zaten mevcut: '" + name
+
                         + "'. Üzerine yazıp eski videoyu silmek istediğinize emin misiniz?"
+
                 : "";
+
         return ResponseEntity.ok(Map.of("collision", collision, "message", message));
+
     }
 
+
+
     @Caching(evict = {
+
             @CacheEvict(value = "recentMovies", allEntries = true),
+
             @CacheEvict(value = "featuredMovies", allEntries = true),
+
             @CacheEvict(value = "weeklyBestMovies", allEntries = true),
+
             @CacheEvict(value = "videoDetails", allEntries = true),
+
             @CacheEvict(value = "resolvedSlugs", allEntries = true),
+
             @CacheEvict(value = "similarContent", allEntries = true)
+
     })
+
     @PostMapping("/add-movie")
+
     public ResponseEntity<String> addMovie(
+
             @ModelAttribute Movie movie,
+
             @RequestParam(value = "file", required = false) MultipartFile file,
+
             @RequestParam(value = "image", required = false) MultipartFile image,
+
             @RequestParam(value = "imageUrl", required = false) String imageUrl,
+
             @RequestParam("summary") String summary,
+
             @RequestParam(value = "country", required = false) String country) {
+
         try {
+
             movie.setCountry(country);
+
             movieService.saveMovieWithFile(movie, file, image, summary);
 
+
+
             if ((image == null || image.isEmpty()) && imageUrl != null && !imageUrl.isEmpty()) {
+
                 movieService.saveImageFromUrl(movie.getId(), imageUrl);
+
             }
+
+
 
             return ResponseEntity.ok("{\"id\": \"" + movie.getId() + "\", \"message\": \"Film başarıyla işlendi.\"}");
+
         } catch (Exception e) {
+
             e.printStackTrace();
+
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+
         }
+
     }
 
+
+
     @Caching(evict = {
+
             @CacheEvict(value = "recentMovies", allEntries = true),
+
             @CacheEvict(value = "featuredMovies", allEntries = true),
+
             @CacheEvict(value = "weeklyBestMovies", allEntries = true),
+
             @CacheEvict(value = "videoDetails", allEntries = true),
+
             @CacheEvict(value = "resolvedSlugs", allEntries = true),
+
             @CacheEvict(value = "similarContent", allEntries = true)
+
     })
+
     @PostMapping("/update-movie")
+
     public ResponseEntity<Map<String, String>> updateMovie(
+
             @ModelAttribute Movie movie,
+
             @RequestParam(value = "file", required = false) MultipartFile file,
+
             @RequestParam(value = "image", required = false) MultipartFile image,
+
             @RequestParam(value = "imageUrl", required = false) String imageUrl,
+
             @RequestParam(value = "country", required = false) String country,
+
             @RequestParam(value = "overwrite", defaultValue = "false") boolean overwrite) {
+
         Map<String, String> response = new HashMap<>();
+
         try {
+
             if (movie.getId() == null) {
+
                 response.put("error", "Film ID bulunamadı.");
+
                 return ResponseEntity.badRequest().body(response);
+
             }
+
             movie.setCountry(country);
+
             movieService.updateMovie(movie, file, image, overwrite);
 
+
+
             if ((image == null || image.isEmpty()) && imageUrl != null && !imageUrl.isEmpty()) {
+
                 movieService.saveImageFromUrl(movie.getId(), imageUrl);
+
             }
+
+
 
             response.put("id", movie.getId().toString());
+
             response.put("message", "Film güncellendi.");
+
             return ResponseEntity.ok(response);
+
         } catch (com.ses.whodatidols.exception.DuplicateConflictException e) {
+
             response.put("error", e.getMessage());
+
             return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+
         } catch (Exception e) {
+
             response.put("error", e.getMessage());
+
             return ResponseEntity.status(500).body(response);
+
         }
+
     }
 
+
+
     @Caching(evict = {
+
             @CacheEvict(value = "recentSeries", allEntries = true),
+
             @CacheEvict(value = "featuredTv", allEntries = true),
+
             @CacheEvict(value = "weeklyBestSeries", allEntries = true),
+
             @CacheEvict(value = "videoDetails", allEntries = true),
+
             @CacheEvict(value = "resolvedSlugs", allEntries = true),
+
             @CacheEvict(value = "similarContent", allEntries = true)
+
     })
+
     @PostMapping("/update-series")
+
     public ResponseEntity<Map<String, String>> updateSeries(
+
             @ModelAttribute Series s,
+
             @RequestParam(value = "file", required = false) MultipartFile file,
+
             @RequestParam(value = "image", required = false) MultipartFile image,
+
             @RequestParam(value = "imageUrl", required = false) String imageUrl,
+
             @RequestParam(value = "country", required = false) String country) {
+
         Map<String, String> response = new HashMap<>();
+
         try {
+
             if (s.getId() == null) {
+
                 response.put("error", "Dizi ID yok.");
+
                 return ResponseEntity.badRequest().body(response);
+
             }
+
             s.setCountry(country);
+
             seriesService.updateSeriesMetadata(s, file, image);
 
+
+
             if ((image == null || image.isEmpty()) && imageUrl != null && !imageUrl.isEmpty()) {
+
                 seriesService.saveImageFromUrl(s.getId(), imageUrl);
+
             }
+
+
 
             response.put("id", s.getId().toString());
+
             response.put("message", "Dizi güncellendi.");
+
             return ResponseEntity.ok(response);
+
         } catch (Exception e) {
+
             response.put("error", e.getMessage());
+
             return ResponseEntity.status(500).body(response);
+
         }
+
     }
 
+
+
     @Caching(evict = {
+
             @CacheEvict(value = "recentSeries", allEntries = true),
+
             @CacheEvict(value = "featuredTv", allEntries = true),
+
             @CacheEvict(value = "weeklyBestSeries", allEntries = true),
+
             @CacheEvict(value = "videoDetails", allEntries = true),
+
             @CacheEvict(value = "resolvedSlugs", allEntries = true),
+
             @CacheEvict(value = "similarContent", allEntries = true)
+
     })
+
     @PostMapping("/add-series")
+
     public ResponseEntity<String> addSoapOpera(
+
             @ModelAttribute Series seriesInfo,
+
             @RequestParam(value = "file", required = false) MultipartFile file,
+
             @RequestParam(value = "image", required = false) MultipartFile image,
+
             @RequestParam(value = "imageUrl", required = false) String imageUrl,
+
             @RequestParam(value = "existingSeriesId", required = false) UUID existingSeriesId,
+
             @RequestParam(value = "summary", required = false) String summary,
+
             @RequestParam(value = "country", required = false) String country,
+
             @RequestParam("season") int season,
+
             @RequestParam("episode") int episode,
+
             @RequestParam(value = "overwrite", defaultValue = "false") boolean overwrite,
+
             @RequestParam(value = "isAdult", defaultValue = "false") boolean isAdult) {
+
         try {
+
             if (existingSeriesId != null) {
+
                 seriesInfo.setId(existingSeriesId);
+
             }
+
+
 
             seriesInfo.setSummary(summary);
+
             seriesInfo.setCountry(country);
+
             UUID episodeId = seriesService.saveEpisodeWithFile(seriesInfo, season, episode, file, image,
+
                     existingSeriesId, overwrite, isAdult);
 
+
+
             if (existingSeriesId == null && (image == null || image.isEmpty()) && imageUrl != null
+
                     && !imageUrl.isEmpty()) {
+
                 Series parent = seriesService.findSeriesByName(seriesInfo.getName());
+
                 if (parent != null) {
+
                     seriesService.saveImageFromUrl(parent.getId(), imageUrl);
+
                 }
+
             }
+
+
 
             return ResponseEntity.ok("{\"id\": \"" + episodeId + "\", \"message\": \"Bölüm başarıyla işlendi (S"
+
                     + season + "E" + episode + ").\"}");
+
         } catch (com.ses.whodatidols.exception.DuplicateConflictException e) {
+
             return ResponseEntity.status(409).body("{\"error\": \"" + e.getMessage() + "\"}");
+
         } catch (Exception e) {
+
             e.printStackTrace();
+
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+
         }
+
     }
 
+
+
     @Caching(evict = {
+
             @CacheEvict(value = "recentSeries", allEntries = true),
+
             @CacheEvict(value = "featuredTv", allEntries = true),
+
             @CacheEvict(value = "weeklyBestSeries", allEntries = true),
+
             @CacheEvict(value = "videoDetails", allEntries = true),
+
             @CacheEvict(value = "resolvedSlugs", allEntries = true),
+
             @CacheEvict(value = "similarContent", allEntries = true)
+
     })
+
     @DeleteMapping("/delete-episode")
+
     public ResponseEntity<String> deleteEpisode(@RequestParam("id") UUID id) {
+
         try {
+
             seriesService.deleteEpisodeById(id);
+
             return ResponseEntity.ok("Bölüm silindi.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Silinemedi: " + e.getMessage());
+
         }
+
     }
 
+
+
     @Caching(evict = {
+
             @CacheEvict(value = "recentSeries", allEntries = true),
+
             @CacheEvict(value = "featuredTv", allEntries = true),
+
             @CacheEvict(value = "weeklyBestSeries", allEntries = true),
+
             @CacheEvict(value = "videoDetails", allEntries = true),
+
             @CacheEvict(value = "resolvedSlugs", allEntries = true),
+
             @CacheEvict(value = "similarContent", allEntries = true)
+
     })
+
     @PostMapping("/update-episode")
+
     public ResponseEntity<String> updateEpisode(
+
             @RequestParam("episodeId") UUID episodeId,
+
             @RequestParam("season") int season,
+
             @RequestParam("episodeNum") int episodeNum,
+
             @RequestParam("finalStatus") int finalStatus,
+
             @RequestParam(value = "file", required = false) MultipartFile file,
+
             @RequestParam(value = "overwrite", defaultValue = "false") boolean overwrite,
+
             @RequestParam(value = "isAdult", defaultValue = "false") boolean isAdult) {
+
         try {
+
             seriesService.updateEpisode(episodeId, season, episodeNum, finalStatus, file, overwrite, isAdult);
+
             return ResponseEntity.ok("{\"id\": \"" + episodeId + "\", \"message\": \"Bölüm güncellendi.\"}");
+
         } catch (com.ses.whodatidols.exception.DuplicateConflictException e) {
+
             return ResponseEntity.status(409).body("{\"error\": \"" + e.getMessage() + "\"}");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Bölüm güncelleme hatası: " + e.getMessage());
+
         }
+
     }
 
+
+
     @Caching(evict = {
+
             @CacheEvict(value = "recentSeries", allEntries = true),
+
             @CacheEvict(value = "featuredTv", allEntries = true),
+
             @CacheEvict(value = "weeklyBestSeries", allEntries = true),
+
             @CacheEvict(value = "videoDetails", allEntries = true),
+
             @CacheEvict(value = "resolvedSlugs", allEntries = true),
+
             @CacheEvict(value = "similarContent", allEntries = true)
+
     })
+
     @DeleteMapping("/delete-series-by-name")
+
     public ResponseEntity<String> deleteSeriesByName(@RequestParam("name") String name) {
+
         try {
+
             seriesService.deleteSeriesByName(name);
+
             return ResponseEntity.ok("Dizi komple silindi.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Silinemedi: " + e.getMessage());
+
         }
+
     }
+
+
 
     @DeleteMapping("/delete-movie-source")
+
     public ResponseEntity<String> deleteMovieSource(@RequestParam("id") UUID id) {
+
         try {
+
             movieService.deleteMovieSource(id);
+
             return ResponseEntity.ok("Film ana kaynağı başarıyla silindi (metadata korundu).");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Film ana kaynağı silinirken hata oluştu: " + e.getMessage());
+
         }
+
     }
+
+
 
     @DeleteMapping("/delete-episode-source")
+
     public ResponseEntity<String> deleteEpisodeSource(@RequestParam("id") UUID id) {
+
         try {
+
             seriesService.deleteEpisodeSource(id);
+
             return ResponseEntity.ok("Bölüm ana kaynağı başarıyla silindi (metadata korundu).");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Bölüm ana kaynağı silinemedi: " + e.getMessage());
+
         }
+
     }
 
+
+
     @Caching(evict = {
+
             @CacheEvict(value = "recentMovies", allEntries = true),
+
             @CacheEvict(value = "featuredMovies", allEntries = true),
+
             @CacheEvict(value = "weeklyBestMovies", allEntries = true),
+
             @CacheEvict(value = "videoDetails", allEntries = true),
+
             @CacheEvict(value = "resolvedSlugs", allEntries = true),
+
             @CacheEvict(value = "similarContent", allEntries = true)
+
     })
+
     @DeleteMapping("/delete-movie")
+
     public ResponseEntity<String> deleteMovie(@RequestParam("id") UUID id) {
+
         try {
+
             movieService.deleteMovieById(id);
+
             return ResponseEntity.ok("Film başarıyla silindi.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Film silinirken hata oluştu: " + e.getMessage());
+
         }
+
     }
 
+
+
     @Caching(evict = {
+
             @CacheEvict(value = "recentMovies", allEntries = true),
+
             @CacheEvict(value = "featuredMovies", allEntries = true),
+
             @CacheEvict(value = "weeklyBestMovies", allEntries = true),
+
             @CacheEvict(value = "videoDetails", allEntries = true),
+
             @CacheEvict(value = "resolvedSlugs", allEntries = true),
+
             @CacheEvict(value = "similarContent", allEntries = true)
+
     })
+
     @PostMapping("/delete-movies-bulk")
+
     public ResponseEntity<String> deleteMoviesBulk(@RequestBody List<UUID> ids) {
+
         try {
+
             for (UUID id : ids) {
+
                 movieService.deleteMovieById(id);
+
             }
+
             return ResponseEntity.ok(ids.size() + " film başarıyla silindi.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Toplu silme hatası: " + e.getMessage());
+
         }
+
     }
 
+
+
     @Caching(evict = {
+
             @CacheEvict(value = "recentSeries", allEntries = true),
+
             @CacheEvict(value = "featuredTv", allEntries = true),
+
             @CacheEvict(value = "weeklyBestSeries", allEntries = true),
+
             @CacheEvict(value = "videoDetails", allEntries = true),
+
             @CacheEvict(value = "resolvedSlugs", allEntries = true),
+
             @CacheEvict(value = "similarContent", allEntries = true)
+
     })
+
     @PostMapping("/delete-series-bulk")
+
     public ResponseEntity<String> deleteSeriesBulk(@RequestBody List<UUID> ids) {
+
         try {
+
             for (UUID id : ids) {
+
                 seriesService.deleteSeriesById(id);
+
             }
+
             return ResponseEntity.ok(ids.size() + " dizi başarıyla silindi.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Toplu silme hatası: " + e.getMessage());
+
         }
+
     }
+
+
 
     @PostMapping("/toggle-movie-hidden")
+
     public ResponseEntity<String> toggleMovieHidden(@RequestParam("id") UUID id,
+
             @RequestParam("isHidden") boolean isHidden) {
+
         try {
+
             int hiddenVal = isHidden ? 1 : 0;
+
             jdbcTemplate.update("UPDATE Movie SET IsHidden = ? WHERE ID = ?", hiddenVal, id.toString());
+
             evictAllCaches();
+
             return ResponseEntity.ok("Film gizlilik durumu güncellendi.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Gizlilik durumu değiştirilemedi: " + e.getMessage());
+
         }
+
     }
+
+
 
     @PostMapping("/toggle-series-hidden")
+
     public ResponseEntity<String> toggleSeriesHidden(@RequestParam("id") UUID id,
+
             @RequestParam("isHidden") boolean isHidden) {
+
         try {
+
             int hiddenVal = isHidden ? 1 : 0;
+
             jdbcTemplate.update("UPDATE Series SET IsHidden = ? WHERE ID = ?", hiddenVal, id.toString());
+
             evictAllCaches();
+
             return ResponseEntity.ok("Dizi gizlilik durumu güncellendi.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Gizlilik durumu değiştirilemedi: " + e.getMessage());
+
         }
+
     }
+
+
 
     @GetMapping("/episodes-by-series")
+
     @ResponseBody
+
     public ResponseEntity<List<Episode>> getEpisodesBySeries(@RequestParam("seriesId") UUID seriesId) {
+
         return ResponseEntity.ok(seriesRepository.findEpisodesBySeriesIdForAdmin(seriesId));
+
     }
+
+
 
     @PostMapping("/toggle-episode-hidden")
+
     public ResponseEntity<String> toggleEpisodeHidden(@RequestParam("id") UUID id,
+
             @RequestParam("isHidden") boolean isHidden) {
+
         try {
+
             int hiddenVal = isHidden ? 1 : 0;
+
             jdbcTemplate.update("UPDATE Episode SET IsHidden = ? WHERE ID = ?", hiddenVal, id.toString());
+
             evictAllCaches();
+
             return ResponseEntity.ok("Bölüm gizlilik durumu güncellendi.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Gizlilik durumu değiştirilemedi: " + e.getMessage());
+
         }
+
     }
+
+
 
     // HERO MANAGEMENT
+
     @GetMapping("/hero-videos")
+
     public ResponseEntity<List<Map<String, Object>>> getAdminHeroVideos() {
+
         return getHeroVideos();
+
     }
+
+
 
     private ResponseEntity<List<Map<String, Object>>> getHeroVideos() {
+
         return ResponseEntity.ok(heroRepository.getHeroVideos());
+
     }
 
+
+
     @Caching(evict = {
+
             @CacheEvict(value = "heroVideos", allEntries = true)
+
     })
+
     @PostMapping("/add-hero")
+
     public ResponseEntity<String> addHero(
+
             @RequestParam("contentId") UUID contentId,
+
             @RequestParam("type") String type,
+
             @RequestParam("content") String content,
+
             @RequestParam(value = "file", required = false) MultipartFile file) {
+
         try {
+
             if ("Film".equalsIgnoreCase(type) || "Movie".equalsIgnoreCase(type)) {
+
                 type = "Movie";
+
             } else {
+
                 type = "SoapOpera";
+
             }
 
+
+
             boolean isImage = true;
+
             if (file != null && !file.isEmpty()) {
+
                 String contentType = file.getContentType();
+
                 if (contentType != null && contentType.startsWith("video/")) {
+
                     isImage = false;
+
                 }
+
             }
+
+
 
             UUID heroId = heroRepository.addHero(contentId, content, type, isImage);
 
+
+
             if (file != null && !file.isEmpty()) {
+
                 Path uploadPath = Paths.get(heroVideosPath).toAbsolutePath().normalize();
+
                 if (!Files.exists(uploadPath))
+
                     Files.createDirectories(uploadPath);
 
+
+
                 if (!isImage) {
+
                     Path filePath = uploadPath.resolve(heroId.toString() + ".mp4");
+
                     Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
                     copyHeroImage(contentId, heroId, type);
 
+
+
                     // Automate HLS Conversion for Hero video
+
                     final String input = filePath.toString();
+
                     final String output = uploadPath.resolve("hls").resolve(heroId.toString()).toString();
+
                     java.util.concurrent.CompletableFuture.runAsync(() -> {
+
                         try {
+
                             ffmpegUtils.convertToHls(input, output);
+
                         } catch (Exception e) {
+
                             System.err.println("Hero HLS auto-conversion failed: " + e.getMessage());
+
                         }
+
                     });
+
                 } else {
+
                     String ext = ".jpg";
+
                     String originalName = file.getOriginalFilename();
+
                     if (originalName != null && originalName.lastIndexOf(".") > 0) {
+
                         ext = originalName.substring(originalName.lastIndexOf(".")).toLowerCase();
+
                     }
+
                     Path filePath = uploadPath.resolve(heroId.toString() + ext);
+
                     Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
                 }
+
             } else {
+
                 copyHeroImage(contentId, heroId, type);
+
             }
+
+
 
             return ResponseEntity.ok("Hero başarıyla eklendi.");
+
         } catch (Exception e) {
+
             e.printStackTrace();
+
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+
         }
+
     }
 
+
+
     @CacheEvict(value = "heroVideos", allEntries = true)
+
     @PostMapping("/update-hero-order")
+
     public ResponseEntity<String> updateHeroOrder(@RequestBody List<String> heroIds) {
+
         try {
+
             heroRepository.updateHeroOrder(heroIds);
+
             return ResponseEntity.ok("Sıralama güncellendi.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Sıralama hatası: " + e.getMessage());
+
         }
+
     }
 
+
+
     @CacheEvict(value = "heroVideos", allEntries = true)
+
     @DeleteMapping("/delete-hero")
+
     public ResponseEntity<String> deleteHero(@RequestParam("id") UUID id) {
+
         try {
+
             Path uploadPath = Paths.get(heroVideosPath).toAbsolutePath().normalize();
+
             Files.deleteIfExists(uploadPath.resolve(id.toString() + ".mp4"));
 
+
+
             String[] extensions = { ".jpg", ".jpeg", ".png", ".webp" };
+
             for (String ext : extensions) {
-                Files.deleteIfExists(uploadPath.resolve(id.toString() + ext));
+
+                Files.deleteIfExists(uploadPath.resolve(id + ext));
+
             }
 
+
+
             try {
+
                 deleteDirectory(uploadPath.resolve("hls").resolve(id.toString()));
+
             } catch (Exception e) {
+
                 System.err.println("Failed to delete Hero HLS directory: " + e.getMessage());
+
             }
+
+
 
             heroRepository.deleteHero(id);
 
+
+
             return ResponseEntity.ok("Hero video ve ilgili dosyalar silindi.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Silme hatası: " + e.getMessage());
+
         }
+
     }
+
+
 
     @PostMapping("/add-source")
+
     public ResponseEntity<String> addSource(@RequestBody VideoSource source) {
+
         try {
+
             if (source.getContentId() == null) {
+
                 return ResponseEntity.badRequest().body("Hata: ContentId boş olamaz.");
+
             }
+
             videoSourceRepository.save(source);
+
             return ResponseEntity.ok("Kaynak eklendi.");
+
         } catch (Exception e) {
+
             e.printStackTrace();
+
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+
         }
+
     }
+
+
 
     @DeleteMapping("/delete-source")
+
     public ResponseEntity<String> deleteSource(@RequestParam("id") UUID id) {
+
         try {
+
             videoSourceRepository.delete(id);
+
             return ResponseEntity.ok("Kaynak silindi.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+
         }
+
     }
+
+
 
     @DeleteMapping("/delete-sources-for-content")
+
     public ResponseEntity<String> deleteSourcesForContent(@RequestParam("contentId") UUID contentId) {
+
         try {
+
             videoSourceRepository.deleteAllForContent(contentId);
+
             return ResponseEntity.ok("Tüm kaynaklar silindi.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+
         }
+
     }
+
+
 
     // AD MANAGEMENT
+
     @GetMapping("/ads")
+
     public ResponseEntity<List<Ad>> getAds() {
+
         return ResponseEntity.ok(adService.getAllAds());
+
     }
+
+
 
     @PostMapping("/add-ad")
+
     public ResponseEntity<String> addAd(
+
             @RequestParam("name") String name,
+
             @RequestParam("file") MultipartFile file) {
+
         try {
+
             if (file == null || file.isEmpty()) {
+
                 return ResponseEntity.badRequest().body("Hata: Dosya yüklenmelidir.");
+
             }
+
             adService.saveAd(name, file);
+
             return ResponseEntity.ok("Reklam başarıyla eklendi.");
+
         } catch (Exception e) {
+
             e.printStackTrace();
+
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+
         }
+
     }
+
+
 
     @DeleteMapping("/delete-ad")
+
     public ResponseEntity<String> deleteAd(@RequestParam("id") UUID id) {
+
         try {
+
             adService.deleteAd(id);
+
             return ResponseEntity.ok("Reklam ve ilgili dosyaları silindi.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Silme hatası: " + e.getMessage());
+
         }
+
     }
+
+
 
     @PostMapping("/toggle-ad-hidden")
+
     public ResponseEntity<String> toggleAdHidden(
+
             @RequestParam("id") UUID id,
+
             @RequestParam("isHidden") boolean isHidden) {
+
         try {
+
             adService.toggleAdHidden(id, isHidden);
+
             return ResponseEntity.ok("Reklam gizlilik durumu güncellendi.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Gizlilik durumu değiştirilemedi: " + e.getMessage());
+
         }
+
     }
+
+
 
     private void copyHeroImage(UUID contentId, UUID heroId, String type) {
+
         try {
+
             Path sourceBase = Paths.get("Movie".equalsIgnoreCase(type) ? moviesPath : soapOperasPath).toAbsolutePath()
+
                     .normalize();
+
             Path targetBase = Paths.get(heroVideosPath).toAbsolutePath().normalize();
 
+
+
             String[] extensions = { ".jpg", ".jpeg", ".png", ".webp" };
+
             for (String ext : extensions) {
+
                 Path sourceFile = sourceBase.resolve(contentId.toString() + ext);
+
                 if (Files.exists(sourceFile)) {
+
                     Files.copy(sourceFile, targetBase.resolve(heroId.toString() + ext),
+
                             StandardCopyOption.REPLACE_EXISTING);
+
                     break;
+
                 }
+
             }
+
         } catch (Exception e) {
+
             System.err.println("Hero resmi kopyalanamadı: " + e.getMessage());
+
         }
+
     }
+
+
 
     // UPCOMING MANAGEMENT
+
     @GetMapping("/upcoming")
+
     public ResponseEntity<List<Map<String, Object>>> getUpcoming() {
+
         return ResponseEntity.ok(jdbcTemplate.queryForList("EXEC GetUpcoming"));
+
     }
 
+
+
     @PostMapping("/add-upcoming")
+
     public ResponseEntity<String> addUpcoming(
+
             @RequestParam("name") String name,
+
             @RequestParam("type") String type,
+
             @RequestParam("category") String category,
+
             @RequestParam("status") String status,
+
             @RequestParam("datetime") String datetimeStr,
+
             @RequestParam(value = "referenceId", required = false) String referenceId,
+
             @RequestParam(value = "image", required = false) MultipartFile image,
+
             @RequestParam(value = "imageUrl", required = false) String imageUrl) {
+
         try {
+
             java.sql.Timestamp timestamp = null;
+
             if (datetimeStr != null && !datetimeStr.isEmpty()) {
+
                 String formatted = datetimeStr.replace("T", " ");
+
                 if (formatted.length() == 16) {
+
                     formatted += ":00";
+
                 }
+
                 timestamp = java.sql.Timestamp.valueOf(formatted);
+
             }
 
+
+
             UUID uuid = null;
+
             if (referenceId != null && !referenceId.isEmpty()) {
+
                 uuid = UUID.fromString(referenceId);
+
             }
+
+
 
             UUID upcomingId = UUID.randomUUID();
 
+
+
             jdbcTemplate.update("EXEC AddUpcomingCustom ?, ?, ?, ?, ?, ?, ?",
+
                     upcomingId,
+
                     name,
+
                     type,
+
                     status,
+
                     timestamp,
+
                     uuid,
+
                     category);
 
+
+
             if (image != null && !image.isEmpty()) {
-                saveUpcomingImage(upcomingId, image);
+
+                saveUpcomingImage(upcomingId, image, uuid);
+
             } else if (imageUrl != null && !imageUrl.isEmpty()) {
-                saveUpcomingImageFromUrl(upcomingId, imageUrl);
+
+                saveUpcomingImageFromUrl(upcomingId, imageUrl, uuid);
+
             }
+
+
 
             return ResponseEntity.ok("Beklenen bölüm eklendi.");
+
         } catch (Exception e) {
+
             e.printStackTrace();
+
             return ResponseEntity.status(500).body("Ekleme hatası: " + e.getMessage());
+
         }
+
     }
 
-    private void saveUpcomingImage(UUID id, MultipartFile image) {
+
+
+    private void saveUpcomingImage(UUID id, MultipartFile image, UUID secondaryId) {
+
         try {
+
             Path targetPath = Paths.get(upcomingPath).toAbsolutePath().normalize();
+
             if (!Files.exists(targetPath)) {
+
                 Files.createDirectories(targetPath);
+
             }
+
             String extension = ".jpg";
+
             String originalName = image.getOriginalFilename();
+
             if (originalName != null && originalName.lastIndexOf(".") > 0) {
+
                 extension = originalName.substring(originalName.lastIndexOf("."));
+
             }
-            Files.copy(image.getInputStream(), targetPath.resolve(id.toString() + extension),
-                    StandardCopyOption.REPLACE_EXISTING);
+
+            Path primaryFile = targetPath.resolve(id.toString() + extension);
+
+            Files.copy(image.getInputStream(), primaryFile, StandardCopyOption.REPLACE_EXISTING);
+
+            if (secondaryId != null) {
+
+                Path secondaryFile = targetPath.resolve(secondaryId + extension);
+
+                Files.copy(primaryFile, secondaryFile, StandardCopyOption.REPLACE_EXISTING);
+
+            }
+
         } catch (Exception e) {
+
             System.err.println("Upcoming resmi kaydedilemedi: " + e.getMessage());
+
         }
+
     }
 
-    private void saveUpcomingImageFromUrl(UUID id, String imageUrl) {
+
+
+    private void saveUpcomingImageFromUrl(UUID id, String imageUrl, UUID secondaryId) {
+
         try {
+
             byte[] imageBytes = tvMazeService.downloadImage(imageUrl);
+
             if (imageBytes != null) {
+
                 Path targetPath = Paths.get(upcomingPath).toAbsolutePath().normalize().resolve(id.toString() + ".jpg");
+
                 if (!Files.exists(targetPath.getParent())) {
+
                     Files.createDirectories(targetPath.getParent());
+
                 }
+
                 Files.write(targetPath, imageBytes);
+
+                if (secondaryId != null) {
+
+                    Path secondaryPath = Paths.get(upcomingPath).toAbsolutePath().normalize().resolve(secondaryId + ".jpg");
+
+                    Files.write(secondaryPath, imageBytes);
+
+                }
+
             }
+
         } catch (Exception e) {
+
             System.err.println("URL'den upcoming resmi kaydedilemedi: " + e.getMessage());
+
         }
+
     }
+
+
 
     @DeleteMapping("/delete-upcoming")
+
     public ResponseEntity<String> deleteUpcoming(@RequestParam("id") UUID id) {
+
         try {
+
             jdbcTemplate.update("EXEC DeleteUpcoming ?", id);
+
             return ResponseEntity.ok("Beklenen bölüm silindi.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Silme hatası: " + e.getMessage());
+
         }
+
     }
+
+
 
     @GetMapping("/weekly-best-stats")
+
     public ResponseEntity<Map<String, Object>> getWeeklyBestStats() {
+
         String moviesSql = """
+
                 SELECT TOP 6 M.ID, M.name, ISNULL(V.WeeklyViews, 0) as weeklyViewCount
+
                 FROM [WhoDatIdols].[dbo].[Movie] M
+
                 LEFT JOIN (
+
                     SELECT ContentId, COUNT(*) as WeeklyViews
+
                     FROM [dbo].[ContentViewLog]
+
                     WHERE [ViewedAt] >= DATEADD(day, -7, GETDATE())
+
                     GROUP BY ContentId
+
                 ) V ON M.ID = V.ContentId
+
                 WHERE M.IsHidden = 0
-                ORDER BY ISNULL(V.WeeklyViews, 0) DESC, M.viewCount DESC, M.name ASC
+
+                ORDER BY ISNULL(V.WeeklyViews, 0) DESC, M.viewCount DESC, M.name
+
                 """;
+
+
 
         String seriesSql = """
+
                 SELECT TOP 6 S.ID, S.name, ISNULL(V.WeeklyViews, 0) as weeklyViewCount
+
                 FROM Series S
+
                 LEFT JOIN (
+
                     SELECT SeriesId, COUNT(*) as WeeklyViews
+
                     FROM (
+
                         SELECT E.SeriesId
+
                         FROM Episode E
+
                         JOIN [dbo].[ContentViewLog] VL ON E.ID = VL.ContentId
+
                         WHERE VL.ViewedAt >= DATEADD(day, -7, GETDATE())
+
                         UNION ALL
+
                         SELECT VL.ContentId as SeriesId
+
                         FROM [dbo].[ContentViewLog] VL
+
                         WHERE VL.ViewedAt >= DATEADD(day, -7, GETDATE())
+
                           AND EXISTS (SELECT 1 FROM Series WHERE ID = VL.ContentId)
+
                     ) Combined
+
                     GROUP BY SeriesId
+
                 ) V ON S.ID = V.SeriesId
+
                 WHERE S.IsHidden = 0
-                ORDER BY ISNULL(V.WeeklyViews, 0) DESC, S.viewCount DESC, S.name ASC
+
+                ORDER BY ISNULL(V.WeeklyViews, 0) DESC, S.viewCount DESC, S.name
+
                 """;
+
+
 
         Map<String, Object> response = new HashMap<>();
+
         response.put("movies", jdbcTemplate.queryForList(moviesSql));
+
         response.put("series", jdbcTemplate.queryForList(seriesSql));
+
         return ResponseEntity.ok(response);
+
     }
+
+
 
     @GetMapping("/view-stats")
+
     public ResponseEntity<List<Map<String, Object>>> getViewStats() {
+
         String sql = """
+
                 SELECT M.ID, M.Name, 'Movie' as Type, M.viewCount, ISNULL(V.WeeklyViews, 0) as weeklyViewCount
+
                 FROM Movie M
+
                 LEFT JOIN (
+
                     SELECT ContentId, COUNT(*) as WeeklyViews
+
                     FROM [dbo].[ContentViewLog]
+
                     WHERE [ViewedAt] >= DATEADD(day, -7, GETDATE())
+
                     GROUP BY ContentId
+
                 ) V ON M.ID = V.ContentId
+
                 UNION ALL
+
                 SELECT S.ID, S.Name, 'SoapOpera' as Type, S.viewCount, ISNULL(V.WeeklyViews, 0) as weeklyViewCount
+
                 FROM Series S
+
                 LEFT JOIN (
+
                     SELECT SeriesId, COUNT(*) as WeeklyViews
+
                     FROM (
+
                         SELECT E.SeriesId
+
                         FROM Episode E
+
                         JOIN [dbo].[ContentViewLog] VL ON E.ID = VL.ContentId
+
                         WHERE VL.ViewedAt >= DATEADD(day, -7, GETDATE())
+
                         UNION ALL
+
                         SELECT VL.ContentId as SeriesId
+
                         FROM [dbo].[ContentViewLog] VL
+
                         WHERE VL.ViewedAt >= DATEADD(day, -7, GETDATE())
+
                           AND EXISTS (SELECT 1 FROM Series WHERE ID = VL.ContentId)
+
                     ) Combined
+
                     GROUP BY SeriesId
+
                 ) V ON S.ID = V.SeriesId
-                ORDER BY weeklyViewCount DESC, viewCount DESC, Name ASC
+
+                ORDER BY weeklyViewCount DESC, viewCount DESC, Name
+
                 """;
+
         return ResponseEntity.ok(jdbcTemplate.queryForList(sql));
+
     }
+
+
 
     @Caching(evict = {
+
             @CacheEvict(value = "weeklyBestMovies", allEntries = true),
+
             @CacheEvict(value = "weeklyBestSeries", allEntries = true)
+
     })
+
     @PostMapping("/update-view-count")
+
     public ResponseEntity<String> updateViewCount(
+
             @RequestParam("id") UUID id,
+
             @RequestParam("type") String type,
+
             @RequestParam("count") int count) {
+
         try {
+
             String tableName = "Movie".equalsIgnoreCase(type) ? "Movie" : "Series";
+
             jdbcTemplate.update("UPDATE " + tableName + " SET viewCount = ? WHERE ID = ?", count, id.toString());
+
             return ResponseEntity.ok("İzlenme sayısı güncellendi.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Güncelleme hatası: " + e.getMessage());
+
         }
+
     }
+
+
 
     @GetMapping("/users")
+
     public ResponseEntity<List<Person>> getAllUsers() {
+
         return ResponseEntity.ok(personRepository.findAllUsers());
+
     }
+
+
 
     @PostMapping("/ban-user")
+
     public ResponseEntity<String> toggleBanUser(
+
             @RequestParam("userId") UUID userId,
+
             @RequestParam("ban") boolean ban,
+
             @RequestParam(value = "reason", required = false) String reason) {
+
         try {
+
             personRepository.toggleUserBanStatus(userId, ban, reason);
+
             return ResponseEntity.ok(ban ? "Kullanıcı banlandı." : "Kullanıcı banı kaldırıldı.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+
         }
+
     }
+
+
 
     @GetMapping("/me")
+
     public ResponseEntity<Map<String, Object>> getCurrentUser(Authentication authentication) {
+
         if (authentication == null)
+
             return ResponseEntity.status(401).build();
 
+
+
         Map<String, Object> user = new HashMap<>();
+
         user.put("username", authentication.getName());
+
         user.put("roles", authentication.getAuthorities().stream()
+
                 .map(GrantedAuthority::getAuthority)
+
                 .collect(Collectors.toList()));
 
+
+
         return ResponseEntity.ok(user);
+
     }
+
+
 
     @PostMapping("/update-role")
+
     public ResponseEntity<String> updateUserRole(
+
             @RequestParam("userId") UUID userId,
+
             @RequestParam("role") String role) {
+
         try {
+
             personRepository.updateUserRole(userId, role);
+
             return ResponseEntity.ok("Kullanıcı rolü güncellendi.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+
         }
+
     }
+
+
 
     @GetMapping("/comment-moderation/pending")
+
     public ResponseEntity<List<CommentViewModel>> getPendingComments() {
+
         try {
+
             return ResponseEntity.ok(commentRepository.getPendingComments());
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).build();
+
         }
+
     }
+
+
 
     @GetMapping("/comment-moderation/approved")
+
     public ResponseEntity<List<CommentViewModel>> getApprovedComments() {
+
         try {
+
             return ResponseEntity.ok(commentRepository.getApprovedComments());
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).build();
+
         }
+
     }
+
+
 
     @PostMapping("/comment-moderation/approve")
+
     public ResponseEntity<String> approveComment(@RequestParam("commentId") UUID commentId) {
+
         try {
+
             commentRepository.approveComment(commentId);
+
             return ResponseEntity.ok("Yorum onaylandı.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+
         }
+
     }
+
+
 
     @PostMapping("/translate")
+
     public ResponseEntity<String> translate(@RequestParam("text") String text) {
+
         try {
+
             return ResponseEntity.ok(translationService.translateToTurkish(text));
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Çeviri hatası: " + e.getMessage());
+
         }
+
     }
+
+
 
     @DeleteMapping("/comment-moderation/reject")
+
     public ResponseEntity<String> rejectComment(@RequestParam("commentId") UUID commentId) {
+
         try {
+
             commentRepository.rejectComment(commentId);
+
             return ResponseEntity.ok("Yorum reddedildi/silindi.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+
         }
+
     }
+
+
 
     @GetMapping("/feedbacks")
+
     public ResponseEntity<List<Map<String, Object>>> getAllFeedbacks() {
+
         try {
+
             return ResponseEntity.ok(feedbackRepository.getAllFeedbacks());
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).build();
+
         }
+
     }
+
+
 
     @DeleteMapping("/delete-feedback")
+
     public ResponseEntity<String> deleteFeedback(@RequestParam("id") UUID id) {
+
         try {
+
             feedbackRepository.deleteFeedback(id);
+
             return ResponseEntity.ok("Geri bildirim silindi.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+
         }
+
     }
+
+
 
     @GetMapping("/stats/storage")
+
     public ResponseEntity<List<Map<String, Object>>> getStorageStats() {
+
         try {
+
             List<Map<String, Object>> storageList = new java.util.ArrayList<>();
+
             Path currentPath = Paths.get(".").toAbsolutePath();
+
             java.nio.file.FileStore appStore = Files.getFileStore(currentPath);
 
+
+
             for (java.nio.file.FileStore store : java.nio.file.FileSystems.getDefault().getFileStores()) {
+
                 // Only show the store where the app is located
+
                 if (!store.equals(appStore)) {
+
                     continue;
+
                 }
 
+
+
                 long totalSpace = store.getTotalSpace();
+
                 if (totalSpace <= 0)
+
                     continue;
 
+
+
                 long unallocatedSpace = store.getUnallocatedSpace();
+
                 long usedSpace = totalSpace - unallocatedSpace;
 
+
+
                 Map<String, Object> stats = new HashMap<>();
+
                 stats.put("name", "Ana Depolama");
+
                 stats.put("description", store.toString());
+
                 stats.put("total", formatBytes(totalSpace));
+
                 stats.put("used", formatBytes(usedSpace));
+
                 stats.put("free", formatBytes(unallocatedSpace));
+
                 stats.put("percentUsed", (int) ((double) usedSpace / totalSpace * 100));
 
+
+
                 storageList.add(stats);
+
             }
+
             return ResponseEntity.ok(storageList);
+
         } catch (Exception e) {
+
             e.printStackTrace();
+
             return ResponseEntity.status(500).build();
+
         }
+
     }
+
+
 
     private String formatBytes(long bytes) {
+
         if (bytes < 1024)
+
             return bytes + " B";
+
         int exp = (int) (Math.log(bytes) / Math.log(1024));
+
         char pre = "KMGTPE".charAt(exp - 1);
+
         return String.format("%.1f %sB", bytes / Math.pow(1024, exp), pre);
+
     }
+
+
 
     @GetMapping("/security/violations")
+
     public ResponseEntity<List<SecurityViolation>> getSecurityViolations() {
+
         return ResponseEntity.ok(securityViolationRepository.findAllByOrderByTimestampDesc());
+
     }
+
+
 
     @DeleteMapping("/security/violations/{id}")
+
     public ResponseEntity<Void> deleteSecurityViolation(@PathVariable("id") Long id) {
+
         securityViolationRepository.deleteById(id);
+
         return ResponseEntity.ok().build();
+
     }
+
+
 
     @PostMapping("/security/violations/bulk-delete")
+
     public ResponseEntity<Void> deleteSecurityViolationsBulk(@RequestBody List<Long> ids) {
+
         securityViolationRepository.deleteByIds(ids);
+
         return ResponseEntity.ok().build();
+
     }
+
+
 
     @PostMapping("/security/ban")
+
     public ResponseEntity<Void> banIp(@RequestParam("ip") String ip,
+
             @RequestParam(value = "reason", required = false) String reason) {
+
         bannedIpRepository.save(ip, reason != null ? reason : "Security Violation");
+
         securityViolationRepository.deleteByIp(ip);
+
         return ResponseEntity.ok().build();
+
     }
+
+
 
     @GetMapping("/security/banned-ips")
+
     public ResponseEntity<List<BannedIp>> getBannedIps() {
+
         return ResponseEntity.ok(bannedIpRepository.findAll());
+
     }
+
+
 
     @DeleteMapping("/security/banned-ips/{ip:.+}")
+
     public ResponseEntity<Void> unbanIp(@PathVariable("ip") String ip) {
+
         bannedIpRepository.deleteByIp(ip);
+
         return ResponseEntity.ok().build();
+
     }
+
+
 
     // MESSAGE MONITORING
+
     @GetMapping("/messages/conversations")
+
     public ResponseEntity<List<com.ses.whodatidols.model.Message>> getAllConversations() {
+
         return ResponseEntity.ok(messageRepository.getAllConversations());
+
     }
+
+
 
     @GetMapping("/messages/history/{u1}/{u2}")
+
     public ResponseEntity<List<com.ses.whodatidols.model.Message>> getAdminChatHistory(@PathVariable("u1") UUID u1,
+
             @PathVariable("u2") UUID u2) {
+
         return ResponseEntity.ok(messageRepository.getChatHistory(u1, u2));
+
     }
+
+
 
     // USER REPORTS
+
     @GetMapping("/reports")
+
     public ResponseEntity<List<java.util.Map<String, Object>>> getAllReports() {
+
         return ResponseEntity.ok(messageRepository.getAllReports());
+
     }
+
+
 
     @PostMapping("/reports/{id}/resolve")
+
     public ResponseEntity<Void> resolveReport(@PathVariable("id") UUID id) {
+
         messageRepository.resolveReport(id);
+
         return ResponseEntity.ok().build();
+
     }
+
+
 
     // SYSTEM SETTINGS
+
     @GetMapping("/settings/maintenance")
+
     public ResponseEntity<Map<String, Boolean>> getMaintenanceMode() {
+
         return ResponseEntity.ok(Map.of("maintenanceMode", systemSettingRepository.isMaintenanceMode()));
+
     }
+
+
 
     @PostMapping("/settings/maintenance")
+
     public ResponseEntity<String> setMaintenanceMode(@RequestParam("active") boolean active) {
+
         try {
+
             systemSettingRepository.setMaintenanceMode(active);
+
             return ResponseEntity.ok(active ? "Bakım modu AKTİF edildi." : "Bakım modu KAPATILDI.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+
         }
+
     }
+
+
 
     @GetMapping("/settings/registration")
+
     public ResponseEntity<Map<String, Boolean>> getRegistrationStatus() {
+
         return ResponseEntity.ok(Map.of("registrationEnabled", systemSettingRepository.isRegistrationEnabled()));
+
     }
+
+
 
     @PostMapping("/settings/registration")
+
     public ResponseEntity<String> setRegistrationStatus(@RequestParam("active") boolean active) {
+
         try {
+
             systemSettingRepository.setRegistrationEnabled(active);
+
             return ResponseEntity.ok(active ? "Yeni üye alımı AÇILDI." : "Yeni üye alımı KAPATILDI.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+
         }
+
     }
+
+
 
     @GetMapping("/settings/main-source")
+
     public ResponseEntity<Map<String, Boolean>> getMainSourceStatus() {
+
         return ResponseEntity.ok(Map.of("mainSourceEnabled", systemSettingRepository.isMainVideoSourceEnabled()));
+
     }
 
+
+
     @PostMapping("/settings/main-source")
+
     public ResponseEntity<String> setMainSourceStatus(@RequestParam("active") boolean active) {
+
         try {
+
             systemSettingRepository.setMainVideoSourceEnabled(active);
+
             return ResponseEntity.ok(active ? "Ana video kaynağı ETKİNLEŞTİRİLDİ." : "Ana video kaynağı DEVRE DIŞI bırakıldı.");
+
         } catch (Exception e) {
+
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+
         }
+
     }
+
+
 
     private void deleteDirectory(Path path) throws IOException {
         if (Files.exists(path)) {
-            Files.walk(path)
-                    .sorted(java.util.Comparator.reverseOrder())
-                    .map(Path::toFile)
-                    .forEach(java.io.File::delete);
+            try (java.util.stream.Stream<Path> stream = Files.walk(path)) {
+                stream.sorted(java.util.Comparator.reverseOrder())
+                        .map(Path::toFile)
+                        .forEach(file -> {
+                            if (!file.delete()) {
+                                file.deleteOnExit();
+                            }
+                        });
+            }
         }
     }
+
 }

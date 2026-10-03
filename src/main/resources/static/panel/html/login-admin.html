@@ -6,415 +6,1000 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex">
-    <title>Admin Girişi - Who Dat Idols?</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Yönetici Giriş Portalı - Who Dat Idols?</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/elements/variables.css">
+    <script src="/homepage/js/devtools-protection.js"></script>
+
     <style>
         :root {
-            --primary: var(--primary-color);
-            --primary-hover: #1fdf64;
-            --text-main: #ffffff;
-            --text-dim: #b3b3b3;
-            --danger: #ff4b4b;
+            --mouse-x: 50%;
+            --mouse-y: 50%;
+            --primary: var(--primary-color, #10b981);
+            --primary-rgb: 16, 185, 129;
+            --primary-glow: rgba(var(--primary-rgb), 0.45);
+            --accent-cyan: #06b6d4;
+            --accent-purple: #8b5cf6;
+            --bg-deep: #07090e;
+            --surface: rgba(13, 17, 26, 0.72);
+            --surface-border: rgba(255, 255, 255, 0.08);
+            --surface-border-focus: rgba(var(--primary-rgb), 0.65);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.35);
+            --card-radius: 24px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
         }
 
         body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Montserrat', sans-serif;
-            height: 100vh;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
-            background: #000;
-            color: var(--text-main);
+            overflow-x: hidden;
             position: relative;
+            padding: 24px 16px;
         }
 
-        /* Dynamic Background */
-        .background {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            background: radial-gradient(circle at 15% 50%, rgba(var(--primary-rgb), 0.08), transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(138, 43, 226, 0.08), transparent 25%);
-            animation: bgShift 15s ease-in-out infinite alternate;
-        }
-
-        .orb {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.6;
-            animation: float 20s infinite ease-in-out;
-        }
-
-        .orb-1 {
-            width: 300px;
-            height: 300px;
-            background: var(--primary-color);
-            top: -50px;
-            left: -50px;
-            animation-delay: 0s;
-        }
-
-        .orb-2 {
-            width: 400px;
-            height: 400px;
-            background: #8e44ad;
-            bottom: -100px;
-            right: -100px;
-            animation-delay: -5s;
-        }
-
-        .orb-3 {
-            width: 200px;
-            height: 200px;
-            background: #3498db;
-            top: 40%;
-            left: 60%;
-            animation-delay: -10s;
-            opacity: 0.4;
-        }
-
-        @keyframes bgShift {
-            0% {
-                transform: scale(1);
-            }
-
-            100% {
-                transform: scale(1.1);
-            }
-        }
-
-        @keyframes float {
-
-            0%,
-            100% {
-                transform: translate(0, 0);
-            }
-
-            33% {
-                transform: translate(30px, -50px);
-            }
-
-            66% {
-                transform: translate(-20px, 20px);
-            }
-        }
-
-        /* Glassmorphism Card */
-        .login-container {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 50px 40px;
-            border-radius: 20px;
-            width: 100%;
-            max-width: 380px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            text-align: center;
-            transform: translateY(30px);
-            opacity: 0;
-            animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        @keyframes slideUp {
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .logo {
-            font-size: 3rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #fff 0%, var(--primary) 100%);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 30px;
-            letter-spacing: -1px;
-            display: inline-block;
-        }
-
-        h2 {
-            margin-bottom: 40px;
-            font-size: 1.1rem;
-            color: var(--text-dim);
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        /* Form Styling */
-        .form-group {
-            position: relative;
-            margin-bottom: 25px;
-            text-align: left;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 15px 0;
-            background: transparent;
-            border: none;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-            color: #fff;
-            font-size: 1rem;
-            font-family: inherit;
-            outline: none;
-            transition: all 0.3s ease;
-            box-sizing: border-box;
-        }
-
-        .form-group label {
-            position: absolute;
-            top: 15px;
-            left: 0;
-            color: var(--text-dim);
-            font-size: 1rem;
+        /* Ambient Cyber Grid & Vignette */
+        .cyber-grid {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
             pointer-events: none;
-            transition: all 0.3s ease;
+            z-index: 0;
+            mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+            -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
         }
 
-        .form-group input:focus,
-        .form-group input:valid {
-            border-bottom-color: var(--primary);
-        }
-
-        .form-group input:focus+label,
-        .form-group input:valid+label {
-            top: -10px;
-            font-size: 0.8rem;
-            color: var(--primary);
-        }
-
-        .btn-login {
-            width: 100%;
-            padding: 16px;
-            background: var(--primary);
-            color: #000;
-            border: none;
-            border-radius: 50px;
-            font-weight: 700;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            margin-top: 20px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            position: relative;
-            overflow: hidden;
+        .ambient-vignette {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 50% 50%, transparent 20%, rgba(7, 9, 14, 0.85) 85%);
+            pointer-events: none;
             z-index: 1;
         }
 
-        .btn-login::after {
+        /* Glowing Aurora Orbs */
+        .aurora-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.55;
+            will-change: transform;
+            animation: orbFloat 22s infinite ease-in-out alternate;
+        }
+
+        .orb-emerald {
+            width: 460px;
+            height: 460px;
+            background: radial-gradient(circle, var(--primary) 0%, rgba(16, 185, 129, 0) 70%);
+            top: -120px;
+            left: -100px;
+            animation-duration: 18s;
+        }
+
+        .orb-purple {
+            width: 520px;
+            height: 520px;
+            background: radial-gradient(circle, var(--accent-purple) 0%, rgba(139, 92, 246, 0) 70%);
+            bottom: -150px;
+            right: -120px;
+            animation-duration: 24s;
+            animation-delay: -6s;
+        }
+
+        .orb-cyan {
+            width: 320px;
+            height: 320px;
+            background: radial-gradient(circle, var(--accent-cyan) 0%, rgba(6, 182, 212, 0) 70%);
+            top: 45%;
+            left: 55%;
+            transform: translate(-50%, -50%);
+            animation-duration: 20s;
+            animation-delay: -11s;
+            opacity: 0.35;
+        }
+
+        @keyframes orbFloat {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+            50% {
+                transform: translate(60px, -40px) scale(1.08);
+            }
+            100% {
+                transform: translate(-40px, 50px) scale(0.95);
+            }
+        }
+
+        /* Interactive Canvas */
+        #particleCanvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* 3D Perspective Card Wrapper */
+        .card-perspective-wrapper {
+            perspective: 1200px;
+            z-index: 10;
+            width: 100%;
+            max-width: 440px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Main Login Card */
+        .login-card {
+            width: 100%;
+            background: var(--surface);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--card-radius);
+            padding: 42px 38px 38px;
+            box-shadow: 
+                0 30px 60px -15px rgba(0, 0, 0, 0.75),
+                0 0 0 1px rgba(255, 255, 255, 0.05),
+                0 0 40px -10px var(--primary-glow);
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            transition: transform 0.15s ease-out, box-shadow 0.3s ease;
+            will-change: transform;
+        }
+
+        /* Subtle Animated Border Glow Sweep */
+        .login-card::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.2);
-            transform: scaleX(0);
-            transform-origin: right;
-            transition: transform 0.3s ease;
-            z-index: -1;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(
+                transparent,
+                rgba(var(--primary-rgb), 0.18),
+                transparent 30%
+            );
+            animation: rotateBorder 9s linear infinite;
+            z-index: -2;
+            pointer-events: none;
         }
 
-        .btn-login:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(var(--primary-rgb), 0.3);
-        }
-
-        .btn-login:hover::after {
-            transform: scaleX(1);
-            transform-origin: left;
-        }
-
-        .error-message {
-            background: rgba(255, 75, 75, 0.1);
-            border: 1px solid rgba(255, 75, 75, 0.2);
-            color: var(--danger);
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            font-size: 0.9rem;
-            display: none;
-            animation: shake 0.5s ease-in-out;
-        }
-
-        @keyframes shake {
-
-            0%,
-            100% {
-                transform: translateX(0);
-            }
-
-            25% {
-                transform: translateX(-5px);
-            }
-
-            75% {
-                transform: translateX(5px);
-            }
-        }
-
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            margin-top: 30px;
-            color: var(--text-dim);
-            text-decoration: none;
-            font-size: 0.85rem;
-            transition: all 0.3s ease;
-            padding: 8px 16px;
-            border-radius: 20px;
-        }
-
-        .back-link i {
-            margin-right: 8px;
-            transition: transform 0.3s ease;
-        }
-
-        .back-link:hover {
-            color: #fff;
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .back-link:hover i {
-            transform: translateX(-3px);
-        }
-
-        /* Particle canvas behind everything */
-        #particles {
+        .login-card::after {
+            content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            inset: 1px;
+            background: rgba(11, 15, 23, 0.88);
+            border-radius: calc(var(--card-radius) - 1px);
             z-index: -1;
             pointer-events: none;
         }
+
+        @keyframes rotateBorder {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Holographic Dynamic Glare Overlay */
+        .card-glare {
+            position: absolute;
+            inset: 0;
+            border-radius: var(--card-radius);
+            background: radial-gradient(
+                circle 280px at var(--mouse-x, 50%) var(--mouse-y, 50%),
+                rgba(255, 255, 255, 0.09),
+                transparent 70%
+            );
+            pointer-events: none;
+            z-index: 2;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .login-card:hover .card-glare {
+            opacity: 1;
+        }
+
+        /* Security Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            background: rgba(var(--primary-rgb), 0.08);
+            border: 1px solid rgba(var(--primary-rgb), 0.25);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: var(--primary);
+            text-transform: uppercase;
+            margin-bottom: 22px;
+            box-shadow: 0 0 16px -4px var(--primary-glow);
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            box-shadow: 0 0 8px var(--primary);
+            animation: pulseDot 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseDot {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.4;
+                transform: scale(0.85);
+            }
+        }
+
+        /* Holographic Crest / WDI Logo Emblem */
+        .crest-wrapper {
+            position: relative;
+            width: 76px;
+            height: 76px;
+            margin: 0 auto 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .crest-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 2px dashed rgba(var(--primary-rgb), 0.45);
+            animation: spinRing 22s linear infinite;
+        }
+
+        .crest-ring-inner {
+            position: absolute;
+            inset: 6px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        @keyframes spinRing {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .crest-icon-box {
+            width: 54px;
+            height: 54px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.22), rgba(6, 182, 212, 0.12));
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 24px -4px var(--primary-glow);
+            transition: all 0.3s ease;
+        }
+
+        .wdi-logo-text {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 900;
+            font-size: 1.28rem;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff 20%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 16px rgba(var(--primary-rgb), 0.5);
+            user-select: none;
+            line-height: 1;
+        }
+
+        .login-card:hover .crest-icon-box {
+            transform: scale(1.08);
+            border-color: rgba(var(--primary-rgb), 0.5);
+            box-shadow: 0 0 32px var(--primary-glow);
+        }
+
+        /* Typography */
+        .portal-title {
+            font-size: 1.65rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff 30%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            margin-bottom: 6px;
+        }
+
+        .portal-subtitle {
+            font-size: 0.82rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        /* Cyber Form Layout */
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .input-group-cyber {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .input-box .input-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-dim);
+            font-size: 1.05rem;
+            transition: color 0.3s ease;
+            pointer-events: none;
+            z-index: 2;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-box:focus-within .input-icon {
+            color: var(--primary);
+        }
+
+        .cyber-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid var(--surface-border);
+            border-radius: 14px;
+            padding: 16px 18px 16px 52px;
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 500;
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .cyber-input.has-toggle {
+            padding-right: 52px;
+        }
+
+        .cyber-input:focus {
+            background: rgba(var(--primary-rgb), 0.04);
+            border-color: var(--surface-border-focus);
+            box-shadow: 
+                0 0 0 3px rgba(var(--primary-rgb), 0.12),
+                0 0 20px -3px var(--primary-glow);
+        }
+
+        .cyber-input::placeholder {
+            color: var(--text-dim);
+            font-weight: 400;
+        }
+
+        /* Password Toggle Button */
+        .btn-toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        .btn-toggle-password:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.06);
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        /* Underline Laser Animation */
+        .laser-line {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%) scaleX(0);
+            width: 85%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+            z-index: 3;
+            border-radius: 1px;
+        }
+
+        .input-box:focus-within + .laser-line {
+            transform: translateX(-50%) scaleX(1);
+        }
+
+        /* Caps Lock Warning Banner */
+        .capslock-alert {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: #f59e0b;
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 6px;
+            padding-left: 6px;
+            animation: fadeIn 0.2s ease;
+        }
+
+        /* Submit Button */
+        .btn-submit-cyber {
+            margin-top: 6px;
+            position: relative;
+            width: 100%;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, var(--primary) 0%, #059669 100%);
+            border: none;
+            border-radius: 14px;
+            color: #03140d;
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: 
+                0 10px 25px -5px var(--primary-glow),
+                0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 1;
+        }
+
+        .btn-submit-cyber::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+            z-index: -1;
+        }
+
+        .btn-submit-cyber:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 14px 30px -5px var(--primary-glow),
+                0 0 15px rgba(var(--primary-rgb), 0.4);
+            color: #000;
+        }
+
+        .btn-submit-cyber:hover::before {
+            transform: translateX(100%);
+        }
+
+        .btn-submit-cyber:active {
+            transform: translateY(0);
+        }
+
+        .btn-submit-cyber:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .btn-text {
+            display: inline-block;
+        }
+
+        .btn-arrow {
+            display: inline-block;
+            transition: transform 0.2s ease;
+        }
+
+        .btn-submit-cyber:hover .btn-arrow {
+            transform: translateX(3px);
+        }
+
+        .btn-submit-cyber .spinner-icon {
+            display: none !important;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .btn-submit-cyber.loading .btn-text,
+        .btn-submit-cyber.loading .btn-arrow {
+            display: none !important;
+        }
+
+        .btn-submit-cyber.loading .spinner-icon {
+            display: inline-block !important;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error Notification Banner */
+        .error-banner {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 14px;
+            color: #fca5a5;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            margin-bottom: 22px;
+            box-shadow: 0 0 20px -5px var(--danger-glow);
+            animation: shakeGlitch 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+
+        .error-banner i {
+            color: var(--danger);
+            font-size: 1.15rem;
+            flex-shrink: 0;
+        }
+
+        @keyframes shakeGlitch {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+
+        /* Back to Home Button */
+        .back-pill-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 24px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 9999px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .back-pill-link i {
+            transition: transform 0.3s ease;
+        }
+
+        .back-pill-link:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.18);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .back-pill-link:hover i {
+            transform: translateX(-4px);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 34px 22px 28px;
+            }
+
+            .portal-title {
+                font-size: 1.45rem;
+            }
+
+            .orb-emerald, .orb-purple {
+                width: 300px;
+                height: 300px;
+            }
+        }
     </style>
-    <script src="/homepage/js/devtools-protection.js"></script>
-    <link rel="stylesheet" href="/elements/variables.css">
 </head>
 
 <body>
 
-    <div class="background"></div>
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
+    <!-- Cyber Background Layers -->
+    <div class="cyber-grid"></div>
+    <div class="ambient-vignette"></div>
 
-    <!-- Canvas for subtle particle effect -->
-    <canvas id="particles"></canvas>
+    <!-- Glowing Orbs -->
+    <div class="aurora-orb orb-emerald"></div>
+    <div class="aurora-orb orb-purple"></div>
+    <div class="aurora-orb orb-cyan"></div>
 
-    <div class="login-container">
-        <div class="logo">WDI</div>
-        <h2>Admin Access Portal</h2>
+    <!-- Interactive Canvas Mesh -->
+    <canvas id="particleCanvas"></canvas>
 
-        <div id="error-box" class="error-message">
-            <i class="fas fa-exclamation-circle"></i> Erişim reddedildi. Bilgilerini kontrol et.
+    <!-- Card Wrapper for 3D Tilt -->
+    <div class="card-perspective-wrapper">
+
+        <div class="login-card" id="loginCard">
+            <!-- Dynamic Glare Highlight -->
+            <div class="card-glare" id="cardGlare"></div>
+
+            <div style="text-align: center;">
+                <div class="status-badge">
+                    <span class="status-dot"></span>
+                    <span>SECURE ACCESS • ROOT CONSOLE</span>
+                </div>
+
+                <div class="crest-wrapper">
+                    <div class="crest-ring"></div>
+                    <div class="crest-ring-inner"></div>
+                    <div class="crest-icon-box">
+                        <span class="wdi-logo-text">WDI</span>
+                    </div>
+                </div>
+
+                <h1 class="portal-title">WHO DAT IDOLS?</h1>
+                <p class="portal-subtitle">Yönetici Kontrol Portalı</p>
+            </div>
+
+            <!-- Error Banner -->
+            <div id="errorBox" class="error-banner" role="alert">
+                <i class="fas fa-triangle-exclamation"></i>
+                <span><strong>Erişim Reddedildi:</strong> Bilgiler doğrulanamadı. Lütfen kullanıcı adı ve şifrenizi kontrol ediniz.</span>
+            </div>
+
+            <!-- Authentication Form -->
+            <form id="adminLoginForm" action="/login-admin" method="POST" class="login-form">
+                <div class="input-group-cyber">
+                    <label for="username" class="sr-only">Yönetici Kullanıcı Adı</label>
+                    <div class="input-box">
+                        <i class="fas fa-user-shield input-icon"></i>
+                        <input 
+                            type="text" 
+                            id="username" 
+                            name="username" 
+                            class="cyber-input" 
+                            placeholder="Yönetici Kullanıcı Adı" 
+                            required 
+                            autocomplete="username" 
+                            autofocus>
+                    </div>
+                    <div class="laser-line"></div>
+                </div>
+
+                <div class="input-group-cyber">
+                    <label for="password" class="sr-only">Güvenlik Anahtarı veya Şifre</label>
+                    <div class="input-box">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            class="cyber-input has-toggle" 
+                            placeholder="Güvenlik Anahtarı / Şifre" 
+                            required 
+                            autocomplete="current-password">
+                        <button 
+                            type="button" 
+                            id="btnTogglePassword" 
+                            class="btn-toggle-password" 
+                            title="Şifreyi Göster/Gizle" 
+                            aria-label="Şifreyi Göster">
+                            <i class="fas fa-eye" id="togglePasswordIcon"></i>
+                        </button>
+                    </div>
+                    <div class="laser-line"></div>
+                    <div id="capsLockAlert" class="capslock-alert">
+                        <i class="fas fa-arrow-up-from-bracket"></i>
+                        <span>Caps Lock AÇIK</span>
+                    </div>
+                </div>
+
+                <button type="submit" id="btnSubmit" class="btn-submit-cyber">
+                    <i class="fas fa-circle-notch spinner-icon"></i>
+                    <span class="btn-text">Sisteme Giriş Yap</span>
+                    <i class="fas fa-arrow-right btn-arrow"></i>
+                </button>
+            </form>
         </div>
 
-        <form action="/login-admin" method="POST">
-            <div class="form-group">
-                <input type="text" id="username" name="username" required autocomplete="off">
-                <label for="username">Kullanıcı Adı</label>
-            </div>
-            <div class="form-group">
-                <input type="password" id="password" name="password" required>
-                <label for="password">Şifre</label>
-            </div>
-            <button type="submit" class="btn-login">Sisteme Gir</button>
-        </form>
+        <a href="/" class="back-pill-link">
+            <i class="fas fa-arrow-left-long"></i>
+            <span>Ana Sayfaya Dön</span>
+        </a>
 
-        <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Anasayfa</a>
     </div>
 
     <script>
-        // URL Error Check
+        // --- 1. ERROR CHECK ---
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('error')) {
-            const errorBox = document.getElementById('error-box');
-            errorBox.style.display = 'block';
+            const errorBox = document.getElementById('errorBox');
+            if (errorBox) {
+                errorBox.style.display = 'flex';
+            }
         }
 
-        // Simple Particle Effect
-        const canvas = document.getElementById('particles');
+        // --- 2. PASSWORD TOGGLE ---
+        const passwordInput = document.getElementById('password');
+        const btnTogglePassword = document.getElementById('btnTogglePassword');
+        const togglePasswordIcon = document.getElementById('togglePasswordIcon');
+
+        if (btnTogglePassword && passwordInput) {
+            btnTogglePassword.addEventListener('click', () => {
+                const isPassword = passwordInput.getAttribute('type') === 'password';
+                passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+                togglePasswordIcon.className = isPassword ? 'fas fa-eye-slash' : 'fas fa-eye';
+            });
+        }
+
+        // --- 3. CAPS LOCK DETECTION ---
+        const capsLockAlert = document.getElementById('capsLockAlert');
+        if (passwordInput && capsLockAlert) {
+            const checkCapsLock = (e) => {
+                if (e.getModifierState && e.getModifierState('CapsLock')) {
+                    capsLockAlert.style.display = 'flex';
+                } else {
+                    capsLockAlert.style.display = 'none';
+                }
+            };
+            passwordInput.addEventListener('keydown', checkCapsLock);
+            passwordInput.addEventListener('keyup', checkCapsLock);
+            passwordInput.addEventListener('blur', () => {
+                capsLockAlert.style.display = 'none';
+            });
+        }
+
+        // --- 4. FORM SUBMISSION LOADING STATE ---
+        const loginForm = document.getElementById('adminLoginForm');
+        const btnSubmit = document.getElementById('btnSubmit');
+
+        if (loginForm && btnSubmit) {
+            loginForm.addEventListener('submit', () => {
+                btnSubmit.classList.add('loading');
+                btnSubmit.disabled = true;
+            });
+        }
+
+        // --- 5. 3D CARD TILT & SPECULAR GLARE EFFECT ---
+        const card = document.getElementById('loginCard');
+        const glare = document.getElementById('cardGlare');
+
+        if (card && window.matchMedia('(pointer: fine)').matches) {
+            document.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                // Update glare position
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+
+                // Check if cursor is near the card
+                const cardCenterX = rect.left + rect.width / 2;
+                const cardCenterY = rect.top + rect.height / 2;
+                const distX = (e.clientX - cardCenterX) / (window.innerWidth / 2);
+                const distY = (e.clientY - cardCenterY) / (window.innerHeight / 2);
+
+                const maxTilt = 8; // degrees
+                const rotateY = (distX * maxTilt).toFixed(2);
+                const rotateX = (-distY * maxTilt).toFixed(2);
+
+                card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+            });
+
+            document.addEventListener('mouseleave', () => {
+                card.style.transform = 'rotateX(0deg) rotateY(0deg)';
+            });
+        }
+
+        // --- 6. HIGH-PERFORMANCE CONSTELLATION CANVAS ---
+        const canvas = document.getElementById('particleCanvas');
         const ctx = canvas.getContext('2d');
 
-        let width, height;
+        let width = 0;
+        let height = 0;
         let particles = [];
+        let mouse = { x: null, y: null, radius: 150 };
 
-        function resize() {
+        function setupCanvas() {
             width = window.innerWidth;
             height = window.innerHeight;
             canvas.width = width;
             canvas.height = height;
         }
 
-        class Particle {
+        class CyberParticle {
             constructor() {
                 this.x = Math.random() * width;
                 this.y = Math.random() * height;
-                this.vx = (Math.random() - 0.5) * 0.5;
-                this.vy = (Math.random() - 0.5) * 0.5;
-                this.size = Math.random() * 2;
-                this.alpha = Math.random() * 0.5;
+                this.vx = (Math.random() - 0.5) * 0.7;
+                this.vy = (Math.random() - 0.5) * 0.7;
+                this.radius = Math.random() * 1.8 + 0.8;
+                this.alpha = Math.random() * 0.6 + 0.2;
+                this.baseAlpha = this.alpha;
             }
 
             update() {
                 this.x += this.vx;
                 this.y += this.vy;
 
-                if (this.x < 0) this.x = width;
-                if (this.x > width) this.x = 0;
-                if (this.y < 0) this.y = height;
-                if (this.y > height) this.y = 0;
+                // Bounce borders
+                if (this.x < 0 || this.x > width) this.vx = -this.vx;
+                if (this.y < 0 || this.y > height) this.vy = -this.vy;
+
+                // Mouse interaction
+                if (mouse.x !== null) {
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < mouse.radius) {
+                        const force = (1 - dist / mouse.radius) * 1.5;
+                        this.x -= (dx / dist) * force;
+                        this.y -= (dy / dist) * force;
+                        this.alpha = Math.min(1, this.baseAlpha + 0.4);
+                    } else {
+                        this.alpha = this.baseAlpha;
+                    }
+                }
             }
 
             draw() {
-                ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
+                ctx.fillStyle = `rgba(16, 185, 129, ${this.alpha * 0.8})`;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
 
-        function init() {
-            resize();
-            for (let i = 0; i < 50; i++) {
-                particles.push(new Particle());
+        function initParticles() {
+            setupCanvas();
+            particles = [];
+            const count = Math.min(Math.floor((width * height) / 14000), 75);
+            for (let i = 0; i < count; i++) {
+                particles.push(new CyberParticle());
             }
-            animate();
+        }
+
+        function drawConnections() {
+            const maxDist = 120;
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < maxDist) {
+                        const alpha = (1 - dist / maxDist) * 0.18;
+                        ctx.strokeStyle = `rgba(16, 185, 129, ${alpha})`;
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Connection to mouse
+            if (mouse.x !== null) {
+                for (let i = 0; i < particles.length; i++) {
+                    const dx = mouse.x - particles[i].x;
+                    const dy = mouse.y - particles[i].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < mouse.radius) {
+                        const alpha = (1 - dist / mouse.radius) * 0.35;
+                        ctx.strokeStyle = `rgba(6, 182, 212, ${alpha})`;
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(mouse.x, mouse.y);
+                        ctx.stroke();
+                    }
+                }
+            }
         }
 
         function animate() {
             ctx.clearRect(0, 0, width, height);
+
             particles.forEach(p => {
                 p.update();
                 p.draw();
             });
+
+            drawConnections();
             requestAnimationFrame(animate);
         }
 
-        window.addEventListener('resize', () => {
-            resize();
-            particles = [];
-            init();
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
         });
 
-        init();
+        window.addEventListener('mouseleave', () => {
+            mouse.x = null;
+            mouse.y = null;
+        });
+
+        window.addEventListener('resize', () => {
+            setupCanvas();
+            initParticles();
+        });
+
+        initParticles();
+        animate();
     </script>
 
 </body>
