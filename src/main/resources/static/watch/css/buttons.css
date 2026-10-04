@@ -1,24 +1,31 @@
+/* ==========================================================================
+   Button Styles - Cohesive Modern Glassmorphic Look
+   ========================================================================== */
+
 /* Control Button Styles */
 .control-button {
-    background-color: var(--bg-tertiary);
-    color: var(--white);
-    border: none;
-    padding: 8px 15px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.85);
+    padding: 8px 16px;
     border-radius: 50px;
-    font-weight: 500;
+    font-weight: 600;
+    font-size: 13px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    display: flex;
+    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     position: relative;
     overflow: hidden;
+    font-family: inherit;
 }
 
 .control-button:hover {
-    background-color: var(--bg-card-hover);
+    background: rgba(var(--primary-rgb), 0.15);
+    border-color: rgba(var(--primary-rgb), 0.4);
     color: var(--primary-color);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
     transform: translateY(-2px);
 }
 
@@ -27,110 +34,74 @@
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
-.control-button::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 5px;
-    height: 5px;
-    background: rgba(var(--primary-rgb), 0.5);
-    opacity: 0;
-    border-radius: 100%;
-    transform: translate(-50%, -50%) scale(1);
-    transition: all 0.4s ease;
-}
-
-.control-button:active::after {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(20);
-    transition: none;
-}
-
 /* Navigation Button Styles */
 .nav-button {
-    background-color: var(--bg-tertiary);
-    color: var(--white);
-    border: none;
-    padding: 10px 20px;
-    border-radius: 50px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    position: relative;
-    overflow: hidden;
-    z-index: 1;
-}
-
-.nav-button:hover:not([disabled]) {
-    background-color: var(--bg-card-hover);
-    color: var(--primary-color);
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 7px 15px rgba(0, 0, 0, 0.2);
-}
-
-.nav-button:active:not([disabled]) {
-    transform: translateY(-1px);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-}
-
-.nav-button i {
-    transition: transform 0.3s ease;
-}
-
-.nav-button:hover:not([disabled]) i {
-    transform: scale(1.2);
-}
-
-.nav-button::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(45deg, transparent 50%, rgba(var(--primary-rgb), 0.1) 50%);
-    background-size: 200% 200%;
-    background-position: 100% 0;
-    transition: background-position 0.5s ease;
-    z-index: -1;
-}
-
-.nav-button:hover:not([disabled])::before {
-    background-position: 0 100%;
-}
-
-.nav-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Glow Button Animation */
-.glow-button {
-    background: linear-gradient(45deg, var(--primary-color), var(--primary-hover));
-    color: var(--black);
-    border: none;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.85);
     padding: 10px 22px;
     border-radius: 50px;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13.5px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-    display: flex;
+    transition: all 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+    display: inline-flex;
     align-items: center;
     gap: 8px;
-    box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.4);
-    z-index: 1;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.nav-button:hover:not([disabled]) {
+    background: rgba(var(--primary-rgb), 0.15);
+    border-color: rgba(var(--primary-rgb), 0.4);
+    color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4), 0 0 15px rgba(var(--primary-rgb), 0.1);
+}
+
+.nav-button:active:not([disabled]) {
+    transform: translateY(0);
+}
+
+.nav-button i {
+    transition: transform 0.25s ease;
+}
+
+.nav-button:hover:not([disabled]) i {
+    transform: scale(1.15);
+}
+
+.nav-button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    border-color: rgba(255, 255, 255, 0.04);
+}
+
+/* Glow Button (Add to list) */
+.glow-button {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+    color: var(--black);
+    border: none;
+    padding: 10px 24px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: all 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.35);
+    font-family: 'Montserrat', sans-serif;
 }
 
 .glow-button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.7);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(var(--primary-rgb), 0.55);
 }
 
 .glow-button i {
@@ -141,42 +112,24 @@
     transform: rotate(90deg);
 }
 
-.glow-button::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: linear-gradient(45deg, var(--primary-color), var(--color-28d86a), var(--color-13a346), var(--primary-color));
-    background-size: 400% 400%;
-    border-radius: 50px;
-    z-index: -1;
-    animation: glowing 3s ease infinite;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.glow-button:hover::before {
-    opacity: 1;
-}
-
 /* Comment Submit Button */
 .comment-submit-btn {
-    background: linear-gradient(45deg, var(--primary-color), var(--primary-hover));
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
     color: var(--black);
     border: none;
-    padding: 10px 20px;
+    padding: 10px 22px;
     border-radius: 30px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
+    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    display: inline-flex;
     align-items: center;
     gap: 8px;
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
+    font-family: inherit;
 }
 
 .comment-submit-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(var(--primary-rgb), 0.4);
+    box-shadow: 0 6px 18px rgba(var(--primary-rgb), 0.45);
 }

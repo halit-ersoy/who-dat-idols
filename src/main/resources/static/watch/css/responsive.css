@@ -1,13 +1,9 @@
-@import url('/elements/scrool.css');
+@import url('../../elements/scrool.css');
 
 /* Responsive Styles */
 @media (max-width: 992px) {
     .video-title {
         font-size: 24px;
-    }
-
-    .recommendation-cards {
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     }
 }
 
@@ -46,10 +42,6 @@
     .nav-button {
         width: 100%;
         justify-content: center;
-    }
-
-    .recommendation-cards {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     }
 
     .comment-form {
@@ -101,10 +93,6 @@
 
     .watch-container {
         padding: 12px;
-    }
-
-    .recommendation-cards {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     }
 
     /* Extra Small Screen Adult Overlay */

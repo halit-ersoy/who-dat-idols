@@ -1,70 +1,104 @@
+/* ==========================================================================
+   Wishlist & Add to List Modal - Consistent Modern Glassmorphism
+   ========================================================================== */
+
 /* Modal styles */
 .modal {
     display: none;
     position: fixed;
-    z-index: 999;
+    z-index: 9999;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(5px);
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 .modal.show {
     display: flex;
     opacity: 1;
-    justify-content: center;
-    align-items: center;
-    animation: fadeIn 0.3s ease;
 }
 
 .modal-content {
-    background-color: var(--bg-card);
-    border-radius: 12px;
-    width: 90%;
-    max-width: 500px;
-    max-height: 90vh;
+    background: rgba(18, 18, 22, 0.95);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 88vh;
     overflow-y: auto;
-    transform: translateY(-30px) scale(0.95);
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(var(--primary-rgb), 0.3);
+    transform: scale(0.92) translateY(20px);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8), 0 0 40px rgba(var(--primary-rgb), 0.12);
+    color: var(--white);
+    box-sizing: border-box;
 }
 
 .modal.show .modal-content {
-    transform: translateY(0) scale(1);
+    transform: scale(1) translateY(0);
 }
 
 .modal-header {
-    padding: 15px 20px;
-    background: linear-gradient(to right, var(--bg-secondary), var(--bg-tertiary));
+    padding: 20px 24px;
+    background: rgba(255, 255, 255, 0.02);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .modal-header h3 {
     margin: 0;
-    color: var(--primary-color);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.modal-header h3::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 18px;
+    background: var(--primary-color);
+    border-radius: 2px;
 }
 
 .close-modal {
-    color: var(--text-secondary);
-    font-size: 28px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    color: #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    transition: color 0.2s ease;
+    font-size: 18px;
+    transition: all 0.25s ease;
 }
 
 .close-modal:hover {
-    color: var(--primary-color);
+    background: rgba(255, 75, 75, 0.25);
+    color: #ff5c5c;
+    transform: rotate(90deg);
 }
 
 .modal-body {
-    padding: 20px;
+    padding: 24px;
 }
 
 .lists-container {
@@ -72,61 +106,54 @@
 }
 
 .lists-container h4, .new-list-form h4 {
-    color: var(--text-light);
+    color: rgba(255, 255, 255, 0.9);
     margin-top: 0;
-    margin-bottom: 15px;
-    font-size: 18px;
-    position: relative;
-}
-
-.lists-container h4::after, .new-list-form h4::after {
-    content: '';
-    position: absolute;
-    bottom: -5px;
-    left: 0;
-    width: 50px;
-    height: 2px;
-    background-color: var(--primary-color);
+    margin-bottom: 14px;
+    font-size: 15px;
+    font-weight: 700;
 }
 
 .user-lists {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 10px;
-    max-height: 220px;
+    gap: 12px;
+    max-height: 240px;
     overflow-y: auto;
+    padding-right: 4px;
 }
 
 .list-item {
-    background-color: var(--bg-card-hover);
-    padding: 15px;
-    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    padding: 14px 16px;
+    border-radius: 12px;
     cursor: pointer;
-    transition: all 0.2s ease;
-    border: 2px solid transparent;
+    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .list-item:hover {
-    background-color: var(--bg-watch-hover);
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(var(--primary-rgb), 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
 }
 
 .list-item.selected {
     border-color: var(--primary-color);
-    background-color: rgba(var(--primary-rgb), 0.1);
+    background: rgba(var(--primary-rgb), 0.15);
 }
 
 .list-item h5 {
-    margin: 0 0 5px 0;
-    font-size: 16px;
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    font-weight: 600;
     color: var(--white);
 }
 
 .list-item p {
     margin: 0;
     font-size: 12px;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.5);
 }
 
 .input-group {
@@ -136,33 +163,37 @@
 
 #newListName {
     flex-grow: 1;
-    padding: 10px 15px;
-    background-color: var(--bg-card-hover);
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
     color: var(--white);
     font-size: 14px;
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
+    font-family: inherit;
 }
 
 #newListName:focus {
     border-color: var(--primary-color);
     outline: none;
-    box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.3);
+    box-shadow: 0 0 15px rgba(var(--primary-rgb), 0.25);
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .btn-create-list {
-    background: linear-gradient(45deg, var(--primary-color), var(--primary-hover));
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
     color: var(--black);
     border: none;
-    padding: 10px 15px;
-    border-radius: 8px;
+    padding: 10px 18px;
+    border-radius: 10px;
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 5px;
-    font-weight: 600;
-    transition: all 0.3s ease;
+    gap: 6px;
+    font-weight: 700;
+    font-size: 13.5px;
+    transition: all 0.25s ease;
+    white-space: nowrap;
 }
 
 .btn-create-list:hover {
@@ -172,49 +203,52 @@
 
 .loading-spinner {
     text-align: center;
-    padding: 20px;
-    color: var(--text-secondary);
+    padding: 24px;
+    color: rgba(255, 255, 255, 0.5);
 }
 
 .empty-list-message {
     text-align: center;
-    padding: 20px;
-    color: var(--text-secondary);
+    padding: 24px;
+    color: rgba(255, 255, 255, 0.5);
     font-style: italic;
 }
 
 .list-actions {
     display: flex;
     justify-content: flex-end;
-    margin-top: 20px;
+    margin-top: 22px;
     gap: 10px;
 }
 
 .btn-cancel, .btn-save {
-    padding: 10px 20px;
-    border-radius: 8px;
+    padding: 9px 20px;
+    border-radius: 10px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
+    font-size: 13.5px;
 }
 
 .btn-cancel {
-    background-color: var(--border-color);
-    color: var(--text-dark-grey);
-    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .btn-cancel:hover {
-    background-color: var(--border-light);
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--white);
 }
 
 .btn-save {
-    background: linear-gradient(45deg, var(--primary-color), var(--primary-hover));
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
     color: var(--black);
     border: none;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
+    font-weight: 700;
 }
 
 .btn-save:hover {
@@ -224,25 +258,27 @@
 
 /* Message styles */
 .success-message, .error-message {
-    padding: 10px;
-    border-radius: 8px;
-    margin: 10px 0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    margin: 12px 0;
     display: flex;
     align-items: center;
     gap: 8px;
+    font-size: 13.5px;
 }
 
 .success-message {
-    background-color: rgba(var(--primary-rgb), 0.1);
+    background-color: rgba(var(--primary-rgb), 0.12);
+    border: 1px solid rgba(var(--primary-rgb), 0.3);
     color: var(--primary-color);
 }
 
 .error-message {
-    background-color: rgba(255, 70, 70, 0.1);
-    color: var(--danger-color);
+    background-color: rgba(255, 70, 70, 0.12);
+    border: 1px solid rgba(255, 70, 70, 0.3);
+    color: var(--danger-color, #ff5c5c);
 }
 
-/* Add to your watch.css file */
 .list-item.has-video {
     background-color: rgba(var(--primary-rgb), 0.1);
     border-left: 3px solid var(--primary-color);
@@ -251,37 +287,36 @@
 .in-list-badge {
     background-color: var(--primary-color);
     color: var(--black);
-    padding: 2px 5px;
+    padding: 2px 6px;
     border-radius: 4px;
-    font-size: 11px;
-    font-weight: bold;
+    font-size: 10.5px;
+    font-weight: 700;
     display: inline-block;
     margin-top: 5px;
 }
 
 .btn-save i.fa-minus {
-    color: var(--danger-color);
+    color: var(--danger-color, #ff5c5c);
 }
 
 .glow-button.in-list {
-    background: linear-gradient(45deg, var(--danger-color), var(--danger-hover));
+    background: linear-gradient(135deg, var(--danger-color, #ff5c5c), #d32f2f);
+    color: var(--white);
 }
 
 .temp-success-message {
     position: absolute;
     right: 20px;
     top: -40px;
-    background-color: rgba(var(--primary-rgb), 0.9);
+    background: var(--primary-color);
     color: var(--black);
-    padding: 8px 15px;
-    border-radius: 5px;
+    padding: 8px 16px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     gap: 8px;
+    font-weight: 600;
+    font-size: 13px;
     animation: slideDown 0.3s forwards;
-}
-
-@keyframes slideDown {
-    from { transform: translateY(-20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
 }

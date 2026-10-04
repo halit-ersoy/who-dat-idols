@@ -156,6 +156,76 @@ public class TmdbService {
         return null;
     }
 
+    @Cacheable(value = "tmdbPersonDetails", key = "#personId", unless = "#result == null || #result.isEmpty()")
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getPersonDetails(int personId) {
+        if (apiKey == null || apiKey.trim().isEmpty() || personId <= 0) return Collections.emptyMap();
+        try {
+            String urlTr = UriComponentsBuilder.fromHttpUrl(BASE_URL)
+                    .pathSegment("person", String.valueOf(personId))
+                    .queryParam("api_key", apiKey.trim())
+                    .queryParam("language", "tr-TR")
+                    .toUriString();
+
+            Map<String, Object> resp = restTemplate.getForObject(new URI(urlTr), Map.class);
+            if (resp != null) {
+                Map<String, Object> copy = new HashMap<>(resp);
+                String bio = (String) copy.get("biography");
+                if (bio == null || bio.trim().isEmpty()) {
+                    try {
+                        String urlEn = UriComponentsBuilder.fromHttpUrl(BASE_URL)
+                                .pathSegment("person", String.valueOf(personId))
+                                .queryParam("api_key", apiKey.trim())
+                                .queryParam("language", "en-US")
+                                .toUriString();
+                        Map<String, Object> respEn = restTemplate.getForObject(new URI(urlEn), Map.class);
+                        if (respEn != null && respEn.get("biography") != null) {
+                            String enBio = (String) respEn.get("biography");
+                            if (enBio != null && !enBio.trim().isEmpty()) {
+                                copy.put("biography", enBio);
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                }
+                String profilePath = (String) copy.get("profile_path");
+                if (profilePath != null && !profilePath.isEmpty()) {
+                    copy.put("profileUrl", getProfileUrl(profilePath));
+                }
+                return copy;
+            }
+        } catch (Exception e) {
+            System.err.println("TMDB Person Details Error (" + personId + "): " + e.getMessage());
+        }
+        return Collections.emptyMap();
+    }
+
+    @Cacheable(value = "tmdbSearchPerson", key = "#name", unless = "#result == null")
+    @SuppressWarnings("unchecked")
+    public Integer searchPersonId(String name) {
+        if (apiKey == null || apiKey.trim().isEmpty() || name == null || name.trim().isEmpty()) return null;
+        try {
+            String url = UriComponentsBuilder.fromHttpUrl(BASE_URL)
+                    .pathSegment("search", "person")
+                    .queryParam("api_key", apiKey.trim())
+                    .queryParam("query", name.trim())
+                    .toUriString();
+
+            Map<String, Object> resp = restTemplate.getForObject(new URI(url), Map.class);
+            if (resp != null && resp.containsKey("results")) {
+                List<Map<String, Object>> list = (List<Map<String, Object>>) resp.get("results");
+                if (list != null && !list.isEmpty()) {
+                    Object idObj = list.get(0).get("id");
+                    if (idObj instanceof Number) {
+                        return ((Number) idObj).intValue();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("TMDB Search Person Error (" + name + "): " + e.getMessage());
+        }
+        return null;
+    }
+
     public String getPosterUrl(String posterPath) {
         if (posterPath == null || posterPath.isEmpty())
             return null;

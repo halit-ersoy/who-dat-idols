@@ -1,5 +1,6 @@
 package com.ses.whodatidols;
 
+import com.ses.whodatidols.controller.ActorController;
 import com.ses.whodatidols.model.CastMemberDto;
 import com.ses.whodatidols.model.Movie;
 import com.ses.whodatidols.repository.ActorRepository;
@@ -8,8 +9,10 @@ import com.ses.whodatidols.service.CastSyncService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -24,6 +27,9 @@ class WhoDatIdolsApplicationTests {
 
     @Autowired
     private MovieRepository movieRepository;
+
+    @Autowired
+    private ActorController actorController;
 
     @Test
     void contextLoads() {
@@ -50,5 +56,26 @@ class WhoDatIdolsApplicationTests {
             }
         }
         assertTrue(photosFoundOnDisk > 0, "At least some actor photos should be saved on disk");
+    }
+
+    @Test
+    void testActorDetailsEndpoint() {
+        List<Movie> movies = movieRepository.findAll();
+        assertFalse(movies.isEmpty());
+        Movie m = movies.get(0);
+        List<CastMemberDto> cast = actorRepository.getCastForMovie(m.getId());
+        if (!cast.isEmpty()) {
+            CastMemberDto firstActor = cast.get(0);
+            assertNotNull(firstActor.getActorId());
+            ResponseEntity<Map<String, Object>> response = actorController.getActorDetails(firstActor.getActorId());
+            assertNotNull(response);
+            assertTrue(response.getStatusCode().is2xxSuccessful());
+            Map<String, Object> body = response.getBody();
+            assertNotNull(body);
+            assertEquals(firstActor.getName(), body.get("name"));
+            assertNotNull(body.get("productions"));
+            assertTrue(body.containsKey("biography"));
+            assertTrue(body.containsKey("knownFor"));
+        }
     }
 }

@@ -57,22 +57,44 @@ function renderRecommendations(items, container) {
         return;
     }
 
+    const defaultPosterSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='320' viewBox='0 0 180 320' fill='%231a1a20'><rect width='100%' height='100%' fill='%231a1a20'/><circle cx='90' cy='130' r='24' fill='%2333333e'/><rect x='50' y='170' width='80' height='40' rx='10' fill='%2333333e'/></svg>";
+
     container.innerHTML = '';
     items.forEach(item => {
         const card = document.createElement('div');
         card.className = 'rec-card';
+        const title = escapeHtml(item.Name || 'İçerik');
+        const category = item.Category ? escapeHtml(item.Category.split(',')[0].trim()) : 'Detaylar';
+        const url = `/${item.slug || item.ID}`;
+        const posterUrl = `/media/image/${item.ID}`;
+
         card.innerHTML = `
-            <a href="/${item.slug || item.ID}" class="rec-link">
+            <a href="${url}" class="rec-link" title="${title} izle">
                 <div class="rec-image img-skeleton">
-                    <img src="/media/image/${item.ID}" alt="${item.Name}" onerror="this.src='https://picsum.photos/300/170?blur=10'">
+                    <img src="${posterUrl}" alt="${title}" loading="lazy" onerror="this.onerror=null; this.src='${defaultPosterSvg}';">
                 </div>
-                <div class="rec-title" title="${item.Name}">${item.Name}</div>
-                <div class="rec-meta">${item.Category ? item.Category.split(',')[0] : 'Detaylar'}</div>
+                <div class="rec-title" title="${title}">${title}</div>
+                <div class="rec-meta">${category}</div>
             </a>
         `;
         container.appendChild(card);
 
         const img = card.querySelector('img');
-        img.onload = () => card.querySelector('.rec-image').classList.remove('img-skeleton');
+        if (img) {
+            img.onload = () => card.querySelector('.rec-image')?.classList.remove('img-skeleton');
+            if (img.complete) {
+                card.querySelector('.rec-image')?.classList.remove('img-skeleton');
+            }
+        }
     });
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }

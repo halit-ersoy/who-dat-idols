@@ -66,6 +66,43 @@ public class ActorRepository {
                     "    ALTER TABLE [dbo].[Actor] ADD [RemotePhotoUrl] NVARCHAR(1000) NULL; " +
                     "END");
 
+            // Migration: Add Biography, Birthday, Deathday, PlaceOfBirth, KnownFor, Gender if missing
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = 'Biography' AND Object_ID = OBJECT_ID('Actor')) " +
+                    "BEGIN " +
+                    "    ALTER TABLE [dbo].[Actor] ADD [Biography] NVARCHAR(MAX) NULL; " +
+                    "END");
+
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = 'Birthday' AND Object_ID = OBJECT_ID('Actor')) " +
+                    "BEGIN " +
+                    "    ALTER TABLE [dbo].[Actor] ADD [Birthday] NVARCHAR(50) NULL; " +
+                    "END");
+
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = 'Deathday' AND Object_ID = OBJECT_ID('Actor')) " +
+                    "BEGIN " +
+                    "    ALTER TABLE [dbo].[Actor] ADD [Deathday] NVARCHAR(50) NULL; " +
+                    "END");
+
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = 'PlaceOfBirth' AND Object_ID = OBJECT_ID('Actor')) " +
+                    "BEGIN " +
+                    "    ALTER TABLE [dbo].[Actor] ADD [PlaceOfBirth] NVARCHAR(255) NULL; " +
+                    "END");
+
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = 'KnownFor' AND Object_ID = OBJECT_ID('Actor')) " +
+                    "BEGIN " +
+                    "    ALTER TABLE [dbo].[Actor] ADD [KnownFor] NVARCHAR(100) NULL; " +
+                    "END");
+
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = 'Gender' AND Object_ID = OBJECT_ID('Actor')) " +
+                    "BEGIN " +
+                    "    ALTER TABLE [dbo].[Actor] ADD [Gender] INT NULL; " +
+                    "END");
+
             // 2. MovieActors Table
             jdbcTemplate.execute(
                     "IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'MovieActors') " +
@@ -156,6 +193,15 @@ public class ActorRepository {
         if (!rs.wasNull()) a.setTmdbId(tmdb);
         int tvmaze = rs.getInt("TvMazeId");
         if (!rs.wasNull()) a.setTvmazeId(tvmaze);
+        try {
+            a.setBiography(rs.getString("Biography"));
+            a.setBirthday(rs.getString("Birthday"));
+            a.setDeathday(rs.getString("Deathday"));
+            a.setPlaceOfBirth(rs.getString("PlaceOfBirth"));
+            a.setKnownFor(rs.getString("KnownFor"));
+            int gender = rs.getInt("Gender");
+            if (!rs.wasNull()) a.setGender(gender);
+        } catch (Exception ignored) {}
         java.sql.Timestamp ts = rs.getTimestamp("CreatedAt");
         if (ts != null) a.setCreatedAt(ts.toInstant());
         return a;
@@ -174,6 +220,114 @@ public class ActorRepository {
         dto.setOrderIndex(rs.getInt("OrderIndex"));
         return dto;
     };
+
+    public Actor findById(UUID actorId) {
+        if (actorId == null) return null;
+        try {
+            List<Actor> list = jdbcTemplate.query(
+                    "SELECT ID, Name, PhotoUrl, RemotePhotoUrl, TmdbId, TvMazeId, Biography, Birthday, Deathday, PlaceOfBirth, KnownFor, Gender, CreatedAt FROM [dbo].[Actor] WHERE ID = ?",
+                    actorRowMapper, actorId.toString());
+            return list.isEmpty() ? null : list.get(0);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public void updateActorTmdbId(UUID actorId, int tmdbId) {
+        if (actorId == null || tmdbId <= 0) return;
+        try {
+            jdbcTemplate.update("UPDATE [dbo].[Actor] SET TmdbId = ? WHERE ID = ? AND (TmdbId IS NULL OR TmdbId <= 0)",
+                    tmdbId, actorId.toString());
+        } catch (Exception e) {
+            System.err.println("Failed to update TmdbId for actor " + actorId + ": " + e.getMessage());
+        }
+    }
+
+    public void updateActorDetails(UUID actorId, String biography, String birthday, String deathday, String placeOfBirth, String knownFor, Integer gender) {
+        if (actorId == null) return;
+        try {
+            jdbcTemplate.update(
+                    "UPDATE [dbo].[Actor] SET Biography = ?, Birthday = ?, Deathday = ?, PlaceOfBirth = ?, KnownFor = ?, Gender = ? WHERE ID = ?",
+                    biography, birthday, deathday, placeOfBirth, knownFor, gender, actorId.toString());
+        } catch (Exception e) {
+            System.err.println("Failed to update actor details in DB: " + e.getMessage());
+        }
+    }
+
+    public List<Map<String, Object>> getMoviesForActor(UUID actorId) {
+        if (actorId == null) return Collections.emptyList();
+        String sql = """
+                SELECT m.ID, m.name, m.slug, m.ReleaseYear, m.DurationMinutes, m.Country,
+                       ma.CharacterName, ma.OrderIndex,
+                       (SELECT STRING_AGG(c.Name, ', ') FROM Categories c
+                        JOIN MovieCategories mc ON mc.CategoryID = c.ID
+                        WHERE mc.MovieID = m.ID) AS category
+                FROM [dbo].[MovieActors] ma
+                JOIN [dbo].[Movie] m ON ma.MovieID = m.ID
+                WHERE ma.ActorID = ? AND m.IsHidden = 0
+                ORDER BY m.ReleaseYear DESC, m.name ASC
+                """;
+        try {
+            return jdbcTemplate.query(sql, (rs, rowNum) -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", rs.getString("ID"));
+                map.put("name", rs.getString("name"));
+                map.put("slug", rs.getString("slug"));
+                int year = rs.getInt("ReleaseYear");
+                if (!rs.wasNull()) map.put("releaseYear", year);
+                int dur = rs.getInt("DurationMinutes");
+                if (!rs.wasNull()) map.put("durationMinutes", dur);
+                map.put("country", rs.getString("Country"));
+                map.put("characterName", rs.getString("CharacterName"));
+                map.put("category", rs.getString("category"));
+                map.put("posterUrl", "/media/image/" + rs.getString("ID"));
+                map.put("type", "movie");
+                return map;
+            }, actorId.toString());
+        } catch (Exception e) {
+            System.err.println("Failed to get movies for actor " + actorId + ": " + e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    public List<Map<String, Object>> getSeriesForActor(UUID actorId) {
+        if (actorId == null) return Collections.emptyList();
+        String sql = """
+                SELECT s.ID, s.name, s.slug, s.Country, s.SeriesType, s.finalStatus,
+                       sa.CharacterName, sa.OrderIndex,
+                       (SELECT MIN(e.ReleaseYear) FROM Episode e WHERE e.SeriesId = s.ID AND e.IsHidden = 0) AS ReleaseYear,
+                       (SELECT COUNT(*) FROM Episode e WHERE e.SeriesId = s.ID AND e.IsHidden = 0) AS episodeCount,
+                       (SELECT STRING_AGG(c.Name, ', ') FROM Categories c
+                        JOIN SeriesCategories sc ON sc.CategoryID = c.ID
+                        WHERE sc.SeriesID = s.ID) AS category
+                FROM [dbo].[SeriesActors] sa
+                JOIN [dbo].[Series] s ON sa.SeriesID = s.ID
+                WHERE sa.ActorID = ? AND s.IsHidden = 0
+                ORDER BY s.name ASC
+                """;
+        try {
+            return jdbcTemplate.query(sql, (rs, rowNum) -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", rs.getString("ID"));
+                map.put("name", rs.getString("name"));
+                map.put("slug", rs.getString("slug"));
+                int releaseYear = rs.getInt("ReleaseYear");
+                if (!rs.wasNull()) map.put("releaseYear", releaseYear);
+                map.put("country", rs.getString("Country"));
+                map.put("seriesType", rs.getString("SeriesType"));
+                map.put("finalStatus", rs.getInt("finalStatus"));
+                map.put("characterName", rs.getString("CharacterName"));
+                map.put("episodeCount", rs.getInt("episodeCount"));
+                map.put("category", rs.getString("category"));
+                map.put("posterUrl", "/media/image/" + rs.getString("ID"));
+                map.put("type", "series");
+                return map;
+            }, actorId.toString());
+        } catch (Exception e) {
+            System.err.println("Failed to get series for actor " + actorId + ": " + e.getMessage());
+            return Collections.emptyList();
+        }
+    }
 
     public boolean hasLocalPhoto(UUID actorId) {
         if (actorId == null || actorImagesPath == null || actorImagesPath.trim().isEmpty()) {
@@ -421,7 +575,7 @@ public class ActorRepository {
         // 1. By TMDB ID
         if (tmdbId != null && tmdbId > 0) {
             List<Actor> list = jdbcTemplate.query(
-                    "SELECT ID, Name, PhotoUrl, RemotePhotoUrl, TmdbId, TvMazeId, CreatedAt FROM [dbo].[Actor] WHERE TmdbId = ?",
+                    "SELECT ID, Name, PhotoUrl, RemotePhotoUrl, TmdbId, TvMazeId, Biography, Birthday, Deathday, PlaceOfBirth, KnownFor, Gender, CreatedAt FROM [dbo].[Actor] WHERE TmdbId = ?",
                     actorRowMapper, tmdbId);
             if (!list.isEmpty()) {
                 existing = list.get(0);
@@ -431,7 +585,7 @@ public class ActorRepository {
         // 2. By TVMaze ID
         if (existing == null && tvmazeId != null && tvmazeId > 0) {
             List<Actor> list = jdbcTemplate.query(
-                    "SELECT ID, Name, PhotoUrl, RemotePhotoUrl, TmdbId, TvMazeId, CreatedAt FROM [dbo].[Actor] WHERE TvMazeId = ?",
+                    "SELECT ID, Name, PhotoUrl, RemotePhotoUrl, TmdbId, TvMazeId, Biography, Birthday, Deathday, PlaceOfBirth, KnownFor, Gender, CreatedAt FROM [dbo].[Actor] WHERE TvMazeId = ?",
                     actorRowMapper, tvmazeId);
             if (!list.isEmpty()) {
                 existing = list.get(0);
@@ -441,7 +595,7 @@ public class ActorRepository {
         // 3. By Name (case insensitive)
         if (existing == null) {
             List<Actor> list = jdbcTemplate.query(
-                    "SELECT ID, Name, PhotoUrl, RemotePhotoUrl, TmdbId, TvMazeId, CreatedAt FROM [dbo].[Actor] WHERE LOWER(TRIM(Name)) = LOWER(?)",
+                    "SELECT ID, Name, PhotoUrl, RemotePhotoUrl, TmdbId, TvMazeId, Biography, Birthday, Deathday, PlaceOfBirth, KnownFor, Gender, CreatedAt FROM [dbo].[Actor] WHERE LOWER(TRIM(Name)) = LOWER(?)",
                     actorRowMapper, trimmedName);
             if (!list.isEmpty()) {
                 existing = list.get(0);

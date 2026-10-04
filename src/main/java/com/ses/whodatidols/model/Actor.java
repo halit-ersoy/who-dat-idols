@@ -10,6 +10,12 @@ public class Actor {
     private String remotePhotoUrl;
     private Integer tmdbId;
     private Integer tvmazeId;
+    private String biography;
+    private String birthday;
+    private String deathday;
+    private String placeOfBirth;
+    private String knownFor;
+    private Integer gender;
     private Instant createdAt;
 
     public Actor() {
@@ -80,6 +86,54 @@ public class Actor {
 
     public void setTvmazeId(Integer tvmazeId) {
         this.tvmazeId = tvmazeId;
+    }
+
+    public String getBiography() {
+        return biography;
+    }
+
+    public void setBiography(String biography) {
+        this.biography = biography;
+    }
+
+    public String getBirthday() {
+        return birthday;
+    }
+
+    public void setBirthday(String birthday) {
+        this.birthday = birthday;
+    }
+
+    public String getDeathday() {
+        return deathday;
+    }
+
+    public void setDeathday(String deathday) {
+        this.deathday = deathday;
+    }
+
+    public String getPlaceOfBirth() {
+        return placeOfBirth;
+    }
+
+    public void setPlaceOfBirth(String placeOfBirth) {
+        this.placeOfBirth = placeOfBirth;
+    }
+
+    public String getKnownFor() {
+        return knownFor;
+    }
+
+    public void setKnownFor(String knownFor) {
+        this.knownFor = knownFor;
+    }
+
+    public Integer getGender() {
+        return gender;
+    }
+
+    public void setGender(Integer gender) {
+        this.gender = gender;
     }
 
     public Instant getCreatedAt() {
