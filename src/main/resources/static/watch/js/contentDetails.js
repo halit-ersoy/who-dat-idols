@@ -215,10 +215,60 @@ async function loadContentDetails(id) {
             });
         }
 
-        // Cast - placeholder or need to fetch separately? 
-        // For now clear it or leave empty as API doesn't return cast yet
+        // Cast rendering
         const castList = document.getElementById('castList');
-        castList.innerHTML = '<p style="color:#aaa; font-size:0.9em;">Oyuncu bilgisi bulunamadı.</p>';
+        if (castList) {
+            castList.innerHTML = '';
+            if (data.cast && data.cast.length > 0) {
+                const defaultAvatarSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='70' height='70' viewBox='0 0 24 24' fill='%23666'><path d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/></svg>";
+                data.cast.forEach((actor, index) => {
+                    const member = document.createElement('div');
+                    member.className = 'cast-member';
+                    member.style.animationDelay = `${(index + 1) * 0.08}s`;
+
+                    const avatar = document.createElement('div');
+                    avatar.className = 'cast-avatar';
+                    const img = document.createElement('img');
+                    img.src = actor.photoUrl || defaultAvatarSvg;
+                    img.alt = actor.name || 'Oyuncu';
+                    img.loading = 'lazy';
+                    img.onerror = function () {
+                        this.onerror = null;
+                        this.src = defaultAvatarSvg;
+                    };
+                    avatar.appendChild(img);
+
+                    const name = document.createElement('div');
+                    name.className = 'cast-name';
+                    name.textContent = actor.name || '';
+                    name.title = actor.name || '';
+
+                    const role = document.createElement('div');
+                    role.className = 'cast-role';
+                    role.textContent = actor.characterName || '';
+                    role.title = actor.characterName || '';
+
+                    member.appendChild(avatar);
+                    member.appendChild(name);
+                    if (actor.characterName) {
+                        member.appendChild(role);
+                    }
+                    castList.appendChild(member);
+                });
+
+                if (!castList.dataset.wheelBound) {
+                    castList.dataset.wheelBound = "true";
+                    castList.addEventListener('wheel', (e) => {
+                        if (e.deltaY !== 0) {
+                            e.preventDefault();
+                            castList.scrollLeft += e.deltaY;
+                        }
+                    }, { passive: false });
+                }
+            } else {
+                castList.innerHTML = '<p style="color:#aaa; font-size:0.9em;">Oyuncu bilgisi bulunamadı.</p>';
+            }
+        }
 
         // Broadcast seriesId for other modules (like listModal)
         if (data.seriesId) {

@@ -1,10 +1,12 @@
 package com.ses.whodatidols.controller;
 
+import com.ses.whodatidols.model.CastMemberDto;
 import com.ses.whodatidols.service.TmdbService;
 import com.ses.whodatidols.service.TvMazeService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -43,11 +45,18 @@ public class MetadataController {
             @RequestParam(value = "source", defaultValue = "tvmaze") String source,
             @RequestParam(value = "type", defaultValue = "series") String type) {
         try {
+            int parsedId = Integer.parseInt(id);
+            Map<String, Object> details;
+            List<CastMemberDto> cast;
             if ("tmdb".equalsIgnoreCase(source)) {
-                return ResponseEntity.ok(tmdbService.getDetails(Integer.parseInt(id), type));
+                details = new HashMap<>(tmdbService.getDetails(parsedId, type));
+                cast = tmdbService.getCast(parsedId, type);
             } else {
-                return ResponseEntity.ok(tvMazeService.getSeriesDetails(Integer.parseInt(id)));
+                details = new HashMap<>(tvMazeService.getSeriesDetails(parsedId));
+                cast = tvMazeService.getShowCast(parsedId);
             }
+            details.put("cast", cast);
+            return ResponseEntity.ok(details);
         } catch (Exception e) {
             System.err.println("Metadata Details Error: " + e.getMessage());
             return ResponseEntity.badRequest().build();

@@ -34,6 +34,7 @@ import com.ses.whodatidols.repository.BannedIpRepository;
 
 import com.ses.whodatidols.viewmodel.CommentViewModel;
 
+import com.ses.whodatidols.service.CastSyncService;
 import com.ses.whodatidols.service.MovieService;
 
 import com.ses.whodatidols.service.SeriesService;
@@ -147,6 +148,7 @@ public class AdminController {
     private final com.ses.whodatidols.util.FFmpegUtils ffmpegUtils;
 
     private final AdService adService;
+    private final CastSyncService castSyncService;
 
 
 
@@ -201,7 +203,7 @@ public class AdminController {
 
             CacheManager cacheManager, SeriesRepository seriesRepository, TrafficStatsService trafficStatsService,
 
-            com.ses.whodatidols.util.FFmpegUtils ffmpegUtils, AdService adService) {
+            com.ses.whodatidols.util.FFmpegUtils ffmpegUtils, AdService adService, CastSyncService castSyncService) {
 
         this.movieService = movieService;
 
@@ -240,7 +242,7 @@ public class AdminController {
         this.ffmpegUtils = ffmpegUtils;
 
         this.adService = adService;
-
+        this.castSyncService = castSyncService;
     }
 
 
@@ -541,7 +543,9 @@ public class AdminController {
 
             @RequestParam("summary") String summary,
 
-            @RequestParam(value = "country", required = false) String country) {
+            @RequestParam(value = "country", required = false) String country,
+
+            @RequestParam(value = "castData", required = false) String castData) {
 
         try {
 
@@ -557,7 +561,9 @@ public class AdminController {
 
             }
 
-
+            if (castData != null && !castData.isEmpty()) {
+                castSyncService.saveCastFromJson(movie.getId(), "movie", castData);
+            }
 
             return ResponseEntity.ok("{\"id\": \"" + movie.getId() + "\", \"message\": \"Film başarıyla işlendi.\"}");
 
@@ -603,6 +609,8 @@ public class AdminController {
 
             @RequestParam(value = "country", required = false) String country,
 
+            @RequestParam(value = "castData", required = false) String castData,
+
             @RequestParam(value = "overwrite", defaultValue = "false") boolean overwrite) {
 
         Map<String, String> response = new HashMap<>();
@@ -629,7 +637,9 @@ public class AdminController {
 
             }
 
-
+            if (castData != null && !castData.isEmpty()) {
+                castSyncService.saveCastFromJson(movie.getId(), "movie", castData);
+            }
 
             response.put("id", movie.getId().toString());
 
@@ -683,7 +693,9 @@ public class AdminController {
 
             @RequestParam(value = "imageUrl", required = false) String imageUrl,
 
-            @RequestParam(value = "country", required = false) String country) {
+            @RequestParam(value = "country", required = false) String country,
+
+            @RequestParam(value = "castData", required = false) String castData) {
 
         Map<String, String> response = new HashMap<>();
 
@@ -709,7 +721,9 @@ public class AdminController {
 
             }
 
-
+            if (castData != null && !castData.isEmpty()) {
+                castSyncService.saveCastFromJson(s.getId(), "series", castData);
+            }
 
             response.put("id", s.getId().toString());
 
@@ -769,7 +783,9 @@ public class AdminController {
 
             @RequestParam(value = "overwrite", defaultValue = "false") boolean overwrite,
 
-            @RequestParam(value = "isAdult", defaultValue = "false") boolean isAdult) {
+            @RequestParam(value = "isAdult", defaultValue = "false") boolean isAdult,
+
+            @RequestParam(value = "castData", required = false) String castData) {
 
         try {
 
@@ -805,7 +821,16 @@ public class AdminController {
 
             }
 
-
+            if (castData != null && !castData.isEmpty()) {
+                UUID targetSeriesId = existingSeriesId;
+                if (targetSeriesId == null) {
+                    Series p = seriesService.findSeriesByName(seriesInfo.getName());
+                    if (p != null) targetSeriesId = p.getId();
+                }
+                if (targetSeriesId != null) {
+                    castSyncService.saveCastFromJson(targetSeriesId, "series", castData);
+                }
+            }
 
             return ResponseEntity.ok("{\"id\": \"" + episodeId + "\", \"message\": \"Bölüm başarıyla işlendi (S"
 
@@ -895,7 +920,9 @@ public class AdminController {
 
             @RequestParam(value = "overwrite", defaultValue = "false") boolean overwrite,
 
-            @RequestParam(value = "isAdult", defaultValue = "false") boolean isAdult) {
+            @RequestParam(value = "isAdult", defaultValue = "false") boolean isAdult,
+
+            @RequestParam(value = "castData", required = false) String castData) {
 
         try {
 
@@ -2559,4 +2586,58 @@ public class AdminController {
         }
     }
 
+
+    @PostMapping("/sync-all-cast")
+    public ResponseEntity<Map<String, Object>> syncAllCast() {
+        try {
+            boolean started = castSyncService.startSyncAllCastAsync();
+            return ResponseEntity.ok(Map.of(
+                    "status", started ? "started" : "already_running",
+                    "isSyncing", true
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/sync-all-cast/progress")
+    public ResponseEntity<CastSyncService.SyncProgress> getSyncAllCastProgress() {
+        return ResponseEntity.ok(castSyncService.getProgress());
+    }
+
+    @PostMapping("/sync-all-cast/stop")
+    public ResponseEntity<Map<String, Object>> stopSyncAllCast() {
+        try {
+            castSyncService.stopSync();
+            return ResponseEntity.ok(Map.of("status", "stopping"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/sync-cast")
+    public ResponseEntity<Map<String, Object>> syncCast(
+            @RequestParam("id") UUID id,
+            @RequestParam("type") String type) {
+        try {
+            if ("movie".equalsIgnoreCase(type)) {
+                Movie movie = movieService.getAllMovies().stream()
+                        .filter(m -> m.getId().equals(id))
+                        .findFirst().orElse(null);
+                if (movie != null) {
+                    var cast = castSyncService.syncCastForMovie(movie);
+                    return ResponseEntity.ok(Map.of("success", true, "count", cast.size()));
+                }
+            } else {
+                Series series = seriesService.getSeriesById(id);
+                if (series != null) {
+                    var cast = castSyncService.syncCastForSeries(series);
+                    return ResponseEntity.ok(Map.of("success", true, "count", cast.size()));
+                }
+            }
+            return ResponseEntity.badRequest().body(Map.of("error", "İçerik bulunamadı"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
 }

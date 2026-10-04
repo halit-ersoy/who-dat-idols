@@ -1,5 +1,10 @@
 package com.ses.whodatidols.controller;
 
+import com.ses.whodatidols.model.CastMemberDto;
+import com.ses.whodatidols.repository.ActorRepository;
+import com.ses.whodatidols.service.CastSyncService;
+import java.util.Collections;
+
 import com.ses.whodatidols.service.TranscodingService;
 import com.ses.whodatidols.service.VideoService;
 import com.ses.whodatidols.model.Episode;
@@ -29,16 +34,21 @@ public class VideoController {
     private final SeriesRepository seriesRepository;
     private final ContentRepository contentRepository;
     private final AdRepository adRepository;
+    private final ActorRepository actorRepository;
+    private final CastSyncService castSyncService;
 
     public VideoController(VideoService videoService, TranscodingService transcodingService,
             MovieRepository movieRepository, SeriesRepository seriesRepository,
-            ContentRepository contentRepository, AdRepository adRepository) {
+            ContentRepository contentRepository, AdRepository adRepository,
+            ActorRepository actorRepository, CastSyncService castSyncService) {
         this.videoService = videoService;
         this.transcodingService = transcodingService;
         this.movieRepository = movieRepository;
         this.seriesRepository = seriesRepository;
         this.contentRepository = contentRepository;
         this.adRepository = adRepository;
+        this.actorRepository = actorRepository;
+        this.castSyncService = castSyncService;
     }
 
     @GetMapping("/details")
@@ -55,6 +65,7 @@ public class VideoController {
             // Descriptions are usually on the Series parent, but maybe Episode has it?
             // Model doesn't have description for Episode.
             // Let's fetch parent series for category and description
+            List<CastMemberDto> cast = Collections.emptyList();
             try {
                 var series = seriesRepository.findSeriesByEpisodeId(id);
                 if (series != null) {
@@ -70,6 +81,11 @@ public class VideoController {
                     response.put("country", series.getCountry());
                     response.put("finalStatus", series.getFinalStatus());
                     response.put("adult", episode.isAdult());
+
+                    cast = actorRepository.getCastForSeries(series.getId());
+                    if (cast.isEmpty()) {
+                        cast = castSyncService.syncCastForSeries(series);
+                    }
                 } else {
                     response.put("title", episode.getName());
                     response.put("adult", episode.isAdult());
@@ -78,6 +94,7 @@ public class VideoController {
                 // Ignore if parent not found
             }
 
+            response.put("cast", cast);
             response.put("season", episode.getSeasonNumber());
             response.put("episode", episode.getEpisodeNumber());
             response.put("type", "episode");
@@ -100,6 +117,12 @@ public class VideoController {
             response.put("type", "movie");
             response.put("slug", movie.getSlug());
             response.put("adult", movie.isAdult());
+
+            List<CastMemberDto> movieCast = actorRepository.getCastForMovie(movie.getId());
+            if (movieCast.isEmpty()) {
+                movieCast = castSyncService.syncCastForMovie(movie);
+            }
+            response.put("cast", movieCast);
             return ResponseEntity.ok(response);
         }
 

@@ -666,6 +666,7 @@
                     </div>
                     <form id="movieForm" class="admin-form">
                         <input type="hidden" id="movieId">
+                        <input type="hidden" id="movieCastData">
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="movieName">Film Adı</label>
@@ -858,6 +859,7 @@
                     <form id="seriesForm" class="admin-form">
                         <input type="hidden" id="seriesId">
                         <input type="hidden" id="episodeId">
+                        <input type="hidden" id="seriesCastData">
 
                         <div id="seriesFormStatus" class="form-status-badge" style="display: none;">
                             <span>İşlem: <strong id="seriesFormModeText">-</strong></span>
@@ -1946,6 +1948,51 @@
                             <i class="fas fa-broom" style="margin-right: 8px;"></i> Tüm Önbelleği Temizle
                         </button>
                     </div>
+                    <!-- Cast Sync Card -->
+                    <div class="card"
+                        style="padding: 30px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; border: 1px solid rgba(52, 152, 219, 0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+                        <div style="position: absolute; top:0; left:0; width: 4px; height: 100%; background: #3498db;">
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                                <div
+                                    style="width: 50px; height: 50px; border-radius: 12px; background: rgba(52, 152, 219, 0.1); color: #3498db; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <h2 style="font-size: 1.3rem; margin: 0; color: #fff;">Oyuncu Bilgisi Senkronizasyonu</h2>
+                            </div>
+                            <p style="color: #bbb; font-size: 0.95rem; line-height: 1.6; margin-bottom: 30px;">
+                                Veritabanında kayıtlı olup henüz oyuncu bilgisi çekilmemiş tüm film ve dizileri tarar; TMDB ve TVMaze üzerinden oyuncu ve rol bilgilerini çekip sisteme kaydeder.
+                            </p>
+                        </div>
+
+                        <!-- Cast Sync Progress Container -->
+                        <div id="castSyncProgressContainer" style="display: none; margin-bottom: 20px; background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(52, 152, 219, 0.3); border-radius: 12px; padding: 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span id="castSyncStatusText" style="color: #3498db; font-weight: 600; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;">Senkronizasyon Başlatılıyor...</span>
+                                <span id="castSyncPercentText" style="color: #fff; font-weight: 700; font-size: 1.1rem; min-width: 45px; text-align: right;">%0</span>
+                            </div>
+                            <div style="width: 100%; height: 10px; background: rgba(255, 255, 255, 0.08); border-radius: 5px; overflow: hidden; margin-bottom: 8px;">
+                                <div id="castSyncProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #3498db, #2ecc71); transition: width 0.3s ease; border-radius: 5px;"></div>
+                            </div>
+                            <div id="castSyncDetailText" style="color: #888; font-size: 0.8rem;">0 / 0 yapım işlendi</div>
+                        </div>
+
+                        <button type="button" id="btnSyncAllCast" class="btn"
+                            style="width: 100%; justify-content: center; padding: 18px; font-size: 0.95rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; background: rgba(52, 152, 219, 0.1); color: #3498db; border: 1px solid rgba(52, 152, 219, 0.3); border-radius: 12px; cursor: pointer; transition: all 0.3s;"
+                            onmouseover="this.style.background='#3498db'; this.style.color='#fff';"
+                            onmouseout="this.style.background='rgba(52, 152, 219, 0.1)'; this.style.color='#3498db';">
+                            <i class="fas fa-sync" style="margin-right: 8px;"></i> Tüm Oyuncuları Senkronize Et
+                        </button>
+
+                        <button type="button" id="btnStopSyncCast" class="btn"
+                            style="display: none; width: 100%; justify-content: center; padding: 14px; margin-top: 12px; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; background: rgba(231, 76, 60, 0.15); color: #e74c3c; border: 1px solid rgba(231, 76, 60, 0.4); border-radius: 12px; cursor: pointer; transition: all 0.3s;"
+                            onmouseover="this.style.background='#e74c3c'; this.style.color='#fff';"
+                            onmouseout="this.style.background='rgba(231, 76, 60, 0.15)'; this.style.color='#e74c3c';">
+                            <i class="fas fa-stop-circle" style="margin-right: 8px;"></i> Senkronizasyonu Durdur
+                        </button>
+                    </div>
+
 
                 </div>
             </section>

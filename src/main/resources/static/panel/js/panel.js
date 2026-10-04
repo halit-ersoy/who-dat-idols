@@ -1003,8 +1003,14 @@ document.addEventListener('DOMContentLoaded', function () {
             if (lastFetchedPosterUrl) {
                 formData.append('imageUrl', lastFetchedPosterUrl);
             }
+            if (document.getElementById('seriesCastData') && document.getElementById('seriesCastData').value) {
+                formData.append('castData', document.getElementById('seriesCastData').value);
+            }
             if (movieFileInput.files.length > 0) {
                 formData.append('file', movieFileInput.files[0]);
+            }
+            if (document.getElementById('movieCastData') && document.getElementById('movieCastData').value) {
+                formData.append('castData', document.getElementById('movieCastData').value);
             }
 
             movieSubmitBtn.innerText = "KONTROL EDİLİYOR...";
@@ -1073,6 +1079,9 @@ document.addEventListener('DOMContentLoaded', function () {
             if (movieFileInput.files.length > 0) formData.append('file', movieFileInput.files[0]);
             if (movieImageInput.files.length > 0) formData.append('image', movieImageInput.files[0]);
             if (lastFetchedPosterUrl) formData.append('imageUrl', lastFetchedPosterUrl);
+            if (document.getElementById('movieCastData') && document.getElementById('movieCastData').value) {
+                formData.append('castData', document.getElementById('movieCastData').value);
+            }
 
             movieSubmitBtn.innerText = "KONTROL EDİLİYOR...";
             movieSubmitBtn.disabled = true;
@@ -1221,6 +1230,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function resetMovieForm() {
         movieForm.reset();
+        if (document.getElementById('movieCastData')) document.getElementById('movieCastData').value = '';
         movieIdInput.value = "";
         document.getElementById('movieSourcesList').innerHTML = '';
         movieSubmitBtn.innerText = "FİLMİ KAYDET";
@@ -1477,6 +1487,9 @@ document.addEventListener('DOMContentLoaded', function () {
             formData.append('seriesType', document.getElementById('seriesType').value);
             if (seriesImageInput.files.length > 0) formData.append('image', seriesImageInput.files[0]);
             if (lastFetchedPosterUrl) formData.append('imageUrl', lastFetchedPosterUrl);
+            if (document.getElementById('seriesCastData') && document.getElementById('seriesCastData').value) {
+                formData.append('castData', document.getElementById('seriesCastData').value);
+            }
         }
 
         seriesSubmitBtn.innerText = "KONTROL EDİLİYOR...";
@@ -1931,6 +1944,7 @@ document.addEventListener('DOMContentLoaded', function () {
     seriesCancelBtn.addEventListener('click', resetSeriesForm);
     function resetSeriesForm() {
         seriesForm.reset();
+        if (document.getElementById('seriesCastData')) document.getElementById('seriesCastData').value = '';
         seriesIdInput.value = "";
         episodeIdInput.value = "";
 
@@ -2279,6 +2293,9 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('movieCategory').value = category;
             document.getElementById('movieImageUrl').value = image;
             document.getElementById('movieLanguage').value = mappedLang;
+            if (data.cast && document.getElementById('movieCastData')) {
+                document.getElementById('movieCastData').value = JSON.stringify(data.cast);
+            }
             if (document.getElementById('movieCountry')) {
                 const countryOption = Array.from(document.getElementById('movieCountry').options)
                     .find(o => o.value === mappedCountry || o.text === mappedCountry);
@@ -2293,6 +2310,9 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('seriesImageUrl').value = image;
             document.getElementById('seriesLanguage').value = mappedLang;
             document.getElementById('seriesType').value = 'Dizi';
+            if (data.cast && document.getElementById('seriesCastData')) {
+                document.getElementById('seriesCastData').value = JSON.stringify(data.cast);
+            }
             if (document.getElementById('seriesCountry')) {
                 const countryOption = Array.from(document.getElementById('seriesCountry').options)
                     .find(o => o.value === mappedCountry || o.text === mappedCountry);
@@ -2603,7 +2623,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     tr.innerHTML = `
                         <td style="font-weight: 600;">${item.name}</td>
                         <td>${item.type === 'Movie' ? 'Film' : 'Dizi'} ${catBadge}</td>
-                        <td><span class="badge" style="background: var(--primary-dim); color: var(--primary); padding: 4px 8px; border-radius: 4px; font-weight: 700;">${item.status}</span></td>
+                        <td><span class="badge" style="background: rgba(var(--primary-rgb), 0.15); color: var(--primary); padding: 4px 8px; border-radius: 4px; font-weight: 700;">${item.status}</span></td>
                         <td>${new Date(item.datetime).toLocaleString('tr-TR')}</td>
                         <td>
                             <button class="btn btn-sm btn-danger" onclick='deleteUpcoming("${item.upcomingId}")'><i class="fas fa-trash"></i> SİL</button>
@@ -2834,7 +2854,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             el.className = 'weekly-best-item';
                             el.innerHTML = `
                                 <div class="weekly-best-rank rank-${rank <= 3 ? rank : 'other'}">${rank}</div>
-                                <img src="/media/image/${item.ID}" class="weekly-best-poster" onerror="this.onerror=null; this.src='/images/placeholder.webp'">
+                                <img src="/media/image/${item.ID}" alt="${item.name || 'Poster'}" class="weekly-best-poster" onerror="this.onerror=null; this.src='/images/placeholder.webp'">
                                 <div class="weekly-best-details">
                                     <span class="weekly-best-name" title="${item.name}">${item.name}</span>
                                 </div>
@@ -2858,7 +2878,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             el.className = 'weekly-best-item';
                             el.innerHTML = `
                                 <div class="weekly-best-rank rank-${rank <= 3 ? rank : 'other'}">${rank}</div>
-                                <img src="/media/image/${item.ID}" class="weekly-best-poster" onerror="this.onerror=null; this.src='/images/placeholder.webp'">
+                                <img src="/media/image/${item.ID}" alt="${item.name || 'Poster'}" class="weekly-best-poster" onerror="this.onerror=null; this.src='/images/placeholder.webp'">
                                 <div class="weekly-best-details">
                                     <span class="weekly-best-name" title="${item.name}">${item.name}</span>
                                 </div>
@@ -2887,7 +2907,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     tr.innerHTML = `
                         <td style="font-weight: 600;">${item.Name}</td>
                         <td><span class="item-type">${isMovie ? 'Film' : 'Dizi'}</span></td>
-                        <td style="text-align: center;"><span class="badge" style="background: var(--primary-dim); color: var(--primary); font-weight: 700; padding: 6px 12px; border-radius: 6px;">${item.weeklyViewCount || 0}</span></td>
+                        <td style="text-align: center;"><span class="badge" style="background: rgba(var(--primary-rgb), 0.15); color: var(--primary); font-weight: 700; padding: 6px 12px; border-radius: 6px;">${item.weeklyViewCount || 0}</span></td>
                         <td>
                             <div class="premium-counter">
                                 <button class="spin-btn minus" onclick="stepViewCount('${item.ID}', -1)"><i class="fas fa-minus"></i></button>
@@ -3043,7 +3063,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <td>
                             <div onclick="openProfilePhotoPreview(this, '${avatarUrl}')" data-has-photo="true" style="width: 35px; height: 35px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; position: relative; overflow: hidden; font-size: 14px; cursor: pointer; transition: transform 0.2s;" onmouseover="if(this.dataset.hasPhoto==='true') this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
                                 <span style="pointer-events: none;">${initialLetter}</span>
-                                <img src="${avatarUrl}" onerror="this.style.display='none'; this.parentElement.dataset.hasPhoto='false'; this.parentElement.style.cursor='default'; this.parentElement.style.transform='none';" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; z-index: 1; pointer-events: none;">
+                                <img src="${avatarUrl}" alt="Avatar" onerror="this.style.display='none'; this.parentElement.dataset.hasPhoto='false'; this.parentElement.style.cursor='default'; this.parentElement.style.transform='none';" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; z-index: 1; pointer-events: none;">
                             </div>
                         </td>
                         <td style="font-weight: 600;">${nicknameDisplay}</td>
@@ -3085,7 +3105,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .catch(err => console.error("User fetch error:", err));
     }
 
-    window.updateUserRoleUnified = function (userId, role, optionElement) {
+    window.updateUserRoleUnified = function (userId, role, _optionElement) {
         if (!confirm(`Kullanıcı rolünü "${role}" olarak güncellemek istediğinize emin misiniz?`)) {
             return;
         }
@@ -3362,7 +3382,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 body: JSON.stringify({ text, active })
             })
                 .then(res => res.json())
-                .then(data => {
+                .then(() => {
                     alert("Duyuru ayarları başarıyla güncellendi!");
                 })
                 .catch(err => {
@@ -3471,7 +3491,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 font-weight: 600;
                                 background: ${note.active ? 'rgba(var(--primary-rgb), 0.12)' : 'rgba(255,255,255,0.05)'};
                                 color: ${note.active ? 'var(--primary-color)' : 'rgba(255,255,255,0.4)'};
-                                border: 1px solid ${note.active ? 'rgba(var(--primary-rgb), 0.3)' : 'rgba(255,255,255,0.1)'};
+                                ${note.active ? 'border: 1px solid rgba(var(--primary-rgb), 0.3);' : 'border: 1px solid rgba(255,255,255,0.1);'}
                             ">
                                 <i class="fas ${note.active ? 'fa-circle-check' : 'fa-circle-xmark'}" style="font-size: 10px;"></i>
                                 ${note.active ? 'Aktif' : 'Pasif'}
@@ -3485,7 +3505,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                     gap: 7px;
                                     padding: 7px 14px;
                                     border-radius: 10px;
-                                    border: 1px solid ${note.active ? 'rgba(255, 180, 0, 0.3)' : 'rgba(var(--primary-rgb), 0.3)'};
+                                    ${note.active ? 'border: 1px solid rgba(255, 180, 0, 0.3);' : 'border: 1px solid rgba(var(--primary-rgb), 0.3);'}
                                     background: ${note.active ? 'rgba(255, 180, 0, 0.08)' : 'rgba(var(--primary-rgb), 0.08)'};
                                     color: ${note.active ? '#f5a623' : 'var(--primary-color)'};
                                     cursor: pointer;
@@ -4351,3 +4371,187 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     };
 });
+
+    // Cast Sync Handler with Real-time Progress, Percentage & Stop Control
+    const btnSyncAllCast = document.getElementById('btnSyncAllCast');
+    const btnStopSyncCast = document.getElementById('btnStopSyncCast');
+    const castSyncProgressContainer = document.getElementById('castSyncProgressContainer');
+    const castSyncStatusText = document.getElementById('castSyncStatusText');
+    const castSyncPercentText = document.getElementById('castSyncPercentText');
+    const castSyncProgressBar = document.getElementById('castSyncProgressBar');
+    const castSyncDetailText = document.getElementById('castSyncDetailText');
+
+    let syncPollTimer = null;
+
+    function updateCastSyncUi(progress) {
+        if (!castSyncProgressContainer) return;
+
+        const isRunning = progress.status === 'running' || progress.status === 'stopping' || progress.isSyncing || progress.syncing;
+
+        if (isRunning) {
+            castSyncProgressContainer.style.display = 'block';
+            if (btnSyncAllCast) {
+                btnSyncAllCast.disabled = true;
+                btnSyncAllCast.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i> Senkronize Ediliyor...';
+            }
+            if (btnStopSyncCast) {
+                btnStopSyncCast.style.display = 'inline-flex';
+                if (progress.status === 'stopping') {
+                    btnStopSyncCast.disabled = true;
+                    btnStopSyncCast.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i> Durduruluyor...';
+                } else {
+                    btnStopSyncCast.disabled = false;
+                    btnStopSyncCast.innerHTML = '<i class="fas fa-stop-circle" style="margin-right: 8px;"></i> Senkronizasyonu Durdur';
+                }
+            }
+            if (castSyncPercentText) castSyncPercentText.textContent = `%${progress.percent || 0}`;
+            if (castSyncProgressBar) {
+                castSyncProgressBar.style.width = `${progress.percent || 0}%`;
+                castSyncProgressBar.style.background = 'linear-gradient(90deg, #3498db, #2ecc71)';
+            }
+            if (castSyncStatusText) {
+                if (progress.phase === 'photos') {
+                    castSyncStatusText.textContent = progress.currentItem ? `Fotoğraf İndiriliyor: ${progress.currentItem}` : 'Eksik Fotoğraflar İndiriliyor...';
+                } else if (progress.phase === 'productions') {
+                    castSyncStatusText.textContent = progress.currentItem ? `İşleniyor: ${progress.currentItem}` : 'Yapımlar Taranıyor...';
+                } else {
+                    castSyncStatusText.textContent = progress.currentItem || 'Senkronize Ediliyor...';
+                }
+                castSyncStatusText.style.color = '#3498db';
+            }
+            if (castSyncDetailText) {
+                if (progress.phase === 'photos') {
+                    if (progress.total > 0) {
+                        castSyncDetailText.textContent = `${progress.current || 0} / ${progress.total} eksik oyuncu fotoğrafı indiriliyor...`;
+                    } else {
+                        castSyncDetailText.textContent = 'Mevcut arşiv taranıyor, eksik fotoğraflar tespit ediliyor...';
+                    }
+                } else if (progress.phase === 'productions') {
+                    castSyncDetailText.textContent = `${progress.current || 0} / ${progress.total || 0} yapım incelendi (${progress.moviesSynced || 0} film, ${progress.seriesSynced || 0} dizi güncellendi)`;
+                } else {
+                    castSyncDetailText.textContent = 'Senkronizasyon hazırlanıyor, lütfen bekleyin...';
+                }
+            }
+        } else if (progress.status === 'completed') {
+            castSyncProgressContainer.style.display = 'block';
+            if (btnStopSyncCast) btnStopSyncCast.style.display = 'none';
+            if (castSyncPercentText) castSyncPercentText.textContent = '%100';
+            if (castSyncProgressBar) {
+                castSyncProgressBar.style.width = '100%';
+                castSyncProgressBar.style.background = '#2ecc71';
+            }
+            if (castSyncStatusText) {
+                castSyncStatusText.textContent = 'Senkronizasyon Başarıyla Tamamlandı!';
+                castSyncStatusText.style.color = '#2ecc71';
+            }
+            if (castSyncDetailText) {
+                castSyncDetailText.textContent = progress.message || `Toplam ${progress.total || 0} yapım tarandı.`;
+            }
+            if (btnSyncAllCast) {
+                btnSyncAllCast.disabled = false;
+                btnSyncAllCast.innerHTML = '<i class="fas fa-check" style="margin-right: 8px;"></i> Yeniden Senkronize Et';
+            }
+        } else if (progress.status === 'stopped') {
+            castSyncProgressContainer.style.display = 'block';
+            if (btnStopSyncCast) btnStopSyncCast.style.display = 'none';
+            if (castSyncStatusText) {
+                castSyncStatusText.textContent = 'Senkronizasyon Durduruldu.';
+                castSyncStatusText.style.color = '#e67e22';
+            }
+            if (castSyncDetailText) {
+                castSyncDetailText.textContent = progress.message || 'Kullanıcı tarafından durduruldu.';
+            }
+            if (btnSyncAllCast) {
+                btnSyncAllCast.disabled = false;
+                btnSyncAllCast.innerHTML = '<i class="fas fa-sync" style="margin-right: 8px;"></i> Yeniden Senkronize Et';
+            }
+        } else if (progress.status === 'error') {
+            castSyncProgressContainer.style.display = 'block';
+            if (btnStopSyncCast) btnStopSyncCast.style.display = 'none';
+            if (castSyncStatusText) {
+                castSyncStatusText.textContent = 'Hata: ' + (progress.message || 'Senkronizasyon başarısız.');
+                castSyncStatusText.style.color = '#e74c3c';
+            }
+            if (btnSyncAllCast) {
+                btnSyncAllCast.disabled = false;
+                btnSyncAllCast.innerHTML = '<i class="fas fa-sync" style="margin-right: 8px;"></i> Tekrar Dene';
+            }
+        }
+    }
+
+    async function pollCastSyncProgress() {
+        try {
+            const res = await fetch('/admin/sync-all-cast/progress');
+            if (!res.ok) return;
+            const progress = await res.json();
+            updateCastSyncUi(progress);
+
+            const isRunning = progress.status === 'running' || progress.status === 'stopping' || progress.isSyncing || progress.syncing;
+            if (isRunning) {
+                syncPollTimer = setTimeout(pollCastSyncProgress, 1000);
+            } else {
+                if (syncPollTimer) clearTimeout(syncPollTimer);
+            }
+        } catch (e) {
+            console.warn("Cast sync progress poll error:", e);
+        }
+    }
+
+    if (btnSyncAllCast) {
+        // Check if sync was already running when page loaded
+        pollCastSyncProgress();
+
+        btnSyncAllCast.addEventListener('click', async function () {
+            if (!confirm("Veritabanındaki tüm film ve dizilerin oyuncu kadrosu TMDB ve TVMaze üzerinden taranıp güncellenecektir. Bu işlem arka planda yürütülecek ve ilerleme yüzdesi canlı gösterilecektir. Başlatmak istiyor musunuz?")) {
+                return;
+            }
+
+            btnSyncAllCast.disabled = true;
+            btnSyncAllCast.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i> Başlatılıyor...';
+            if (btnStopSyncCast) {
+                btnStopSyncCast.style.display = 'inline-flex';
+                btnStopSyncCast.disabled = false;
+                btnStopSyncCast.innerHTML = '<i class="fas fa-stop-circle" style="margin-right: 8px;"></i> Senkronizasyonu Durdur';
+            }
+            if (castSyncProgressContainer) castSyncProgressContainer.style.display = 'block';
+            if (castSyncProgressBar) {
+                castSyncProgressBar.style.width = '0%';
+                castSyncProgressBar.style.background = 'linear-gradient(90deg, #3498db, #2ecc71)';
+            }
+            if (castSyncPercentText) castSyncPercentText.textContent = '%0';
+            if (castSyncStatusText) {
+                castSyncStatusText.textContent = 'Senkronizasyon Başlatılıyor...';
+                castSyncStatusText.style.color = '#3498db';
+            }
+
+            try {
+                const res = await fetch('/admin/sync-all-cast', { method: 'POST' });
+                if (!res.ok) throw new Error(await res.text());
+                if (syncPollTimer) clearTimeout(syncPollTimer);
+                pollCastSyncProgress();
+            } catch (err) {
+                console.error("Cast Sync Error:", err);
+                alert("Senkronizasyon başlatılamadı: " + (err.message || err));
+                btnSyncAllCast.disabled = false;
+                btnSyncAllCast.innerHTML = '<i class="fas fa-sync" style="margin-right: 8px;"></i> Tüm Oyuncuları Senkronize Et';
+                if (btnStopSyncCast) btnStopSyncCast.style.display = 'none';
+            }
+        });
+    }
+
+    if (btnStopSyncCast) {
+        btnStopSyncCast.addEventListener('click', async function () {
+            if (!confirm("Oyuncu senkronizasyonu durdurulsun mu? O ana kadar kaydedilen oyuncular ve indirilen fotoğraflar korunacaktır.")) {
+                return;
+            }
+            btnStopSyncCast.disabled = true;
+            btnStopSyncCast.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i> Durduruluyor...';
+            try {
+                await fetch('/admin/sync-all-cast/stop', { method: 'POST' });
+                if (syncPollTimer) clearTimeout(syncPollTimer);
+                setTimeout(pollCastSyncProgress, 200);
+            } catch (err) {
+                console.error("Cast Stop Error:", err);
+            }
+        });
+    }

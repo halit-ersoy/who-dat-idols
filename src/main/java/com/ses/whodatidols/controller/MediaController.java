@@ -2,6 +2,7 @@ package com.ses.whodatidols.controller;
 
 import com.ses.whodatidols.model.VideoSource;
 
+import com.ses.whodatidols.repository.ActorRepository;
 import com.ses.whodatidols.repository.VideoSourceRepository;
 import com.ses.whodatidols.repository.SystemSettingRepository;
 import com.ses.whodatidols.service.TrafficStatsService;
@@ -23,8 +24,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/media")
@@ -54,6 +57,9 @@ public class MediaController {
     @Value("${media.profile.images.path}")
     private String profileImagesPath;
 
+    @Value("${media.actor.images.path:D:\\SourceFiles\\mssql\\media\\images\\actors}")
+    private String actorImagesPath;
+
     @Value("${media.source.upcoming.path}")
     private String upcomingPath;
 
@@ -65,6 +71,7 @@ public class MediaController {
     private final VideoSourceRepository videoSourceRepository;
     private final SystemSettingRepository systemSettingRepository;
     private final TrafficStatsService trafficStatsService;
+    private final ActorRepository actorRepository;
 
     // Cache to avoid repeated content type probing
     private final Map<String, MediaType> mediaTypeCache = new ConcurrentHashMap<>();
@@ -74,11 +81,13 @@ public class MediaController {
     private final Map<UUID, UUID> parentSeriesIdCache = new ConcurrentHashMap<>();
 
     public MediaController(JdbcTemplate jdbcTemplate, VideoSourceRepository videoSourceRepository,
-            SystemSettingRepository systemSettingRepository, TrafficStatsService trafficStatsService) {
+            SystemSettingRepository systemSettingRepository, TrafficStatsService trafficStatsService,
+            ActorRepository actorRepository) {
         this.jdbcTemplate = jdbcTemplate;
         this.videoSourceRepository = videoSourceRepository;
         this.systemSettingRepository = systemSettingRepository;
         this.trafficStatsService = trafficStatsService;
+        this.actorRepository = actorRepository;
     }
 
     // --- 1. STATİK RESİM SUNUCUSU ---
@@ -135,6 +144,45 @@ public class MediaController {
                     .body(new UrlResource(java.util.Objects.requireNonNull(imagePath.toUri())));
         } catch (IOException e) {
             logger.error("Error serving profile image for id {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // --- 1.2 OYUNCU FOTOĞRAFI SUNUCUSU ---
+    @SuppressWarnings("null")
+    @GetMapping("/actor/{id}")
+    public ResponseEntity<Resource> getActorImage(@PathVariable("id") UUID id) {
+        logger.debug("Requesting actor image for id: {}", id);
+        try {
+            Path rootPath = Paths.get(actorImagesPath).toAbsolutePath().normalize();
+            Path imagePath = findExistingImage(rootPath, id);
+
+            // On-demand self-healing: if file does not exist on disk, attempt to restore it!
+            if (imagePath == null || !Files.exists(imagePath)) {
+                boolean restored = actorRepository.restoreActorPhoto(id);
+                if (restored) {
+                    imagePath = findExistingImage(rootPath, id);
+                }
+            }
+
+            if (imagePath == null || !Files.exists(imagePath)) {
+                return ResponseEntity.notFound().build();
+            }
+
+            MediaType mediaType = determineMediaType(imagePath);
+            if (mediaType == null) {
+                mediaType = MediaType.IMAGE_JPEG;
+            }
+
+            long lastModified = Files.getLastModifiedTime(imagePath).toMillis();
+
+            return ResponseEntity.ok()
+                    .contentType(mediaType)
+                    .lastModified(lastModified)
+                    .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
+                    .body(new UrlResource(Objects.requireNonNull(imagePath.toUri())));
+        } catch (IOException e) {
+            logger.error("Error serving actor image for id {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
