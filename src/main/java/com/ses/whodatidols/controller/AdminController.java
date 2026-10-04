@@ -33,6 +33,8 @@ import com.ses.whodatidols.repository.SecurityViolationRepository;
 import com.ses.whodatidols.repository.BannedIpRepository;
 
 import com.ses.whodatidols.viewmodel.CommentViewModel;
+import com.ses.whodatidols.model.ContentRequest;
+import com.ses.whodatidols.repository.ContentRequestRepository;
 
 import com.ses.whodatidols.service.CastSyncService;
 import com.ses.whodatidols.service.MovieService;
@@ -149,6 +151,7 @@ public class AdminController {
 
     private final AdService adService;
     private final CastSyncService castSyncService;
+    private final ContentRequestRepository contentRequestRepository;
 
 
 
@@ -203,7 +206,7 @@ public class AdminController {
 
             CacheManager cacheManager, SeriesRepository seriesRepository, TrafficStatsService trafficStatsService,
 
-            com.ses.whodatidols.util.FFmpegUtils ffmpegUtils, AdService adService, CastSyncService castSyncService) {
+            com.ses.whodatidols.util.FFmpegUtils ffmpegUtils, AdService adService, CastSyncService castSyncService, ContentRequestRepository contentRequestRepository) {
 
         this.movieService = movieService;
 
@@ -243,6 +246,7 @@ public class AdminController {
 
         this.adService = adService;
         this.castSyncService = castSyncService;
+        this.contentRequestRepository = contentRequestRepository;
     }
 
 
@@ -2638,6 +2642,57 @@ public class AdminController {
             return ResponseEntity.badRequest().body(Map.of("error", "İçerik bulunamadı"));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/content-requests")
+    public ResponseEntity<Map<String, Object>> getAdminContentRequests(
+            @RequestParam(value = "type", defaultValue = "all") String type,
+            @RequestParam(value = "status", defaultValue = "all") String status,
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "50") int size) {
+        try {
+            int offset = (Math.max(1, page) - 1) * size;
+            List<ContentRequest> items = contentRequestRepository.getRequestsForAdmin(type, status, search, size, offset);
+            int total = contentRequestRepository.countRequestsForAdmin(type, status, search);
+            int totalPages = (int) Math.ceil((double) total / size);
+
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("items", items);
+            resp.put("total", total);
+            resp.put("totalPages", totalPages);
+            resp.put("page", page);
+            return ResponseEntity.ok(resp);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/content-requests/{id}")
+    public ResponseEntity<Map<String, Object>> deleteAdminContentRequest(@PathVariable("id") UUID id) {
+        try {
+            boolean deleted = contentRequestRepository.deleteRequest(id);
+            if (deleted) {
+                return ResponseEntity.ok(Map.of("success", true, "message", "İstek başarıyla silindi."));
+            } else {
+                return ResponseEntity.status(404).body(Map.of("success", false, "message", "İstek bulunamadı."));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/content-requests/{id}/status")
+    public ResponseEntity<Map<String, Object>> updateAdminContentRequestStatus(
+            @PathVariable("id") UUID id,
+            @RequestParam("status") String status) {
+        try {
+            boolean updated = contentRequestRepository.updateStatus(id, status);
+            return ResponseEntity.ok(Map.of("success", updated));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
         }
     }
 }

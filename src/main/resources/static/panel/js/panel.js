@@ -49,6 +49,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 fetchViewStats();
             } else if (targetId === 'feedback-section') {
                 fetchFeedbacks();
+            } else if (targetId === 'content-requests-section') {
+                if (typeof window.fetchAdminContentRequests === 'function') window.fetchAdminContentRequests();
+                if (typeof window.updateAllDynamicSliders === 'function') {
+                    setTimeout(window.updateAllDynamicSliders, 50);
+                }
             } else if (targetId === 'security-violations-section') {
                 fetchSecurityViolations();
             } else if (targetId === 'banned-ips-section') {
@@ -304,7 +309,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const translatorHiddenSections = [
                     'hero-section', 'ad-section', 'calendar-section', 'upcoming-section',
                     'view-management-section', 'comments-section', 'user-section',
-                    'announcement-section', 'update-notes-section', 'feedback-section',
+                    'announcement-section', 'update-notes-section', 'feedback-section', 'content-requests-section',
                     'security-violations-section', 'banned-ips-section', 'system-settings-section'
                 ];
                 translatorHiddenSections.forEach(section => {
@@ -3134,18 +3139,33 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Close all other dropdowns
         document.querySelectorAll('.premium-role-select').forEach(el => el.classList.remove('active'));
+        if (typeof window.closeAdminStatusDropdown === 'function') {
+            window.closeAdminStatusDropdown();
+        }
 
         if (!isActive) {
             parent.classList.add('active');
         }
     };
 
-    // Global listener to close dropdowns when clicking outside
+    // Global listener to close dropdowns when clicking outside or scrolling
     document.addEventListener('click', function (e) {
+        if (!e.target.closest('#adminStatusFloatingDropdown') && !e.target.closest('.premium-status-select')) {
+            if (typeof window.closeAdminStatusDropdown === 'function') {
+                window.closeAdminStatusDropdown();
+            }
+        }
         if (!e.target.closest('.premium-role-select')) {
             document.querySelectorAll('.premium-role-select').forEach(el => el.classList.remove('active'));
         }
     });
+
+    window.addEventListener('scroll', function () {
+        if (typeof window.closeAdminStatusDropdown === 'function') {
+            window.closeAdminStatusDropdown();
+        }
+        document.querySelectorAll('.premium-role-select.active').forEach(el => el.classList.remove('active'));
+    }, true);
 
     window.toggleUserBan = function (userId, ban, reason) {
         const formData = new URLSearchParams();
@@ -3717,7 +3737,249 @@ document.addEventListener('DOMContentLoaded', function () {
         fetchFeedbacks();
     }
 
+    
     /* ===========================================================
+       İÇERİK İSTEKLERİ (CONTENT REQUESTS)
+       =========================================================== */
+    let allContentRequests = [];
+
+    window.fetchAdminContentRequests = function () {
+        const tbody = document.getElementById('contentRequestsTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:rgba(255,255,255,0.4); padding:30px;">Yükleniyor...</td></tr>';
+
+        const typeFilter = document.querySelector('input[name="crTypeFilter"]:checked')?.value || 'all';
+        const statusFilter = document.querySelector('input[name="crStatusFilter"]:checked')?.value || 'all';
+        const searchVal = document.getElementById('contentRequestsSearch')?.value?.trim() || '';
+
+        const url = `/admin/content-requests?type=${encodeURIComponent(typeFilter)}&status=${encodeURIComponent(statusFilter)}&search=${encodeURIComponent(searchVal)}&size=100`;
+
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                allContentRequests = data.items || [];
+                const countEl = document.getElementById('contentRequestsCount');
+                if (countEl) countEl.textContent = `Toplam: ${data.total || allContentRequests.length} istek`;
+                renderAdminContentRequests(allContentRequests);
+            })
+            .catch(err => {
+                console.error('Content requests fetch error:', err);
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#e74c3c; padding:30px;">İstekler yüklenirken hata oluştu.</td></tr>';
+            });
+    };
+
+    function renderAdminContentRequests(items) {
+        const tbody = document.getElementById('contentRequestsTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (!items || items.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:35px; color:rgba(255,255,255,0.35);">Kayıtlı içerik isteği bulunamadı.</td></tr>';
+            return;
+        }
+
+        items.forEach(req => {
+            const tr = document.createElement('tr');
+            const date = req.createdAt ? new Date(req.createdAt).toLocaleString('tr-TR') : '-';
+            const isMovie = req.contentType === 'movie';
+            const typeLabel = isMovie ? 'Film' : 'Dizi';
+            const typeColor = isMovie ? '#ffc107' : '#82b1ff';
+            const typeBg = isMovie ? 'rgba(255, 171, 0, 0.15)' : 'rgba(41, 121, 255, 0.15)';
+
+            const poster = req.posterUrl ? `<img src="${req.posterUrl}" style="width:36px; height:50px; object-fit:cover; border-radius:6px; background:#1c1e27;" alt="Poster" onerror="this.style.display='none';">` : `<div style="width:36px; height:50px; background:#222; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#555; font-size:12px;"><i class="fas fa-image"></i></div>`;
+
+            const escapedTitle = (req.title || '').replace(/'/g, "\\'");
+            const noteText = req.description ? (req.description.length > 80 ? req.description.substring(0, 80) + '...' : req.description) : '-';
+
+            const status = (req.status || 'PENDING').toUpperCase();
+            let statusLabel = 'Beklemede';
+            if (status === 'IN_REVIEW') statusLabel = 'İnceleniyor';
+            else if (status === 'COMPLETED' || status === 'APPROVED') statusLabel = 'Eklendi';
+
+            tr.innerHTML = `
+                <td>${poster}</td>
+                <td>
+                    <div style="font-weight:600; color:#fff; font-size:0.95rem;">${req.title || '-'}</div>
+                    <div style="font-size:0.75rem; color:rgba(255,255,255,0.45); margin-top:2px;">
+                        ${req.releaseYear ? req.releaseYear + ' • ' : ''}${req.tmdbId ? 'TMDB #' + req.tmdbId : (req.tvmazeId ? 'TVmaze #' + req.tvmazeId : 'Manuel')}
+                    </div>
+                </td>
+                <td>
+                    <span style="background:${typeBg}; color:${typeColor}; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:700; text-transform:uppercase;">
+                        ${typeLabel}
+                    </span>
+                </td>
+                <td>
+                    <span style="font-weight:600; color:rgba(255,255,255,0.85); font-size:0.85rem;">@${req.userNickname || '-'}</span>
+                </td>
+                <td>
+                    <span style="background:rgba(30, 215, 96, 0.15); color:var(--primary-color, #1ed760); padding:3px 10px; border-radius:12px; font-weight:700; font-size:0.85rem; border:1px solid rgba(30, 215, 96, 0.3);">
+                        +${req.voteCount || 0}
+                    </span>
+                </td>
+                <td style="font-size:0.82rem; color:rgba(255,255,255,0.65); max-width:240px; word-break:break-word;" title="${req.description || ''}">
+                    ${noteText}
+                </td>
+                <td>
+                    <div class="premium-status-select">
+                        <div class="status-badge-display" onclick="window.toggleAdminStatusDropdown(this, '${req.id}', '${status}', event)" data-status="${status}">
+                            <span>${statusLabel}</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                </td>
+                <td style="font-size:0.8rem; color:rgba(255,255,255,0.4); white-space:nowrap;">${date}</td>
+                <td style="text-align: right; white-space: nowrap;">
+                    <button class="btn btn-sm btn-danger" onclick="window.deleteAdminContentRequest('${req.id}', '${escapedTitle}')" title="İsteği Sil"
+                        style="padding:6px 12px; border-radius:8px; font-size:12px;">
+                        <i class="fas fa-trash-alt"></i> Sil
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function getOrCreateStatusFloatingDropdown() {
+        let dropdown = document.getElementById('adminStatusFloatingDropdown');
+        if (!dropdown) {
+            dropdown = document.createElement('div');
+            dropdown.id = 'adminStatusFloatingDropdown';
+            dropdown.className = 'status-dropdown-menu';
+            document.body.appendChild(dropdown);
+        }
+        return dropdown;
+    }
+
+    window.toggleAdminStatusDropdown = function (badgeElement, reqId, currentStatus, event) {
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+
+        const dropdown = getOrCreateStatusFloatingDropdown();
+        const parent = badgeElement.parentElement;
+        const isCurrentOpen = dropdown.style.display === 'flex' && dropdown.dataset.targetId === reqId;
+
+        // Close any open status and role dropdowns
+        window.closeAdminStatusDropdown();
+        document.querySelectorAll('.premium-role-select').forEach(el => el.classList.remove('active'));
+
+        if (!isCurrentOpen) {
+            parent.classList.add('active');
+            dropdown.dataset.targetId = reqId;
+
+            dropdown.innerHTML = `
+                <div class="status-option ${currentStatus === 'PENDING' ? 'active' : ''}" data-status="PENDING" onclick="window.selectAdminStatus('${reqId}', 'PENDING')">Beklemede</div>
+                <div class="status-option ${currentStatus === 'IN_REVIEW' ? 'active' : ''}" data-status="IN_REVIEW" onclick="window.selectAdminStatus('${reqId}', 'IN_REVIEW')">İnceleniyor</div>
+                <div class="status-option ${currentStatus === 'COMPLETED' || currentStatus === 'APPROVED' ? 'active' : ''}" data-status="COMPLETED" onclick="window.selectAdminStatus('${reqId}', 'COMPLETED')">Eklendi</div>
+            `;
+
+            dropdown.style.display = 'flex';
+
+            const rect = badgeElement.getBoundingClientRect();
+            dropdown.style.left = rect.left + 'px';
+            dropdown.style.width = Math.max(rect.width, 130) + 'px';
+
+            const dropdownHeight = dropdown.offsetHeight || 135;
+            if (rect.bottom + dropdownHeight + 10 > window.innerHeight && rect.top > dropdownHeight) {
+                dropdown.style.top = (rect.top - dropdownHeight - 6) + 'px';
+            } else {
+                dropdown.style.top = (rect.bottom + 6) + 'px';
+            }
+        }
+    };
+
+    window.closeAdminStatusDropdown = function () {
+        const dropdown = document.getElementById('adminStatusFloatingDropdown');
+        if (dropdown) {
+            dropdown.style.display = 'none';
+            dropdown.dataset.targetId = '';
+        }
+        document.querySelectorAll('.premium-status-select.active').forEach(el => el.classList.remove('active'));
+    };
+
+    window.selectAdminStatus = function (reqId, newStatus) {
+        window.closeAdminStatusDropdown();
+        window.updateAdminContentRequestStatus(reqId, newStatus);
+    };
+
+    window.deleteAdminContentRequest = function (id, title) {
+        if (!confirm(`"${title}" adlı içerik isteğini silmek istediğinize emin misiniz?`)) return;
+        fetch(`/admin/content-requests/${id}`, { method: 'DELETE' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.fetchAdminContentRequests();
+                } else {
+                    alert('Hata: ' + (data.message || 'Silinemedi'));
+                }
+            })
+            .catch(err => alert('Hata: ' + err));
+    };
+
+    window.updateAdminContentRequestStatus = function (id, status) {
+        window.closeAdminStatusDropdown();
+        fetch(`/admin/content-requests/${id}/status?status=${encodeURIComponent(status)}`, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    alert('Durum güncellenemedi: ' + (data.message || ''));
+                }
+                window.fetchAdminContentRequests();
+            })
+            .catch(err => {
+                console.error('Status update error:', err);
+                alert('Durum güncellenirken hata oluştu.');
+                window.fetchAdminContentRequests();
+            });
+    };
+
+    // Live search & filters for Content Requests
+    const contentRequestsSearchInput = document.getElementById('contentRequestsSearch');
+    let crSearchTimeout = null;
+    if (contentRequestsSearchInput) {
+        contentRequestsSearchInput.addEventListener('input', function () {
+            clearTimeout(crSearchTimeout);
+            crSearchTimeout = setTimeout(() => {
+                window.fetchAdminContentRequests();
+            }, 300);
+        });
+    }
+
+    document.querySelectorAll('input[name="crTypeFilter"]').forEach(radio => {
+        radio.addEventListener('change', () => window.fetchAdminContentRequests());
+    });
+
+    document.querySelectorAll('input[name="crStatusFilter"]').forEach(radio => {
+        radio.addEventListener('change', () => window.fetchAdminContentRequests());
+    });
+
+    const refreshContentRequestsBtn = document.getElementById('refreshContentRequestsBtn');
+    if (refreshContentRequestsBtn) {
+        refreshContentRequestsBtn.addEventListener('click', () => window.fetchAdminContentRequests());
+    }
+
+    document.querySelectorAll('.nav-link').forEach(link => {
+        if (link.getAttribute('data-section') === 'content-requests-section') {
+            link.addEventListener('click', () => {
+                window.fetchAdminContentRequests();
+                if (typeof window.updateAllDynamicSliders === 'function') {
+                    setTimeout(window.updateAllDynamicSliders, 50);
+                }
+            });
+        }
+    });
+
+    if (window.location.hash === '#content-requests-section') {
+        window.fetchAdminContentRequests();
+        if (typeof window.updateAllDynamicSliders === 'function') {
+            setTimeout(window.updateAllDynamicSliders, 100);
+        }
+    }
+
+
+/* ===========================================================
        GÜVENLİK İHLAL KAYITLARI (SECURITY VIOLATIONS)
        =========================================================== */
     let selectedViolationIds = new Set();

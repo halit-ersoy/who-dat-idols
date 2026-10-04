@@ -385,10 +385,17 @@
             // Re-calc when switching sections since display:none breaks offsetWidth
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.addEventListener('click', () => {
-                    if (link.getAttribute('data-section') === 'archive-section') {
+                    const sec = link.getAttribute('data-section');
+                    if (sec === 'archive-section' || sec === 'content-requests-section') {
                         setTimeout(window.updateAllDynamicSliders, 50); // slight delay to allow display block to apply
                     }
                 });
+            });
+
+            window.addEventListener('resize', () => {
+                if (typeof window.updateAllDynamicSliders === 'function') {
+                    window.updateAllDynamicSliders();
+                }
             });
         });
     </script>
@@ -449,6 +456,9 @@
                 </a>
                 <a href="#feedback-section" class="nav-link" data-section="feedback-section">
                     <i class="fas fa-comment-dots"></i> Geri Bildirimler
+                </a>
+                <a href="#content-requests-section" class="nav-link" data-section="content-requests-section">
+                    <i class="fas fa-clapperboard"></i> İçerik İstekleri
                 </a>
                 <a href="#system-settings-section" class="nav-link" data-section="system-settings-section">
                     <i class="fas fa-tools"></i> Sistem Ayarları
@@ -1681,6 +1691,93 @@
                             <tbody id="feedbackTableBody">
                                 <tr>
                                     <td colspan="5" style="text-align:center; color:rgba(255,255,255,0.4);">
+                                        Yükleniyor...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            
+            <!-- CONTENT REQUESTS SECTION -->
+            <section id="content-requests-section" class="admin-section" style="display: none;">
+                <!-- Content Request Filter Switch -->
+                <div class="archive-filters-wrapper"
+                    style="display: flex; gap: 20px; align-items: center; justify-content: flex-start; margin-bottom: 20px; flex-wrap: wrap;">
+
+                    <div class="filter-switch-container" style="margin: 0;">
+                        <div class="dynamic-switch">
+                            <input type="radio" id="crTypeAll" name="crTypeFilter" value="all" checked>
+                            <label for="crTypeAll">Tümü</label>
+
+                            <input type="radio" id="crTypeSeries" name="crTypeFilter" value="series">
+                            <label for="crTypeSeries">Diziler</label>
+
+                            <input type="radio" id="crTypeMovies" name="crTypeFilter" value="movie">
+                            <label for="crTypeMovies">Filmler</label>
+
+                            <div class="dynamic-slider"></div>
+                        </div>
+                    </div>
+
+                    <div class="filter-switch-container" style="margin: 0;">
+                        <div class="dynamic-switch">
+                            <input type="radio" id="crStatusAll" name="crStatusFilter" value="all" checked>
+                            <label for="crStatusAll">Tüm Durumlar</label>
+
+                            <input type="radio" id="crStatusPending" name="crStatusFilter" value="PENDING">
+                            <label for="crStatusPending">Beklemede</label>
+
+                            <input type="radio" id="crStatusReview" name="crStatusFilter" value="IN_REVIEW">
+                            <label for="crStatusReview">İnceleniyor</label>
+
+                            <input type="radio" id="crStatusCompleted" name="crStatusFilter" value="COMPLETED">
+                            <label for="crStatusCompleted">Eklendi</label>
+
+                            <div class="dynamic-slider"></div>
+                        </div>
+                    </div>
+
+                    <div style="margin-left: auto; display: flex; gap: 10px; align-items: center; flex: 1; justify-content: flex-end; min-width: 260px;">
+                        <div style="position: relative; width: 100%; max-width: 320px;">
+                            <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.4); font-size: 0.85rem;"></i>
+                            <input type="text" id="contentRequestsSearch" placeholder="İçerik adı, kullanıcı veya notta ara..."
+                                style="width: 100%; padding: 8px 14px 8px 34px; border-radius: 10px;
+                                       background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+                                       color: #fff; font-size: 0.88rem; outline: none; transition: border-color 0.2s;">
+                        </div>
+                        <button id="refreshContentRequestsBtn" class="btn btn-sm btn-secondary" title="Yenile" style="white-space: nowrap; height: 36px; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-sync-alt"></i> <span>Yenile</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"
+                        style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                        <h2><i class="fas fa-clapperboard"></i> İçerik İstekleri</h2>
+                        <span id="contentRequestsCount" style="font-size: 0.85rem; color: rgba(255,255,255,0.5);"></span>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="admin-table" id="contentRequestsTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">Afiş</th>
+                                    <th>İçerik Adı</th>
+                                    <th>Tür</th>
+                                    <th>İsteyen</th>
+                                    <th>Oy</th>
+                                    <th>Not / Açıklama</th>
+                                    <th>Durum</th>
+                                    <th>Tarih</th>
+                                    <th style="text-align: right;">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contentRequestsTableBody">
+                                <tr>
+                                    <td colspan="9" style="text-align:center; color:rgba(255,255,255,0.4);">
                                         Yükleniyor...</td>
                                 </tr>
                             </tbody>
