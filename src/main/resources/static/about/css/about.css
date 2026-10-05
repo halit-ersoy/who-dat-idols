@@ -2,12 +2,12 @@
    Who Dat Idols? - About Page Styles
    ========================================================================== */
 
-@import url('/elements/variables.css');
-@import url('/elements/base.css');
-@import url('/elements/header.css');
-@import url('/elements/footer.css');
-@import url('/elements/animations.css');
-@import url('/elements/scrool.css');
+@import url('../../elements/variables.css');
+@import url('../../elements/base.css');
+@import url('../../elements/header.css');
+@import url('../../elements/footer.css');
+@import url('../../elements/animations.css');
+@import url('../../elements/scrool.css');
 
 /* Page Base & Glow */
 body {
@@ -80,6 +80,7 @@ header {
     align-items: center;
     justify-content: center;
     position: relative;
+    /*noinspection CssUnknownTarget*/
     background-image: url('/media/static/image/background-2.jpg');
     background-size: cover;
     background-position: center;
@@ -461,7 +462,7 @@ header {
 
 /* ==========================================================================
    Features Section (Why Choose Us)
-   ========================================================================== */
+   ========================================================================= */
 .features-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
