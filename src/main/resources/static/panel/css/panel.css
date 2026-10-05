@@ -3539,3 +3539,274 @@ input[type='checkbox']:hover {
         display: none;
     }
 }
+
+
+/* ==========================================================================
+   DISTINCT FORM INPUTS, TEXTAREAS & CONTROLS BORDERS
+   ========================================================================== */
+
+/* Universal crisp and elegant border for text/select/textarea fields ONLY */
+.form-group input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.form-group select,
+.form-group textarea,
+.admin-form input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.admin-form select,
+.admin-form textarea,
+.form-control,
+.search-archive-wrapper input,
+.search-select-wrapper input,
+.url-input-wrapper input,
+.input-with-action input,
+.source-panel-frame input,
+.ep-num-group input,
+.custom-season-item input,
+.table-filter-bar input,
+.table-filter-bar select,
+.filter-select,
+.table-search-input,
+.modal input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.modal select,
+.modal textarea {
+    width: 100%;
+    background-color: rgba(14, 14, 18, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    border-radius: 10px !important;
+    padding: 13px 16px !important;
+    color: #ffffff !important;
+    font-family: var(--font-body) !important;
+    font-size: 0.92rem !important;
+    outline: none !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Distinct hover boundary */
+.form-group input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):hover,
+.form-group select:hover,
+.form-group textarea:hover,
+.admin-form input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):hover,
+.admin-form select:hover,
+.admin-form textarea:hover,
+.form-control:hover,
+.search-archive-wrapper input:hover,
+.search-select-wrapper input:hover,
+.url-input-wrapper input:hover,
+.input-with-action input:hover,
+.source-panel-frame input:hover,
+.ep-num-group input:hover,
+.custom-season-item input:hover,
+.table-filter-bar input:hover,
+.table-filter-bar select:hover,
+.filter-select:hover,
+.table-search-input:hover,
+.modal input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):hover,
+.modal select:hover,
+.modal textarea:hover {
+    border-color: rgba(255, 255, 255, 0.32) !important;
+    background-color: rgba(22, 22, 28, 0.95) !important;
+}
+
+/* Focus boundary with glowing theme ring */
+.form-group input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+.form-group select:focus,
+.form-group textarea:focus,
+.admin-form input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+.admin-form select:focus,
+.admin-form textarea:focus,
+.form-control:focus,
+.search-archive-wrapper input:focus,
+.search-select-wrapper input:focus,
+.url-input-wrapper input:focus,
+.input-with-action input:focus,
+.source-panel-frame input:focus,
+.ep-num-group input:focus,
+.custom-season-item input:focus,
+.table-filter-bar input:focus,
+.table-filter-bar select:focus,
+.filter-select:focus,
+.table-search-input:focus,
+.modal input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+.modal select:focus,
+.modal textarea:focus {
+    border-color: var(--primary) !important;
+    background-color: #16161e !important;
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.22), inset 0 2px 5px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* ==========================================================================
+   TOGGLE SWITCH STYLES (.switch, .slider.round, .toggle-switch-wrapper)
+   ========================================================================== */
+
+.toggle-switch-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    user-select: none;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 52px;
+    height: 28px;
+    flex-shrink: 0;
+    margin: 0 !important;
+    cursor: pointer;
+}
+
+/* Completely reset and hide checkbox inside .switch */
+.switch input[type="checkbox"],
+.switch input {
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    position: absolute !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    pointer-events: none !important;
+}
+
+/* The slider background track */
+.switch .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35);
+}
+
+.switch .slider.round {
+    border-radius: 30px;
+}
+
+/* Slider knob/thumb */
+.switch .slider:before,
+.switch .slider.round:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+
+/* Checked state - primary theme colored track */
+.switch input:checked + .slider {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 12px rgba(var(--primary-rgb), 0.35);
+}
+
+/* Checked state - knob moves right */
+.switch input:checked + .slider:before,
+.switch input:checked + .slider.round:before {
+    transform: translateX(24px);
+    background-color: #000000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Hover effects */
+.switch:hover .slider {
+    border-color: rgba(255, 255, 255, 0.45);
+}
+
+.switch:hover input:checked + .slider {
+    border-color: var(--primary-hover, var(--primary));
+    box-shadow: 0 0 16px rgba(var(--primary-rgb), 0.5);
+}
+
+#announcementStatusText {
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    transition: color 0.2s ease;
+}
+
+/* Input with icon alignment */
+.input-with-icon {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.input-with-icon i {
+    position: absolute;
+    left: 16px;
+    color: var(--text-dim);
+    pointer-events: none;
+    font-size: 0.95rem;
+    transition: color 0.2s ease;
+    z-index: 2;
+}
+
+.input-with-icon input {
+    padding-left: 44px !important;
+}
+
+.input-with-icon:focus-within i {
+    color: var(--primary);
+}
+
+/* File Upload Containers */
+.file-label {
+    background: rgba(16, 16, 20, 0.65) !important;
+    border: 2px dashed rgba(255, 255, 255, 0.22) !important;
+    border-radius: 14px !important;
+}
+
+.file-label:hover {
+    border-color: var(--primary) !important;
+    background: rgba(var(--primary-rgb), 0.05) !important;
+}
+
+/* Poster Preview Box */
+.poster-preview {
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    background: rgba(14, 14, 18, 0.8) !important;
+}
+
+/* Cards & Surfaces boundary enhancement */
+.series-selection-container {
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.series-select-card {
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    background: rgba(18, 18, 22, 0.8) !important;
+}
+
+.series-select-card:hover {
+    border-color: rgba(var(--primary-rgb), 0.4) !important;
+}
+
+.episode-builder-box {
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+}
+
+.ep-row {
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    background: rgba(18, 18, 22, 0.7) !important;
+}
+
+.ep-frame-item {
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    background: rgba(12, 12, 16, 0.7) !important;
+}
+
+.ep-frame-item:hover {
+    border-color: rgba(var(--primary-rgb), 0.4) !important;
+}
