@@ -252,8 +252,12 @@
             if (!header.querySelector('.toggle-indicator')) {
                 const icon = document.createElement('i');
                 icon.className = 'fas fa-chevron-down toggle-indicator';
-                // Başlığın içine, action butonundan önce ekle
-                header.insertBefore(icon, header.querySelector('.list-actions'));
+                const actions = header.querySelector('.list-actions');
+                if (actions) {
+                    actions.appendChild(icon);
+                } else {
+                    header.appendChild(icon);
+                }
             }
 
             const content = wrapper.querySelector('.list-content');
@@ -390,7 +394,10 @@
             ${escapeHtml(list.name)} 
             <span class="video-count">(${count} video)</span>
           </h3>
-          <button class="list-action-btn edit-list-btn" title="Listeyi Düzenle"><i class="fas fa-pen"></i></button>
+          <div class="list-actions">
+            <button class="list-action-btn edit-list-btn" title="Listeyi Düzenle"><i class="fas fa-pen"></i></button>
+            <i class="fas fa-chevron-down toggle-indicator"></i>
+          </div>
         </div>
         <div class="list-content">
           <div class="list-content-inner">
