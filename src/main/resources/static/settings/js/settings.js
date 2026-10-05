@@ -61,7 +61,7 @@ async function setupProfileSection() {
         avatarEl.style.backgroundImage = `url('${profileImgUrl}')`;
         avatarEl.style.color = "transparent";
         avatarEl.style.backgroundColor = "transparent";
-        if (removePhotoBtn) removePhotoBtn.style.display = 'block';
+        if (removePhotoBtn) removePhotoBtn.style.display = 'inline-flex';
     };
     imgTest.onerror = () => {
         avatarEl.style.backgroundImage = 'none';
@@ -601,6 +601,8 @@ function setupProfilePhotoUpload(userData) {
                             // Load new avatar immediately
                             userAvatar.style.backgroundImage = `url('${data.imageUrl}')`;
                             userAvatar.style.color = "transparent";
+                            const removeBtn = document.getElementById('remove-photo-btn');
+                            if (removeBtn) removeBtn.style.display = 'inline-flex';
 
                             setTimeout(() => {
                                 closeModalFunc();
