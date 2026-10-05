@@ -3737,28 +3737,46 @@ input[type='checkbox']:hover {
 
 /* Input with icon alignment */
 .input-with-icon {
-    position: relative;
-    width: 100%;
-    display: flex;
-    align-items: center;
+    position: relative !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
 }
 
+.input-with-icon > i,
 .input-with-icon i {
-    position: absolute;
-    left: 16px;
-    color: var(--text-dim);
-    pointer-events: none;
-    font-size: 0.95rem;
-    transition: color 0.2s ease;
-    z-index: 2;
+    position: absolute !important;
+    left: 15px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    color: var(--text-dim) !important;
+    pointer-events: none !important;
+    font-size: 0.95rem !important;
+    transition: color 0.2s ease !important;
+    z-index: 5 !important;
+    line-height: 1 !important;
 }
 
-.input-with-icon input {
+.input-with-icon input,
+.input-with-icon input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.admin-form .input-with-icon input,
+.admin-form .input-with-icon input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.form-group .input-with-icon input,
+.form-group .input-with-icon input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.url-input-wrapper .input-with-icon input,
+.url-input-wrapper .input-with-icon input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.url-input-wrapper input,
+.source-inputs .input-with-icon input,
+.source-inputs .input-with-icon input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.premium-source-row .input-with-icon input,
+.search-filter-box.input-with-icon input,
+.search-filter-box input {
     padding-left: 44px !important;
 }
 
+.input-with-icon:focus-within > i,
 .input-with-icon:focus-within i {
-    color: var(--primary);
+    color: var(--primary) !important;
 }
 
 /* File Upload Containers */

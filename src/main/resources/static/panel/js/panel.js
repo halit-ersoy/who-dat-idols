@@ -1655,15 +1655,15 @@ document.addEventListener('DOMContentLoaded', function () {
                         let fUrl = fUrlInput ? fUrlInput.value.trim() : '';
 
                         if (fUrl) {
-                            const match = fUrl.match(/src=["']([^"']+)["']/i);
-                            if (match) fUrl = match[1];
+                            fUrl = extractUrlFromIframeOrLink(fUrl);
+                            const finalName = fName || getSourceNameFromUrl(fUrl) || '';
 
                             await fetch('/admin/add-source', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                     contentId: episodeId,
-                                    sourceName: fName || `Frame ${sortIdx + 1}`,
+                                    sourceName: finalName,
                                     sourceUrl: fUrl,
                                     sortOrder: sortIdx++
                                 })
@@ -1891,6 +1891,97 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     // -------------------------------------------------------------
+    // SOURCE & FRAME URL / NAME AUTO-DETECTION HELPERS
+    // -------------------------------------------------------------
+    function extractUrlFromIframeOrLink(rawStr) {
+        if (!rawStr) return '';
+        let val = rawStr.trim();
+        if (val.toLowerCase().includes('<iframe') && val.toLowerCase().includes('src=')) {
+            const match = val.match(/src=["']([^"']+)["']/i);
+            if (match && match[1]) {
+                val = match[1].trim();
+            }
+        }
+        if (val.startsWith('//')) {
+            val = 'https:' + val;
+        }
+        return val;
+    }
+    window.extractUrlFromIframeOrLink = extractUrlFromIframeOrLink;
+
+    function getSourceNameFromUrl(urlStr) {
+        if (!urlStr) return '';
+        let url = extractUrlFromIframeOrLink(urlStr);
+        if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('//')) {
+            url = 'https://' + url;
+        }
+        try {
+            const parsedUrl = new URL(url);
+            const hostname = parsedUrl.hostname.toLowerCase();
+            if (hostname.includes('vidmoly')) return 'VID';
+            if (hostname.includes('ok.ru') || hostname.includes('odnoklassniki')) return 'OKRU';
+            if (hostname.includes('vk.com') || hostname.includes('vkvideo.ru') || hostname.includes('vk.ru')) return 'VK';
+            if (hostname.includes('abyssplayer') || hostname.includes('short.icu')) return 'ABS';
+            if (hostname.includes('videa.hu') || hostname.includes('videa')) return 'VIDEA';
+            if (hostname.includes('filemoon')) return 'FM';
+            if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) return 'YOUTUBE';
+            if (hostname.includes('dood') || hostname.includes('ds2play')) return 'DOOD';
+            if (hostname.includes('supervideo')) return 'SUPER';
+            if (hostname.includes('streamtape')) return 'STREAMTAPE';
+            if (hostname.includes('upstream')) return 'UPSTREAM';
+            if (hostname.includes('uqload')) return 'UQLOAD';
+            if (hostname.includes('mixdrop')) return 'MIXDROP';
+            if (hostname.includes('mp4upload')) return 'MP4UPLOAD';
+            if (hostname.includes('fembed')) return 'FEMBED';
+            if (hostname.includes('sendvid')) return 'SENDVID';
+            if (hostname.includes('streamwish')) return 'WISH';
+            if (hostname.includes('lulustream')) return 'LULU';
+
+            let cleanHost = hostname.replace(/^www\./, '');
+            let parts = cleanHost.split('.');
+            if (parts.length > 1) {
+                let domainIndex = parts.length - 2;
+                if (parts.length >= 3) {
+                    const secondToLast = parts[parts.length - 2];
+                    if (['co', 'com', 'net', 'org', 'gov', 'edu', 'web', 'com-tr'].includes(secondToLast)) {
+                        domainIndex = parts.length - 3;
+                    }
+                }
+                if (domainIndex >= 0) {
+                    return parts[domainIndex].toUpperCase();
+                }
+                return parts[0].toUpperCase();
+            }
+            return hostname.toUpperCase();
+        } catch (err) {
+            return '';
+        }
+    }
+    window.getSourceNameFromUrl = getSourceNameFromUrl;
+
+    function autoFillSourceName(urlInp, nameInp) {
+        const urlVal = urlInp.value.trim();
+        if (!urlVal) return;
+        const detectedName = getSourceNameFromUrl(urlVal);
+        if (detectedName) {
+            const currentName = nameInp.value.trim();
+            const previousAutoValue = nameInp.dataset.autoValue || '';
+            const isGenericDefault = !currentName ||
+                currentName === previousAutoValue ||
+                currentName.toLowerCase() === 'ana frame' ||
+                currentName.toLowerCase() === 'ana kaynak' ||
+                /^frame\s*\d*$/i.test(currentName) ||
+                /^kaynak\s*\d*$/i.test(currentName);
+
+            if (isGenericDefault) {
+                nameInp.value = detectedName;
+                nameInp.dataset.autoValue = detectedName;
+            }
+        }
+    }
+    window.autoFillSourceName = autoFillSourceName;
+
+    // -------------------------------------------------------------
     // EPISODE FRAME MANAGEMENT (MULTIPLE FRAMES PER EPISODE)
     // -------------------------------------------------------------
     window.addFrameToEpisodeRow = function (rowId, presetName, presetUrl) {
@@ -1899,7 +1990,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const frameId = 'fr_' + Math.random().toString(36).substr(2, 9);
         const count = list.querySelectorAll('.ep-frame-item').length + 1;
-        const defaultName = presetName || (count === 1 ? 'Ana Frame' : `Frame ${count}`);
+        const defaultName = presetName || '';
 
         const itemDiv = document.createElement('div');
         itemDiv.className = 'ep-frame-item';
@@ -1920,6 +2011,39 @@ document.addEventListener('DOMContentLoaded', function () {
                 </button>
             </div>
         `;
+
+        const urlInput = itemDiv.querySelector('.ep-frame-url');
+        const nameInput = itemDiv.querySelector('.ep-frame-name');
+
+        function handleFrameInput(inputEl) {
+            let val = inputEl.value.trim();
+            if (val.toLowerCase().includes('<iframe') && val.toLowerCase().includes('src=')) {
+                inputEl.value = extractUrlFromIframeOrLink(val);
+            }
+            autoFillSourceName(inputEl, nameInput);
+        }
+
+        urlInput.addEventListener('paste', function (e) {
+            const pastedText = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+            if (pastedText.toLowerCase().includes('<iframe') && pastedText.toLowerCase().includes('src=')) {
+                e.preventDefault();
+                const extractedUrl = extractUrlFromIframeOrLink(pastedText);
+                this.value = extractedUrl;
+                autoFillSourceName(this, nameInput);
+            } else {
+                setTimeout(() => {
+                    handleFrameInput(this);
+                }, 30);
+            }
+        });
+
+        urlInput.addEventListener('input', function () {
+            handleFrameInput(this);
+        });
+
+        if (presetUrl) {
+            handleFrameInput(urlInput);
+        }
 
         list.appendChild(itemDiv);
     };
@@ -2432,7 +2556,9 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('seriesModeGroup').style.display = 'none';
         if (document.getElementById('episodeMethodGroup')) document.getElementById('episodeMethodGroup').style.display = 'none';
         document.getElementById('newSeriesFields').style.display = 'grid';
-        document.getElementById('episodeFields').style.display = 'none';
+        if (document.getElementById('episodeFields')) document.getElementById('episodeFields').style.display = 'none';
+        if (document.getElementById('episodeBuilderSection')) document.getElementById('episodeBuilderSection').style.display = 'none';
+        if (document.getElementById('episodeSingleEditFields')) document.getElementById('episodeSingleEditFields').style.display = 'none';
         if (document.getElementById('bulkEpisodeFields')) document.getElementById('bulkEpisodeFields').style.display = 'none';
         document.getElementById('seriesPosterGroup').style.display = 'block';
 
@@ -3260,50 +3386,6 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
 
-    function getSourceNameFromUrl(urlStr) {
-        if (!urlStr) return '';
-        let url = urlStr.trim();
-        if (url.includes('<iframe') && url.includes('src=')) {
-            const match = url.match(/src=["']([^"']+)["']/);
-            if (match && match[1]) {
-                url = match[1];
-            }
-        }
-        if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('//')) {
-            url = 'https://' + url;
-        }
-        try {
-            const parsedUrl = new URL(url.startsWith('//') ? 'https:' + url : url);
-            const hostname = parsedUrl.hostname.toLowerCase();
-            if (hostname.includes('vidmoly')) return 'VID';
-            if (hostname.includes('ok.ru') || hostname.includes('odnoklassniki')) return 'OKRU';
-            if (hostname.includes('vk.com') || hostname.includes('vkvideo.ru') || hostname.includes('vk.ru')) return 'VK';
-            if (hostname.includes('abyssplayer') || hostname.includes('short.icu')) return 'ABS';
-            if (hostname.includes('videa.hu') || hostname.includes('videa')) return 'VIDEA';
-            if (hostname.includes('filemoon')) return 'FM';
-            if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) return 'YOUTUBE';
-            
-            let cleanHost = hostname.replace(/^www\./, '');
-            let parts = cleanHost.split('.');
-            if (parts.length > 1) {
-                let domainIndex = parts.length - 2;
-                if (parts.length >= 3) {
-                    const secondToLast = parts[parts.length - 2];
-                    if (['co', 'com', 'net', 'org', 'gov', 'edu', 'web', 'com-tr'].includes(secondToLast)) {
-                        domainIndex = parts.length - 3;
-                    }
-                }
-                if (domainIndex >= 0) {
-                    return parts[domainIndex].toUpperCase();
-                }
-                return parts[0].toUpperCase();
-            }
-            return hostname.toUpperCase();
-        } catch (err) {
-            return '';
-        }
-    }
-
     window.addSourceField = function (type, name = '', url = '') {
         const container = document.getElementById(`${type}SourcesList`);
         if (!container) return;
@@ -3329,45 +3411,37 @@ document.addEventListener('DOMContentLoaded', function () {
         const urlInput = row.querySelector('.source-url');
         const nameInput = row.querySelector('.source-name');
 
-        function autoFillName(urlInp, nameInp) {
-            const urlVal = urlInp.value.trim();
-            if (!urlVal) return;
-            const detectedName = getSourceNameFromUrl(urlVal);
-            if (detectedName) {
-                const previousAutoValue = nameInp.dataset.autoValue || '';
-                if (!nameInp.value.trim() || nameInp.value.trim() === previousAutoValue) {
-                    nameInp.value = detectedName;
-                    nameInp.dataset.autoValue = detectedName;
-                }
+        function handleSourceUrlInput(inputEl) {
+            let val = inputEl.value.trim();
+            if (val.toLowerCase().includes('<iframe') && val.toLowerCase().includes('src=')) {
+                inputEl.value = extractUrlFromIframeOrLink(val);
             }
+            updateVideoRequirement(type);
+            autoFillSourceName(inputEl, nameInput);
         }
 
-        // Extract URL from iframe on paste
         urlInput.addEventListener('paste', function (e) {
-            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-            if (pastedText.includes('<iframe') && pastedText.includes('src=')) {
+            const pastedText = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+            if (pastedText.toLowerCase().includes('<iframe') && pastedText.toLowerCase().includes('src=')) {
                 e.preventDefault();
-                const match = pastedText.match(/src=["']([^"']+)["']/);
-                if (match && match[1]) {
-                    let extractedUrl = match[1];
-                    if (extractedUrl.startsWith('//')) {
-                        extractedUrl = 'https:' + extractedUrl;
-                    }
-                    this.value = extractedUrl;
-                    updateVideoRequirement(type);
-                    autoFillName(this, nameInput);
-                }
+                const extractedUrl = extractUrlFromIframeOrLink(pastedText);
+                this.value = extractedUrl;
+                updateVideoRequirement(type);
+                autoFillSourceName(this, nameInput);
             } else {
                 setTimeout(() => {
-                    autoFillName(this, nameInput);
-                }, 50);
+                    handleSourceUrlInput(this);
+                }, 30);
             }
         });
 
         urlInput.addEventListener('input', function () {
-            updateVideoRequirement(type);
-            autoFillName(this, nameInput);
+            handleSourceUrlInput(this);
         });
+
+        if (url) {
+            handleSourceUrlInput(urlInput);
+        }
 
         container.appendChild(row);
         updateVideoRequirement(type);
