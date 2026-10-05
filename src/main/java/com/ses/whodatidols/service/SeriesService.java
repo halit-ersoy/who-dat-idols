@@ -20,11 +20,44 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class SeriesService {
+
+    public static class SeasonConfig {
+        private int season;
+        private int startEpisode = 1;
+        private int episodeCount;
+
+        public int getSeason() {
+            return season;
+        }
+
+        public void setSeason(int season) {
+            this.season = season;
+        }
+
+        public int getStartEpisode() {
+            return startEpisode > 0 ? startEpisode : 1;
+        }
+
+        public void setStartEpisode(int startEpisode) {
+            this.startEpisode = startEpisode;
+        }
+
+        public int getEpisodeCount() {
+            return episodeCount;
+        }
+
+        public void setEpisodeCount(int episodeCount) {
+            this.episodeCount = episodeCount;
+        }
+    }
 
     private final SeriesRepository repository;
     private final TvMazeService tvMazeService;
@@ -291,6 +324,160 @@ public class SeriesService {
     }
 
     @Transactional
+    public Map<String, Object> createBulkEpisodes(
+            Series seriesInfo,
+            UUID existingSeriesId,
+            MultipartFile image,
+            String imageUrl,
+            String seasonConfigsJson,
+            boolean overwrite,
+            boolean isAdult,
+            Integer releaseYear) throws IOException {
+
+        cacheService.evictContentCaches();
+        UUID seriesId;
+        String currentXML;
+        String seriesName;
+
+        if (existingSeriesId != null) {
+            Series found = repository.findSeriesById(existingSeriesId);
+            if (found == null) {
+                throw new RuntimeException("Seçilen dizi bulunamadı! ID: " + existingSeriesId);
+            }
+            seriesId = existingSeriesId;
+            currentXML = found.getEpisodeMetadataXml() != null ? found.getEpisodeMetadataXml() : "<Seasons></Seasons>";
+            seriesName = found.getName();
+
+            if (seriesInfo != null && seriesInfo.getFinalStatus() != found.getFinalStatus()) {
+                found.setFinalStatus(seriesInfo.getFinalStatus());
+                repository.updateSeriesMetadata(found);
+            }
+        } else {
+            if (seriesInfo == null || seriesInfo.getName() == null || seriesInfo.getName().trim().isEmpty()) {
+                throw new RuntimeException("Dizi adı boş olamaz!");
+            }
+            Series existingSeries = repository.findSeriesByName(seriesInfo.getName().trim());
+            if (existingSeries == null) {
+                seriesId = UUID.randomUUID();
+                seriesInfo.setId(seriesId);
+                seriesInfo.setName(seriesInfo.getName().trim());
+                seriesInfo.setSlug(com.ses.whodatidols.util.SlugUtil.toSlug(seriesInfo.getName()));
+                seriesInfo.setEpisodeMetadataXml("<Seasons></Seasons>");
+                seriesInfo.setUploadDate(Instant.now());
+                repository.createSeries(seriesInfo);
+                currentXML = "<Seasons></Seasons>";
+                seriesName = seriesInfo.getName();
+            } else {
+                seriesId = existingSeries.getId();
+                currentXML = existingSeries.getEpisodeMetadataXml() != null ? existingSeries.getEpisodeMetadataXml() : "<Seasons></Seasons>";
+                seriesName = existingSeries.getName();
+
+                if (seriesInfo.getFinalStatus() != existingSeries.getFinalStatus()) {
+                    existingSeries.setFinalStatus(seriesInfo.getFinalStatus());
+                    repository.updateSeriesMetadata(existingSeries);
+                }
+
+                if (existingSeries.getSlug() == null || existingSeries.getSlug().isEmpty()) {
+                    String newSlug = com.ses.whodatidols.util.SlugUtil.toSlug(seriesName);
+                    repository.updateSeriesSlug(seriesId, newSlug);
+                }
+            }
+        }
+
+        if (image != null && !image.isEmpty()) {
+            saveImage(seriesId, image);
+        } else if (existingSeriesId == null && imageUrl != null && !imageUrl.isBlank()) {
+            saveImageFromUrl(seriesId, imageUrl);
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+        List<SeasonConfig> configs;
+        try {
+            configs = mapper.readValue(seasonConfigsJson,
+                    mapper.getTypeFactory().constructCollectionType(List.class, SeasonConfig.class));
+        } catch (Exception e) {
+            throw new RuntimeException("Geçersiz sezon/bölüm yapılandırması: " + e.getMessage());
+        }
+
+        if (configs == null || configs.isEmpty()) {
+            throw new RuntimeException("Oluşturulacak sezon veya bölüm bulunamadı!");
+        }
+
+        int defaultYear = releaseYear != null && releaseYear > 1900 ? releaseYear : java.time.Year.now().getValue();
+        int createdCount = 0;
+        int skippedCount = 0;
+        int overwrittenCount = 0;
+
+        for (SeasonConfig cfg : configs) {
+            int season = cfg.getSeason();
+            int startEp = cfg.getStartEpisode();
+            int count = cfg.getEpisodeCount();
+
+            for (int ep = startEp; ep < startEp + count; ep++) {
+                List<Episode> collisions = repository.findEpisodesBySeriesIdAndSeasonAndEpisodeNumber(seriesId, season, ep);
+                if (!collisions.isEmpty()) {
+                    if (!overwrite) {
+                        skippedCount++;
+                        continue;
+                    } else {
+                        for (Episode c : collisions) {
+                            deleteEpisodeById(c.getId());
+                            overwrittenCount++;
+                        }
+                        Series refreshed = repository.findSeriesById(seriesId);
+                        if (refreshed != null && refreshed.getEpisodeMetadataXml() != null) {
+                            currentXML = refreshed.getEpisodeMetadataXml();
+                        }
+                    }
+                }
+
+                UUID episodeId = UUID.randomUUID();
+                Episode episodeData = new Episode();
+                episodeData.setId(episodeId);
+                episodeData.setName(seriesName);
+                episodeData.setDurationMinutes(1);
+                episodeData.setReleaseYear(defaultYear);
+                episodeData.setUploadDate(Instant.now());
+                episodeData.setSeriesId(seriesId);
+                episodeData.setSeasonNumber(season);
+                episodeData.setEpisodeNumber(ep);
+                episodeData.setAdult(isAdult);
+                episodeData.setSlug(com.ses.whodatidols.util.SlugUtil
+                        .toSlug(seriesName + "-" + season + "-sezon-" + ep + "-bolum"));
+
+                repository.saveEpisode(episodeData);
+
+                currentXML = injectEpisodeToXML(currentXML, season, ep, episodeId.toString());
+                createdCount++;
+            }
+        }
+
+        repository.updateSeriesXML(seriesId, currentXML);
+
+        if (createdCount > 0) {
+            try {
+                notificationService.createNotification(
+                        "Yeni Bölümler Geldi!",
+                        seriesName + " dizisine " + createdCount + " yeni bölüm eklendi!",
+                        seriesId,
+                        "SoapOpera");
+            } catch (Exception e) {
+                System.err.println("Bildirim oluşturulamadı: " + e.getMessage());
+            }
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("seriesId", seriesId.toString());
+        result.put("seriesName", seriesName);
+        result.put("createdCount", createdCount);
+        result.put("skippedCount", skippedCount);
+        result.put("overwrittenCount", overwrittenCount);
+        result.put("message", seriesName + " için " + createdCount + " bölüm başarıyla oluşturuldu."
+                + (skippedCount > 0 ? " (" + skippedCount + " mevcut bölüm korundu/atlandı)" : ""));
+        return result;
+    }
+
+    @Transactional
     public void updateEpisode(UUID episodeId, int seasonNumber, int episodeNumber, int finalStatus, MultipartFile file,
             boolean overwrite, boolean isAdult)
             throws IOException {
@@ -365,7 +552,7 @@ public class SeriesService {
         repository.updateEpisode(ep);
     }
 
-    private void saveImage(UUID id, MultipartFile image) throws IOException {
+    public void saveImage(UUID id, MultipartFile image) throws IOException {
         Path uploadPath = Paths.get(soapOperasPath).toAbsolutePath().normalize();
         if (!Files.exists(uploadPath))
             Files.createDirectories(uploadPath);

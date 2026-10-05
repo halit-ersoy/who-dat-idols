@@ -1057,14 +1057,54 @@
                                 </div>
                             </div>
 
-                            <div id="episodeFields" class="full-width">
+                                                        <!-- BÖLÜM EKLEME ALANI (BÖLÜM BUILDER) -->
+                            <div class="form-group full-width" id="episodeBuilderSection">
+                                <div class="episode-builder-header">
+                                    <div class="builder-title-info">
+                                        <h3 class="builder-main-title">
+                                            <i class="fas fa-layer-group"></i> Bölümler 
+                                            <span class="builder-count-pill" id="episodeCountBadge">0</span>
+                                        </h3>
+                                        <p class="builder-desc">Diziye eklemek istediğiniz bölümleri ekleyin. Her bölüm için doğrudan video dosyası yükleyebilir ya da harici frame / iframe linki girebilirsiniz.</p>
+                                    </div>
+                                    <div class="builder-action-buttons">
+                                        <button type="button" class="btn btn-primary" id="btnAddEpisodeBtn" onclick="addEpisodeRow()">
+                                            <i class="fas fa-plus"></i> Bölüm Ekle
+                                        </button>
+                                        <button type="button" class="btn btn-outline-custom" id="btnMultiEpisodeBtn" onclick="openMultiEpisodeModal()">
+                                            <i class="fas fa-list-ol"></i> Çoklu Satır Ekle
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger" id="btnClearEpisodeRowsBtn" onclick="clearAllEpisodeRows()" style="display: none;">
+                                            <i class="fas fa-trash"></i> Temizle
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Episode Cards Container -->
+                                <div id="episodeRowsContainer" class="episode-rows-container">
+                                    <!-- Dynamic episode cards injected here -->
+                                </div>
+
+                                <!-- Empty State Placeholder -->
+                                <div id="episodeEmptyPlaceholder" class="episode-empty-card">
+                                    <div class="empty-icon"><i class="fas fa-video-slash"></i></div>
+                                    <h4>Henüz Bölüm Eklenmedi</h4>
+                                    <p>Bölüm eklemek için yukarıdaki <strong>"+ Bölüm Ekle"</strong> butonuna tıklayın. Her satırda sezon ve bölüm numarasını belirleyebilir, ana video veya frame linki ekleyebilirsiniz.</p>
+                                    <button type="button" class="btn btn-primary btn-sm" onclick="addEpisodeRow()">
+                                        <i class="fas fa-plus"></i> İlk Bölümü Ekle
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- TEK BÖLÜM DÜZENLEME MODU ALANI (Mevcut Bölüm Düzenlenirken Açılır) -->
+                            <div id="episodeSingleEditFields" class="full-width" style="display: none;">
                                 <div class="form-group">
                                     <label for="seasonNum">Sezon No</label>
-                                    <input type="number" id="seasonNum" value="1" min="1" required>
+                                    <input type="number" id="seasonNum" value="1" min="1">
                                 </div>
                                 <div class="form-group">
                                     <label for="episodeNum">Bölüm No</label>
-                                    <input type="number" id="episodeNum" value="1" min="1" required>
+                                    <input type="number" id="episodeNum" value="1" min="1">
                                 </div>
                                 <div class="form-group">
                                     <label for="episodeSeriesStatus">Dizi Durumu</label>
@@ -1089,11 +1129,10 @@
                                     </div>
                                 </div>
 
-                                <!-- Bölüm Dosyası (Her iki durumda da gerekli) -->
                                 <div class="form-group full-width" id="episodeVideoGroup">
                                     <label for="seriesFile">Bölüm Videosu</label>
                                     <div class="premium-file-input" id="seriesFileContainer">
-                                        <input type="file" id="seriesFile" accept="video/*" required
+                                        <input type="file" id="seriesFile" accept="video/*"
                                             onchange="handleFileSelect(this)">
                                         <label for="seriesFile" class="file-label">
                                             <i class="fas fa-cloud-upload-alt"></i>
@@ -1108,8 +1147,7 @@
                                     </div>
                                 </div>
                                 <div class="form-group full-width" id="episodeSourcesGroup">
-                                    <label><i class="fas fa-external-link-alt"></i> Dış Kaynaklar (Iframe
-                                        Linkleri)</label>
+                                    <label><i class="fas fa-external-link-alt"></i> Dış Kaynaklar (Iframe Linkleri)</label>
                                     <div id="seriesSourcesList" class="external-sources-container">
                                         <!-- Dinamik olarak eklenecek -->
                                     </div>
@@ -2094,6 +2132,57 @@
                 </div>
             </section>
         </main>
+    </div>
+
+    <!-- Çoklu Bölüm Satırı Ekle Modal -->
+    <div id="multiEpisodeModal" class="modal">
+        <div class="modal-content" style="max-width: 520px; border-radius: 16px; border: 1px solid rgba(var(--primary-rgb, 30, 215, 96), 0.3); box-shadow: 0 20px 60px rgba(0,0,0,0.6);">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 15px; margin-bottom: 20px;">
+                <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; font-size: 1.2rem; color: #fff;">
+                    <i class="fas fa-layer-group" style="color: var(--primary, #1ed760);"></i> Çoklu Bölüm Satırı Ekle
+                </h3>
+                <button type="button" class="close-modal" onclick="closeMultiEpisodeModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+                <p style="font-size: 0.86rem; color: rgba(255,255,255,0.65); margin: 0; line-height: 1.5;">
+                    Belirttiğiniz sezon ve başlangıç bölümünden itibaren toplu bölüm satırları oluşturun.
+                </p>
+
+                <div class="form-grid" style="grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 0;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="multiModalSeason" style="font-size: 0.82rem; color: rgba(255,255,255,0.7);"><i class="fas fa-calendar-alt"></i> Başlangıç Sezonu</label>
+                        <input type="number" id="multiModalSeason" min="1" value="1" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 9px 12px; color: #fff; width: 100%;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="multiModalStartEp" style="font-size: 0.82rem; color: rgba(255,255,255,0.7);"><i class="fas fa-play"></i> Başlangıç Bölümü</label>
+                        <input type="number" id="multiModalStartEp" min="1" value="1" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 9px 12px; color: #fff; width: 100%;">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="multiModalCount" style="font-size: 0.82rem; color: rgba(255,255,255,0.7);"><i class="fas fa-list-ol"></i> Kaç Bölüm Eklensin?</label>
+                    <input type="number" id="multiModalCount" min="1" max="100" value="12" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 9px 12px; color: #fff; width: 100%;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-size: 0.82rem; color: rgba(255,255,255,0.7);"><i class="fas fa-sliders-h"></i> Varsayılan Kaynak Türü</label>
+                    <div class="ep-source-switch" style="margin-top: 6px; margin-bottom: 0;">
+                        <button type="button" class="ep-switch-btn active" id="multiDefaultTypeVideo" onclick="setMultiDefaultSourceType('video')">
+                            <i class="fas fa-file-video"></i> Ana Kaynak (Video)
+                        </button>
+                        <button type="button" class="ep-switch-btn" id="multiDefaultTypeFrame" onclick="setMultiDefaultSourceType('frame')">
+                            <i class="fas fa-code"></i> Frame / Iframe
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 25px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.08);">
+                <button type="button" class="btn btn-secondary" onclick="closeMultiEpisodeModal()">Vazgeç</button>
+                <button type="button" class="btn btn-primary" onclick="confirmAddMultipleRows()">
+                    <i class="fas fa-plus-circle"></i> Satırları Oluştur
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- TVMaze Results Modal -->

@@ -2194,3 +2194,559 @@ input[type='checkbox']:hover {
     color: var(--primary);
     border: 1px solid rgba(var(--primary-rgb), 0.3);
 }
+
+
+/* --- TOPLU BOLUM VE SEZON SIHIRBAZI STILLERI --- */
+.mode-toggle-episode input[id="epMethodBulk"]:checked ~ .episode-slider {
+    transform: translateX(100%);
+}
+
+.bulk-container-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(var(--primary-rgb, 30, 215, 96), 0.25);
+    border-radius: 16px;
+    padding: 24px;
+    margin-top: 10px;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.bulk-card-header {
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding-bottom: 15px;
+}
+
+.bulk-badge-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 8px;
+}
+
+.bulk-help-text {
+    font-size: 0.88rem;
+    color: rgba(255, 255, 255, 0.65);
+    line-height: 1.5;
+}
+
+.bulk-inputs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.bulk-options-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 25px;
+    align-items: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    margin-bottom: 20px;
+}
+
+.switch-label {
+    margin-left: 10px;
+    font-weight: 500;
+    color: #eee;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.9rem;
+}
+
+.btn-outline-custom {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.85);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-outline-custom:hover {
+    background: rgba(var(--primary-rgb, 30, 215, 96), 0.12);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.custom-seasons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.custom-season-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.custom-season-item label {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 600;
+}
+
+.custom-season-item input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: #fff;
+    font-size: 0.9rem;
+}
+
+.bulk-summary-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: linear-gradient(135deg, rgba(var(--primary-rgb, 30, 215, 96), 0.1), rgba(var(--primary-rgb, 30, 215, 96), 0.03));
+    border: 1px solid rgba(var(--primary-rgb, 30, 215, 96), 0.35);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-top: 15px;
+}
+
+.bulk-summary-icon {
+    font-size: 1.8rem;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bulk-summary-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.bulk-summary-details {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.4;
+}
+
+.btn-bulk-season {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    color: #fff;
+    border: none;
+    font-weight: 600;
+}
+.btn-bulk-season:hover {
+    background: linear-gradient(135deg, #138496, #117a8b);
+    color: #fff;
+}
+
+/* ========================================================
+   EPISODE BUILDER & DYNAMIC ROWS STYLING
+   ======================================================== */
+.episode-builder-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.builder-title-info {
+    flex: 1;
+    min-width: 250px;
+}
+
+.builder-main-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+}
+
+.builder-count-pill {
+    background: rgba(var(--primary-rgb, 30, 215, 96), 0.15);
+    color: var(--primary, #1ed760);
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(var(--primary-rgb, 30, 215, 96), 0.3);
+}
+
+.builder-desc {
+    font-size: 0.86rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 6px 0 0 0;
+    line-height: 1.4;
+}
+
+.builder-action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.episode-empty-card {
+    border: 2px dashed rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 40px 20px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.015);
+    transition: all 0.3s ease;
+}
+
+.episode-empty-card:hover {
+    border-color: rgba(var(--primary-rgb, 30, 215, 96), 0.3);
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.episode-empty-card .empty-icon {
+    font-size: 2.5rem;
+    color: rgba(255, 255, 255, 0.25);
+    margin-bottom: 12px;
+}
+
+.episode-empty-card h4 {
+    font-size: 1.1rem;
+    color: #eee;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.episode-empty-card p {
+    font-size: 0.88rem;
+    color: rgba(255, 255, 255, 0.55);
+    max-width: 480px;
+    margin: 0 auto 18px auto;
+    line-height: 1.5;
+}
+
+.episode-rows-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 10px;
+}
+
+.episode-card-item {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 18px 20px;
+    position: relative;
+    transition: all 0.2s ease;
+    animation: fadeInRow 0.25s ease-out;
+}
+
+@keyframes fadeInRow {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.episode-card-item:hover {
+    border-color: rgba(var(--primary-rgb, 30, 215, 96), 0.35);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.ep-card-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ep-card-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ep-badge-pill {
+    background: rgba(var(--primary-rgb, 30, 215, 96), 0.12);
+    color: var(--primary, #1ed760);
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 3px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(var(--primary-rgb, 30, 215, 96), 0.25);
+}
+
+.card-tag-preview {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.ep-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-card-action {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.btn-card-action:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-card-action.btn-delete:hover {
+    background: rgba(244, 67, 54, 0.2);
+    border-color: rgba(244, 67, 54, 0.5);
+    color: #f44336;
+}
+
+.ep-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 15px;
+    margin-bottom: 16px;
+}
+
+.ep-num-group {
+    flex: 0 0 130px;
+}
+
+.ep-num-group label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ep-num-group input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    width: 100%;
+}
+
+.ep-num-group input:focus {
+    border-color: var(--primary, #1ed760);
+    outline: none;
+}
+
+.ep-adult-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    padding-left: 5px;
+}
+
+.ep-adult-group .switch-text {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    user-select: none;
+}
+
+.ep-source-selection-block {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+
+.ep-source-switch {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.ep-switch-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.86rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.ep-switch-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.ep-switch-btn.active {
+    background: var(--primary, #1ed760);
+    color: #000;
+    border-color: var(--primary, #1ed760);
+    box-shadow: 0 2px 10px rgba(30, 215, 96, 0.3);
+}
+
+.source-panel-video .ep-file-container {
+    margin: 0;
+}
+
+.source-panel-frame .frame-inputs-row {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 15px;
+}
+
+@media (max-width: 768px) {
+    .source-panel-frame .frame-inputs-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.source-panel-frame .form-group label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.source-panel-frame input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: #fff;
+    font-size: 0.9rem;
+    width: 100%;
+}
+
+.source-panel-frame input:focus {
+    border-color: var(--primary, #1ed760);
+    outline: none;
+}
+
+/* Multiple Frames within Episode Card */
+.ep-frames-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.ep-frames-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ep-frames-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.ep-frame-item {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 10px 12px;
+    transition: all 0.2s ease;
+}
+
+.ep-frame-item:hover {
+    border-color: rgba(var(--primary-rgb, 30, 215, 96), 0.35);
+}
+
+.ep-frame-item .frame-inputs-grid {
+    display: grid;
+    grid-template-columns: 180px 1fr 34px;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+@media (max-width: 768px) {
+    .ep-frame-item .frame-inputs-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.btn-remove-frame {
+    width: 34px;
+    height: 38px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.btn-remove-frame:hover {
+    background: rgba(244, 67, 54, 0.2);
+    border-color: rgba(244, 67, 54, 0.5);
+    color: #f44336;
+}
+
+.btn-xs {
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    border-radius: 6px;
+}

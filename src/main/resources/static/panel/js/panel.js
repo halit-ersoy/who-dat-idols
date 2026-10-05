@@ -1443,9 +1443,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             return;
         }
-        // ADD NEW SERIES or ADD TO EXISTING SERIES MODE
-        if (sId === "" && mode === 'new') {
+        // ADD NEW SERIES or ADD TO EXISTING SERIES (DYNAMIC EPISODE ROWS)
+        const cards = document.querySelectorAll('#episodeRowsContainer .episode-card-item');
+        if (cards.length === 0) {
+            alert("Lütfen en az bir bölüm ekleyin! (Yukarıdaki '+ Bölüm Ekle' butonunu kullanabilirsiniz)");
+            return;
+        }
+
+        const existingId = document.getElementById('selectedSeriesId').value;
+        if (mode === 'existing') {
+            if (!existingId) return alert("Lütfen bir dizi seçin!");
+        } else {
             const name = seriesNameInput.value.trim();
+            if (!name) return alert("Lütfen dizi adını giriniz!");
             try {
                 const res = await fetch(`/admin/series/check?name=${encodeURIComponent(name)}`);
                 const data = await res.json();
@@ -1457,81 +1467,150 @@ document.addEventListener('DOMContentLoaded', function () {
             } catch (e) { }
         }
 
-        const formData = new FormData();
-        const existingId = document.getElementById('selectedSeriesId').value;
-
-        // Episode specific fields
-        formData.append('season', document.getElementById('seasonNum').value);
-        formData.append('episode', document.getElementById('episodeNum').value);
-        if (seriesFileInput.files.length > 0) formData.append('file', seriesFileInput.files[0]);
-
-        // UNIFIED finalStatus: Check both selects based on UI state
-        let finalStatus = 0;
-        const seriesStatusEl = document.getElementById('seriesStatus');
-        const episodeSeriesStatusEl = document.getElementById('episodeSeriesStatus');
-
-        if (seriesStatusEl && seriesStatusEl.offsetParent !== null) {
-            finalStatus = seriesStatusEl.value;
-        } else if (episodeSeriesStatusEl && episodeSeriesStatusEl.offsetParent !== null) {
-            finalStatus = episodeSeriesStatusEl.value;
-        }
-        formData.append('finalStatus', finalStatus);
-        formData.append('isAdult', document.getElementById('episodeIsAdult') && document.getElementById('episodeIsAdult').checked ? 'true' : 'false');
-
-        if (mode === 'existing') {
-            if (!existingId) return alert("Lütfen bir dizi seçin!");
-            formData.append('existingSeriesId', existingId);
-        } else {
-            // New Series Mode
-            formData.append('name', document.getElementById('seriesName').value);
-            formData.append('category', document.getElementById('seriesCategory').value);
-            formData.append('summary', document.getElementById('seriesSummary').value);
-            formData.append('year', document.getElementById('seriesYear').value);
-            formData.append('language', document.getElementById('seriesLanguage').value);
-            formData.append('country', document.getElementById('seriesCountry').value);
-            formData.append('seriesType', document.getElementById('seriesType').value);
-            if (seriesImageInput.files.length > 0) formData.append('image', seriesImageInput.files[0]);
-            if (lastFetchedPosterUrl) formData.append('imageUrl', lastFetchedPosterUrl);
-            if (document.getElementById('seriesCastData') && document.getElementById('seriesCastData').value) {
-                formData.append('castData', document.getElementById('seriesCastData').value);
+        // Validate all cards
+        for (let i = 0; i < cards.length; i++) {
+            const card = cards[i];
+            const sInp = card.querySelector('.ep-input-season');
+            const eInp = card.querySelector('.ep-input-episode');
+            const sVal = parseInt(sInp ? sInp.value : 0);
+            const eVal = parseInt(eInp ? eInp.value : 0);
+            if (isNaN(sVal) || sVal < 1 || isNaN(eVal) || eVal < 1) {
+                alert(`Lütfen ${i + 1}. bölüm kartı için geçerli bir sezon ve bölüm numarası giriniz.`);
+                if (sInp) sInp.focus();
+                return;
             }
         }
 
-        seriesSubmitBtn.innerText = "KONTROL EDİLİYOR...";
+        // Start upload process
         seriesSubmitBtn.disabled = true;
+        const total = cards.length;
+        let currentSeriesId = (mode === 'existing') ? existingId : null;
 
-        if (existingId) {
-            const season = document.getElementById('seasonNum').value;
-            const episodeNum = document.getElementById('episodeNum').value;
-            fetch(`/admin/check-episode-collision?seriesId=${existingId}&season=${season}&episodeNum=${episodeNum}`)
-                .then(r => r.json())
-                .then(check => {
-                    if (check.collision) {
-                        if (!confirm(check.message)) {
-                            seriesSubmitBtn.innerText = "BÖLÜMÜ KAYDET";
-                            seriesSubmitBtn.disabled = false;
-                            return;
-                        }
-                        formData.append('overwrite', 'true');
+        const progressWrapper = document.getElementById('progressWrapperSeries');
+        const progressBar = document.getElementById('progressBarSeries');
+        const percentSpan = document.getElementById('percentSeries');
+        const progressStatus = progressWrapper.querySelector('.progress-status');
+        progressWrapper.style.display = 'block';
+
+        try {
+            for (let i = 0; i < total; i++) {
+                const card = cards[i];
+                const season = card.querySelector('.ep-input-season').value;
+                const episode = card.querySelector('.ep-input-episode').value;
+                const isAdult = card.querySelector('.ep-input-adult') && card.querySelector('.ep-input-adult').checked;
+                const isVideo = card.querySelector('.ep-switch-btn[data-type="video"]').classList.contains('active');
+                const fileInput = card.querySelector('.ep-video-file-input');
+                const file = (isVideo && fileInput && fileInput.files.length > 0) ? fileInput.files[0] : null;
+                const frameName = card.querySelector('.ep-frame-name') ? card.querySelector('.ep-frame-name').value.trim() : '';
+                let frameUrl = card.querySelector('.ep-frame-url') ? card.querySelector('.ep-frame-url').value.trim() : '';
+
+                if (frameUrl) {
+                    const match = frameUrl.match(/src=["']([^"']+)["']/i);
+                    if (match) frameUrl = match[1];
+                }
+
+                seriesSubmitBtn.innerText = `Bölüm ${i + 1} / ${total} Yükleniyor...`;
+                progressStatus.innerHTML = `Bölüm ${i + 1} / ${total} (Sezon ${season}, Bölüm ${episode}) Yükleniyor... <span id="percentSeries">0%</span>`;
+                progressBar.style.width = '0%';
+
+                const formData = new FormData();
+                if (i === 0 && !currentSeriesId) {
+                    formData.append('name', document.getElementById('seriesName').value);
+                    formData.append('category', document.getElementById('seriesCategory').value);
+                    formData.append('summary', document.getElementById('seriesSummary').value);
+                    formData.append('year', document.getElementById('seriesYear').value);
+                    formData.append('language', document.getElementById('seriesLanguage').value);
+                    formData.append('country', document.getElementById('seriesCountry').value);
+                    formData.append('seriesType', document.getElementById('seriesType').value);
+                    let finalStatus = 0;
+                    const seriesStatusEl = document.getElementById('seriesStatus');
+                    if (seriesStatusEl) finalStatus = seriesStatusEl.value;
+                    formData.append('finalStatus', finalStatus);
+                    if (seriesImageInput.files.length > 0) formData.append('image', seriesImageInput.files[0]);
+                    if (lastFetchedPosterUrl) formData.append('imageUrl', lastFetchedPosterUrl);
+                    if (document.getElementById('seriesCastData') && document.getElementById('seriesCastData').value) {
+                        formData.append('castData', document.getElementById('seriesCastData').value);
                     }
-                    startSeriesUpload(formData);
-                }).catch(err => {
-                    alert("Hata: " + err.message);
-                    seriesSubmitBtn.disabled = false;
-                });
-        } else {
-            startSeriesUpload(formData);
-        }
+                } else {
+                    formData.append('existingSeriesId', currentSeriesId);
+                }
 
-        function startSeriesUpload(fd) {
-            seriesSubmitBtn.innerText = "YÜKLENİYOR...";
-            uploadDataWithProgress('/admin/add-series', fd, 'seriesForm', 'progressWrapperSeries', 'progressBarSeries', 'percentSeries', async (res) => {
+                formData.append('season', season);
+                formData.append('episode', episode);
+                formData.append('isAdult', isAdult ? 'true' : 'false');
+                formData.append('overwrite', 'true');
+                if (file) {
+                    formData.append('file', file);
+                }
+
+                const resText = await uploadEpisodeSinglePromise('/admin/add-series', formData, progressBar, percentSpan);
+                let resData;
                 try {
-                    const data = JSON.parse(res);
-                    if (data.id) await saveExternalSources(data.id, 'series');
-                } catch (e) { console.error("Source save error:", e); }
-                fetchSeries();
-            });
+                    resData = JSON.parse(resText);
+                } catch(err) {
+                    throw new Error("Sunucu yanıtı okunamadı: " + resText);
+                }
+
+                if (resData.seriesId) {
+                    currentSeriesId = resData.seriesId;
+                }
+                const episodeId = resData.id;
+
+                // Save all frames for this episode
+                if (episodeId) {
+                    const frameItems = card.querySelectorAll('.ep-frame-item');
+                    let sortIdx = 0;
+                    for (let f = 0; f < frameItems.length; f++) {
+                        const fItem = frameItems[f];
+                        const fNameInput = fItem.querySelector('.ep-frame-name');
+                        const fUrlInput = fItem.querySelector('.ep-frame-url');
+                        const fName = fNameInput ? fNameInput.value.trim() : '';
+                        let fUrl = fUrlInput ? fUrlInput.value.trim() : '';
+
+                        if (fUrl) {
+                            const match = fUrl.match(/src=["']([^"']+)["']/i);
+                            if (match) fUrl = match[1];
+
+                            await fetch('/admin/add-source', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    contentId: episodeId,
+                                    sourceName: fName || `Frame ${sortIdx + 1}`,
+                                    sourceUrl: fUrl,
+                                    sortOrder: sortIdx++
+                                })
+                            });
+                        }
+                    }
+                }
+            }
+
+            alert(`Tebrikler! Toplam ${total} adet bölüm başarıyla eklendi.`);
+            resetSeriesForm();
+            fetchSeries();
+            if (currentSeriesId) {
+                setTimeout(() => {
+                    const groups = document.querySelectorAll('#seriesAccordion .series-group');
+                    groups.forEach(g => {
+                        const cb = g.querySelector('.series-checkbox');
+                        if (cb && cb.value === currentSeriesId) {
+                            const header = g.querySelector('.series-header');
+                            if (header) {
+                                toggleAccordion(header);
+                                g.scrollIntoView({ behavior: 'smooth' });
+                            }
+                        }
+                    });
+                }, 600);
+            }
+        } catch (err) {
+            console.error("Episode batch upload error:", err);
+            alert("Hata oluştu: " + err.message);
+        } finally {
+            seriesSubmitBtn.disabled = false;
+            seriesSubmitBtn.innerText = "KAYDET";
+            progressWrapper.style.display = 'none';
         }
     });
 
@@ -1586,6 +1665,31 @@ document.addEventListener('DOMContentLoaded', function () {
                         card.classList.add('selected');
                         selectedSeriesIdInput.value = series.id;
                         updatePosterPreview('series', posterPath);
+                        fetch(`/admin/episodes-by-series?seriesId=${series.id}`)
+                            .then(r => r.json())
+                            .then(episodes => {
+                                clearAllEpisodeRows(true);
+                                if (episodes && episodes.length > 0) {
+                                    let maxSeason = 1;
+                                    let maxEp = 0;
+                                    episodes.forEach(ep => {
+                                        const s = ep.seasonNumber || ep.season || 1;
+                                        const e = ep.episodeNumber || ep.episode || 1;
+                                        if (s > maxSeason) {
+                                            maxSeason = s;
+                                            maxEp = e;
+                                        } else if (s === maxSeason && e > maxEp) {
+                                            maxEp = e;
+                                        }
+                                    });
+                                    addEpisodeRow(maxSeason, maxEp + 1);
+                                } else {
+                                    addEpisodeRow(1, 1);
+                                }
+                            }).catch(() => {
+                                clearAllEpisodeRows(true);
+                                addEpisodeRow(1, 1);
+                            });
                     };
 
                     cardGrid.appendChild(card);
@@ -1612,6 +1716,9 @@ document.addEventListener('DOMContentLoaded', function () {
                                 </div>
                             </div>
                             <div class="series-actions" onclick="event.stopPropagation()">
+                                <button class="btn btn-sm btn-bulk-season" onclick='openBulkForSeries("${series.id}", "${(series.name || "").replace(/'/g, "&#39;")}", event)' title="Toplu Sezon/Bölüm Ekle">
+                                    <i class="fas fa-plus"></i> BÖLÜM EKLE
+                                </button>
                                 <button class="btn btn-sm toggle-btn ${series.hidden ? 'btn-success' : 'btn-secondary'}" onclick='toggleSeriesHidden("${series.id}", ${series.hidden}, this)'>
                                     <i class="fas ${series.hidden ? 'fa-eye' : 'fa-eye-slash'}"></i> <span>${series.hidden ? 'GÖSTER' : 'GİZLE'}</span>
                                 </button>
@@ -1660,6 +1767,417 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
+    // -------------------------------------------------------------
+    // EPISODE BUILDER & DYNAMIC ROWS
+    // -------------------------------------------------------------
+    window.uploadEpisodeSinglePromise = function (url, formData, bar, percentText) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.upload.addEventListener("progress", function (e) {
+                if (e.lengthComputable && bar && percentText) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    bar.style.width = percent + "%";
+                    percentText.innerText = percent + "%";
+                    if (percent > 99) {
+                        percentText.innerText = "İşleniyor...";
+                    }
+                }
+            });
+            xhr.addEventListener("load", function () {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    resolve(xhr.responseText);
+                } else {
+                    let errMsg = `Sunucu Hatası (${xhr.status}): ` + xhr.responseText;
+                    try {
+                        const parsed = JSON.parse(xhr.responseText);
+                        if (parsed.error) errMsg = parsed.error;
+                    } catch (e) { }
+                    reject(new Error(errMsg));
+                }
+            });
+            xhr.addEventListener("error", function () {
+                reject(new Error("Ağ bağlantısı hatası oluştu."));
+            });
+            xhr.open("POST", url);
+            xhr.send(formData);
+        });
+    };
+
+    // -------------------------------------------------------------
+    // EPISODE FRAME MANAGEMENT (MULTIPLE FRAMES PER EPISODE)
+    // -------------------------------------------------------------
+    window.addFrameToEpisodeRow = function (rowId, presetName, presetUrl) {
+        const list = document.getElementById(`framesList_${rowId}`);
+        if (!list) return;
+
+        const frameId = 'fr_' + Math.random().toString(36).substr(2, 9);
+        const count = list.querySelectorAll('.ep-frame-item').length + 1;
+        const defaultName = presetName || (count === 1 ? 'Ana Frame' : `Frame ${count}`);
+
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'ep-frame-item';
+        itemDiv.id = `frameItem_${frameId}`;
+
+        itemDiv.innerHTML = `
+            <div class="frame-inputs-grid">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-size: 0.75rem; color: #888; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;"><i class="fas fa-tag"></i> Kaynak Adı</label>
+                    <input type="text" class="ep-frame-name" placeholder="Örn: VidMoly, Doodle, VK" value="${defaultName}">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-size: 0.75rem; color: #888; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;"><i class="fas fa-link"></i> Frame Kodu veya Iframe Linki</label>
+                    <input type="text" class="ep-frame-url" placeholder="https://... veya <iframe src='...'></iframe>" value="${presetUrl || ''}">
+                </div>
+                <button type="button" class="btn-remove-frame" title="Bu Frame'i Sil" onclick="removeFrameFromEpisodeRow('${frameId}')">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+        `;
+
+        list.appendChild(itemDiv);
+    };
+
+    window.removeFrameFromEpisodeRow = function (frameId) {
+        const item = document.getElementById(`frameItem_${frameId}`);
+        if (item) {
+            item.remove();
+        }
+    };
+
+    window.addEpisodeRow = function (presetSeason, presetEpisode, defaultSourceType) {
+        const container = document.getElementById('episodeRowsContainer');
+        if (!container) return;
+
+        let season = presetSeason;
+        let episode = presetEpisode;
+
+        if (season === undefined || episode === undefined) {
+            const cards = container.querySelectorAll('.episode-card-item');
+            if (cards.length > 0) {
+                const lastCard = cards[cards.length - 1];
+                const lastS = parseInt(lastCard.querySelector('.ep-input-season').value) || 1;
+                const lastE = parseInt(lastCard.querySelector('.ep-input-episode').value) || 1;
+                season = lastS;
+                episode = lastE + 1;
+            } else {
+                season = 1;
+                episode = 1;
+            }
+        }
+
+        const isFrameDefault = (defaultSourceType === 'frame');
+        const rowId = 'ep_' + Math.random().toString(36).substr(2, 9);
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'episode-card-item';
+        cardDiv.id = `epCard_${rowId}`;
+
+        cardDiv.innerHTML = `
+            <div class="ep-card-topbar">
+                <div class="ep-card-title">
+                    <span class="ep-badge-pill">Bölüm #<span class="card-seq-num">1</span></span>
+                    <strong class="card-tag-preview" id="epTag_${rowId}">Sezon ${season}, Bölüm ${episode}</strong>
+                </div>
+                <div class="ep-card-actions">
+                    <button type="button" class="btn-card-action btn-duplicate" title="Sonraki Bölüm Olarak Çoğalt" onclick="duplicateEpisodeRow('${rowId}')">
+                        <i class="fas fa-clone"></i>
+                    </button>
+                    <button type="button" class="btn-card-action btn-delete" title="Bu Bölümü Sil" onclick="removeEpisodeRow('${rowId}')">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="ep-card-content">
+                <div class="ep-meta-row">
+                    <div class="form-group ep-num-group">
+                        <label><i class="fas fa-layer-group"></i> Sezon No</label>
+                        <input type="number" class="ep-input-season" min="1" value="${season}" oninput="updateEpisodeCardTag('${rowId}')" required>
+                    </div>
+                    <div class="form-group ep-num-group">
+                        <label><i class="fas fa-video"></i> Bölüm No</label>
+                        <input type="number" class="ep-input-episode" min="1" value="${episode}" oninput="updateEpisodeCardTag('${rowId}')" required>
+                    </div>
+                    <div class="form-group ep-adult-group">
+                        <label class="switch">
+                            <input type="checkbox" class="ep-input-adult">
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="switch-text" onclick="const cb = this.previousElementSibling.querySelector('input'); cb.checked = !cb.checked;">
+                            <i class="fas fa-exclamation-triangle" style="color: #f44336; margin-right: 3px;"></i> +18 İçerik
+                        </span>
+                    </div>
+                </div>
+
+                <div class="ep-source-selection-block">
+                    <div class="ep-source-switch">
+                        <button type="button" class="ep-switch-btn ${!isFrameDefault ? 'active' : ''}" data-type="video" onclick="setRowSourceType('${rowId}', 'video')">
+                            <i class="fas fa-file-video"></i> Ana Kaynak (Video Dosyası)
+                        </button>
+                        <button type="button" class="ep-switch-btn ${isFrameDefault ? 'active' : ''}" data-type="frame" onclick="setRowSourceType('${rowId}', 'frame')">
+                            <i class="fas fa-code"></i> Frame / Dış Kaynak (Iframe)
+                        </button>
+                    </div>
+
+                    <!-- Panel: Ana Kaynak (Video) -->
+                    <div class="source-panel-video" id="videoPanel_${rowId}" style="display: ${!isFrameDefault ? 'block' : 'none'};">
+                        <div class="premium-file-input compact ep-file-container">
+                            <input type="file" class="ep-video-file-input" accept="video/*" onchange="handleEpisodeRowFile(this, '${rowId}')">
+                            <label class="file-label">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span class="file-text">Bölüm Videosunu Seç veya Sürükle (.mp4)</span>
+                                <span class="file-name">Dosya seçilmedi</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Panel: Frame (Iframe / Dış Kaynak) -->
+                    <div class="source-panel-frame" id="framePanel_${rowId}" style="display: ${isFrameDefault ? 'block' : 'none'};">
+                        <div class="ep-frames-header">
+                            <span class="ep-frames-title"><i class="fas fa-code"></i> Frame / Iframe Kaynakları</span>
+                            <button type="button" class="btn btn-xs btn-outline-custom" onclick="addFrameToEpisodeRow('${rowId}')">
+                                <i class="fas fa-plus"></i> Frame Ekle
+                            </button>
+                        </div>
+                        <div class="ep-frames-list" id="framesList_${rowId}">
+                            <!-- Dynamic multiple frame items -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        container.appendChild(cardDiv);
+        // By default add 1 frame row
+        addFrameToEpisodeRow(rowId);
+        updateEpisodeRowsMeta();
+    };
+
+    window.removeEpisodeRow = function (rowId) {
+        const card = document.getElementById(`epCard_${rowId}`);
+        if (!card) return;
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(-8px)';
+        card.style.transition = 'all 0.2s ease';
+        setTimeout(() => {
+            card.remove();
+            updateEpisodeRowsMeta();
+        }, 200);
+    };
+
+    window.clearAllEpisodeRows = function (silent) {
+        if (!silent) {
+            if (!confirm("Eklenen tüm bölüm satırlarını silmek istediğinize emin misiniz?")) return;
+        }
+        const container = document.getElementById('episodeRowsContainer');
+        if (container) container.innerHTML = '';
+        updateEpisodeRowsMeta();
+    };
+
+    window.duplicateEpisodeRow = function (rowId) {
+        const card = document.getElementById(`epCard_${rowId}`);
+        if (!card) return;
+        const s = parseInt(card.querySelector('.ep-input-season').value) || 1;
+        const e = parseInt(card.querySelector('.ep-input-episode').value) || 1;
+        const isFrameActive = card.querySelector('.ep-switch-btn[data-type="frame"]').classList.contains('active');
+        
+        addEpisodeRow(s, e + 1, isFrameActive ? 'frame' : 'video');
+    };
+
+    window.updateEpisodeCardTag = function (rowId) {
+        const card = document.getElementById(`epCard_${rowId}`);
+        if (!card) return;
+        const s = card.querySelector('.ep-input-season').value || 1;
+        const e = card.querySelector('.ep-input-episode').value || 1;
+        const tag = document.getElementById(`epTag_${rowId}`);
+        if (tag) tag.innerText = `Sezon ${s}, Bölüm ${e}`;
+    };
+
+    window.setRowSourceType = function (rowId, type) {
+        const card = document.getElementById(`epCard_${rowId}`);
+        if (!card) return;
+
+        const btns = card.querySelectorAll('.ep-switch-btn');
+        btns.forEach(b => {
+            if (b.dataset.type === type) b.classList.add('active');
+            else b.classList.remove('active');
+        });
+
+        const vPanel = document.getElementById(`videoPanel_${rowId}`);
+        const fPanel = document.getElementById(`framePanel_${rowId}`);
+
+        if (type === 'video') {
+            if (vPanel) vPanel.style.display = 'block';
+            if (fPanel) fPanel.style.display = 'none';
+        } else {
+            if (vPanel) vPanel.style.display = 'none';
+            if (fPanel) fPanel.style.display = 'block';
+        }
+    };
+
+    window.handleEpisodeRowFile = function (input, rowId) {
+        const card = document.getElementById(`epCard_${rowId}`);
+        if (!card) return;
+        const fileNameSpan = card.querySelector('.file-name');
+        if (input.files && input.files[0]) {
+            if (fileNameSpan) fileNameSpan.innerText = input.files[0].name;
+        } else {
+            if (fileNameSpan) fileNameSpan.innerText = "Dosya seçilmedi";
+        }
+    };
+
+    // -------------------------------------------------------------
+    // ÇOKLU BÖLÜM SATIRI EKLE MODAL MANAGEMENT
+    // -------------------------------------------------------------
+    let multiDefaultSourceType = 'video';
+
+    window.openMultiEpisodeModal = function () {
+        const container = document.getElementById('episodeRowsContainer');
+        let nextSeason = 1;
+        let nextEpisode = 1;
+
+        const cards = container ? container.querySelectorAll('.episode-card-item') : [];
+        if (cards.length > 0) {
+            const lastCard = cards[cards.length - 1];
+            nextSeason = parseInt(lastCard.querySelector('.ep-input-season').value) || 1;
+            nextEpisode = (parseInt(lastCard.querySelector('.ep-input-episode').value) || 1) + 1;
+        } else {
+            const existingId = document.getElementById('selectedSeriesId')?.value;
+            if (existingId) {
+                // If series is selected, attempt to use its existing count
+                nextSeason = 1;
+                nextEpisode = 1;
+            }
+        }
+
+        const seasonInput = document.getElementById('multiModalSeason');
+        const epInput = document.getElementById('multiModalStartEp');
+        const countInput = document.getElementById('multiModalCount');
+
+        if (seasonInput) seasonInput.value = nextSeason;
+        if (epInput) epInput.value = nextEpisode;
+        if (countInput) countInput.value = 12;
+
+        setMultiDefaultSourceType(multiDefaultSourceType);
+
+        const modal = document.getElementById('multiEpisodeModal');
+        if (modal) modal.classList.add('active');
+    };
+
+    window.closeMultiEpisodeModal = function () {
+        const modal = document.getElementById('multiEpisodeModal');
+        if (modal) modal.classList.remove('active');
+    };
+
+    window.setMultiDefaultSourceType = function (type) {
+        multiDefaultSourceType = type;
+        const btnVideo = document.getElementById('multiDefaultTypeVideo');
+        const btnFrame = document.getElementById('multiDefaultTypeFrame');
+        if (type === 'video') {
+            if (btnVideo) btnVideo.classList.add('active');
+            if (btnFrame) btnFrame.classList.remove('active');
+        } else {
+            if (btnVideo) btnVideo.classList.remove('active');
+            if (btnFrame) btnFrame.classList.add('active');
+        }
+    };
+
+    window.confirmAddMultipleRows = function () {
+        const season = parseInt(document.getElementById('multiModalSeason').value) || 1;
+        const startEp = parseInt(document.getElementById('multiModalStartEp').value) || 1;
+        const count = parseInt(document.getElementById('multiModalCount').value) || 1;
+
+        if (count < 1 || count > 100) {
+            alert("Lütfen 1 ile 100 arasında bir bölüm sayısı giriniz.");
+            return;
+        }
+
+        for (let i = 0; i < count; i++) {
+            addEpisodeRow(season, startEp + i, multiDefaultSourceType);
+        }
+
+        closeMultiEpisodeModal();
+    };
+
+    window.promptAddMultipleRows = window.openMultiEpisodeModal;
+
+    window.updateEpisodeRowsMeta = function () {
+        const container = document.getElementById('episodeRowsContainer');
+        const placeholder = document.getElementById('episodeEmptyPlaceholder');
+        const badge = document.getElementById('episodeCountBadge');
+        const clearBtn = document.getElementById('btnClearEpisodeRowsBtn');
+
+        const cards = container ? container.querySelectorAll('.episode-card-item') : [];
+        const count = cards.length;
+
+        if (badge) badge.innerText = count;
+        if (placeholder) placeholder.style.display = count === 0 ? 'block' : 'none';
+        if (clearBtn) clearBtn.style.display = count > 0 ? 'inline-flex' : 'none';
+
+        cards.forEach((card, idx) => {
+            const seqSpan = card.querySelector('.card-seq-num');
+            if (seqSpan) seqSpan.innerText = (idx + 1).toString();
+        });
+    };
+
+    window.openBulkForSeries = function (seriesId, seriesName, event) {
+        if (event) event.stopPropagation();
+        resetSeriesForm();
+
+        const modeExistingRadio = document.getElementById('modeExisting');
+        if (modeExistingRadio) {
+            modeExistingRadio.checked = true;
+            toggleSeriesMode();
+        }
+
+        const selectedSeriesIdInput = document.getElementById('selectedSeriesId');
+        if (selectedSeriesIdInput) {
+            selectedSeriesIdInput.value = seriesId;
+        }
+
+        document.querySelectorAll('.series-card').forEach(c => {
+            if (c.dataset.id === seriesId) c.classList.add('selected');
+            else c.classList.remove('selected');
+        });
+
+        updatePosterPreview('series', `/media/image/${seriesId}?t=${Date.now()}`);
+
+        fetch(`/admin/episodes-by-series?seriesId=${seriesId}`)
+            .then(r => r.json())
+            .then(episodes => {
+                clearAllEpisodeRows(true);
+                if (episodes && episodes.length > 0) {
+                    let maxSeason = 1;
+                    let maxEp = 1;
+                    episodes.forEach(ep => {
+                        const s = ep.seasonNumber || ep.season || 1;
+                        const e = ep.episodeNumber || ep.episode || 1;
+                        if (s > maxSeason) {
+                            maxSeason = s;
+                            maxEp = e;
+                        } else if (s === maxSeason && e > maxEp) {
+                            maxEp = e;
+                        }
+                    });
+                    addEpisodeRow(maxSeason, maxEp + 1);
+                } else {
+                    addEpisodeRow(1, 1);
+                }
+            }).catch(() => {
+                clearAllEpisodeRows(true);
+                addEpisodeRow(1, 1);
+            });
+
+        const seriesLink = document.querySelector('.nav-link[data-section="series-section"]');
+        if (seriesLink) seriesLink.click();
+        const section = document.getElementById('episodeBuilderSection');
+        if (section) section.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    window.toggleEpisodeMethod = function () {};
+    window.toggleCustomSeasons = function () {};
+    window.updateBulkPreview = function () {};
+    window.getBulkSeasonConfigs = function () { return []; };
+
     window.toggleSeriesMode = function () {
         const mode = document.querySelector('input[name="seriesMode"]:checked').value;
         const existingWrapper = document.getElementById('existingSeriesSelectWrapper');
@@ -1668,12 +2186,18 @@ document.addEventListener('DOMContentLoaded', function () {
         if (mode === 'existing') {
             existingWrapper.style.display = 'block';
             newFields.style.display = 'none';
-            // Refresh cards
             fetchSeries();
         } else {
             existingWrapper.style.display = 'none';
             newFields.style.display = 'grid';
             updatePosterPreview('series', null);
+        }
+
+        const epMethod = document.querySelector('input[name="episodeMethod"]:checked') ? document.querySelector('input[name="episodeMethod"]:checked').value : 'single';
+        if (epMethod === 'bulk') {
+            updateBulkSummary();
+        } else {
+            seriesSubmitBtn.innerHTML = '<i class="fas fa-save"></i> ' + (mode === 'new' ? 'KAYDET' : 'BÖLÜMÜ KAYDET');
         }
     };
 
@@ -1819,8 +2343,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Form Layout for Series Edit
         document.getElementById('seriesModeGroup').style.display = 'none';
+        if (document.getElementById('episodeMethodGroup')) document.getElementById('episodeMethodGroup').style.display = 'none';
         document.getElementById('newSeriesFields').style.display = 'grid';
         document.getElementById('episodeFields').style.display = 'none';
+        if (document.getElementById('bulkEpisodeFields')) document.getElementById('bulkEpisodeFields').style.display = 'none';
         document.getElementById('seriesPosterGroup').style.display = 'block';
 
         document.getElementById('seriesFormStatus').style.display = 'block';
@@ -1850,8 +2376,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Form Layout for Episode Edit
         document.getElementById('seriesModeGroup').style.display = 'none';
+        if (document.getElementById('episodeMethodGroup')) document.getElementById('episodeMethodGroup').style.display = 'none';
         document.getElementById('newSeriesFields').style.display = 'none';
-        document.getElementById('episodeFields').style.display = 'grid';
+        if (document.getElementById('episodeBuilderSection')) document.getElementById('episodeBuilderSection').style.display = 'none';
+        if (document.getElementById('episodeSingleEditFields')) document.getElementById('episodeSingleEditFields').style.display = 'grid';
+        if (document.getElementById('bulkEpisodeFields')) document.getElementById('bulkEpisodeFields').style.display = 'none';
         document.getElementById('seriesPosterGroup').style.display = 'none';
 
         document.getElementById('seriesFormStatus').style.display = 'block';
@@ -1972,7 +2501,10 @@ document.addEventListener('DOMContentLoaded', function () {
         // Reset visibility to default (New mode)
         document.getElementById('seriesModeGroup').style.display = 'block';
         document.getElementById('newSeriesFields').style.display = 'grid';
-        document.getElementById('episodeFields').style.display = 'grid';
+        if (document.getElementById('episodeBuilderSection')) document.getElementById('episodeBuilderSection').style.display = 'block';
+        if (document.getElementById('episodeSingleEditFields')) document.getElementById('episodeSingleEditFields').style.display = 'none';
+        clearAllEpisodeRows(true);
+        addEpisodeRow(1, 1);
         document.getElementById('seriesPosterGroup').style.display = 'block';
         document.getElementById('existingSeriesSelectWrapper').style.display = 'none';
         document.getElementById('modeNew').checked = true;
@@ -2369,6 +2901,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         if (e.target == banModal) banModal.classList.remove('active');
         if (e.target == profilePhotoModal) profilePhotoModal.classList.remove('active');
+        const multiModal = document.getElementById('multiEpisodeModal');
+        if (e.target == multiModal) multiModal.classList.remove('active');
     });
 
     document.addEventListener('keydown', (e) => {
@@ -2766,8 +3300,9 @@ document.addEventListener('DOMContentLoaded', function () {
             ? document.getElementById('movieId').value !== ""
             : (document.getElementById('seriesId').value !== "" || document.getElementById('episodeId').value !== "");
 
-        // If in edit mode, it's already NOT required (backend handles partial updates)
-        if (isEditMode) {
+        // If in edit mode or bulk mode, it's NOT required
+        const isBulk = type === 'series' && document.querySelector('input[name="episodeMethod"]:checked')?.value === 'bulk';
+        if (isEditMode || isBulk) {
             fileInput.removeAttribute('required');
             return;
         }

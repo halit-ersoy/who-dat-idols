@@ -836,8 +836,13 @@ public class AdminController {
                 }
             }
 
-            return ResponseEntity.ok("{\"id\": \"" + episodeId + "\", \"message\": \"Bölüm başarıyla işlendi (S"
+            UUID actualSeriesId = existingSeriesId;
+            if (actualSeriesId == null) {
+                Series p = seriesService.findSeriesByName(seriesInfo.getName());
+                if (p != null) actualSeriesId = p.getId();
+            }
 
+            return ResponseEntity.ok("{\"id\": \"" + episodeId + "\", \"seriesId\": \"" + (actualSeriesId != null ? actualSeriesId.toString() : "") + "\", \"message\": \"Bölüm başarıyla işlendi (S"
                     + season + "E" + episode + ").\"}");
 
         } catch (com.ses.whodatidols.exception.DuplicateConflictException e) {
@@ -855,6 +860,51 @@ public class AdminController {
     }
 
 
+
+
+    @Caching(evict = {
+            @CacheEvict(value = "recentSeries", allEntries = true),
+            @CacheEvict(value = "featuredTv", allEntries = true),
+            @CacheEvict(value = "weeklyBestSeries", allEntries = true),
+            @CacheEvict(value = "videoDetails", allEntries = true),
+            @CacheEvict(value = "resolvedSlugs", allEntries = true),
+            @CacheEvict(value = "similarContent", allEntries = true)
+    })
+    @PostMapping("/add-series-bulk")
+    public ResponseEntity<?> addSeriesBulk(
+            @ModelAttribute Series seriesInfo,
+            @RequestParam(value = "image", required = false) MultipartFile image,
+            @RequestParam(value = "imageUrl", required = false) String imageUrl,
+            @RequestParam(value = "existingSeriesId", required = false) UUID existingSeriesId,
+            @RequestParam(value = "summary", required = false) String summary,
+            @RequestParam(value = "country", required = false) String country,
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam("seasonConfigs") String seasonConfigs,
+            @RequestParam(value = "overwrite", defaultValue = "false") boolean overwrite,
+            @RequestParam(value = "isAdult", defaultValue = "false") boolean isAdult,
+            @RequestParam(value = "castData", required = false) String castData) {
+        try {
+            if (existingSeriesId != null) {
+                seriesInfo.setId(existingSeriesId);
+            }
+            if (summary != null) seriesInfo.setSummary(summary);
+            if (country != null) seriesInfo.setCountry(country);
+
+            Map<String, Object> result = seriesService.createBulkEpisodes(
+                    seriesInfo, existingSeriesId, image, imageUrl, seasonConfigs,
+                    overwrite, isAdult, year);
+
+            String targetSeriesIdStr = (String) result.get("seriesId");
+            if (targetSeriesIdStr != null && castData != null && !castData.isEmpty()) {
+                castSyncService.saveCastFromJson(UUID.fromString(targetSeriesIdStr), "series", castData);
+            }
+
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Bilinmeyen hata"));
+        }
+    }
 
     @Caching(evict = {
 
