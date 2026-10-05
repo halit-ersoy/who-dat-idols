@@ -10,22 +10,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Hakkımızda - Who Dat Idols?</title>
     <meta name="description"
-        content="Learn more about Who Dat Idols? (WDI), our mission, and the team behind the best Asian drama streaming platform.">
+        content="Who Dat Idols? (WDI) hakkında bilgi edinin: Misyonumuz, vizyonumuz ve Asya içeriklerini sizlerle buluşturan ekibimiz.">
     <link rel="canonical" href="https://whodatidols.com/about">
     <link
-        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Poppins:wght@300;400;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/elements/variables.css">
     <link rel="stylesheet" href="/about/css/about.css">
     <script src="/homepage/js/devtools-protection.js"></script>
-    <link rel="stylesheet" href="/elements/variables.css">
 </head>
 
 <body>
-    <!-- Fixed navigation header -->
+    <!-- Fixed navigation header (Watch ile aynı minimal yapı) -->
     <header>
-        <a href="/" class="logo" style="text-decoration: none;">WDI</a>
+        <a href="/" class="logo-link" aria-label="Ana sayfa">
+            <div class="logo">WDI</div>
+        </a>
     </header>
 
     <!-- About Hero Section -->
@@ -38,26 +40,39 @@
     </section>
 
     <!-- Our Story Section -->
-    <section class="about-section">
+    <section class="about-section story-section">
         <div class="container">
-            <h2 class="section-title">Hikayemiz</h2>
-            <div class="about-content">
-                <div class="about-text">
-                    <p>Who Dat Idols? (WDI), 2021 yılında Asya dizi ve filmlerini Türkiye'deki izleyicilerle buluşturma
-                        amacıyla kuruldu. Platformumuz, K-Drama'dan BL içeriklerine, J-Drama'dan C-Drama'ya kadar geniş
-                        bir
-                        yelpazeye sahip.</p>
-                    <p>İzleyicilerimize en kaliteli ve güncel içeriği sunmak için sürekli çalışıyoruz. Profesyonel
-                        çeviri
-                        ekibimiz ve teknik kadromuz sayesinde, orijinal içerikleri Türkçe altyazılarla en kısa sürede
-                        platformumuza ekliyoruz.</p>
-                    <p>Misyonumuz, Asya'nın zengin kültürel içeriklerini Türk izleyicisine ulaştırmak ve kültürlerarası
-                        bir
-                        köprü oluşturmaktır.</p>
+            <div class="section-header-centered">
+                <span class="section-tag">BİZ KİMİZ?</span>
+                <h2 class="section-title">Hikayemiz</h2>
+            </div>
+            <div class="story-glass-card">
+                <div class="about-content">
+                    <div class="about-text">
+                        <p><strong>Who Dat Idols? (WDI)</strong>, 2021 yılında Asya dizi ve sinema kültürünü Türkiye'deki izleyicilerle en kaliteli biçimde buluşturma tutkusuyla kuruldu.</p>
+                        <p>K-Drama'dan BL içeriklerine, J-Drama'dan C-Drama'ya uzanan geniş arşivimizi her geçen gün genişleterek izleyicilerimize kesintisiz, hızlı ve yüksek çözünürlüklü bir seyir keyfi sunuyoruz.</p>
+                        <p>Gönüllü ve profesyonel çevirmenlerimiz, editörlerimiz ve teknik kadromuz sayesinde orijinal Asya yapımlarını Türkçeye en doğru kültürel bağlam ve kusursuz imla ile kazandırıyor; Asya ile izleyicilerimiz arasında köprü olmaktan gurur duyuyoruz.</p>
+                    </div>
                 </div>
-                <!-- <div class="about-image">
-                    <img src="/media/static/image/about_our_stories.jpg" alt="About WDI">
-                </div> -->
+
+                <div class="story-stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">2021</div>
+                        <div class="stat-label">Kuruluş Yılı</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">1000+</div>
+                        <div class="stat-label">Bölüm &amp; Yapım</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">7+</div>
+                        <div class="stat-label">Tutkulu Ekip Üyesi</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">%100</div>
+                        <div class="stat-label">Gönüllü &amp; Samimi</div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -65,96 +80,81 @@
     <!-- Our Team Section -->
     <section class="about-section team-section">
         <div class="container">
-            <h2 class="section-title">Ekibimiz</h2>
-            <div class="team-subgrid team-top">
-                <div class="team-member">
-                    <div class="member-avatar">
-                        <img src="/media/static/image/stayberry.jpg" alt="Team Member">
-                    </div>
-                    <h3 class="member-name">@stayberry</h3>
-                    <p class="member-role">Kurucu</p>
+            <div class="section-header-centered">
+                <span class="section-tag">BİZİ BİZ YAPANLAR</span>
+                <h2 class="section-title">Ekibimiz</h2>
+                <p class="section-description">Who Dat Idols?'ı ayakta tutan, platformu her gün daha ileriye taşıyan çekirdek kadromuz ve çeviri ekibimiz.</p>
+            </div>
+
+            <!-- Yönetim & Geliştirme -->
+            <div class="team-group">
+                <div class="team-group-header">
+                    <div class="team-group-icon"><i class="fas fa-crown"></i></div>
+                    <h3 class="team-group-title">Yönetim &amp; Geliştirme</h3>
                 </div>
-                <div class="team-member">
-                    <div class="member-avatar">
-                        <img src="/media/static/image/xeon.jpg" alt="Team Member">
+                <div class="team-subgrid team-core">
+                    <div class="team-member">
+                        <div class="member-avatar">
+                            <img src="/media/static/image/stayberry.jpg" alt="@stayberry" loading="lazy">
+                        </div>
+                        <h3 class="member-name">@stayberry</h3>
+                        <span class="member-role member-role-badge role-founder">Kurucu</span>
                     </div>
-                    <h3 class="member-name">@xeon</h3>
-                    <p class="member-role">Geliştirici</p>
-                </div>
-                <div class="team-member">
-                    <div class="member-avatar">
-                        <img src="/media/static/image/haruya.jpg" alt="Team Member">
+                    <div class="team-member">
+                        <div class="member-avatar">
+                            <img src="/media/static/image/xeon.jpg" alt="@xeon" loading="lazy">
+                        </div>
+                        <h3 class="member-name">@xeon</h3>
+                        <span class="member-role member-role-badge role-dev">Geliştirici</span>
                     </div>
-                    <h3 class="member-name">@haruyaa</h3>
-                    <p class="member-role">Editör & Çevirmen</p>
-                </div>
-                <div class="team-member">
-                    <div class="member-avatar">
-                        <img src="/media/static/image/armony.jpg" alt="Team Member">
+                    <div class="team-member">
+                        <div class="member-avatar">
+                            <img src="/media/static/image/haruya.jpg" alt="@haruyaa" loading="lazy">
+                        </div>
+                        <h3 class="member-name">@haruyaa</h3>
+                        <span class="member-role member-role-badge role-editor">Editör &amp; Çevirmen</span>
                     </div>
-                    <h3 class="member-name">@armony</h3>
-                    <p class="member-role">Editör & Çevirmen</p>
                 </div>
             </div>
-            <div class="team-divider"></div>
-            <div class="team-subgrid team-bottom">
-                <div class="team-member">
-                    <div class="member-avatar">
-                        <img src="/media/static/image/efo.jpg" alt="Team Member">
-                    </div>
-                    <h3 class="member-name">@efö</h3>
-                    <p class="member-role">Çevirmen</p>
-                </div>
-                <div class="team-member">
-                    <div class="member-avatar">
-                        <img src="/media/static/image/ash.jpg" alt="Team Member">
-                    </div>
-                    <h3 class="member-name">@ash</h3>
-                    <p class="member-role">Çevirmen</p>
-                </div>
-                <div class="team-member">
-                    <div class="member-avatar">
-                        <img src="/media/static/image/april.jpg" alt="Team Member">
-                    </div>
-                    <h3 class="member-name">@april</h3>
-                    <p class="member-role">Çevirmen</p>
-                </div>
-                <div class="team-member">
-                    <div class="member-avatar">
-                        <img src="/media/static/image/sparkle.jpg" alt="Team Member">
-                    </div>
-                    <h3 class="member-name">@sparkle</h3>
-                    <p class="member-role">Çevirmen</p>
-                </div>
-                <div class="team-member">
-                    <div class="member-avatar">
-                        <img src="/media/static/image/ales.jpg" alt="Team Member">
-                    </div>
-                    <h3 class="member-name">@ales</h3>
-                    <p class="member-role">Çevirmen</p>
-                </div>
-                <div class="team-member">
-                    <div class="member-avatar">
-                        <img src="/media/static/image/haneul.jpg" alt="Team Member">
-                    </div>
-                    <h3 class="member-name">@haneul</h3>
-                    <p class="member-role">Çevirmen</p>
-                </div>
-                <div class="team-member">
-                    <div class="member-avatar">
-                        <img src="/media/static/image/harin.jpg" alt="Team Member">
-                    </div>
-                    <h3 class="member-name">@harin</h3>
-                    <p class="member-role">Çevirmen</p>
-                </div>
-                <div class="team-member">
-                    <div class="member-avatar">
-                        <img src="/media/static/image/rawee.jpg" alt="Team Member">
-                    </div>
-                    <h3 class="member-name">@rawee</h3>
-                    <p class="member-role">Çevirmen</p>
-                </div>
 
+            <div class="team-divider"></div>
+
+            <!-- Çeviri Ekibi -->
+            <div class="team-group">
+                <div class="team-group-header">
+                    <div class="team-group-icon"><i class="fas fa-language"></i></div>
+                    <h3 class="team-group-title">Çeviri Ekibi</h3>
+                </div>
+                <div class="team-subgrid team-translators">
+                    <div class="team-member">
+                        <div class="member-avatar">
+                            <img src="/media/static/image/april.jpg" alt="@april" loading="lazy">
+                        </div>
+                        <h3 class="member-name">@april</h3>
+                        <span class="member-role member-role-badge role-translator">Çevirmen</span>
+                    </div>
+                    <div class="team-member">
+                        <div class="member-avatar">
+                            <img src="/media/static/image/sparkle.jpg" alt="@sparkle" loading="lazy">
+                        </div>
+                        <h3 class="member-name">@sparkle</h3>
+                        <span class="member-role member-role-badge role-translator">Çevirmen</span>
+                    </div>
+                    <div class="team-member">
+                        <div class="member-avatar">
+                            <img src="/media/static/image/ales.jpg" alt="@ales" loading="lazy">
+                        </div>
+                        <h3 class="member-name">@ales</h3>
+                        <span class="member-role member-role-badge role-translator">Çevirmen</span>
+                    </div>
+                    <div class="team-member">
+                        <div class="member-avatar">
+                            <img src="/media/static/image/rawee.jpg" alt="@rawee" loading="lazy">
+                        </div>
+                        <h3 class="member-name">@rawee</h3>
+                        <span class="member-role member-role-badge role-translator">Çevirmen</span>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -162,35 +162,39 @@
     <!-- Why Choose Us Section -->
     <section class="about-section features-section">
         <div class="container">
-            <h2 class="section-title">Neden Biz?</h2>
+            <div class="section-header-centered">
+                <span class="section-tag">AYRICALIKLAR</span>
+                <h2 class="section-title">Neden Biz?</h2>
+                <p class="section-description">İzleyicilerimize en iyi deneyimi sunmak için benimsediğimiz temel ilkeler.</p>
+            </div>
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <i class="fas fa-video"></i>
+                        <i class="fas fa-tv"></i>
                     </div>
-                    <h3>Geniş İçerik</h3>
-                    <p>K-Drama, BL, J-Drama, C-Drama ve daha fazlası</p>
+                    <h3>Zengin İçerik Arşivi</h3>
+                    <p>K-Drama, BL, J-Drama, C-Drama ve popüler Asya eğlence programlarıyla dopdolu bir kütüphane.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <i class="fas fa-language"></i>
+                        <i class="fas fa-closed-captioning"></i>
                     </div>
-                    <h3>Kaliteli Çeviriler</h3>
-                    <p>Profesyonel çevirmenlerimiz tarafından hazırlanmış Türkçe altyazılar</p>
+                    <h3>Özenli Türkçe Çeviriler</h3>
+                    <p>Diyalogların özgün anlamını koruyarak kültürel bağlamıyla hazırlanan kaliteli Türkçe altyazılar.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <i class="fas fa-bolt"></i>
                     </div>
-                    <h3>Hızlı Yayın</h3>
-                    <p>Yeni bölümler en kısa sürede platformumuzda</p>
+                    <h3>Hızlı &amp; Güncel Yayın</h3>
+                    <p>Asya'da yayınlanan yeni bölümleri en kısa sürede izleyicilerimize ulaştıran dinamik yayın akışı.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <i class="fas fa-heart"></i>
                     </div>
-                    <h3>Tutkulu Ekip</h3>
-                    <p>Asya içeriklerine tutkuyla bağlı bir ekip</p>
+                    <h3>Tutkulu Topluluk</h3>
+                    <p>Asya dizi ve sinema kültürünü seven, izleyicilerle sürekli etkileşimde olan samimi bir kadro.</p>
                 </div>
             </div>
         </div>
@@ -199,26 +203,53 @@
     <!-- Contact Section -->
     <section class="about-section contact-section">
         <div class="container">
-            <h2 class="section-title">Bize Ulaşın</h2>
-            <div class="contact-content">
-                <div class="contact-info">
-                    <div class="contact-item">
-                        <i class="fas fa-envelope"></i>
-                        <p>info@whodatidols.com</p>
+            <div class="section-header-centered">
+                <span class="section-tag">İLETİŞİM</span>
+                <h2 class="section-title">Bize Ulaşın</h2>
+                <p class="section-description">Görüş, öneri veya iş birliği talepleriniz için bize dilediğiniz zaman ulaşabilirsiniz.</p>
+            </div>
+            <div class="contact-card">
+                <div class="contact-content">
+                    <div class="contact-info">
+                        <a href="mailto:info@whodatidols.com" class="contact-item">
+                            <div class="contact-icon-box">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="contact-text">
+                                <span class="contact-label">E-Posta</span>
+                                <span class="contact-val">info@whodatidols.com</span>
+                            </div>
+                        </a>
+                        <div class="contact-item">
+                            <div class="contact-icon-box">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div class="contact-text">
+                                <span class="contact-label">Konum</span>
+                                <span class="contact-val">İstanbul, Türkiye</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="contact-item">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <p>İstanbul, Türkiye</p>
-                    </div>
-                    <div class="social-links">
-                        <a href="https://www.tiktok.com/@whodatidolss?_t=ZS-8w9spOIC1ZA&_r=1" class="social-link"
-                            target="_blank" rel="noopener noreferrer"><i class="fab fa-tiktok"></i></a>
-                        <a href="https://x.com/whodatidols?s=21&t=fn9Kzc3PH2fZliSh-iBBrA" class="social-link"
-                            target="_blank" rel="noopener noreferrer"><i class="fab fa-twitter"></i></a>
-                        <a href="https://www.instagram.com/whodatidols?igsh=MTV1czNyYmtlZmhreg==" class="social-link"
-                            target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
-                        <a href="https://youtube.com/@whodatidols?si=x3v_2vmEAbjJyctv" class="social-link"
-                            target="_blank" rel="noopener noreferrer"><i class="fab fa-youtube"></i></a>
+                    <div class="social-wrapper">
+                        <span class="social-title">Bizi Takip Edin</span>
+                        <div class="social-links">
+                            <a href="https://www.tiktok.com/@whodatidolss?_t=ZS-8w9spOIC1ZA&_r=1" class="social-link"
+                                target="_blank" rel="noopener noreferrer" aria-label="TikTok">
+                                <i class="fab fa-tiktok"></i>
+                            </a>
+                            <a href="https://x.com/whodatidols?s=21&t=fn9Kzc3PH2fZliSh-iBBrA" class="social-link"
+                                target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+                                <i class="fab fa-x-twitter"></i>
+                            </a>
+                            <a href="https://www.instagram.com/whodatidols?igsh=MTV1czNyYmtlZmhreg==" class="social-link"
+                                target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                                <i class="fab fa-instagram"></i>
+                            </a>
+                            <a href="https://youtube.com/@whodatidols?si=x3v_2vmEAbjJyctv" class="social-link"
+                                target="_blank" rel="noopener noreferrer" aria-label="YouTube">
+                                <i class="fab fa-youtube"></i>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
