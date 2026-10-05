@@ -2140,30 +2140,42 @@ public class AdminController {
 
 
 
-    @GetMapping("/me")
-
+        @GetMapping("/me")
     public ResponseEntity<Map<String, Object>> getCurrentUser(Authentication authentication) {
-
         if (authentication == null)
-
             return ResponseEntity.status(401).build();
 
-
-
         Map<String, Object> user = new HashMap<>();
-
-        user.put("username", authentication.getName());
-
+        String authName = authentication.getName();
+        user.put("username", authName);
         user.put("roles", authentication.getAuthorities().stream()
-
                 .map(GrantedAuthority::getAuthority)
-
                 .collect(Collectors.toList()));
 
+        try {
+            personRepository.findByNicknameOrEmail(authName).ifPresent(p -> {
+                user.put("nickname", p.getNickname());
+                user.put("name", p.getName());
+                user.put("surname", p.getSurname());
+                String fullName = "";
+                if (p.getName() != null && !p.getName().isBlank()) {
+                    fullName += p.getName().trim();
+                }
+                if (p.getSurname() != null && !p.getSurname().isBlank()) {
+                    fullName += (fullName.isEmpty() ? "" : " ") + p.getSurname().trim();
+                }
+                user.put("fullName", fullName);
+                String display = !fullName.isEmpty() ? fullName : (p.getNickname() != null ? p.getNickname() : authName);
+                user.put("displayName", display);
+            });
+        } catch (Exception ignored) {
+        }
 
+        if (!user.containsKey("displayName")) {
+            user.put("displayName", authName);
+        }
 
         return ResponseEntity.ok(user);
-
     }
 
 

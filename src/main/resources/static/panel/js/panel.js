@@ -1,3 +1,20 @@
+// Admin Live Theme Switcher
+window.changeAdminTheme = function (theme) {
+    localStorage.setItem('wdi-theme', theme);
+    if (theme === 'green') {
+        document.documentElement.removeAttribute('data-theme');
+    } else {
+        document.documentElement.setAttribute('data-theme', theme);
+    }
+    document.querySelectorAll('.theme-dot').forEach(dot => {
+        if (dot.getAttribute('data-color') === theme) {
+            dot.classList.add('active');
+        } else {
+            dot.classList.remove('active');
+        }
+    });
+};
+
 document.addEventListener('DOMContentLoaded', function () {
 
     const escapeHtml = (unsafe) => {
@@ -17,6 +34,19 @@ document.addEventListener('DOMContentLoaded', function () {
             // Update active state in nav
             navLinks.forEach(l => l.classList.remove('active'));
             link.classList.add('active');
+
+            // Update Breadcrumb text
+            const breadcrumbEl = document.getElementById('headerActiveSectionName');
+            if (breadcrumbEl) {
+                const linkSpan = link.querySelector('span');
+                breadcrumbEl.textContent = linkSpan ? linkSpan.textContent.trim() : link.textContent.trim();
+            }
+
+            // Close mobile sidebar if open
+            const sidebarEl = document.getElementById('adminSidebar') || document.querySelector('.sidebar');
+            if (sidebarEl && sidebarEl.classList.contains('mobile-open')) {
+                sidebarEl.classList.remove('mobile-open');
+            }
 
             // Show target section, hide others
             sections.forEach(section => {
@@ -82,6 +112,63 @@ document.addEventListener('DOMContentLoaded', function () {
             document.querySelector('.main-content').scrollTop = 0;
         });
     });
+
+
+    // Current Logged-in Admin Profile Loader
+    function fetchCurrentAdminProfile() {
+        fetch('/admin/me')
+            .then(res => {
+                if (!res.ok) throw new Error('Not logged in');
+                return res.json();
+            })
+            .then(user => {
+                const nameEl = document.getElementById('currentAdminName') || document.querySelector('.admin-name');
+                if (nameEl) {
+                    const displayName = user.displayName || user.fullName || user.name || user.nickname || user.username || 'Admin';
+                    nameEl.textContent = displayName;
+                    nameEl.title = `@${user.username || displayName}`;
+                }
+                const avatarEl = document.getElementById('currentAdminAvatar') || document.querySelector('.admin-avatar');
+                if (avatarEl) {
+                    const displayName = user.displayName || user.fullName || user.name || user.nickname || user.username || 'A';
+                    const initial = displayName.trim().charAt(0).toUpperCase();
+                    avatarEl.innerHTML = `<span style="font-weight:700;font-size:0.9rem;letter-spacing:0;">${initial}</span>`;
+                }
+            })
+            .catch(err => {
+                console.warn('Could not fetch admin user details:', err);
+            });
+    }
+
+    // Call immediately on page ready
+    fetchCurrentAdminProfile();
+
+    // Initialize Theme Dots to reflect current localStorage theme
+    const activeTheme = localStorage.getItem('wdi-theme') || 'green';
+    document.querySelectorAll('.theme-dot').forEach(dot => {
+        if (dot.getAttribute('data-color') === activeTheme) {
+            dot.classList.add('active');
+        } else {
+            dot.classList.remove('active');
+        }
+    });
+
+    // Mobile Sidebar Toggle Listener
+    const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+    const adminSidebar = document.getElementById('adminSidebar') || document.querySelector('.sidebar');
+    if (sidebarToggleBtn && adminSidebar) {
+        sidebarToggleBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            adminSidebar.classList.toggle('mobile-open');
+        });
+
+        document.addEventListener('click', function (e) {
+            if (adminSidebar.classList.contains('mobile-open') && !adminSidebar.contains(e.target) && !sidebarToggleBtn.contains(e.target)) {
+                adminSidebar.classList.remove('mobile-open');
+            }
+        });
+    }
+
 
     // Helper: Update Poster Preview
     function updatePosterPreview(section, urlOrSource) {
@@ -4348,7 +4435,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <span style="font-weight:600; color:rgba(255,255,255,0.85); font-size:0.85rem;">@${req.userNickname || '-'}</span>
                 </td>
                 <td>
-                    <span style="background:rgba(30, 215, 96, 0.15); color:var(--primary-color, #1ed760); padding:3px 10px; border-radius:12px; font-weight:700; font-size:0.85rem; border:1px solid rgba(30, 215, 96, 0.3);">
+                    <span style="background:rgba(var(--primary-rgb), 0.15); color:var(--primary); padding:3px 10px; border-radius:12px; font-weight:700; font-size:0.85rem; border:1px solid rgba(var(--primary-rgb), 0.3);">
                         +${req.voteCount || 0}
                     </span>
                 </td>
