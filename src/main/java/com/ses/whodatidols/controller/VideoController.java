@@ -235,7 +235,7 @@ public class VideoController {
         return ResponseEntity.ok(similar);
     }
 
-    @GetMapping("/ad/random")
+    @GetMapping({"/ad/random", "/commercial/random"})
     public ResponseEntity<Map<String, Object>> getRandomAd() {
         int probability = systemSettingRepository.getAdProbability();
         if (probability <= 0) {
@@ -258,7 +258,7 @@ public class VideoController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/ad/probability")
+    @GetMapping({"/ad/probability", "/commercial/probability"})
     public ResponseEntity<Map<String, Object>> getAdProbabilityPublic() {
         return ResponseEntity.ok(Map.of("probability", systemSettingRepository.getAdProbability()));
     }

@@ -425,7 +425,7 @@ export function initVideoControls(videoId) {
 
         // Configurable ad check (probability handled dynamically by backend)
         try {
-            const adRes = await fetch('/api/video/ad/random');
+            const adRes = await fetch('/api/video/commercial/random');
             if (adRes.ok && adRes.status === 200) {
                 const adData = await adRes.json();
                 if (adData && adData.id) {

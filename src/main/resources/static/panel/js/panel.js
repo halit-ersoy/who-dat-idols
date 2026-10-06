@@ -64,16 +64,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 fetchDashboardStats();
             } else if (targetId === 'hero-section') {
                 fetchHeroVideos();
-            } else if (targetId === 'ad-section') {
-                fetchAds();
-                fetchAdProbability();
+            } else if (targetId === 'ad-section' || targetId === 'commercial-section') {
+                fetchCommercials();
+                fetchCommercialProbability();
             } else if (targetId === 'movie-section') {
                 fetchMovies();
             } else if (targetId === 'series-section') {
                 fetchSeries();
             } else if (targetId === 'archive-section') {
                 fetchHeroVideos();
-                fetchAds();
+                fetchCommercials();
                 fetchMovies();
                 fetchSeries();
             } else if (targetId === 'view-management-section') {
@@ -395,7 +395,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // Hide sections based on role
             if (isTranslator) {
                 const translatorHiddenSections = [
-                    'hero-section', 'ad-section', 'calendar-section', 'upcoming-section',
+                    'hero-section', 'ad-section', 'commercial-section', 'calendar-section', 'upcoming-section',
                     'view-management-section', 'comments-section', 'user-section',
                     'announcement-section', 'update-notes-section', 'feedback-section', 'content-requests-section',
                     'security-violations-section', 'banned-ips-section', 'system-settings-section'
@@ -974,14 +974,16 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     /* ===========================================================
-       REKLAM YÖNETİMİ
+       REKLAM / COMMERCIAL YÖNETİMİ (anti-adblock safe naming)
        =========================================================== */
-    const adForm = document.getElementById('adForm');
-    if (adForm) {
-        adForm.addEventListener('submit', function (e) {
+    const commercialForm = document.getElementById('commercialForm') || document.getElementById('adForm');
+    if (commercialForm) {
+        commercialForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            const name = document.getElementById('adName').value;
-            const file = document.getElementById('adFile').files[0];
+            const nameInput = document.getElementById('commercialName') || document.getElementById('adName');
+            const fileInput = document.getElementById('commercialFile') || document.getElementById('adFile');
+            const name = nameInput ? nameInput.value : '';
+            const file = fileInput && fileInput.files ? fileInput.files[0] : null;
 
             if (!file) {
                 alert("Lütfen bir video dosyası seçin!");
@@ -992,10 +994,15 @@ document.addEventListener('DOMContentLoaded', function () {
             formData.append('name', name);
             formData.append('file', file);
 
-            uploadDataWithProgress('/admin/add-ad', formData, 'adForm', 'progressWrapperAd', 'progressBarAd', 'percentAd', () => {
-                fetchAds();
-                document.getElementById('adName').value = '';
-                const fileContainer = document.getElementById('adFileContainer');
+            const formId = commercialForm.id;
+            const progressWrapId = document.getElementById('progressWrapperCommercial') ? 'progressWrapperCommercial' : 'progressWrapperAd';
+            const progressBarId = document.getElementById('progressBarCommercial') ? 'progressBarCommercial' : 'progressBarAd';
+            const percentId = document.getElementById('percentCommercial') ? 'percentCommercial' : 'percentAd';
+
+            uploadDataWithProgress('/admin/add-commercial', formData, formId, progressWrapId, progressBarId, percentId, () => {
+                fetchCommercials();
+                if (nameInput) nameInput.value = '';
+                const fileContainer = document.getElementById('commercialFileContainer') || document.getElementById('adFileContainer');
                 if (fileContainer) {
                     fileContainer.querySelector('.file-name').innerText = 'Dosya seçilmedi';
                     fileContainer.querySelector('input[type="file"]').value = '';
@@ -1004,13 +1011,14 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function fetchAds() {
-        const adTable = document.getElementById('adTable');
-        if (!adTable) return;
-        fetch('/admin/ads')
+    function fetchCommercials() {
+        const commTable = document.getElementById('commercialTable') || document.getElementById('adTable');
+        if (!commTable) return;
+        fetch('/admin/commercials')
             .then(res => res.json())
             .then(ads => {
-                const tbody = adTable.querySelector('tbody');
+                const tbody = commTable.querySelector('tbody');
+                if (!tbody) return;
                 tbody.innerHTML = '';
                 ads.forEach(ad => {
                     const tr = document.createElement('tr');
@@ -1022,10 +1030,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         <td style="font-weight: 600;">${ad.name}</td>
                         <td>${uploadDate}</td>
                         <td>
-                            <button class="btn btn-sm toggle-btn ${hiddenClass}" onclick='toggleAdHidden("${ad.id}", ${ad.hidden}, this)'>
+                            <button class="btn btn-sm toggle-btn ${hiddenClass}" onclick='toggleCommercialHidden("${ad.id}", ${ad.hidden}, this)'>
                                 <i class="fas ${hiddenIcon}"></i> <span>${hiddenText}</span>
                             </button>
-                            <button class="btn btn-sm btn-danger" onclick='deleteAd("${ad.id}", "${ad.name.replace(/'/g, "\\'")}")'><i class="fas fa-trash"></i> SİL</button>
+                            <button class="btn btn-sm btn-danger" onclick='deleteCommercial("${ad.id}", "${ad.name.replace(/'/g, "\\'")}")'><i class="fas fa-trash"></i> SİL</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -1033,22 +1041,25 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch(err => console.error("Reklam listesi hatası:", err));
     }
+    window.fetchCommercials = fetchCommercials;
+    window.fetchAds = fetchCommercials;
 
-    window.deleteAd = function (id, name) {
+    window.deleteCommercial = function (id, name) {
         if (!confirm(`'${name}' reklamını silmek istediğinize emin misiniz?`)) return;
-        fetch(`/admin/delete-ad?id=${id}`, { method: 'DELETE' })
+        fetch(`/admin/delete-commercial?id=${id}`, { method: 'DELETE' })
             .then(res => {
                 if (res.ok) {
                     alert("Başarıyla silindi.");
-                    fetchAds();
+                    fetchCommercials();
                 } else {
                     alert("Silinirken hata oluştu.");
                 }
             });
     };
+    window.deleteAd = window.deleteCommercial;
 
     /* --- Reklam Gösterim Olasılığı Yönetimi --- */
-    function getAdProbabilityText(val) {
+    function getCommercialProbabilityText(val) {
         const p = parseInt(val, 10);
         if (isNaN(p) || p <= 0) return 'Kapalı (%0 - Hiçbir videoda reklam çıkmaz)';
         if (p < 25) return `Düşük Yoğunluk (%${p})`;
@@ -1059,59 +1070,62 @@ document.addEventListener('DOMContentLoaded', function () {
         return 'Maksimum (%100 - Her açılışta reklam çıkar)';
     }
 
-    function updateAdProbabilityUI(val) {
+    function updateCommercialProbabilityUI(val) {
         let p = parseInt(val, 10);
         if (isNaN(p)) p = 0;
         if (p < 0) p = 0;
         if (p > 100) p = 100;
 
-        const rangeEl = document.getElementById('adProbabilityRange');
-        const numberEl = document.getElementById('adProbabilityNumberInput');
-        const displayEl = document.getElementById('adProbabilityDisplay');
-        const headerValEl = document.getElementById('adProbabilityHeaderVal');
-        const rangeValEl = document.getElementById('adProbabilityRangeValue');
-        const descEl = document.getElementById('adProbabilityStateDesc');
+        const rangeEl = document.getElementById('commercialProbabilityRange') || document.getElementById('adProbabilityRange');
+        const numberEl = document.getElementById('commercialProbabilityNumberInput') || document.getElementById('adProbabilityNumberInput');
+        const displayEl = document.getElementById('commercialProbabilityDisplay') || document.getElementById('adProbabilityDisplay');
+        const headerValEl = document.getElementById('commercialProbabilityHeaderVal') || document.getElementById('adProbabilityHeaderVal');
+        const rangeValEl = document.getElementById('commercialProbabilityRangeValue') || document.getElementById('adProbabilityRangeValue');
+        const descEl = document.getElementById('commercialProbabilityStateDesc') || document.getElementById('adProbabilityStateDesc');
 
         if (rangeEl && parseInt(rangeEl.value, 10) !== p) rangeEl.value = p;
         if (numberEl && parseInt(numberEl.value, 10) !== p) numberEl.value = p;
         if (displayEl) displayEl.innerText = p;
         if (headerValEl) headerValEl.innerText = `%${p}`;
         if (rangeValEl) rangeValEl.innerText = `%${p}`;
-        if (descEl) descEl.innerText = getAdProbabilityText(p);
+        if (descEl) descEl.innerText = getCommercialProbabilityText(p);
     }
 
-    function fetchAdProbability() {
-        const rangeEl = document.getElementById('adProbabilityRange');
+    function fetchCommercialProbability() {
+        const rangeEl = document.getElementById('commercialProbabilityRange') || document.getElementById('adProbabilityRange');
         if (!rangeEl) return;
 
-        fetch('/admin/settings/ad-probability')
+        fetch('/admin/settings/commercial-probability')
             .then(res => {
                 if (!res.ok) throw new Error('Ayar alınamadı');
                 return res.json();
             })
             .then(data => {
                 if (typeof data.probability !== 'undefined') {
-                    updateAdProbabilityUI(data.probability);
+                    updateCommercialProbabilityUI(data.probability);
                 }
             })
             .catch(err => console.error('Reklam olasılığı alınamadı:', err));
     }
-    window.fetchAdProbability = fetchAdProbability;
+    window.fetchCommercialProbability = fetchCommercialProbability;
+    window.fetchAdProbability = fetchCommercialProbability;
 
-    window.onAdProbabilityRangeInput = function (val) {
-        updateAdProbabilityUI(val);
+    window.onCommercialProbabilityRangeInput = function (val) {
+        updateCommercialProbabilityUI(val);
     };
+    window.onAdProbabilityRangeInput = window.onCommercialProbabilityRangeInput;
 
-    window.onAdProbabilityNumberInput = function (val) {
+    window.onCommercialProbabilityNumberInput = function (val) {
         if (val === '' || isNaN(val)) return;
-        updateAdProbabilityUI(val);
+        updateCommercialProbabilityUI(val);
     };
+    window.onAdProbabilityNumberInput = window.onCommercialProbabilityNumberInput;
 
-    window.saveAdProbability = function () {
-        const rangeEl = document.getElementById('adProbabilityRange');
-        const numberEl = document.getElementById('adProbabilityNumberInput');
-        const saveBtn = document.getElementById('saveAdProbabilityBtn');
-        const statusSpan = document.getElementById('adProbabilitySaveStatus');
+    window.saveCommercialProbability = function () {
+        const rangeEl = document.getElementById('commercialProbabilityRange') || document.getElementById('adProbabilityRange');
+        const numberEl = document.getElementById('commercialProbabilityNumberInput') || document.getElementById('adProbabilityNumberInput');
+        const saveBtn = document.getElementById('saveCommercialProbabilityBtn') || document.getElementById('saveAdProbabilityBtn');
+        const statusSpan = document.getElementById('commercialProbabilitySaveStatus') || document.getElementById('adProbabilitySaveStatus');
 
         let rawVal = numberEl ? numberEl.value : (rangeEl ? rangeEl.value : '30');
         let probability = parseInt(rawVal, 10);
@@ -1128,7 +1142,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const formData = new URLSearchParams();
         formData.append('probability', probability);
 
-        fetch('/admin/settings/ad-probability', {
+        fetch('/admin/settings/commercial-probability', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -1140,7 +1154,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return res.text();
             })
             .then(msg => {
-                updateAdProbabilityUI(probability);
+                updateCommercialProbabilityUI(probability);
                 if (statusSpan) {
                     statusSpan.style.display = 'inline-flex';
                     setTimeout(() => {
@@ -1158,6 +1172,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
     };
+    window.saveAdProbability = window.saveCommercialProbability;
 
     /* ===========================================================
        FİLM YÖNETİMİ
@@ -5241,9 +5256,9 @@ document.addEventListener('DOMContentLoaded', function () {
             .catch(err => alert("Hata oluştu: " + err));
     };
 
-    window.toggleAdHidden = function (id, isCurrentlyHidden, btnEl) {
+    window.toggleCommercialHidden = function (id, isCurrentlyHidden, btnEl) {
         if (!confirm(isCurrentlyHidden ? "Reklamı görünür yapmak istediğinize emin misiniz?" : "Reklamı GİZLEMEK istediğinize emin misiniz?")) return;
-        fetch(`/admin/toggle-ad-hidden?id=${id}&isHidden=${!isCurrentlyHidden}`, { method: 'POST' })
+        fetch(`/admin/toggle-commercial-hidden?id=${id}&isHidden=${!isCurrentlyHidden}`, { method: 'POST' })
             .then(res => {
                 if (!res.ok) throw new Error("Sunucu hatası! Veri kaydedilemedi.");
                 return res.text();
@@ -5253,11 +5268,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     const newHiddenState = !isCurrentlyHidden;
                     btnEl.className = `btn btn-sm toggle-btn ${newHiddenState ? 'btn-success' : 'btn-secondary'}`;
                     btnEl.innerHTML = `<i class="fas ${newHiddenState ? 'fa-eye' : 'fa-eye-slash'}"></i> <span>${newHiddenState ? 'GÖSTER' : 'GİZLE'}</span>`;
-                    btnEl.setAttribute('onclick', `toggleAdHidden("${id}", ${newHiddenState}, this)`);
+                    btnEl.setAttribute('onclick', `toggleCommercialHidden("${id}", ${newHiddenState}, this)`);
                 }
             })
             .catch(err => alert("Hata oluştu: " + err));
     };
+    window.toggleAdHidden = window.toggleCommercialHidden;
 
     /* ===========================================================
        BAKIM MODU YÖNETİMİ
@@ -5441,7 +5457,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 fetchMainSourceStatus(); // Revert on error
             });
     };
-    fetchAdProbability();
+    fetchCommercialProbability();
 });
 
     // Cast Sync Handler with Real-time Progress, Percentage & Stop Control

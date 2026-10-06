@@ -1576,7 +1576,7 @@ public class AdminController {
 
     // AD MANAGEMENT
 
-    @GetMapping("/ads")
+    @GetMapping({"/ads", "/commercials"})
 
     public ResponseEntity<List<Ad>> getAds() {
 
@@ -1586,7 +1586,7 @@ public class AdminController {
 
 
 
-    @PostMapping("/add-ad")
+    @PostMapping({"/add-ad", "/add-commercial"})
 
     public ResponseEntity<String> addAd(
 
@@ -1618,7 +1618,7 @@ public class AdminController {
 
 
 
-    @DeleteMapping("/delete-ad")
+    @DeleteMapping({"/delete-ad", "/delete-commercial"})
 
     public ResponseEntity<String> deleteAd(@RequestParam("id") UUID id) {
 
@@ -1638,7 +1638,7 @@ public class AdminController {
 
 
 
-    @PostMapping("/toggle-ad-hidden")
+    @PostMapping({"/toggle-ad-hidden", "/toggle-commercial-hidden"})
 
     public ResponseEntity<String> toggleAdHidden(
 
@@ -2638,12 +2638,12 @@ public class AdminController {
 
 
 
-    @GetMapping("/settings/ad-probability")
+    @GetMapping({"/settings/ad-probability", "/settings/commercial-probability"})
     public ResponseEntity<Map<String, Object>> getAdProbability() {
         return ResponseEntity.ok(Map.of("probability", systemSettingRepository.getAdProbability()));
     }
 
-    @PostMapping("/settings/ad-probability")
+    @PostMapping({"/settings/ad-probability", "/settings/commercial-probability"})
     public ResponseEntity<String> setAdProbability(@RequestParam("probability") int probability) {
         try {
             if (probability < 0 || probability > 100) {
