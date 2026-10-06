@@ -15,6 +15,7 @@ import com.ses.whodatidols.repository.SeriesRepository;
 import com.ses.whodatidols.repository.ContentRepository;
 import com.ses.whodatidols.repository.AdRepository;
 import com.ses.whodatidols.model.Ad;
+import com.ses.whodatidols.repository.SystemSettingRepository;
 import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,11 +37,12 @@ public class VideoController {
     private final AdRepository adRepository;
     private final ActorRepository actorRepository;
     private final CastSyncService castSyncService;
+    private final SystemSettingRepository systemSettingRepository;
 
     public VideoController(VideoService videoService, TranscodingService transcodingService,
             MovieRepository movieRepository, SeriesRepository seriesRepository,
             ContentRepository contentRepository, AdRepository adRepository,
-            ActorRepository actorRepository, CastSyncService castSyncService) {
+            ActorRepository actorRepository, CastSyncService castSyncService, SystemSettingRepository systemSettingRepository) {
         this.videoService = videoService;
         this.transcodingService = transcodingService;
         this.movieRepository = movieRepository;
@@ -49,6 +51,7 @@ public class VideoController {
         this.adRepository = adRepository;
         this.actorRepository = actorRepository;
         this.castSyncService = castSyncService;
+        this.systemSettingRepository = systemSettingRepository;
     }
 
     @GetMapping("/details")
@@ -234,9 +237,18 @@ public class VideoController {
 
     @GetMapping("/ad/random")
     public ResponseEntity<Map<String, Object>> getRandomAd() {
+        int probability = systemSettingRepository.getAdProbability();
+        if (probability <= 0) {
+            return ResponseEntity.noContent().build();
+        }
+        int roll = new java.util.Random().nextInt(100);
+        if (roll >= probability) {
+            return ResponseEntity.noContent().build();
+        }
+
         List<Ad> ads = adRepository.findVisible();
         if (ads.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.noContent().build();
         }
         int randomIndex = new java.util.Random().nextInt(ads.size());
         Ad selectedAd = ads.get(randomIndex);
@@ -244,5 +256,10 @@ public class VideoController {
         response.put("id", selectedAd.getId());
         response.put("name", selectedAd.getName());
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/ad/probability")
+    public ResponseEntity<Map<String, Object>> getAdProbabilityPublic() {
+        return ResponseEntity.ok(Map.of("probability", systemSettingRepository.getAdProbability()));
     }
 }

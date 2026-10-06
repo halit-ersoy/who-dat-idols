@@ -2638,6 +2638,26 @@ public class AdminController {
 
 
 
+    @GetMapping("/settings/ad-probability")
+    public ResponseEntity<Map<String, Object>> getAdProbability() {
+        return ResponseEntity.ok(Map.of("probability", systemSettingRepository.getAdProbability()));
+    }
+
+    @PostMapping("/settings/ad-probability")
+    public ResponseEntity<String> setAdProbability(@RequestParam("probability") int probability) {
+        try {
+            if (probability < 0 || probability > 100) {
+                return ResponseEntity.badRequest().body("Hata: Olasılık %0 ile %100 arasında olmalıdır.");
+            }
+            systemSettingRepository.setAdProbability(probability);
+            return ResponseEntity.ok("Reklam çıkma olasılığı %" + probability + " olarak güncellendi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+        }
+    }
+
+
+
     private void deleteDirectory(Path path) throws IOException {
         if (Files.exists(path)) {
             try (java.util.stream.Stream<Path> stream = Files.walk(path)) {

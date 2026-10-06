@@ -423,20 +423,18 @@ export function initVideoControls(videoId) {
             return;
         }
 
-        // 30% probability check
-        if (Math.random() < 0.3) {
-            try {
-                const adRes = await fetch('/api/video/ad/random');
-                if (adRes.ok) {
-                    const adData = await adRes.json();
-                    if (adData && adData.id) {
-                        playAd(adData.id, id);
-                        return;
-                    }
+        // Configurable ad check (probability handled dynamically by backend)
+        try {
+            const adRes = await fetch('/api/video/ad/random');
+            if (adRes.ok && adRes.status === 200) {
+                const adData = await adRes.json();
+                if (adData && adData.id) {
+                    playAd(adData.id, id);
+                    return;
                 }
-            } catch (err) {
-                console.warn("Failed to check or play ad:", err);
             }
+        } catch (err) {
+            console.warn("Failed to check or play ad:", err);
         }
 
         let hasMainSource = await checkMainSourceAvailability(id);

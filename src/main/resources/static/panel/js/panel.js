@@ -66,6 +66,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 fetchHeroVideos();
             } else if (targetId === 'ad-section') {
                 fetchAds();
+                fetchAdProbability();
             } else if (targetId === 'movie-section') {
                 fetchMovies();
             } else if (targetId === 'series-section') {
@@ -1042,6 +1043,118 @@ document.addEventListener('DOMContentLoaded', function () {
                     fetchAds();
                 } else {
                     alert("Silinirken hata oluştu.");
+                }
+            });
+    };
+
+    /* --- Reklam Gösterim Olasılığı Yönetimi --- */
+    function getAdProbabilityText(val) {
+        const p = parseInt(val, 10);
+        if (isNaN(p) || p <= 0) return 'Kapalı (%0 - Hiçbir videoda reklam çıkmaz)';
+        if (p < 25) return `Düşük Yoğunluk (%${p})`;
+        if (p === 30) return `Varsayılan Seviye (%30)`;
+        if (p < 50) return `Orta Seviye (%${p})`;
+        if (p < 80) return `Yüksek Yoğunluk (%${p})`;
+        if (p < 100) return `Çok Yüksek Yoğunluk (%${p})`;
+        return 'Maksimum (%100 - Her açılışta reklam çıkar)';
+    }
+
+    function updateAdProbabilityUI(val) {
+        let p = parseInt(val, 10);
+        if (isNaN(p)) p = 0;
+        if (p < 0) p = 0;
+        if (p > 100) p = 100;
+
+        const rangeEl = document.getElementById('adProbabilityRange');
+        const numberEl = document.getElementById('adProbabilityNumberInput');
+        const displayEl = document.getElementById('adProbabilityDisplay');
+        const headerValEl = document.getElementById('adProbabilityHeaderVal');
+        const rangeValEl = document.getElementById('adProbabilityRangeValue');
+        const descEl = document.getElementById('adProbabilityStateDesc');
+
+        if (rangeEl && parseInt(rangeEl.value, 10) !== p) rangeEl.value = p;
+        if (numberEl && parseInt(numberEl.value, 10) !== p) numberEl.value = p;
+        if (displayEl) displayEl.innerText = p;
+        if (headerValEl) headerValEl.innerText = `%${p}`;
+        if (rangeValEl) rangeValEl.innerText = `%${p}`;
+        if (descEl) descEl.innerText = getAdProbabilityText(p);
+    }
+
+    function fetchAdProbability() {
+        const rangeEl = document.getElementById('adProbabilityRange');
+        if (!rangeEl) return;
+
+        fetch('/admin/settings/ad-probability')
+            .then(res => {
+                if (!res.ok) throw new Error('Ayar alınamadı');
+                return res.json();
+            })
+            .then(data => {
+                if (typeof data.probability !== 'undefined') {
+                    updateAdProbabilityUI(data.probability);
+                }
+            })
+            .catch(err => console.error('Reklam olasılığı alınamadı:', err));
+    }
+    window.fetchAdProbability = fetchAdProbability;
+
+    window.onAdProbabilityRangeInput = function (val) {
+        updateAdProbabilityUI(val);
+    };
+
+    window.onAdProbabilityNumberInput = function (val) {
+        if (val === '' || isNaN(val)) return;
+        updateAdProbabilityUI(val);
+    };
+
+    window.saveAdProbability = function () {
+        const rangeEl = document.getElementById('adProbabilityRange');
+        const numberEl = document.getElementById('adProbabilityNumberInput');
+        const saveBtn = document.getElementById('saveAdProbabilityBtn');
+        const statusSpan = document.getElementById('adProbabilitySaveStatus');
+
+        let rawVal = numberEl ? numberEl.value : (rangeEl ? rangeEl.value : '30');
+        let probability = parseInt(rawVal, 10);
+        if (isNaN(probability) || probability < 0 || probability > 100) {
+            alert('Geçersiz olasılık değeri! Lütfen 0 ile 100 arasında bir değer girin.');
+            return;
+        }
+
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> KAYDEDİLİYOR...';
+        }
+
+        const formData = new URLSearchParams();
+        formData.append('probability', probability);
+
+        fetch('/admin/settings/ad-probability', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formData.toString()
+        })
+            .then(res => {
+                if (!res.ok) throw new Error('Kaydedilirken hata oluştu');
+                return res.text();
+            })
+            .then(msg => {
+                updateAdProbabilityUI(probability);
+                if (statusSpan) {
+                    statusSpan.style.display = 'inline-flex';
+                    setTimeout(() => {
+                        statusSpan.style.display = 'none';
+                    }, 3500);
+                }
+            })
+            .catch(err => {
+                alert('Ayar kaydedilirken bir hata oluştu: ' + err.message);
+            })
+            .finally(() => {
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> AYARI KAYDET';
                 }
             });
     };
@@ -5328,6 +5441,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 fetchMainSourceStatus(); // Revert on error
             });
     };
+    fetchAdProbability();
 });
 
     // Cast Sync Handler with Real-time Progress, Percentage & Stop Control

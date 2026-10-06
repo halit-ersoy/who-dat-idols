@@ -45,11 +45,11 @@ public class SystemSettingRepository {
             if (count == null || count == 0) {
                 logger.info("Creating SystemSettings table...");
                 jdbcTemplate.execute("""
-                        CREATE TABLE SystemSettings (
-                            SettingKey NVARCHAR(50) PRIMARY KEY,
-                            SettingValue NVARCHAR(MAX),
-                            Description NVARCHAR(255)
-                        )
+                        CREATE TABLE SystemSettings (\
+                            SettingKey NVARCHAR(50) PRIMARY KEY,\
+                            SettingValue NVARCHAR(MAX),\
+                            Description NVARCHAR(255)\
+                        )\
                         """);
             }
         } catch (Exception e) {
@@ -111,6 +111,11 @@ public class SystemSettingRepository {
         if (getValue("main_video_source_enabled") == null) {
             // Default to true (enabled)
             setValue("main_video_source_enabled", "true");
+        }
+
+        if (getValue("ad_probability") == null) {
+            // Default ad display probability to 30%
+            setValue("ad_probability", "30");
         }
     }
 
@@ -177,5 +182,23 @@ public class SystemSettingRepository {
 
     public void setMainVideoSourceEnabled(boolean enabled) {
         setValue("main_video_source_enabled", String.valueOf(enabled));
+    }
+
+    public int getAdProbability() {
+        String val = getValue("ad_probability");
+        if (val == null) {
+            return 30;
+        }
+        try {
+            int p = Integer.parseInt(val.trim());
+            return Math.max(0, Math.min(100, p));
+        } catch (NumberFormatException e) {
+            return 30;
+        }
+    }
+
+    public void setAdProbability(int probability) {
+        int clamped = Math.max(0, Math.min(100, probability));
+        setValue("ad_probability", String.valueOf(clamped));
     }
 }
