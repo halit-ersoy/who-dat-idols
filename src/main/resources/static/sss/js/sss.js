@@ -1,67 +1,130 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    // FAQ Items: Her FAQ item için animasyon gecikmesi ayarlanıyor
-    const faqItems = document.querySelectorAll('.faq-item');
-    faqItems.forEach((item, index) => {
-        item.style.setProperty('--item-index', index);
-        const question = item.querySelector('.faq-question');
-        if (question) {
-            question.addEventListener('click', (event) => {
-                // Ripple effect oluşturma
-                const ripple = document.createElement('div');
-                ripple.className = 'ripple-effect';
-                question.appendChild(ripple);
-                const rect = question.getBoundingClientRect();
-                const size = Math.max(rect.width, rect.height);
-                ripple.style.width = ripple.style.height = `${size}px`;
-                // Güvenlik için event.target yerine event.clientX/Y
-                ripple.style.left = `${event.clientX - rect.left - size / 2}px`;
-                ripple.style.top = `${event.clientY - rect.top - size / 2}px`;
-                setTimeout(() => ripple.remove(), 600);
+    const tocLinks = document.querySelectorAll('.toc-link');
+    const cards = document.querySelectorAll('.policy-card');
+    const accordionHeaders = document.querySelectorAll('.faq-accordion-header');
 
-                // SSS aç/kapa işlemi
-                if (item.classList.contains('active')) {
-                    item.classList.remove('active');
-                } else {
-                    // Diğerleri kapanıyor
-                    faqItems.forEach((otherItem) => {
-                        if (otherItem !== item && otherItem.classList.contains('active')) {
-                            otherItem.classList.remove('active');
-                        }
-                    });
-                    item.classList.add('active');
-                    if (!isElementInViewport(item)) {
-                        item.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
+    // =========================================================================
+    // 1. Smooth Scroll with fixed header offset on TOC link click
+    // =========================================================================
+    tocLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = link.getAttribute('href')?.replace('#', '');
+            if (!targetId) return;
+
+            const targetElement = document.getElementById(targetId);
+            if (targetElement) {
+                const headerOffset = 95;
+                const elementPosition = targetElement.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                });
+
+                // Update active state manually
+                tocLinks.forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+
+                // Update hash in browser without jumping
+                if (history.pushState) {
+                    history.pushState(null, null, `#${targetId}`);
                 }
-            });
-        }
-    });
-
-    // İlk FAQ öğesini aç
-    if (faqItems.length > 0) {
-        faqItems[0].classList.add('active');
-    }
-
-    // Intersection Observer ile scroll animasyonlarını tetikleme
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('in-view');
             }
         });
-    }, { threshold: 0.1 });
+    });
 
-    faqItems.forEach((item) => observer.observe(item));
+    // =========================================================================
+    // 2. Active Section Spy on Scroll using IntersectionObserver
+    // =========================================================================
+    const observerOptions = {
+        root: null,
+        rootMargin: '-100px 0px -60% 0px',
+        threshold: 0
+    };
 
-    // Yardımcı: Elementin viewport'ta olup olmadığını kontrol eder
-    function isElementInViewport(el) {
-        const rect = el.getBoundingClientRect();
-        return (
-            rect.top >= 0 &&
-            rect.left >= 0 &&
-            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-            rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-        );
+    const sectionObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const activeId = entry.target.id;
+                tocLinks.forEach(link => {
+                    const linkTarget = link.getAttribute('data-target') || link.getAttribute('href')?.replace('#', '');
+                    if (linkTarget === activeId) {
+                        link.classList.add('active');
+                        // In mobile scrollable horizontal navbar, keep active link in view
+                        if (window.innerWidth <= 992) {
+                            link.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+                        }
+                    } else {
+                        link.classList.remove('active');
+                    }
+                });
+            }
+        });
+    }, observerOptions);
+
+    cards.forEach(card => sectionObserver.observe(card));
+
+    // =========================================================================
+    // 3. Check for initial URL hash on load
+    // =========================================================================
+    if (window.location.hash) {
+        const hashId = window.location.hash.replace('#', '');
+        const target = document.getElementById(hashId);
+        if (target) {
+            setTimeout(() => {
+                const headerOffset = 95;
+                const elementPosition = target.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                });
+            }, 100);
+        }
     }
+
+    // =========================================================================
+    // 4. Accordion Expand / Collapse with Ripple Effect
+    // =========================================================================
+    accordionHeaders.forEach((header) => {
+        header.addEventListener('click', (event) => {
+            const item = header.closest('.faq-accordion-item');
+            if (!item) return;
+
+            // Ripple effect
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple-effect';
+            header.appendChild(ripple);
+            const rect = header.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            ripple.style.width = ripple.style.height = `${size}px`;
+            ripple.style.left = `${event.clientX - rect.left - size / 2}px`;
+            ripple.style.top = `${event.clientY - rect.top - size / 2}px`;
+            setTimeout(() => ripple.remove(), 600);
+
+            // Toggle item state
+            const isCurrentlyActive = item.classList.contains('active');
+            if (isCurrentlyActive) {
+                item.classList.remove('active');
+                header.setAttribute('aria-expanded', 'false');
+            } else {
+                item.classList.add('active');
+                header.setAttribute('aria-expanded', 'true');
+            }
+        });
+    });
+
+    // Automatically expand the first question in the first card by default
+    const firstFaqItem = document.querySelector('.faq-accordion-item');
+    if (firstFaqItem) {
+        firstFaqItem.classList.add('active');
+        const firstHeader = firstFaqItem.querySelector('.faq-accordion-header');
+        if (firstHeader) {
+            firstHeader.setAttribute('aria-expanded', 'true');
+        }
+    }
+
 });

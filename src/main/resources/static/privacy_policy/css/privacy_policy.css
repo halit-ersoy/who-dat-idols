@@ -72,36 +72,62 @@ header {
 }
 
 /* ==========================================================================
-   Privacy Hero Section
+   Privacy Hero Section (Pure CSS modern ambient mesh & glowing aura)
    ========================================================================== */
 .privacy-hero {
-    min-height: 40vh;
+    min-height: 38vh;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
-    /*noinspection CssUnknownTarget*/
-    background-image: url('/media/static/image/background-2.jpg');
-    background-size: cover;
-    background-position: center;
+    background-color: var(--bg-main, #0f0f0f);
+    background-image: 
+        radial-gradient(ellipse 75% 70% at 50% -15%, rgba(var(--primary-rgb, 30, 215, 96), 0.20) 0%, transparent 70%),
+        radial-gradient(circle 380px at 10% 25%, rgba(var(--primary-rgb, 30, 215, 96), 0.08) 0%, transparent 60%),
+        radial-gradient(circle 420px at 90% 20%, rgba(var(--primary-rgb, 30, 215, 96), 0.07) 0%, transparent 60%);
     color: var(--white);
     text-align: center;
     margin-top: 0;
-    padding: 110px 20px 50px;
+    padding: 120px 20px 60px;
+    overflow: hidden;
     animation: fadeIn 0.8s ease-out;
+}
+
+.privacy-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 65%;
+    max-width: 650px;
+    height: 1px;
+    background: radial-gradient(circle, rgba(var(--primary-rgb, 30, 215, 96), 0.45) 0%, transparent 100%);
+    z-index: 2;
+    pointer-events: none;
+}
+
+.privacy-hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    background: linear-gradient(180deg, transparent 0%, var(--bg-main, #0f0f0f) 100%);
+    pointer-events: none;
+    z-index: 1;
 }
 
 .privacy-hero-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, 
-        rgba(10, 10, 14, 0.82) 0%, 
-        rgba(14, 14, 18, 0.94) 70%, 
-        var(--bg-main, #0f0f0f) 100%
-    );
+    background-image: radial-gradient(rgba(255, 255, 255, 0.065) 1px, transparent 1px);
+    background-size: 26px 26px;
+    mask-image: radial-gradient(ellipse 75% 65% at 50% 45%, #000 35%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 75% 65% at 50% 45%, #000 35%, transparent 100%);
     z-index: 1;
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
+    pointer-events: none;
 }
 
 .privacy-hero-content {
