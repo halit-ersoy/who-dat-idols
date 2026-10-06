@@ -5276,39 +5276,57 @@ document.addEventListener('DOMContentLoaded', function () {
     window.toggleAdHidden = window.toggleCommercialHidden;
 
     /* ===========================================================
-       BAKIM MODU YÖNETİMİ
+       BAKIM MODU YÖNETİMİ (Who Dat Idols & BL Dizi Bağımsız)
        =========================================================== */
     function fetchMaintenanceStatus() {
-        const toggle = document.getElementById('maintenanceActiveToggle');
-        const statusText = document.getElementById('maintenanceStatusText');
-        if (!toggle || !statusText) return;
+        const wdiToggle = document.getElementById('wdiMaintenanceActiveToggle') || document.getElementById('maintenanceActiveToggle');
+        const wdiStatusText = document.getElementById('wdiMaintenanceStatusText') || document.getElementById('maintenanceStatusText');
+        const bldiziToggle = document.getElementById('bldiziMaintenanceActiveToggle');
+        const bldiziStatusText = document.getElementById('bldiziMaintenanceStatusText');
+
+        if (!wdiToggle && !bldiziToggle) return;
 
         fetch('/admin/settings/maintenance')
             .then(res => res.json())
             .then(data => {
-                toggle.checked = data.maintenanceMode === true;
-                statusText.innerText = data.maintenanceMode ? "AKTİF" : "PASİF";
-                statusText.className = "status-badge " + (data.maintenanceMode ? "status-active" : "status-inactive");
+                const wdiActive = (data.wdi !== undefined) ? data.wdi === true : data.maintenanceMode === true;
+                if (wdiToggle && wdiStatusText) {
+                    wdiToggle.checked = wdiActive;
+                    wdiStatusText.innerText = wdiActive ? "AKTİF" : "PASİF";
+                    wdiStatusText.className = "status-badge " + (wdiActive ? "status-active" : "status-inactive");
+                }
+                if (bldiziToggle && bldiziStatusText) {
+                    const bldiziActive = data.bldizi === true;
+                    bldiziToggle.checked = bldiziActive;
+                    bldiziStatusText.innerText = bldiziActive ? "AKTİF" : "PASİF";
+                    bldiziStatusText.className = "status-badge " + (bldiziActive ? "status-active" : "status-inactive");
+                }
             })
             .catch(err => {
                 console.error("Bakım modu durumu alınamadı:", err);
-                statusText.innerText = "HATA";
-                statusText.className = "status-badge status-checking";
+                if (wdiStatusText) {
+                    wdiStatusText.innerText = "HATA";
+                    wdiStatusText.className = "status-badge status-checking";
+                }
+                if (bldiziStatusText) {
+                    bldiziStatusText.innerText = "HATA";
+                    bldiziStatusText.className = "status-badge status-checking";
+                }
             });
     }
 
-    window.toggleMaintenanceMode = function () {
-        const toggle = document.getElementById('maintenanceActiveToggle');
-        const statusText = document.getElementById('maintenanceStatusText');
+    window.toggleWdiMaintenanceMode = function () {
+        const toggle = document.getElementById('wdiMaintenanceActiveToggle') || document.getElementById('maintenanceActiveToggle');
+        const statusText = document.getElementById('wdiMaintenanceStatusText') || document.getElementById('maintenanceStatusText');
         if (!toggle || !statusText) return;
 
         const isActive = toggle.checked;
         const confirmMsg = isActive
-            ? "Siteyi BAKIM MODUNA almak üzeresiniz. Admin olmayan tüm ziyaretçiler siteye erişemeyecek. Onaylıyor musunuz?"
-            : "Bakım modunu kapatmak üzeresiniz. Site tekrar tüm kullanıcılara açılacak. Onaylıyor musunuz?";
+            ? "Who Dat Idols (whodatidols.com) sitesini BAKIM MODUNA almak üzeresiniz. Onaylıyor musunuz?"
+            : "Who Dat Idols (whodatidols.com) bakım modunu kapatmak üzeresiniz. Onaylıyor musunuz?";
 
         if (!confirm(confirmMsg)) {
-            toggle.checked = !isActive; // Revert visually
+            toggle.checked = !isActive;
             return;
         }
 
@@ -5316,25 +5334,66 @@ document.addEventListener('DOMContentLoaded', function () {
         statusText.className = "status-badge status-checking";
 
         const formData = new URLSearchParams();
+        formData.append('site', 'wdi');
         formData.append('active', isActive);
 
         fetch('/admin/settings/maintenance', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: formData.toString()
         })
             .then(res => res.text())
             .then(msg => {
                 alert(msg);
-                fetchMaintenanceStatus(); // Re-fetch to ensure sync with server
+                fetchMaintenanceStatus();
             })
             .catch(err => {
                 alert("Bakım modu güncellenirken hata oluştu.");
-                fetchMaintenanceStatus(); // Revert on error
+                toggle.checked = !isActive;
+                fetchMaintenanceStatus();
             });
     };
+
+    window.toggleBlDiziMaintenanceMode = function () {
+        const toggle = document.getElementById('bldiziMaintenanceActiveToggle');
+        const statusText = document.getElementById('bldiziMaintenanceStatusText');
+        if (!toggle || !statusText) return;
+
+        const isActive = toggle.checked;
+        const confirmMsg = isActive
+            ? "BL Dizi (bldizi.com) sitesini BAKIM MODUNA almak üzeresiniz. Onaylıyor musunuz?"
+            : "BL Dizi (bldizi.com) bakım modunu kapatmak üzeresiniz. Onaylıyor musunuz?";
+
+        if (!confirm(confirmMsg)) {
+            toggle.checked = !isActive;
+            return;
+        }
+
+        statusText.innerText = "Bekleniyor...";
+        statusText.className = "status-badge status-checking";
+
+        const formData = new URLSearchParams();
+        formData.append('site', 'bldizi');
+        formData.append('active', isActive);
+
+        fetch('/admin/settings/maintenance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formData.toString()
+        })
+            .then(res => res.text())
+            .then(msg => {
+                alert(msg);
+                fetchMaintenanceStatus();
+            })
+            .catch(err => {
+                alert("BL Dizi bakım modu güncellenirken hata oluştu.");
+                toggle.checked = !isActive;
+                fetchMaintenanceStatus();
+            });
+    };
+
+    window.toggleMaintenanceMode = window.toggleWdiMaintenanceMode;
 
     /* ===========================================================
        KAYIT YÖNETİMİ

@@ -20,7 +20,7 @@ public class MaintenanceInterceptor implements HandlerInterceptor {
     public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
             @NonNull Object handler)
             throws Exception {
-        if (systemSettingRepository.isMaintenanceMode()) {
+        if (systemSettingRepository.isMaintenanceModeWdi()) {
             String uri = request.getRequestURI();
 
             // Allow access to maintenance page itself
@@ -30,7 +30,7 @@ public class MaintenanceInterceptor implements HandlerInterceptor {
 
             // Allow access to admin panel and its API endpoints
             if (uri.startsWith("/admin") || uri.startsWith("/api/admin") || uri.startsWith("/panel/")
-                    || uri.startsWith("/api/stats")) {
+                    || uri.startsWith("/api/stats") || uri.startsWith("/api/public/")) {
                 return true;
             }
 

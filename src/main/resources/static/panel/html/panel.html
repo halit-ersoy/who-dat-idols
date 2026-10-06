@@ -1751,7 +1751,7 @@
 
                 <div class="form-grid" style="grid-template-columns: repeat(2, 1fr); gap: 30px;">
 
-                    <!-- Maintenance Mode Card -->
+                    <!-- Who Dat Idols Maintenance Card -->
                     <div class="card"
                         style="padding: 30px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; border: 1px solid rgba(255, 51, 102, 0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
                         <div style="position: absolute; top:0; left:0; width: 4px; height: 100%; background: #ff3366;">
@@ -1762,22 +1762,50 @@
                                     style="width: 50px; height: 50px; border-radius: 12px; background: rgba(255, 51, 102, 0.1); color: #ff3366; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
                                     <i class="fas fa-hard-hat"></i>
                                 </div>
-                                <h2 style="font-size: 1.3rem; margin: 0; color: #fff;">Bakım Modu</h2>
+                                <h2 style="font-size: 1.3rem; margin: 0; color: #fff;">Who Dat Idols Bakım Modu</h2>
                             </div>
                             <p style="color: #bbb; font-size: 0.95rem; line-height: 1.6; margin-bottom: 30px;">
-                                Ziyaretçi erişimini sistem genelinde geçici olarak durdurur. Misafirler özel bir
-                                "Bakımdayız" ekranı görürken, yönetici hesabı olanlar siteyi kullanmaya ve test etmeye
-                                devam edebilir.
+                                <strong>whodatidols.com</strong> ziyaretçi erişimini durdurur. Misafirler "Bakımdayız" ekranı görürken, yöneticiler test etmeye devam edebilir.
                             </p>
                         </div>
 
                         <div
                             style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 18px 25px; border-radius: 12px; border: 1px solid rgba(255, 51, 102, 0.15);">
-                            <span id="maintenanceStatusText"
+                            <span id="wdiMaintenanceStatusText"
                                 style="font-weight: 700; letter-spacing: 1px; color: #ff3366; font-size: 0.9rem; text-transform: uppercase;">Kontrol
                                 Ediliyor...</span>
                             <label class="switch" style="margin: 0; transform: scale(1.15);">
-                                <input type="checkbox" id="maintenanceActiveToggle" onchange="toggleMaintenanceMode()">
+                                <input type="checkbox" id="wdiMaintenanceActiveToggle" onchange="toggleWdiMaintenanceMode()">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- BL Dizi Maintenance Card -->
+                    <div class="card"
+                        style="padding: 30px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; border: 1px solid rgba(255, 64, 129, 0.25); box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+                        <div style="position: absolute; top:0; left:0; width: 4px; height: 100%; background: #ff4081;">
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                                <div
+                                    style="width: 50px; height: 50px; border-radius: 12px; background: rgba(255, 64, 129, 0.12); color: #ff4081; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                                    <i class="fas fa-heart-crack"></i>
+                                </div>
+                                <h2 style="font-size: 1.3rem; margin: 0; color: #fff;">BL Dizi Bakım Modu</h2>
+                            </div>
+                            <p style="color: #bbb; font-size: 0.95rem; line-height: 1.6; margin-bottom: 30px;">
+                                <strong>bldizi.com</strong> ziyaretçi erişimini bağımsız olarak durdurur. Misafirler pembe temalı bakım ekranı görür, yöneticiler test edebilir.
+                            </p>
+                        </div>
+
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 18px 25px; border-radius: 12px; border: 1px solid rgba(255, 64, 129, 0.2);">
+                            <span id="bldiziMaintenanceStatusText"
+                                style="font-weight: 700; letter-spacing: 1px; color: #ff4081; font-size: 0.9rem; text-transform: uppercase;">Kontrol
+                                Ediliyor...</span>
+                            <label class="switch" style="margin: 0; transform: scale(1.15);">
+                                <input type="checkbox" id="bldiziMaintenanceActiveToggle" onchange="toggleBlDiziMaintenanceMode()">
                                 <span class="slider round"></span>
                             </label>
                         </div>

@@ -103,6 +103,15 @@ public class SystemSettingRepository {
             setValue("maintenance_mode", "false");
         }
 
+        if (getValue("maintenance_mode_wdi") == null) {
+            String existing = getValue("maintenance_mode");
+            setValue("maintenance_mode_wdi", existing != null ? existing : "false");
+        }
+
+        if (getValue("maintenance_mode_bldizi") == null) {
+            setValue("maintenance_mode_bldizi", "false");
+        }
+
         if (getValue("registration_enabled") == null) {
             // Default to true (registration open)
             setValue("registration_enabled", "true");
@@ -158,12 +167,33 @@ public class SystemSettingRepository {
     }
 
     public boolean isMaintenanceMode() {
-        String val = getValue("maintenance_mode");
+        return isMaintenanceModeWdi();
+    }
+
+    public boolean isMaintenanceModeWdi() {
+        String val = getValue("maintenance_mode_wdi");
+        if (val == null) {
+            val = getValue("maintenance_mode");
+        }
         return "true".equalsIgnoreCase(val);
     }
 
-    public void setMaintenanceMode(boolean active) {
+    public void setMaintenanceModeWdi(boolean active) {
+        setValue("maintenance_mode_wdi", String.valueOf(active));
         setValue("maintenance_mode", String.valueOf(active));
+    }
+
+    public boolean isMaintenanceModeBlDizi() {
+        String val = getValue("maintenance_mode_bldizi");
+        return "true".equalsIgnoreCase(val);
+    }
+
+    public void setMaintenanceModeBlDizi(boolean active) {
+        setValue("maintenance_mode_bldizi", String.valueOf(active));
+    }
+
+    public void setMaintenanceMode(boolean active) {
+        setMaintenanceModeWdi(active);
     }
 
     public boolean isRegistrationEnabled() {

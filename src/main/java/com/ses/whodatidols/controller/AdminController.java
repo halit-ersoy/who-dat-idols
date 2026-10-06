@@ -2549,31 +2549,29 @@ public class AdminController {
     // SYSTEM SETTINGS
 
     @GetMapping("/settings/maintenance")
-
-    public ResponseEntity<Map<String, Boolean>> getMaintenanceMode() {
-
-        return ResponseEntity.ok(Map.of("maintenanceMode", systemSettingRepository.isMaintenanceMode()));
-
+    public ResponseEntity<Map<String, Object>> getMaintenanceMode() {
+        return ResponseEntity.ok(Map.of(
+                "wdi", systemSettingRepository.isMaintenanceModeWdi(),
+                "bldizi", systemSettingRepository.isMaintenanceModeBlDizi(),
+                "maintenanceMode", systemSettingRepository.isMaintenanceModeWdi()
+        ));
     }
 
-
-
     @PostMapping("/settings/maintenance")
-
-    public ResponseEntity<String> setMaintenanceMode(@RequestParam("active") boolean active) {
-
+    public ResponseEntity<String> setMaintenanceMode(
+            @RequestParam(value = "site", defaultValue = "wdi") String site,
+            @RequestParam("active") boolean active) {
         try {
-
-            systemSettingRepository.setMaintenanceMode(active);
-
-            return ResponseEntity.ok(active ? "Bakım modu AKTİF edildi." : "Bakım modu KAPATILDI.");
-
+            if ("bldizi".equalsIgnoreCase(site)) {
+                systemSettingRepository.setMaintenanceModeBlDizi(active);
+                return ResponseEntity.ok(active ? "BL Dizi (bldizi.com) bakım modu AKTİF edildi." : "BL Dizi (bldizi.com) bakım modu KAPATILDI.");
+            } else {
+                systemSettingRepository.setMaintenanceModeWdi(active);
+                return ResponseEntity.ok(active ? "Who Dat Idols (whodatidols.com) bakım modu AKTİF edildi." : "Who Dat Idols (whodatidols.com) bakım modu KAPATILDI.");
+            }
         } catch (Exception e) {
-
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
-
         }
-
     }
 
 

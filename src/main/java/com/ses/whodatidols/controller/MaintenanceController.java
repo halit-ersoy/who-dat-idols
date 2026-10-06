@@ -9,6 +9,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.util.Map;
 
 @Controller
 public class MaintenanceController {
@@ -21,7 +24,7 @@ public class MaintenanceController {
 
     @GetMapping("/maintenance")
     public ResponseEntity<?> showMaintenancePage() {
-        if (!systemSettingRepository.isMaintenanceMode()) {
+        if (!systemSettingRepository.isMaintenanceModeWdi()) {
             return ResponseEntity.status(HttpStatus.FOUND)
                     .header(HttpHeaders.LOCATION, "/")
                     .build();
@@ -38,5 +41,14 @@ public class MaintenanceController {
         } catch (Exception e) {
             return ResponseEntity.status(500).build();
         }
+    }
+
+    @GetMapping("/api/public/maintenance/status")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getPublicMaintenanceStatus() {
+        return ResponseEntity.ok(Map.of(
+                "wdi", systemSettingRepository.isMaintenanceModeWdi(),
+                "bldizi", systemSettingRepository.isMaintenanceModeBlDizi()
+        ));
     }
 }
