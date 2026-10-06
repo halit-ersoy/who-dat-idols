@@ -13,6 +13,8 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
+import java.net.URI;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -831,7 +833,14 @@ public class HomeController {
         }
     }
 
-    @GetMapping({ "/coming-soon", "/bl-dizileri" })
+    @GetMapping("/bl-dizileri")
+    public ResponseEntity<Void> redirectToBlDizi() {
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create("https://bldizi.com"))
+                .build();
+    }
+
+    @GetMapping("/coming-soon")
     public ResponseEntity<Resource> getComingSoonPage() {
         try {
             Resource htmlPage = new ClassPathResource("static/coming-soon/html/coming-soon.html");

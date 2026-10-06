@@ -19,8 +19,19 @@ public class LiveStatsController {
 
     @PostMapping("/heartbeat")
     public ResponseEntity<?> recordHeartbeat(HttpServletRequest request) {
-        // Use IP + User-Agent as a simple session identifier if no auth is present
-        String sessionId = request.getRemoteAddr() + "_" + request.getHeader("User-Agent");
+        // Real client IP resolution (supporting Reverse Proxy / Cloudflare)
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        } else if (ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+
+        String userAgent = request.getHeader("User-Agent");
+        String sessionId = ip + "_" + (userAgent != null ? userAgent : "anonymous");
         trackingService.recordHeartbeat(sessionId);
         return ResponseEntity.ok().build();
     }
