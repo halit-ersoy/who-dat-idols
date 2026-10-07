@@ -47,7 +47,6 @@ public class SitemapController {
         addUrlWithCheck(xml, addedUrls, "/programlar", "0.5", "weekly", Instant.now());
         addUrlWithCheck(xml, addedUrls, "/diziler", "0.5", "weekly", Instant.now());
         addUrlWithCheck(xml, addedUrls, "/filmler", "0.5", "weekly", Instant.now());
-        addUrlWithCheck(xml, addedUrls, "/bl-dizileri", "0.5", "weekly", Instant.now());
 
         // 2. Movies
         List<Movie> movies = movieRepository.findAll();

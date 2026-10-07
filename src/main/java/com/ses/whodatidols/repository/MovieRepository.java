@@ -83,6 +83,23 @@ public class MovieRepository {
             jdbcTemplate.execute(
                     "UPDATE Movie SET slug = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(name, ' ', '-'), 'ı', 'i'), 'ğ', 'g'), 'ü', 'u'), 'ş', 's'), 'ö', 'o'), 'ç', 'c'), '?', ''), '!', '')) WHERE slug IS NULL OR slug = ''");
 
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Movie' AND COLUMN_NAME = 'isBl') "
+                            +
+                            "BEGIN " +
+                            "    ALTER TABLE Movie ADD isBl BIT DEFAULT 0 NOT NULL; " +
+                            "END");
+
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_Movie_isBl' AND object_id = OBJECT_ID('Movie')) "
+                            +
+                            "BEGIN " +
+                            "    CREATE NONCLUSTERED INDEX idx_Movie_isBl ON Movie(isBl); " +
+                            "END");
+
+            jdbcTemplate.execute(
+                    "UPDATE Movie SET isBl = 1 WHERE isBl = 0 AND EXISTS (SELECT 1 FROM MovieCategories MC JOIN Categories C ON MC.CategoryID = C.ID WHERE MC.MovieID = Movie.ID AND C.Name IN ('BL', 'GL'))");
+
             // Clean up existing slugs (strip SEO suffixes)
             jdbcTemplate.execute("UPDATE Movie SET slug = LEFT(slug, LEN(slug) - 6) WHERE slug LIKE '%-watch'");
 
@@ -138,11 +155,24 @@ public class MovieRepository {
     }
 
     // --- KAYIT (INSERT) İŞLEMİ ---
+    public boolean isBlMovie(Movie movie) {
+        if (movie == null) return false;
+        String cat = movie.getCategory();
+        if (cat != null) {
+            for (String p : cat.split(",")) {
+                String t = p.trim();
+                if ("BL".equalsIgnoreCase(t) || "GL".equalsIgnoreCase(t)) return true;
+            }
+        }
+        return false;
+    }
+
     public void save(Movie movie) {
+        boolean isBl = isBlMovie(movie);
         String sql = "INSERT INTO [WhoDatIdols].[dbo].[Movie] " +
-                "(ID, name, Summary, DurationMinutes, language, Country, ReleaseYear, uploadDate, slug, isAdult, IsHidden) "
+                "(ID, name, Summary, DurationMinutes, language, Country, ReleaseYear, uploadDate, slug, isAdult, IsHidden, isBl) "
                 +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         jdbcTemplate.update(sql,
                 movie.getId().toString(),
@@ -155,7 +185,8 @@ public class MovieRepository {
                 movie.getUploadDate() != null ? java.sql.Timestamp.from(movie.getUploadDate()) : null,
                 movie.getSlug(),
                 movie.isAdult(),
-                movie.isHidden());
+                movie.isHidden(),
+                isBl);
 
         // Update categories in junction table
         updateMovieCategories(movie.getId(), movie.getCategory());
@@ -169,6 +200,7 @@ public class MovieRepository {
                         JOIN MovieCategories MC ON MC.CategoryID = C.ID
                         WHERE MC.MovieID = M.ID) as category
                 FROM [WhoDatIdols].[dbo].[Movie] M
+                WHERE M.IsHidden = 0 AND M.isBl = 0
                 ORDER BY M.name ASC
                 """;
         return jdbcTemplate.query(sql, new MovieRowMapper());
@@ -205,8 +237,9 @@ public class MovieRepository {
 
     // --- GÜNCELLEME (UPDATE) ---
     public void update(Movie movie) {
+        boolean isBl = isBlMovie(movie);
         String sql = "UPDATE [WhoDatIdols].[dbo].[Movie] SET " +
-                "name = ?, Summary = ?, ReleaseYear = ?, language = ?, Country = ?, slug = ?, isAdult = ?, IsHidden = ? "
+                "name = ?, Summary = ?, ReleaseYear = ?, language = ?, Country = ?, slug = ?, isAdult = ?, IsHidden = ?, isBl = ? "
                 +
                 "WHERE ID = ?";
 
@@ -219,6 +252,7 @@ public class MovieRepository {
                 movie.getSlug(),
                 movie.isAdult(),
                 movie.isHidden(),
+                isBl,
                 movie.getId().toString());
 
         // Update categories in junction table
@@ -301,14 +335,14 @@ public class MovieRepository {
     // --- PAGINATION OKUMA İŞLEMLERİ ---
     public int countAllMovies() {
         Integer count = jdbcTemplate
-                .queryForObject("SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Movie] WHERE IsHidden = 0", Integer.class);
+                .queryForObject("SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Movie] WHERE IsHidden = 0 AND isBl = 0", Integer.class);
         return count != null ? count : 0;
     }
 
     public int countMoviesBySearch(String query) {
         String likeQuery = "%" + query.trim().toLowerCase() + "%";
         Integer count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Movie] WHERE LOWER(name) LIKE ? AND IsHidden = 0",
+                "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Movie] WHERE LOWER(name) LIKE ? AND IsHidden = 0 AND isBl = 0",
                 Integer.class, likeQuery);
         return count != null ? count : 0;
     }
@@ -320,7 +354,7 @@ public class MovieRepository {
                         JOIN MovieCategories MC ON MC.CategoryID = C.ID
                         WHERE MC.MovieID = M.ID) as category
                 FROM [WhoDatIdols].[dbo].[Movie] M
-                WHERE M.IsHidden = 0
+                WHERE M.IsHidden = 0 AND M.isBl = 0
                 ORDER BY M.uploadDate DESC, M.name ASC
                 OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
                 """;
@@ -335,7 +369,7 @@ public class MovieRepository {
                         JOIN MovieCategories MC ON MC.CategoryID = C.ID
                         WHERE MC.MovieID = M.ID) as category
                 FROM [WhoDatIdols].[dbo].[Movie] M
-                WHERE LOWER(M.name) LIKE ? AND M.IsHidden = 0
+                WHERE LOWER(M.name) LIKE ? AND M.IsHidden = 0 AND M.isBl = 0
                 ORDER BY M.uploadDate DESC, M.name ASC
                 OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
                 """;
@@ -355,7 +389,7 @@ public class MovieRepository {
                     WHERE [ViewedAt] >= DATEADD(day, -7, GETDATE())
                     GROUP BY ContentId
                 ) V ON M.ID = V.ContentId
-                WHERE M.IsHidden = 0
+                WHERE M.IsHidden = 0 AND M.isBl = 0
                 ORDER BY ISNULL(V.WeeklyViews, 0) DESC, M.viewCount DESC, M.name ASC
                 """;
         return jdbcTemplate.query(sql, new MovieRowMapper());
@@ -389,7 +423,7 @@ public class MovieRepository {
                                     JOIN MovieCategories MC ON MC.CategoryID = C.ID
                                     WHERE MC.MovieID = M.ID) as category
                             FROM [WhoDatIdols].[dbo].[Movie] M
-                            WHERE M.IsHidden = 0
+                            WHERE M.IsHidden = 0 AND M.isBl = 0
                         """);
 
         List<Object> params = new java.util.ArrayList<>();
@@ -432,7 +466,7 @@ public class MovieRepository {
     @SuppressWarnings("null")
     public int countMoviesWithFilters(Integer categoryId, Integer year, String country) {
         StringBuilder sql = new StringBuilder(
-                "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Movie] M WHERE M.IsHidden = 0");
+                "SELECT COUNT(*) FROM [WhoDatIdols].[dbo].[Movie] M WHERE M.IsHidden = 0 AND M.isBl = 0");
         List<Object> params = new java.util.ArrayList<>();
 
         if (categoryId != null && categoryId > 0) {
@@ -533,6 +567,12 @@ public class MovieRepository {
 
             try {
                 movie.setHidden(rs.getBoolean("IsHidden"));
+            } catch (SQLException e) {
+                // Ignore if not fetched
+            }
+
+            try {
+                movie.setBl(rs.getBoolean("isBl"));
             } catch (SQLException e) {
                 // Ignore if not fetched
             }

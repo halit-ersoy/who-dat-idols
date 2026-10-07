@@ -62,12 +62,14 @@ public class HeroRepository {
                          (SELECT STRING_AGG(C.Name, ', ') FROM Categories C JOIN MovieCategories MC ON MC.CategoryID = C.ID WHERE MC.MovieID = M.ID) as [category],
                          H.[CustomSummary] as _content, 'Movie' AS [type], H.sortOrder, H.isImage
                   FROM Hero H INNER JOIN Movie M ON H.ReferenceId = M.ID
+                  WHERE M.isBl = 0 AND M.IsHidden = 0
                   UNION ALL
                   SELECT H.[ID], H.[ReferenceId], S.[name],
                          (SELECT TOP 1 E.[slug] FROM Episode E WHERE E.SeriesId = S.ID ORDER BY SeasonNumber ASC, EpisodeNumber ASC) as [slug],
                          (SELECT STRING_AGG(C.Name, ', ') FROM Categories C JOIN SeriesCategories SC ON SC.CategoryID = C.ID WHERE SC.SeriesID = S.ID) as [category],
                          H.[CustomSummary] as _content, 'SoapOpera' AS [type], H.sortOrder, H.isImage
                   FROM Hero H INNER JOIN Series S ON H.ReferenceId = S.ID
+                  WHERE S.isBl = 0 AND S.IsHidden = 0
                 ) AS Result ORDER BY sortOrder ASC
                 """;
         return jdbcTemplate.queryForList(robustSql);

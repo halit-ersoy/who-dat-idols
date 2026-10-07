@@ -269,8 +269,13 @@ public class HomeController {
 
     @GetMapping("/{slug:[a-zA-Z0-9-'’]+}")
     public ResponseEntity<Resource> watchPageBySlug(@PathVariable("slug") String slug) {
-        // Exclude static paths from matching here, though Spring usually handles static
-        // prior to @PathVariable
+        // If content is BL/GL, redirect to bldizi.com
+        if (seriesService.isBlSlug(slug) || movieService.isBlSlug(slug)) {
+            return ResponseEntity.status(302)
+                    .header("Location", "https://bldizi.com/" + slug)
+                    .build();
+        }
+
         // Validate slug existence in Series, Movies, or Episodes
         boolean isValid = seriesService.isValidSlug(slug) || movieService.isValidSlug(slug);
         if (!isValid) {

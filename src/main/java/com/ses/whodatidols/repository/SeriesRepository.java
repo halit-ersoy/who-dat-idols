@@ -69,6 +69,23 @@ public class SeriesRepository {
             jdbcTemplate.execute(
                     "UPDATE Episode SET slug = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(name, ' ', '-'), 'ı', 'i'), 'ğ', 'g'), 'ü', 'u'), 'ş', 's'), 'ö', 'o'), 'ç', 'c'), '?', ''), '!', '')) WHERE slug IS NULL OR slug = ''");
 
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Series' AND COLUMN_NAME = 'isBl') "
+                            +
+                            "BEGIN " +
+                            "    ALTER TABLE Series ADD isBl BIT DEFAULT 0 NOT NULL; " +
+                            "END");
+
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_Series_isBl' AND object_id = OBJECT_ID('Series')) "
+                            +
+                            "BEGIN " +
+                            "    CREATE NONCLUSTERED INDEX idx_Series_isBl ON Series(isBl); " +
+                            "END");
+
+            jdbcTemplate.execute(
+                    "UPDATE Series SET isBl = 1 WHERE isBl = 0 AND (SeriesType IN ('BL', 'GL') OR EXISTS (SELECT 1 FROM SeriesCategories SC JOIN Categories C ON SC.CategoryID = C.ID WHERE SC.SeriesID = Series.ID AND C.Name IN ('BL', 'GL')))");
+
             // Clean up existing slugs (strip SEO suffixes)
             jdbcTemplate.execute("UPDATE Episode SET slug = LEFT(slug, LEN(slug) - 6) WHERE slug LIKE '%-watch'");
 
@@ -213,6 +230,10 @@ public class SeriesRepository {
             s.setHidden(rs.getBoolean("IsHidden"));
         } catch (Exception e) {
         }
+        try {
+            s.setBl(rs.getBoolean("isBl"));
+        } catch (Exception e) {
+        }
         s.setEpisodeMetadataXml(rs.getString("EpisodeMetadataXml"));
         try {
             java.sql.Timestamp ts = rs.getTimestamp("uploadDate");
@@ -271,7 +292,7 @@ public class SeriesRepository {
                         JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                         WHERE SC.SeriesID = S.ID) as category
                 FROM Series S
-                WHERE S.IsHidden = 0
+                WHERE S.IsHidden = 0 AND S.isBl = 0
                 ORDER BY S.name ASC
                 """;
         return jdbcTemplate.query(sql, seriesRowMapper);
@@ -330,9 +351,24 @@ public class SeriesRepository {
         }
     }
 
+    public boolean isBlSeries(Series series) {
+        if (series == null) return false;
+        if ("BL".equalsIgnoreCase(series.getSeriesType()) || "GL".equalsIgnoreCase(series.getSeriesType())) return true;
+        String cat = series.getCategory();
+        if (cat != null) {
+            String[] parts = cat.split(",");
+            for (String p : parts) {
+                String t = p.trim();
+                if ("BL".equalsIgnoreCase(t) || "GL".equalsIgnoreCase(t)) return true;
+            }
+        }
+        return false;
+    }
+
     public void createSeries(Series series) {
+        boolean isBl = isBlSeries(series);
         jdbcTemplate.update(
-                "INSERT INTO Series (ID, name, Summary, Language, Country, SeriesType, finalStatus, EpisodeMetadataXml, uploadDate, slug, IsHidden) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO Series (ID, name, Summary, Language, Country, SeriesType, finalStatus, EpisodeMetadataXml, uploadDate, slug, IsHidden, isBl) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 series.getId().toString(),
                 series.getName(),
                 series.getSummary(),
@@ -343,7 +379,8 @@ public class SeriesRepository {
                 series.getEpisodeMetadataXml(),
                 Timestamp.from(series.getUploadDate()),
                 series.getSlug(),
-                series.isHidden());
+                series.isHidden(),
+                isBl);
 
         updateSeriesCategories(series.getId(), series.getCategory());
     }
@@ -353,8 +390,9 @@ public class SeriesRepository {
     }
 
     public void updateSeriesMetadata(Series series) {
+        boolean isBl = isBlSeries(series);
         jdbcTemplate.update(
-                "UPDATE Series SET name=?, Summary=?, Language=?, Country=?, SeriesType=?, finalStatus=?, IsHidden=? WHERE ID=?",
+                "UPDATE Series SET name=?, Summary=?, Language=?, Country=?, SeriesType=?, finalStatus=?, IsHidden=?, isBl=? WHERE ID=?",
                 series.getName(),
                 series.getSummary(),
                 series.getLanguage(),
@@ -362,6 +400,7 @@ public class SeriesRepository {
                 series.getSeriesType(),
                 series.getFinalStatus(),
                 series.isHidden(),
+                isBl,
                 series.getId().toString());
 
         updateSeriesCategories(series.getId(), series.getCategory());
@@ -519,7 +558,7 @@ public class SeriesRepository {
 
     public List<Episode> findRecentEpisodes(int limit) {
         return jdbcTemplate.query(
-                "SELECT TOP (?) E.* FROM Episode E JOIN Series S ON E.SeriesId = S.ID WHERE E.IsHidden = 0 AND S.IsHidden = 0 ORDER BY E.uploadDate DESC, E.name ASC",
+                "SELECT TOP (?) E.* FROM Episode E JOIN Series S ON E.SeriesId = S.ID WHERE E.IsHidden = 0 AND S.IsHidden = 0 AND S.isBl = 0 ORDER BY E.uploadDate DESC, E.name ASC",
                 episodeRowMapper,
                 limit);
     }
@@ -539,7 +578,7 @@ public class SeriesRepository {
                             JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                             WHERE SC.SeriesID = S.ID) as category
                     FROM Series S
-                    WHERE S.IsHidden = 0
+                    WHERE S.IsHidden = 0 AND S.isBl = 0
                     ORDER BY S.uploadDate DESC, S.name ASC
                     """;
             return jdbcTemplate.query(sql, seriesRowMapper, limit);
@@ -550,7 +589,7 @@ public class SeriesRepository {
                             JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                             WHERE SC.SeriesID = S.ID) as category
                     FROM Series S
-                    WHERE S.IsHidden = 0
+                    WHERE S.IsHidden = 0 AND S.isBl = 0
                     ORDER BY S.uploadDate DESC, S.name ASC
                     """;
             return jdbcTemplate.query(sql, seriesRowMapper);
@@ -559,7 +598,7 @@ public class SeriesRepository {
 
     @SuppressWarnings("null")
     public int countAllSeries(String seriesType) {
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Series S WHERE S.IsHidden = 0");
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Series S WHERE S.IsHidden = 0 AND S.isBl = 0");
         java.util.List<Object> params = new java.util.ArrayList<>();
 
         if ("Program".equalsIgnoreCase(seriesType)) {
@@ -579,7 +618,7 @@ public class SeriesRepository {
     public int countSeriesBySearch(String query, String seriesType) {
         String likeQuery = "%" + query.trim().toLowerCase() + "%";
         StringBuilder sql = new StringBuilder(
-                "SELECT COUNT(*) FROM Series S WHERE LOWER(S.name) LIKE ? AND S.IsHidden = 0");
+                "SELECT COUNT(*) FROM Series S WHERE LOWER(S.name) LIKE ? AND S.IsHidden = 0 AND S.isBl = 0");
         java.util.List<Object> params = new java.util.ArrayList<>();
         params.add(likeQuery);
 
@@ -605,7 +644,7 @@ public class SeriesRepository {
                                 JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                                 WHERE SC.SeriesID = S.ID) as category
                         FROM Series S
-                        WHERE S.IsHidden = 0
+                        WHERE S.IsHidden = 0 AND S.isBl = 0
                         """);
         java.util.List<Object> params = new java.util.ArrayList<>();
 
@@ -635,7 +674,7 @@ public class SeriesRepository {
                                 JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                                 WHERE SC.SeriesID = S.ID) as category
                         FROM Series S
-                        WHERE LOWER(S.name) LIKE ? AND S.IsHidden = 0
+                        WHERE LOWER(S.name) LIKE ? AND S.IsHidden = 0 AND S.isBl = 0
                         """);
         java.util.List<Object> params = new java.util.ArrayList<>();
         params.add(likeQuery);
@@ -657,7 +696,7 @@ public class SeriesRepository {
     }
 
     public List<Episode> findTop6EpisodesByCount() {
-        String sql = "SELECT TOP 6 E.* FROM Episode E JOIN Series S ON E.SeriesId = S.ID WHERE E.IsHidden = 0 AND S.IsHidden = 0 ORDER BY E.viewCount DESC";
+        String sql = "SELECT TOP 6 E.* FROM Episode E JOIN Series S ON E.SeriesId = S.ID WHERE E.IsHidden = 0 AND S.IsHidden = 0 AND S.isBl = 0 ORDER BY E.viewCount DESC";
         return jdbcTemplate.query(sql, episodeRowMapper);
     }
 
@@ -701,7 +740,7 @@ public class SeriesRepository {
                                     JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                                     WHERE SC.SeriesID = S.ID) as category
                             FROM Series S
-                            WHERE S.IsHidden = 0
+                            WHERE S.IsHidden = 0 AND S.isBl = 0
                         """);
 
         List<Object> params = new java.util.ArrayList<>();
@@ -760,7 +799,7 @@ public class SeriesRepository {
     @SuppressWarnings("null")
     public int countSeriesWithFilters(String seriesType, Integer categoryId, Integer finalStatus, Integer year,
             String country) {
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Series S WHERE S.IsHidden = 0");
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Series S WHERE S.IsHidden = 0 AND S.isBl = 0");
         List<Object> params = new java.util.ArrayList<>();
 
         if ("Program".equalsIgnoreCase(seriesType)) {
@@ -849,7 +888,7 @@ public class SeriesRepository {
                            ROW_NUMBER() OVER(PARTITION BY E.SeriesId ORDER BY E.SeasonNumber DESC, E.EpisodeNumber DESC) as latest_in_series_rn
                     FROM Episode E
                     JOIN Series S ON E.SeriesId = S.ID
-                    WHERE E.IsHidden = 0 AND S.IsHidden = 0
+                    WHERE E.IsHidden = 0 AND S.IsHidden = 0 AND S.isBl = 0
                 ),
                 GroupedEpisodes AS (
                     SELECT *, (rn1 - rn2) as island_id
@@ -881,7 +920,7 @@ public class SeriesRepository {
                            ROW_NUMBER() OVER(PARTITION BY E.SeriesId ORDER BY E.uploadDate DESC, E.name ASC, E.ID ASC) as rn2
                     FROM Episode E
                     JOIN Series S ON E.SeriesId = S.ID
-                    WHERE E.IsHidden = 0 AND S.IsHidden = 0
+                    WHERE E.IsHidden = 0 AND S.IsHidden = 0 AND S.isBl = 0
                 ),
                 GroupedEpisodes AS (
                     SELECT SeriesId, (rn1 - rn2) as island_id, rn1, uploadDate, name, EpisodeId

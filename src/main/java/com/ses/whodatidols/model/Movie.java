@@ -16,6 +16,7 @@ public class Movie {
     private String slug;
     private boolean isAdult;
     private boolean isHidden;
+    private boolean isBl;
 
     // Constructors
     public Movie() {
@@ -132,5 +133,13 @@ public class Movie {
 
     public void setHidden(boolean hidden) {
         isHidden = hidden;
+    }
+
+    public boolean isBl() {
+        return isBl;
+    }
+
+    public void setBl(boolean bl) {
+        isBl = bl;
     }
 }

@@ -18,6 +18,7 @@ public class Series {
     private String seriesType;
     private String slug;
     private boolean isHidden;
+    private boolean isBl;
 
     // Getter and Setters
     public UUID getId() {
@@ -122,5 +123,13 @@ public class Series {
 
     public void setHidden(boolean hidden) {
         isHidden = hidden;
+    }
+
+    public boolean isBl() {
+        return isBl;
+    }
+
+    public void setBl(boolean bl) {
+        isBl = bl;
     }
 }

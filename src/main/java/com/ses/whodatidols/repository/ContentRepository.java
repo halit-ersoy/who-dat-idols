@@ -72,7 +72,7 @@ public class ContentRepository {
                     FROM Series S
                     JOIN SeriesCategories SC ON S.ID = SC.SeriesID
                     WHERE SC.CategoryID IN (SELECT CategoryID FROM TargetCategories)
-                      AND S.ID <> ?
+                      AND S.ID <> ? AND S.isBl = 0 AND S.IsHidden = 0
                     GROUP BY S.ID, S.Name, S.viewCount
                 ),
                 SimilarMovies AS (
@@ -83,7 +83,7 @@ public class ContentRepository {
                     FROM Movie M
                     JOIN MovieCategories MC ON M.ID = MC.MovieID
                     WHERE MC.CategoryID IN (SELECT CategoryID FROM TargetCategories)
-                      AND M.ID <> ?
+                      AND M.ID <> ? AND M.isBl = 0 AND M.IsHidden = 0
                     GROUP BY M.ID, M.Name, M.viewCount, M.slug
                 )
                 SELECT TOP (?) ID, Name, Type, Category, viewCount, slug FROM (

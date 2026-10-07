@@ -286,6 +286,12 @@ public class MovieService {
     }
 
     public boolean isValidSlug(String slug) {
-        return movieRepository.findMovieBySlug(slug) != null;
+        var m = movieRepository.findMovieBySlug(slug);
+        return m != null && !m.isBl();
+    }
+
+    public boolean isBlSlug(String slug) {
+        var m = movieRepository.findMovieBySlug(slug);
+        return m != null && m.isBl();
     }
 }

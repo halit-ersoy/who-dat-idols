@@ -72,6 +72,9 @@ public class VideoController {
             try {
                 var series = seriesRepository.findSeriesByEpisodeId(id);
                 if (series != null) {
+                    if (series.isBl()) {
+                        return ResponseEntity.notFound().build();
+                    }
                     // Update title to be "Series Name - X. Sezon Y. Bölüm"
                     String formattedTitle = series.getName() + " - " + episode.getSeasonNumber() + ". Sezon "
                             + episode.getEpisodeNumber() + ". Bölüm";
@@ -109,6 +112,9 @@ public class VideoController {
         // 2. Try Movie
         Movie movie = movieRepository.findMovieById(id);
         if (movie != null && !movie.isHidden()) {
+            if (movie.isBl()) {
+                return ResponseEntity.notFound().build();
+            }
             response.put("title", movie.getName());
             response.put("duration", movie.getDurationMinutes() > 0 ? movie.getDurationMinutes() + " dk" : "");
             response.put("year", movie.getReleaseYear());
@@ -180,18 +186,28 @@ public class VideoController {
         // info)
         Episode episode = seriesRepository.findEpisodeBySlug(slug);
         if (episode != null) {
+            Series parentSeries = seriesRepository.findSeriesByEpisodeId(episode.getId());
+            if (parentSeries != null && parentSeries.isBl()) {
+                return ResponseEntity.notFound().build();
+            }
             return ResponseEntity.ok(Map.of("id", episode.getId().toString(), "type", "episode"));
         }
 
         // 2. Check if it's a movie slug (movies before series to avoid slug collision)
         Movie movie = movieRepository.findMovieBySlug(slug);
         if (movie != null) {
+            if (movie.isBl()) {
+                return ResponseEntity.notFound().build();
+            }
             return ResponseEntity.ok(Map.of("id", movie.getId().toString(), "type", "movie"));
         }
 
         // 3. Check if it's a series slug → return first episode
         Series series = seriesRepository.findSeriesBySlug(slug);
         if (series != null) {
+            if (series.isBl()) {
+                return ResponseEntity.notFound().build();
+            }
             UUID firstEpId = seriesRepository.findFirstEpisodeIdBySeriesId(series.getId());
             if (firstEpId != null) {
                 return ResponseEntity.ok(Map.of("id", firstEpId.toString(), "type", "episode"));

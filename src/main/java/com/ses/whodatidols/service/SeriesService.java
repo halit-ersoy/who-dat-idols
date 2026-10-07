@@ -759,7 +759,23 @@ public class SeriesService {
     }
 
     public boolean isValidSlug(String slug) {
-        return repository.findEpisodeBySlug(slug) != null || repository.findSeriesBySlug(slug) != null;
+        var ep = repository.findEpisodeBySlug(slug);
+        if (ep != null) {
+            var s = repository.findSeriesByEpisodeId(ep.getId());
+            return s != null && !s.isBl();
+        }
+        var s = repository.findSeriesBySlug(slug);
+        return s != null && !s.isBl();
+    }
+
+    public boolean isBlSlug(String slug) {
+        var ep = repository.findEpisodeBySlug(slug);
+        if (ep != null) {
+            var s = repository.findSeriesByEpisodeId(ep.getId());
+            return s != null && s.isBl();
+        }
+        var s = repository.findSeriesBySlug(slug);
+        return s != null && s.isBl();
     }
 
     public List<com.ses.whodatidols.viewmodel.FeaturedTvItemDto> getRecentCondensedEpisodesPaged(int offset,

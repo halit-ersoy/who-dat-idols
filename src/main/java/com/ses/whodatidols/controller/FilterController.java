@@ -28,7 +28,7 @@ public class FilterController {
         Map<String, Object> options = new HashMap<>();
 
         // 1. Categories
-        String categorySql = "SELECT ID, Name FROM Categories ORDER BY Name ASC";
+        String categorySql = "SELECT ID, Name FROM Categories WHERE Name NOT IN ('BL', 'GL') ORDER BY Name ASC";
         List<Map<String, Object>> categories = jdbcTemplate.query(categorySql, (rs, rowNum) -> {
             Map<String, Object> cat = new HashMap<>();
             cat.put("id", rs.getInt("ID"));
@@ -40,7 +40,7 @@ public class FilterController {
         // 2. Years
         String yearSql = "";
         if ("movie".equalsIgnoreCase(type)) {
-            yearSql = "SELECT DISTINCT ReleaseYear as Year FROM Movie WHERE ReleaseYear IS NOT NULL ORDER BY ReleaseYear DESC";
+            yearSql = "SELECT DISTINCT ReleaseYear as Year FROM Movie WHERE isBl = 0 AND ReleaseYear IS NOT NULL ORDER BY ReleaseYear DESC";
         } else {
             // For series (Dizi, BL, Program), we get distinct years from their episodes or
             // assume they uploaded recently
@@ -48,7 +48,7 @@ public class FilterController {
             // Episode.ReleaseYear.
             // A simpler approach: distinct year from max episode release year per series,
             // or just distinct ReleaseYear from Episode.
-            yearSql = "SELECT DISTINCT ReleaseYear as Year FROM Episode WHERE ReleaseYear IS NOT NULL ORDER BY ReleaseYear DESC";
+            yearSql = "SELECT DISTINCT E.ReleaseYear as Year FROM Episode E JOIN Series S ON E.SeriesId = S.ID WHERE S.isBl = 0 AND E.ReleaseYear IS NOT NULL ORDER BY E.ReleaseYear DESC";
         }
 
         List<Integer> years = jdbcTemplate.queryForList(yearSql, Integer.class);
@@ -57,9 +57,9 @@ public class FilterController {
         // 3. Countries
         String countrySql = "";
         if ("movie".equalsIgnoreCase(type)) {
-            countrySql = "SELECT DISTINCT Country FROM Movie WHERE Country IS NOT NULL AND Country != '' ORDER BY Country ASC";
+            countrySql = "SELECT DISTINCT Country FROM Movie WHERE isBl = 0 AND Country IS NOT NULL AND Country != '' ORDER BY Country ASC";
         } else {
-            countrySql = "SELECT DISTINCT Country FROM Series WHERE Country IS NOT NULL AND Country != '' ORDER BY Country ASC";
+            countrySql = "SELECT DISTINCT Country FROM Series WHERE isBl = 0 AND Country IS NOT NULL AND Country != '' ORDER BY Country ASC";
         }
 
         List<String> rawCountries = jdbcTemplate.queryForList(countrySql, String.class);

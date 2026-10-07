@@ -34,7 +34,7 @@ public class AiCatalogRepository {
                 ISNULL(M.Summary, '') AS summary,
                 ISNULL((SELECT STRING_AGG(C.Name, ', ') FROM Categories C JOIN MovieCategories MC ON MC.CategoryID = C.ID WHERE MC.MovieID = M.ID), '') AS category
             FROM Movie M
-            WHERE (M.IsHidden = 0 OR M.IsHidden IS NULL)
+            WHERE (M.IsHidden = 0 OR M.IsHidden IS NULL) AND M.isBl = 0
         """;
 
         try {
@@ -54,7 +54,7 @@ public class AiCatalogRepository {
             logger.warn("Could not query full movies for AI catalog with categories: {}. Retrying basic query...", e.getMessage());
             try {
                 //language=none
-                String basicMovieSql = "SELECT CAST(ID AS NVARCHAR(36)) AS id, name, 'Film' AS type, ReleaseYear AS year, slug, ISNULL(Summary, '') AS summary FROM Movie WHERE (IsHidden = 0 OR IsHidden IS NULL)";
+                String basicMovieSql = "SELECT CAST(ID AS NVARCHAR(36)) AS id, name, 'Film' AS type, ReleaseYear AS year, slug, ISNULL(Summary, '') AS summary FROM Movie WHERE (IsHidden = 0 OR IsHidden IS NULL) AND isBl = 0";
                 List<AiCatalogItem> movies = jdbcTemplate.query(basicMovieSql, (rs, _) -> {
                     AiCatalogItem item = new AiCatalogItem();
                     item.setId(rs.getString("id"));
@@ -82,7 +82,7 @@ public class AiCatalogRepository {
                 ISNULL(S.Summary, '') AS summary,
                 ISNULL((SELECT STRING_AGG(C.Name, ', ') FROM Categories C JOIN SeriesCategories SC ON SC.CategoryID = C.ID WHERE SC.SeriesID = S.ID), '') AS category
             FROM Series S
-            WHERE (S.IsHidden = 0 OR S.IsHidden IS NULL)
+            WHERE (S.IsHidden = 0 OR S.IsHidden IS NULL) AND S.isBl = 0
         """;
 
         try {
@@ -102,7 +102,7 @@ public class AiCatalogRepository {
             logger.warn("Could not query full series for AI catalog with categories: {}. Retrying basic query...", e.getMessage());
             try {
                 //language=none
-                String basicSeriesSql = "SELECT CAST(ID AS NVARCHAR(36)) AS id, name, 'Dizi' AS type, slug, ISNULL(Summary, '') AS summary FROM Series WHERE (IsHidden = 0 OR IsHidden IS NULL)";
+                String basicSeriesSql = "SELECT CAST(ID AS NVARCHAR(36)) AS id, name, 'Dizi' AS type, slug, ISNULL(Summary, '') AS summary FROM Series WHERE (IsHidden = 0 OR IsHidden IS NULL) AND isBl = 0";
                 List<AiCatalogItem> series = jdbcTemplate.query(basicSeriesSql, (rs, _) -> {
                     AiCatalogItem item = new AiCatalogItem();
                     item.setId(rs.getString("id"));
