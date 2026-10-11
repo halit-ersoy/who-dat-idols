@@ -389,16 +389,33 @@ public class PersonRepository {
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> registerUser(Person person, String platform) {
-        Map<String, Object> result = jdbcTemplate.call(connection -> {
-            var callableStatement = connection.prepareCall("{call RegisterUser(?, ?, ?, ?, ?, ?)}");
-            callableStatement.setString(1, person.getNickname());
-            callableStatement.setString(2, person.getName());
-            callableStatement.setString(3, person.getSurname());
-            callableStatement.setString(4, person.getEmail());
-            callableStatement.setString(5, person.getPassword());
-            callableStatement.setString(6, platform != null ? platform : "whodatidols");
-            return callableStatement;
-        }, new ArrayList<SqlParameter>());
+        Map<String, Object> result;
+        try {
+            result = jdbcTemplate.call(connection -> {
+                var callableStatement = connection.prepareCall("{call RegisterUser(?, ?, ?, ?, ?, ?)}");
+                callableStatement.setString(1, person.getNickname());
+                callableStatement.setString(2, person.getName());
+                callableStatement.setString(3, person.getSurname());
+                callableStatement.setString(4, person.getEmail());
+                callableStatement.setString(5, person.getPassword());
+                callableStatement.setString(6, platform != null ? platform : "whodatidols");
+                return callableStatement;
+            }, new ArrayList<SqlParameter>());
+        } catch (Exception e) {
+            if (e.getMessage() != null && (e.getMessage().contains("too many arguments") || e.getMessage().contains("8144"))) {
+                result = jdbcTemplate.call(connection -> {
+                    var callableStatement = connection.prepareCall("{call RegisterUser(?, ?, ?, ?, ?)}");
+                    callableStatement.setString(1, person.getNickname());
+                    callableStatement.setString(2, person.getName());
+                    callableStatement.setString(3, person.getSurname());
+                    callableStatement.setString(4, person.getEmail());
+                    callableStatement.setString(5, person.getPassword());
+                    return callableStatement;
+                }, new ArrayList<SqlParameter>());
+            } else {
+                throw e;
+            }
+        }
 
         Map<String, Object> response = new HashMap<>();
         if (result.containsKey("#result-set-1")) {
@@ -409,6 +426,29 @@ public class PersonRepository {
                 response.put("message", row.get("Message"));
                 response.put("nickname", row.get("Nickname"));
                 response.put("cookie", row.get("Cookie"));
+
+                Object successVal = response.get("success");
+                boolean isSuccess = Boolean.TRUE.equals(successVal) ||
+                        (successVal instanceof Number && ((Number) successVal).intValue() == 1) ||
+                        "true".equalsIgnoreCase(String.valueOf(successVal));
+                Object cookieVal = response.get("cookie");
+                if (isSuccess && cookieVal != null) {
+                    try {
+                        UUID token = UUID.fromString(cookieVal.toString());
+                        UUID userId = findUserIdByCookie(cookieVal.toString());
+                        if (userId != null) {
+                            jdbcTemplate.update("""
+                                IF NOT EXISTS (SELECT 1 FROM [WhoDatIdols].[dbo].[UserSession] WHERE Token = ?)
+                                BEGIN
+                                    INSERT INTO [WhoDatIdols].[dbo].[UserSession] ([UserId], [Token], [Platform], [CreatedAt], [LastActiveAt])
+                                    VALUES (?, ?, ?, GETDATE(), GETDATE())
+                                END
+                            """, token, userId, token, platform != null ? platform : "whodatidols");
+                        }
+                    } catch (Exception ex) {
+                        System.err.println("UserSession register error during registration: " + ex.getMessage());
+                    }
+                }
             }
         }
 
@@ -742,6 +782,37 @@ public class PersonRepository {
                     END
                     ELSE
                         SELECT CAST(0 AS BIT) as Result, 'Hatali kullanici adi veya sifre' as Message;
+                END;
+            """);
+
+            // RegisterUser Procedure (Multi-Platform Support)
+            jdbcTemplate.execute("""
+                CREATE OR ALTER PROCEDURE [dbo].[RegisterUser]
+                    @Nickname NVARCHAR(50),
+                    @Name NVARCHAR(100),
+                    @Surname NVARCHAR(100),
+                    @Email NVARCHAR(255),
+                    @Password NVARCHAR(255),
+                    @Platform NVARCHAR(50) = 'whodatidols'
+                AS
+                BEGIN
+                    SET NOCOUNT ON;
+                    IF EXISTS (SELECT 1 FROM [dbo].[Person] WHERE Nickname = @Nickname OR Email = @Email)
+                    BEGIN
+                        SELECT CAST(0 AS BIT) as Result, 'Kullanici adi veya E-posta zaten kullanimda.' as Message;
+                        RETURN;
+                    END
+                    
+                    DECLARE @UserId UNIQUEIDENTIFIER = NEWID();
+                    DECLARE @NewCookie UNIQUEIDENTIFIER = NEWID();
+
+                    INSERT INTO [dbo].[Person] (ID, Nickname, Name, Surname, Email, Password, cookie, role, isVerified, isBanned, allowMessages)
+                    VALUES (@UserId, @Nickname, @Name, @Surname, @Email, @Password, @NewCookie, 'USER', 0, 0, 1);
+
+                    INSERT INTO [dbo].[UserSession] ([UserId], [Token], [Platform], [CreatedAt], [LastActiveAt])
+                    VALUES (@UserId, @NewCookie, ISNULL(@Platform, 'whodatidols'), GETDATE(), GETDATE());
+                    
+                    SELECT CAST(1 AS BIT) as Result, 'Kayit basarili.' as Message, @Nickname as Nickname, @NewCookie as Cookie;
                 END;
             """);
 

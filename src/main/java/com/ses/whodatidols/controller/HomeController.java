@@ -313,7 +313,7 @@ public class HomeController {
 
     @PostMapping("/register")
     @ResponseBody
-    public ResponseEntity<?> registerUser(@RequestBody Person person) {
+    public ResponseEntity<?> registerUser(@RequestBody Person person, HttpServletResponse response) {
         try {
             if (!systemSettingRepository.isRegistrationEnabled()) {
                 Map<String, Object> error = new HashMap<>();
@@ -379,15 +379,39 @@ public class HomeController {
             // 3. Proceed to Register
             Map<String, Object> result = personRepository.registerUser(person);
 
-            if ((Boolean) result.get("success")) {
+            Object successObj = result.get("success");
+            boolean isSuccess = Boolean.TRUE.equals(successObj) ||
+                    (successObj instanceof Number && ((Number) successObj).intValue() == 1) ||
+                    "true".equalsIgnoreCase(String.valueOf(successObj));
+
+            if (isSuccess) {
+                Object cookieObj = result.get("cookie");
+                if (cookieObj != null) {
+                    Cookie authCookie = new Cookie("wdiAuth", cookieObj.toString());
+                    authCookie.setHttpOnly(true);
+                    authCookie.setPath("/");
+                    authCookie.setMaxAge(7 * 24 * 60 * 60);
+                    authCookie.setSecure(true);
+                    response.addCookie(authCookie);
+
+                    ResponseCookie springCookie = ResponseCookie.from("wdiAuth", cookieObj.toString())
+                            .httpOnly(true)
+                            .path("/")
+                            .maxAge(7 * 24 * 60 * 60)
+                            .secure(true)
+                            .sameSite("Lax")
+                            .build();
+                    response.addHeader(HttpHeaders.SET_COOKIE, springCookie.toString());
+                }
                 return ResponseEntity.ok(result);
             } else {
                 return ResponseEntity.badRequest().body(result);
             }
         } catch (Exception e) {
-            Map<String, String> errorResponse = new HashMap<>();
+            Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("error", e.getMessage());
-            errorResponse.put("success", "false");
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("success", false);
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }
