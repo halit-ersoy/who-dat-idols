@@ -48,6 +48,10 @@ public class MovieService {
         return movieRepository.findAll();
     }
 
+    public List<Movie> getAllMoviesForAdmin() {
+        return movieRepository.findAllForAdmin();
+    }
+
     public List<Movie> getRecentMovies(int limit) {
         return movieRepository.findRecentMovies(limit);
     }

@@ -286,7 +286,7 @@ public class SeriesRepository {
 
     public List<Series> findAllSeries() {
         String sql = """
-                SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden,
+                SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden, S.isBl,
                        (SELECT COUNT(*) FROM Episode E WHERE E.SeriesId = S.ID AND E.IsHidden = 0) as episodeCount,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN SeriesCategories SC ON SC.CategoryID = C.ID
@@ -300,7 +300,7 @@ public class SeriesRepository {
 
     public List<Series> findAllSeriesForAdmin() {
         String sql = """
-                SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden,
+                SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden, S.isBl,
                        (SELECT COUNT(*) FROM Episode E WHERE E.SeriesId = S.ID) as episodeCount,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN SeriesCategories SC ON SC.CategoryID = C.ID
@@ -314,7 +314,7 @@ public class SeriesRepository {
     public Series findSeriesByName(String name) {
         try {
             String sql = """
-                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden,
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden, S.isBl,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                             WHERE SC.SeriesID = S.ID) as category
@@ -330,7 +330,7 @@ public class SeriesRepository {
     public Series findSeriesById(UUID id) {
         try {
             String sql = """
-                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden,
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden, S.isBl,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                             WHERE SC.SeriesID = S.ID) as category
@@ -543,7 +543,7 @@ public class SeriesRepository {
     public Series findSeriesBySlug(String slug) {
         try {
             String sql = """
-                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden,
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden, S.isBl,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                             WHERE SC.SeriesID = S.ID) as category
@@ -573,7 +573,7 @@ public class SeriesRepository {
         String sql;
         if (limit > 0) {
             sql = """
-                    SELECT TOP (?) S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden,
+                    SELECT TOP (?) S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden, S.isBl,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                             WHERE SC.SeriesID = S.ID) as category
@@ -584,7 +584,7 @@ public class SeriesRepository {
             return jdbcTemplate.query(sql, seriesRowMapper, limit);
         } else {
             sql = """
-                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden,
+                    SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden, S.isBl,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                             WHERE SC.SeriesID = S.ID) as category
@@ -639,7 +639,7 @@ public class SeriesRepository {
     public List<Series> findRecentSeriesPaged(String seriesType, int offset, int limit) {
         StringBuilder sql = new StringBuilder(
                 """
-                        SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden,
+                        SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden, S.isBl,
                                (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                                 JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                                 WHERE SC.SeriesID = S.ID) as category
@@ -669,7 +669,7 @@ public class SeriesRepository {
         String likeQuery = "%" + query.trim().toLowerCase() + "%";
         StringBuilder sql = new StringBuilder(
                 """
-                        SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden,
+                        SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden, S.isBl,
                                (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                                 JOIN SeriesCategories SC ON SC.CategoryID = C.ID
                                 WHERE SC.SeriesID = S.ID) as category
@@ -702,7 +702,7 @@ public class SeriesRepository {
 
     public List<Series> findTop6SeriesByCount() {
         String sql = """
-                SELECT TOP 6 S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden,
+                SELECT TOP 6 S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden, S.isBl,
                        (SELECT COUNT(*) FROM Episode E WHERE E.SeriesId = S.ID AND E.IsHidden = 0) as episodeCount,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN SeriesCategories SC ON SC.CategoryID = C.ID
@@ -734,7 +734,7 @@ public class SeriesRepository {
             String country, String sort, int offset, int limit) {
         StringBuilder sql = new StringBuilder(
                 """
-                            SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden,
+                            SELECT S.ID, S.name, S.Summary, S.Language, S.Country, S.SeriesType, S.finalStatus, S.EpisodeMetadataXml, S.uploadDate, S.slug, S.IsHidden, S.isBl,
                                    (SELECT COUNT(*) FROM Episode E WHERE E.SeriesId = S.ID AND E.IsHidden=0) as episodeCount,
                                    (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                                     JOIN SeriesCategories SC ON SC.CategoryID = C.ID

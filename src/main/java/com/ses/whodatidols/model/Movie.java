@@ -139,7 +139,15 @@ public class Movie {
         return isBl;
     }
 
+    public boolean getIsBl() {
+        return isBl;
+    }
+
     public void setBl(boolean bl) {
         isBl = bl;
+    }
+
+    public void setIsBl(boolean isBl) {
+        this.isBl = isBl;
     }
 }

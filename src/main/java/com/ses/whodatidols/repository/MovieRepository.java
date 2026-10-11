@@ -157,6 +157,7 @@ public class MovieRepository {
     // --- KAYIT (INSERT) İŞLEMİ ---
     public boolean isBlMovie(Movie movie) {
         if (movie == null) return false;
+        if (movie.isBl()) return true;
         String cat = movie.getCategory();
         if (cat != null) {
             for (String p : cat.split(",")) {
@@ -195,7 +196,7 @@ public class MovieRepository {
     // --- LİSTELEME (TÜM FİLMLER) ---
     public List<Movie> findAll() {
         String sql = """
-                SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden,
+                SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden, M.isBl,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN MovieCategories MC ON MC.CategoryID = C.ID
                         WHERE MC.MovieID = M.ID) as category
@@ -209,7 +210,7 @@ public class MovieRepository {
     // --- LİSTELEME (ADMİN İÇİN TÜM FİLMLER) ---
     public List<Movie> findAllForAdmin() {
         String sql = """
-                SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden,
+                SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden, M.isBl,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN MovieCategories MC ON MC.CategoryID = C.ID
                         WHERE MC.MovieID = M.ID) as category
@@ -222,7 +223,7 @@ public class MovieRepository {
     public Movie findMovieBySlug(String slug) {
         try {
             String sql = """
-                    SELECT TOP 1 M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden,
+                    SELECT TOP 1 M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden, M.isBl,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN MovieCategories MC ON MC.CategoryID = C.ID
                             WHERE MC.MovieID = M.ID) as category
@@ -291,7 +292,7 @@ public class MovieRepository {
     // --- OKUMA İŞLEMLERİ ---
     public Movie findMovieByName(String name) {
         String sql = """
-                SELECT TOP 1 M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden,
+                SELECT TOP 1 M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden, M.isBl,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN MovieCategories MC ON MC.CategoryID = C.ID
                         WHERE MC.MovieID = M.ID) as category
@@ -309,7 +310,7 @@ public class MovieRepository {
         String sql;
         if (limit > 0) {
             sql = """
-                    SELECT TOP (?) M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden,
+                    SELECT TOP (?) M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden, M.isBl,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN MovieCategories MC ON MC.CategoryID = C.ID
                             WHERE MC.MovieID = M.ID) as category
@@ -320,7 +321,7 @@ public class MovieRepository {
             return jdbcTemplate.query(sql, new MovieRowMapper(), limit);
         } else {
             sql = """
-                    SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden,
+                    SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden, M.isBl,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN MovieCategories MC ON MC.CategoryID = C.ID
                             WHERE MC.MovieID = M.ID) as category
@@ -349,7 +350,7 @@ public class MovieRepository {
 
     public List<Movie> findRecentMoviesPaged(int offset, int limit) {
         String sql = """
-                SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden,
+                SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden, M.isBl,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN MovieCategories MC ON MC.CategoryID = C.ID
                         WHERE MC.MovieID = M.ID) as category
@@ -364,7 +365,7 @@ public class MovieRepository {
     public List<Movie> searchMoviesPaged(String query, int offset, int limit) {
         String likeQuery = "%" + query.trim().toLowerCase() + "%";
         String sql = """
-                SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden,
+                SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden, M.isBl,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN MovieCategories MC ON MC.CategoryID = C.ID
                         WHERE MC.MovieID = M.ID) as category
@@ -378,7 +379,7 @@ public class MovieRepository {
 
     public List<Movie> findTop6MoviesByCount() {
         String sql = """
-                SELECT TOP 6 M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden,
+                SELECT TOP 6 M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden, M.isBl,
                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                         JOIN MovieCategories MC ON MC.CategoryID = C.ID
                         WHERE MC.MovieID = M.ID) as category
@@ -398,7 +399,7 @@ public class MovieRepository {
     public Movie findMovieById(UUID id) {
         try {
             String sql = """
-                    SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden,
+                    SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden, M.isBl,
                            (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                             JOIN MovieCategories MC ON MC.CategoryID = C.ID
                             WHERE MC.MovieID = M.ID) as category
@@ -418,7 +419,7 @@ public class MovieRepository {
             int limit) {
         StringBuilder sql = new StringBuilder(
                 """
-                            SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden,
+                            SELECT M.ID, M.name, M.Summary, M.DurationMinutes, M.language, M.Country, M.ReleaseYear, M.uploadDate, M.slug, M.isAdult, M.IsHidden, M.isBl,
                                    (SELECT STRING_AGG(C.Name, ', ') FROM Categories C
                                     JOIN MovieCategories MC ON MC.CategoryID = C.ID
                                     WHERE MC.MovieID = M.ID) as category

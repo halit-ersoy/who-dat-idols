@@ -301,7 +301,7 @@ public class AdminController {
 
     public ResponseEntity<List<Movie>> getMovies() {
 
-        return ResponseEntity.ok(movieService.getAllMovies());
+        return ResponseEntity.ok(movieService.getAllMoviesForAdmin());
 
     }
 
@@ -311,7 +311,7 @@ public class AdminController {
 
     public ResponseEntity<List<Series>> getSeriesList() {
 
-        return ResponseEntity.ok(seriesService.getAllSeries());
+        return ResponseEntity.ok(seriesService.getAllSeriesForAdmin());
 
     }
 
@@ -549,11 +549,19 @@ public class AdminController {
 
             @RequestParam(value = "country", required = false) String country,
 
+            @RequestParam(value = "isBl", required = false) Boolean isBl,
+
             @RequestParam(value = "castData", required = false) String castData) {
 
         try {
 
             movie.setCountry(country);
+
+            if (isBl != null) {
+
+                movie.setBl(isBl);
+
+            }
 
             movieService.saveMovieWithFile(movie, file, image, summary);
 
@@ -613,6 +621,8 @@ public class AdminController {
 
             @RequestParam(value = "country", required = false) String country,
 
+            @RequestParam(value = "isBl", required = false) Boolean isBl,
+
             @RequestParam(value = "castData", required = false) String castData,
 
             @RequestParam(value = "overwrite", defaultValue = "false") boolean overwrite) {
@@ -630,6 +640,12 @@ public class AdminController {
             }
 
             movie.setCountry(country);
+
+            if (isBl != null) {
+
+                movie.setBl(isBl);
+
+            }
 
             movieService.updateMovie(movie, file, image, overwrite);
 

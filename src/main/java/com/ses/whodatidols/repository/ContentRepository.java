@@ -14,6 +14,67 @@ public class ContentRepository {
 
     public ContentRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+        ensureSchema();
+    }
+
+    private void ensureSchema() {
+        try {
+            jdbcTemplate.execute("""
+                CREATE OR ALTER PROCEDURE [dbo].[SearchContentSmart]
+                    @NameTerm NVARCHAR(100) = NULL, 
+                    @YearTerm INT = NULL, 
+                    @TypeTerm NVARCHAR(50) = NULL, 
+                    @CategoryTerm NVARCHAR(50) = NULL
+                AS
+                BEGIN
+                    SET NOCOUNT ON;
+                    DECLARE @SearchName NVARCHAR(100) = '%' + ISNULL(@NameTerm, '') + '%';
+
+                    SELECT 
+                        CAST(M.ID AS NVARCHAR(36)) as ID, 
+                        M.Name, 
+                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C 
+                         JOIN MovieCategories MC ON MC.CategoryID = C.ID 
+                         WHERE MC.MovieID = M.ID) as Category, 
+                        M.ReleaseYear as Year, 
+                        'movie' as Type, 
+                        M.Summary as Description
+                    FROM [dbo].[Movie] M
+                    WHERE M.isBl = 0 AND M.IsHidden = 0
+                      AND (@NameTerm IS NULL OR M.Name LIKE @SearchName) 
+                      AND (@YearTerm IS NULL OR M.ReleaseYear = @YearTerm)
+                      AND (@CategoryTerm IS NULL OR EXISTS (
+                          SELECT 1 FROM Categories C2 
+                          JOIN MovieCategories MC2 ON MC2.CategoryID = C2.ID 
+                          WHERE MC2.MovieID = M.ID AND C2.Name = @CategoryTerm
+                      ))
+                      AND (@TypeTerm IS NULL OR LOWER(@TypeTerm) IN ('movie', 'film'))
+
+                    UNION ALL
+
+                    SELECT 
+                        CAST(S.ID AS NVARCHAR(36)) as ID, 
+                        S.Name, 
+                        (SELECT STRING_AGG(C.Name, ', ') FROM Categories C 
+                         JOIN SeriesCategories SC ON SC.CategoryID = C.ID 
+                         WHERE SC.SeriesID = S.ID) as Category, 
+                        NULL as Year, 
+                        'soap_opera' as Type, 
+                        S.Summary as Description
+                    FROM [dbo].[Series] S
+                    WHERE S.isBl = 0 AND S.IsHidden = 0
+                      AND (@NameTerm IS NULL OR S.Name LIKE @SearchName) 
+                      AND (@CategoryTerm IS NULL OR EXISTS (
+                          SELECT 1 FROM Categories C2 
+                          JOIN SeriesCategories SC2 ON SC2.CategoryID = C2.ID 
+                          WHERE SC2.SeriesID = S.ID AND C2.Name = @CategoryTerm
+                      ))
+                      AND (@TypeTerm IS NULL OR LOWER(@TypeTerm) IN ('soap_opera', 'soap-opera', 'soapopera', 'series', 'dizi'));
+                END;
+            """);
+        } catch (Exception e) {
+            logger.error("ContentRepository ensureSchema failed: {}", e.getMessage());
+        }
     }
 
     public void incrementViewCount(UUID id) {

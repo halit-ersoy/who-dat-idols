@@ -1216,6 +1216,7 @@ document.addEventListener('DOMContentLoaded', function () {
             formData.append('language', document.getElementById('movieLanguage').value);
             formData.append('country', document.getElementById('movieCountry').value);
             formData.append('isAdult', document.getElementById('movieIsAdult') && document.getElementById('movieIsAdult').checked ? 'true' : 'false');
+            formData.append('isBl', document.getElementById('movieIsBl') && document.getElementById('movieIsBl').checked ? 'true' : 'false');
 
             if (movieImageInput.files.length > 0) {
                 formData.append('image', movieImageInput.files[0]);
@@ -1296,6 +1297,7 @@ document.addEventListener('DOMContentLoaded', function () {
             formData.append('language', document.getElementById('movieLanguage').value);
             formData.append('country', document.getElementById('movieCountry').value);
             formData.append('isAdult', document.getElementById('movieIsAdult') && document.getElementById('movieIsAdult').checked ? 'true' : 'false');
+            formData.append('isBl', document.getElementById('movieIsBl') && document.getElementById('movieIsBl').checked ? 'true' : 'false');
             if (movieFileInput.files.length > 0) formData.append('file', movieFileInput.files[0]);
             if (movieImageInput.files.length > 0) formData.append('image', movieImageInput.files[0]);
             if (lastFetchedPosterUrl) formData.append('imageUrl', lastFetchedPosterUrl);
@@ -1347,7 +1349,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     tr.innerHTML = `
                         <td><input type="checkbox" class="movie-checkbox" value="${movie.id}" onchange="toggleMovieSelection('${movie.id}', this.checked)"></td>
                         <td style="font-weight: 600;" class="movie-name-cell">
-                            ${movie.name}
+                            ${movie.name} ${(movie.bl || movie.isBl) ? '<span class="badge" style="background: rgba(233, 30, 99, 0.2); color: #ff4081; border: 1px solid rgba(233, 30, 99, 0.4); font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">BL</span>' : ''}
                         </td>
                         <td>${movie.releaseYear}</td>
                         <td style="color: var(--text-dim);">${movie.category}</td>
@@ -1385,6 +1387,10 @@ document.addEventListener('DOMContentLoaded', function () {
         // isAdult
         const isAdultCheckbox = document.getElementById('movieIsAdult');
         if (isAdultCheckbox) isAdultCheckbox.checked = movie.adult || movie.isAdult || false;
+
+        // isBl
+        const isBlCheckbox = document.getElementById('movieIsBl');
+        if (isBlCheckbox) isBlCheckbox.checked = (movie.bl === true || movie.isBl === true || false);
 
         // Country population
         document.getElementById('movieCountry').value = movie.country || 'kr';
@@ -1471,6 +1477,8 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('movieCountry').value = 'kr';
         const isAdultCheckbox = document.getElementById('movieIsAdult');
         if (isAdultCheckbox) isAdultCheckbox.checked = false;
+        const isBlCheckbox = document.getElementById('movieIsBl');
+        if (isBlCheckbox) isBlCheckbox.checked = false;
         lastFetchedPosterUrl = "";
         updatePosterPreview('movie', null);
         resetFileInputs();

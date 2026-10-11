@@ -84,6 +84,10 @@ public class SeriesService {
         return repository.findAllSeries();
     }
 
+    public List<Series> getAllSeriesForAdmin() {
+        return repository.findAllSeriesForAdmin();
+    }
+
     public Series findSeriesByName(String name) {
         return repository.findSeriesByName(name);
     }
