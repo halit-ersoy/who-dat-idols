@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.*;
 
 @Repository
+@SuppressWarnings({"SqlResolve", "SqlNoDataSourceInspection"})
 public class PersonRepository {
 
     private final JdbcTemplate jdbcTemplate;
@@ -18,6 +19,7 @@ public class PersonRepository {
     public PersonRepository(JdbcTemplate jdbcTemplate, EmailService emailService) {
         this.jdbcTemplate = jdbcTemplate;
         this.emailService = emailService;
+        ensureSchema();
     }
 
     // SQL sorguları
@@ -278,12 +280,17 @@ public class PersonRepository {
         return emailMatch != null && emailMatch > 0;
     }
 
-    @SuppressWarnings("unchecked")
     public Map<String, Object> loginUser(String usernameOrEmail, String password) {
+        return loginUser(usernameOrEmail, password, "whodatidols");
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> loginUser(String usernameOrEmail, String password, String platform) {
         Map<String, Object> result = jdbcTemplate.call(connection -> {
-            var callableStatement = connection.prepareCall("{call LoginAndSetCookie(?, ?)}");
+            var callableStatement = connection.prepareCall("{call LoginAndSetCookie(?, ?, ?)}");
             callableStatement.setString(1, usernameOrEmail);
             callableStatement.setString(2, password);
+            callableStatement.setString(3, platform != null ? platform : "whodatidols");
             return callableStatement;
         }, new ArrayList<SqlParameter>());
 
@@ -316,7 +323,7 @@ public class PersonRepository {
     }
 
     public Optional<Person> findByNicknameOrEmail(String usernameOrEmail) {
-        ensureAllowMessagesColumnExists();
+        ensureSchema();
         String sql = "SELECT ID, nickname, name, surname, email, password, isBanned, banReason, role, allowMessages, isVerified FROM [WhoDatIdols].[dbo].[Person] WHERE nickname = ? OR email = ?";
         return jdbcTemplate.query(sql, (rs) -> {
             if (rs.next()) {
@@ -340,13 +347,19 @@ public class PersonRepository {
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> registerUser(Person person) {
+        return registerUser(person, "whodatidols");
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> registerUser(Person person, String platform) {
         Map<String, Object> result = jdbcTemplate.call(connection -> {
-            var callableStatement = connection.prepareCall("{call RegisterUser(?, ?, ?, ?, ?)}");
+            var callableStatement = connection.prepareCall("{call RegisterUser(?, ?, ?, ?, ?, ?)}");
             callableStatement.setString(1, person.getNickname());
             callableStatement.setString(2, person.getName());
             callableStatement.setString(3, person.getSurname());
             callableStatement.setString(4, person.getEmail());
             callableStatement.setString(5, person.getPassword());
+            callableStatement.setString(6, platform != null ? platform : "whodatidols");
             return callableStatement;
         }, new ArrayList<SqlParameter>());
 
@@ -366,9 +379,29 @@ public class PersonRepository {
     }
 
     public Map<String, Object> getUserInfoByCookie(String cookie) {
-        ensureAllowMessagesColumnExists();
-        String sql = "SELECT ID, nickname, name, surname, email, isBanned, banReason, role, allowMessages, isVerified FROM [WhoDatIdols].[dbo].[Person] WHERE cookie = ?";
-        return jdbcTemplate.queryForMap(sql, UUID.fromString(cookie));
+        ensureSchema();
+        UUID cookieUuid = UUID.fromString(cookie);
+        String sql = """
+            SELECT TOP 1 P.ID, P.nickname, P.name, P.surname, P.email, P.isBanned, P.banReason, P.role, P.allowMessages, P.isVerified 
+            FROM [WhoDatIdols].[dbo].[Person] P 
+            WHERE P.cookie = ? OR EXISTS (
+                SELECT 1 FROM [WhoDatIdols].[dbo].[UserSession] US 
+                WHERE US.UserId = P.ID AND US.Token = ?
+            )
+        """;
+        return jdbcTemplate.queryForMap(sql, cookieUuid, cookieUuid);
+    }
+
+    public UUID findUserIdByCookie(String cookie) {
+        if (cookie == null || cookie.isBlank()) return null;
+        try {
+            UUID cookieUuid = UUID.fromString(cookie.trim());
+            String sql = "SELECT [dbo].[ResolveUserIdByCookie](?)";
+            String userIdStr = jdbcTemplate.queryForObject(sql, String.class, cookieUuid);
+            return userIdStr != null ? UUID.fromString(userIdStr) : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public Map<String, Object> updatePasswordByCookie(String cookie, String newPassword) {
@@ -385,7 +418,7 @@ public class PersonRepository {
             Map<String, Object> currentUser = getUserInfoByCookie(cookie);
             String currentEmail = (String) currentUser.get("email");
             if (currentEmail != null && !currentEmail.equals(email)) {
-                jdbcTemplate.update("UPDATE [WhoDatIdols].[dbo].[Person] SET isVerified = 0 WHERE cookie = ?",
+                jdbcTemplate.update("UPDATE [WhoDatIdols].[dbo].[Person] SET isVerified = 0 WHERE ID = [dbo].[ResolveUserIdByCookie](?)",
                         UUID.fromString(cookie));
             }
         } catch (Exception e) {
@@ -395,8 +428,78 @@ public class PersonRepository {
         return jdbcTemplate.queryForMap(sql, UUID.fromString(cookie), nickname, name, surname, email);
     }
 
+    /**
+     * Creates a short-lived SSO Ticket for cross-domain single sign-on.
+     */
+    @SuppressWarnings("unchecked")
+    public String createSsoTicket(String cookie, String targetPlatform) {
+        try {
+            Map<String, Object> result = jdbcTemplate.call(connection -> {
+                var callableStatement = connection.prepareCall("{call CreateSsoTicket(?, ?)}");
+                callableStatement.setObject(1, UUID.fromString(cookie));
+                callableStatement.setString(2, targetPlatform);
+                return callableStatement;
+            }, new ArrayList<SqlParameter>());
+
+            if (result.containsKey("#result-set-1")) {
+                List<Map<String, Object>> rows = (List<Map<String, Object>>) result.get("#result-set-1");
+                if (!rows.isEmpty()) {
+                    Map<String, Object> row = rows.get(0);
+                    Object res = row.get("Result");
+                    boolean success = Boolean.TRUE.equals(res) || (res instanceof Number && ((Number) res).intValue() == 1);
+                    if (success && row.get("Ticket") != null) {
+                        return row.get("Ticket").toString();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("createSsoTicket error: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Consumes an SSO Ticket, creates a platform session and returns user info + new cookie.
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> consumeSsoTicket(String ticket, String platform) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Map<String, Object> result = jdbcTemplate.call(connection -> {
+                var callableStatement = connection.prepareCall("{call ConsumeSsoTicket(?, ?)}");
+                callableStatement.setObject(1, UUID.fromString(ticket));
+                callableStatement.setString(2, platform != null ? platform : "whodatidols");
+                return callableStatement;
+            }, new ArrayList<SqlParameter>());
+
+            if (result.containsKey("#result-set-1")) {
+                List<Map<String, Object>> rows = (List<Map<String, Object>>) result.get("#result-set-1");
+                if (!rows.isEmpty()) {
+                    Map<String, Object> row = rows.get(0);
+                    for (String key : row.keySet()) {
+                        String lower = key.toLowerCase();
+                        if (lower.equals("result")) response.put("success", row.get(key));
+                        else if (lower.equals("message")) response.put("message", row.get(key));
+                        else if (lower.equals("cookie")) response.put("cookie", row.get(key));
+                        else if (lower.equals("nickname")) response.put("nickname", row.get(key));
+                        else if (lower.equals("userid")) response.put("userId", row.get(key));
+                        response.put(key, row.get(key));
+                    }
+                    return response;
+                }
+            }
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "SSO bilet işleme hatası: " + e.getMessage());
+            return response;
+        }
+        response.put("success", false);
+        response.put("message", "Geçersiz veya süresi dolmuş bilet");
+        return response;
+    }
+
     public List<Person> findAllUsers() {
-        ensureAllowMessagesColumnExists();
+        ensureSchema();
         String sql = "SELECT ID, nickname, name, surname, email, isBanned, banReason, role, allowMessages, isVerified FROM [WhoDatIdols].[dbo].[Person] ORDER BY nickname ASC";
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
             Person p = new Person();
@@ -420,6 +523,7 @@ public class PersonRepository {
     }
 
     public void deleteUser(UUID userId) {
+        jdbcTemplate.update("DELETE FROM [WhoDatIdols].[dbo].[UserSession] WHERE UserId = ?", userId);
         String sql = "DELETE FROM [WhoDatIdols].[dbo].[Person] WHERE ID = ?";
         jdbcTemplate.update(sql, userId.toString());
     }
@@ -429,41 +533,165 @@ public class PersonRepository {
                 (ban ? ", cookie = NULL " : "") +
                 "WHERE ID = ?";
         jdbcTemplate.update(sql, ban ? 1 : 0, reason, userId.toString());
+        if (ban) {
+            jdbcTemplate.update("DELETE FROM [WhoDatIdols].[dbo].[UserSession] WHERE UserId = ?", userId);
+        }
     }
 
-    private void ensureAllowMessagesColumnExists() {
+    public void ensureSchema() {
         try {
+            // Columns on Person
             jdbcTemplate.execute(
                     "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('[WhoDatIdols].[dbo].[Person]') AND name = 'role') ALTER TABLE [WhoDatIdols].[dbo].[Person] ADD role NVARCHAR(50) DEFAULT 'USER'");
             jdbcTemplate.execute(
                     "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('[WhoDatIdols].[dbo].[Person]') AND name = 'allowMessages') ALTER TABLE [WhoDatIdols].[dbo].[Person] ADD allowMessages BIT DEFAULT 1");
             jdbcTemplate.execute(
                     "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('[WhoDatIdols].[dbo].[Person]') AND name = 'isVerified') ALTER TABLE [WhoDatIdols].[dbo].[Person] ADD isVerified BIT DEFAULT 0");
-            // Ensure existing users have it set correctly (SQL Server fix)
-            jdbcTemplate
-                    .execute("UPDATE [WhoDatIdols].[dbo].[Person] SET allowMessages = 1 WHERE allowMessages IS NULL");
+
+            // UserSession table
+            jdbcTemplate.execute("""
+                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='UserSession' AND xtype='U')
+                BEGIN
+                    CREATE TABLE [dbo].[UserSession] (
+                        [ID] UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID() PRIMARY KEY,
+                        [UserId] UNIQUEIDENTIFIER NOT NULL,
+                        [Token] UNIQUEIDENTIFIER NOT NULL,
+                        [Platform] NVARCHAR(50) NULL DEFAULT 'whodatidols',
+                        [CreatedAt] DATETIME NOT NULL DEFAULT GETDATE(),
+                        [LastActiveAt] DATETIME NOT NULL DEFAULT GETDATE(),
+                        CONSTRAINT [FK_UserSession_Person] FOREIGN KEY ([UserId]) REFERENCES [dbo].[Person]([ID]) ON DELETE CASCADE
+                    );
+                    CREATE UNIQUE NONCLUSTERED INDEX [IX_UserSession_Token] ON [dbo].[UserSession]([Token]);
+                    CREATE NONCLUSTERED INDEX [IX_UserSession_UserId] ON [dbo].[UserSession]([UserId]);
+                END
+            """);
+
+            // SsoTicket table
+            jdbcTemplate.execute("""
+                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='SsoTicket' AND xtype='U')
+                BEGIN
+                    CREATE TABLE [dbo].[SsoTicket] (
+                        [Ticket] UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+                        [UserId] UNIQUEIDENTIFIER NOT NULL,
+                        [TargetPlatform] NVARCHAR(50) NULL,
+                        [ExpiresAt] DATETIME NOT NULL,
+                        [CreatedAt] DATETIME NOT NULL DEFAULT GETDATE(),
+                        CONSTRAINT [FK_SsoTicket_Person] FOREIGN KEY ([UserId]) REFERENCES [dbo].[Person]([ID]) ON DELETE CASCADE
+                    );
+                    CREATE NONCLUSTERED INDEX [IX_SsoTicket_ExpiresAt] ON [dbo].[SsoTicket]([ExpiresAt]);
+                END
+            """);
+
+            // ResolveUserIdByCookie function
+            jdbcTemplate.execute("""
+                CREATE OR ALTER FUNCTION [dbo].[ResolveUserIdByCookie](@cookie UNIQUEIDENTIFIER)
+                RETURNS UNIQUEIDENTIFIER
+                AS
+                BEGIN
+                    IF @cookie IS NULL RETURN NULL;
+                    DECLARE @UserId UNIQUEIDENTIFIER;
+
+                    SELECT TOP 1 @UserId = ID FROM [dbo].[Person] WHERE cookie = @cookie;
+
+                    IF @UserId IS NULL
+                    BEGIN
+                        SELECT TOP 1 @UserId = UserId FROM [dbo].[UserSession] WHERE Token = @cookie;
+                    END
+
+                    RETURN @UserId;
+                END;
+            """);
+
+            // CreateSsoTicket Procedure
+            jdbcTemplate.execute("""
+                CREATE OR ALTER PROCEDURE [dbo].[CreateSsoTicket]
+                    @Cookie UNIQUEIDENTIFIER,
+                    @TargetPlatform NVARCHAR(50) = NULL
+                AS
+                BEGIN
+                    SET NOCOUNT ON;
+                    DECLARE @UserId UNIQUEIDENTIFIER = [dbo].[ResolveUserIdByCookie](@Cookie);
+
+                    IF @UserId IS NULL
+                    BEGIN
+                        SELECT CAST(0 AS BIT) AS Result, 'Gecersiz oturum' AS Message, NULL AS Ticket;
+                        RETURN;
+                    END
+
+                    DECLARE @Ticket UNIQUEIDENTIFIER = NEWID();
+                    INSERT INTO [dbo].[SsoTicket] ([Ticket], [UserId], [TargetPlatform], [ExpiresAt], [CreatedAt])
+                    VALUES (@Ticket, @UserId, @TargetPlatform, DATEADD(SECOND, 120, GETDATE()), GETDATE());
+
+                    DELETE FROM [dbo].[SsoTicket] WHERE ExpiresAt < GETDATE();
+
+                    SELECT CAST(1 AS BIT) AS Result, 'Bilet olusturuldu' AS Message, @Ticket AS Ticket;
+                END;
+            """);
+
+            // ConsumeSsoTicket Procedure
+            jdbcTemplate.execute("""
+                CREATE OR ALTER PROCEDURE [dbo].[ConsumeSsoTicket]
+                    @Ticket UNIQUEIDENTIFIER,
+                    @Platform NVARCHAR(50) = 'whodatidols'
+                AS
+                BEGIN
+                    SET NOCOUNT ON;
+                    DECLARE @UserId UNIQUEIDENTIFIER, @TargetPlatform NVARCHAR(50);
+
+                    SELECT @UserId = UserId, @TargetPlatform = TargetPlatform
+                    FROM [dbo].[SsoTicket]
+                    WHERE Ticket = @Ticket AND ExpiresAt >= GETDATE();
+
+                    IF @UserId IS NULL
+                    BEGIN
+                        SELECT CAST(0 AS BIT) AS Result, 'Gecersiz veya suresi dolmus SSO bileti' AS Message, NULL AS Nickname, NULL AS Cookie;
+                        RETURN;
+                    END
+
+                    DELETE FROM [dbo].[SsoTicket] WHERE Ticket = @Ticket;
+
+                    DECLARE @Nickname NVARCHAR(50), @IsBanned BIT, @BanReason NVARCHAR(500);
+                    SELECT @Nickname = Nickname, @IsBanned = ISNULL(isBanned, 0), @BanReason = banReason
+                    FROM [dbo].[Person] WHERE ID = @UserId;
+
+                    IF @IsBanned = 1
+                    BEGIN
+                        SELECT CAST(0 AS BIT) AS Result, ISNULL(@BanReason, 'Hesabiniz askiya alinmistir') AS Message, NULL AS Nickname, NULL AS Cookie;
+                        RETURN;
+                    END
+
+                    DECLARE @NewToken UNIQUEIDENTIFIER = NEWID();
+                    INSERT INTO [dbo].[UserSession] ([UserId], [Token], [Platform], [CreatedAt], [LastActiveAt])
+                    VALUES (@UserId, @NewToken, ISNULL(@Platform, 'whodatidols'), GETDATE(), GETDATE());
+
+                    SELECT CAST(1 AS BIT) AS Result, 'SSO giris basarili' AS Message, @Nickname AS Nickname, @NewToken AS Cookie, @UserId AS UserId;
+                END;
+            """);
+
+            // Ensure existing users have defaults set correctly
+            jdbcTemplate.execute("UPDATE [WhoDatIdols].[dbo].[Person] SET allowMessages = 1 WHERE allowMessages IS NULL");
             jdbcTemplate.execute("UPDATE [WhoDatIdols].[dbo].[Person] SET isBanned = 0 WHERE isBanned IS NULL");
             jdbcTemplate.execute("UPDATE [WhoDatIdols].[dbo].[Person] SET role = 'USER' WHERE role IS NULL");
             jdbcTemplate.execute("UPDATE [WhoDatIdols].[dbo].[Person] SET isVerified = 0 WHERE isVerified IS NULL");
         } catch (Exception e) {
-            // Log or handle error if needed, but suppressed for auto-migration
+            System.err.println("PersonRepository ensureSchema error: " + e.getMessage());
         }
     }
 
     public void updateAllowMessages(UUID userId, boolean allow) {
-        ensureAllowMessagesColumnExists();
+        ensureSchema();
         String sql = "UPDATE [WhoDatIdols].[dbo].[Person] SET allowMessages = ? WHERE ID = ?";
         jdbcTemplate.update(sql, allow ? 1 : 0, userId.toString());
     }
 
     public void updateAllowMessagesByCookie(String cookie, boolean allow) {
-        ensureAllowMessagesColumnExists();
-        String sql = "UPDATE [WhoDatIdols].[dbo].[Person] SET allowMessages = ? WHERE cookie = ?";
+        ensureSchema();
+        String sql = "UPDATE [WhoDatIdols].[dbo].[Person] SET allowMessages = ? WHERE ID = [dbo].[ResolveUserIdByCookie](?)";
         jdbcTemplate.update(sql, allow ? 1 : 0, UUID.fromString(cookie));
     }
 
     public List<Person> searchUsersForMessaging(String query, String excludeNickname) {
-        ensureAllowMessagesColumnExists();
+        ensureSchema();
         String sql = "SELECT ID, nickname, name, surname, role, isVerified FROM [WhoDatIdols].[dbo].[Person] " +
                 "WHERE (nickname LIKE ? OR name LIKE ? OR surname LIKE ?) " +
                 "AND (allowMessages = 1 OR allowMessages IS NULL) " +

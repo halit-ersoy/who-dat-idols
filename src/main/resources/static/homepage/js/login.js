@@ -3,55 +3,63 @@
 export function initLogin() {
     // DOM Element Referansları
     const loginBtn = document.querySelector('.login-btn');
-    const loginLink = document.getElementById('login-link');
     const loginModal = document.getElementById('login-modal');
     const closeLoginModal = document.getElementById('close-modal');
     const loginSubmit = document.getElementById('login-submit');
     const formInputs = document.querySelectorAll('.form-control');
 
     // Kullanıcı giriş durumunu kontrol edip profil oluşturma
-    // Kullanıcı giriş durumunu kontrol edip profil oluşturma
     async function checkAuthStatus() {
-        const authCookie = localStorage.getItem('wdiUserToken');
-        const userNickname = localStorage.getItem('wdiUserNickname');
+        let authCookie = localStorage.getItem('wdiUserToken');
+        let userNickname = localStorage.getItem('wdiUserNickname');
 
-        if (authCookie && userNickname) {
-            try {
-                const response = await fetch('/api/user/profile');
-                if (response.ok) {
-                    const data = await response.json();
+        try {
+            const response = await fetch('/api/user/profile');
+            if (response.ok) {
+                const data = await response.json();
 
-                    // IF user is found but banned, clear everything and logout
-                    if (data.isBanned) {
-                        handleLogout();
-                        return;
-                    }
+                // IF user is found but banned, clear everything and logout
+                if (data.isBanned) {
+                    handleLogout();
+                    return;
+                }
 
-                    const userId = data.id || data.ID || data.Id;
-                    const profileImgUrl = `/media/profile/${userId}?t=${new Date().getTime()}`;
-                    const initialLetter = userNickname.charAt(0).toUpperCase();
+                if (!userNickname && data.nickname) {
+                    userNickname = data.nickname;
+                    localStorage.setItem('wdiUserNickname', userNickname);
+                }
+                if (!authCookie && (data.cookie || data.Token || data.ID)) {
+                    localStorage.setItem('wdiUserToken', data.cookie || data.Token || data.ID);
+                }
 
-                    const profileSection = document.createElement('div');
-                    profileSection.className = 'profile-section';
-                    profileSection.innerHTML = `
-                        <button class="profile-btn" aria-label="Profil">
-                            <span class="profile-avatar" id="header-profile-avatar">${initialLetter}</span>
-                            <span class="profile-name">${userNickname}</span>
-                            <i class="fas fa-chevron-down"></i>
-                        </button>
-                        <div class="profile-dropdown">
-                            <a href="/profile"><i class="fas fa-user"></i> Profilim</a>
-                            <a href="/favorites"><i class="fas fa-heart"></i> Favorilerim</a>
-                            <a href="/settings"><i class="fas fa-cog"></i> Ayarlar</a>
-                            <a href="/requests"><i class="fas fa-film"></i> İçerik İstekleri</a>
-                            <a href="/history"><i class="fas fa-clock-rotate-left"></i> İzleme Geçmişi</a>
-                            <a href="#" id="feedback-open-btn"><i class="fas fa-comment-dots"></i> Geri Bildirim</a>
-                            <a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</a>
-                        </div>
-                    `;
+                const userId = data.id || data.ID || data.Id;
+                const profileImgUrl = `/media/profile/${userId}?t=${new Date().getTime()}`;
+                const initialLetter = (userNickname || data.nickname || 'U').charAt(0).toUpperCase();
+
+                const profileSection = document.createElement('div');
+                profileSection.className = 'profile-section';
+                profileSection.innerHTML = `
+                    <button class="profile-btn" aria-label="Profil">
+                        <span class="profile-avatar" id="header-profile-avatar">${initialLetter}</span>
+                        <span class="profile-name">${userNickname || data.nickname}</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="profile-dropdown">
+                        <a href="/profile"><i class="fas fa-user"></i> Profilim</a>
+                        <a href="/favorites"><i class="fas fa-heart"></i> Favorilerim</a>
+                        <a href="/settings"><i class="fas fa-cog"></i> Ayarlar</a>
+                        <a href="/requests"><i class="fas fa-film"></i> İçerik İstekleri</a>
+                        <a href="/history"><i class="fas fa-clock-rotate-left"></i> İzleme Geçmişi</a>
+                        <a href="#" id="feedback-open-btn"><i class="fas fa-comment-dots"></i> Geri Bildirim</a>
+                        <a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</a>
+                    </div>
+                `;
+                if (loginBtn && loginBtn.parentNode) {
                     loginBtn.parentNode.replaceChild(profileSection, loginBtn);
+                }
 
-                    const avatarEl = document.getElementById('header-profile-avatar');
+                const avatarEl = document.getElementById('header-profile-avatar');
+                if (avatarEl) {
                     avatarEl.style.backgroundImage = `url('${profileImgUrl}')`;
                     avatarEl.style.backgroundSize = 'cover';
                     avatarEl.style.backgroundPosition = 'center';
@@ -70,41 +78,44 @@ export function initLogin() {
                         avatarEl.style.backgroundColor = ""; // Reset to CSS default 
                     };
                     imgTest.src = profileImgUrl;
-
-                    // Messaging icon visibility
-                    const messagesWrapper = document.getElementById('messages-wrapper');
-                    if (messagesWrapper) {
-                        const isMessagingEnabled = data.allowMessages === true || data.allowMessages === 1 || data.allowMessages === "true";
-                        messagesWrapper.style.display = isMessagingEnabled ? 'block' : 'none';
-                    }
-
-                    const profileBtn = profileSection.querySelector('.profile-btn');
-                    const dropdown = profileSection.querySelector('.profile-dropdown');
-                    if (profileBtn && dropdown) {
-                        profileBtn.addEventListener('click', () => {
-                            dropdown.classList.toggle('active');
-                        });
-                        document.addEventListener('click', (e) => {
-                            if (!profileBtn.contains(e.target) && !dropdown.contains(e.target)) {
-                                dropdown.classList.remove('active');
-                            }
-                        });
-                    }
-
-                    const logoutBtn = document.getElementById('logout-btn');
-                    if (logoutBtn) {
-                        logoutBtn.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            handleLogout();
-                        });
-                    }
-                } else if (response.status === 401 || response.status === 404) {
-                    // Cookie invalid or not found in DB
-                    handleLogout();
                 }
-            } catch (error) {
-                console.error('Auth verification failed:', error);
+
+                // Messaging icon visibility
+                const messagesWrapper = document.getElementById('messages-wrapper');
+                if (messagesWrapper) {
+                    const isMessagingEnabled = data.allowMessages === true || data.allowMessages === 1 || data.allowMessages === "true";
+                    messagesWrapper.style.display = isMessagingEnabled ? 'block' : 'none';
+                }
+
+                const profileBtn = profileSection.querySelector('.profile-btn');
+                const dropdown = profileSection.querySelector('.profile-dropdown');
+                if (profileBtn && dropdown) {
+                    profileBtn.addEventListener('click', () => {
+                        dropdown.classList.toggle('active');
+                    });
+                    document.addEventListener('click', (e) => {
+                        if (!profileBtn.contains(e.target) && !dropdown.contains(e.target)) {
+                            dropdown.classList.remove('active');
+                        }
+                    });
+                }
+
+                const logoutBtn = document.getElementById('logout-btn');
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        handleLogout();
+                    });
+                }
+            } else if (response.status === 401 || response.status === 404) {
+                // If local storage thought user was logged in, clean it up silently
+                if (authCookie || userNickname) {
+                    localStorage.removeItem('wdiUserToken');
+                    localStorage.removeItem('wdiUserNickname');
+                }
             }
+        } catch (error) {
+            console.error('Auth verification failed:', error);
         }
     }
 
@@ -121,39 +132,51 @@ export function initLogin() {
         window.location.reload();
     }
 
-    checkAuthStatus();
+    void checkAuthStatus();
 
     // Login modal açma
-    loginBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        loginModal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-        setTimeout(() => {
-            const emailInput = document.getElementById('email');
-            if (emailInput) emailInput.focus();
-        }, 400);
-    });
+    if (loginBtn) {
+        loginBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (loginModal) {
+                loginModal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+                setTimeout(() => {
+                    const emailInput = document.getElementById('email');
+                    if (emailInput) emailInput.focus();
+                }, 400);
+            }
+        });
+    }
 
     // Login modal kapatma
-    closeLoginModal.addEventListener('click', () => {
-        loginModal.classList.remove('active');
-        document.body.style.overflow = '';
+    if (closeLoginModal) {
+        closeLoginModal.addEventListener('click', () => {
+            if (loginModal) {
+                loginModal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
 
-        // Reset form fields
-        document.getElementById('email').value = '';
-        document.getElementById('password').value = '';
+            // Reset form fields
+            const emailField = document.getElementById('email');
+            const passField = document.getElementById('password');
+            if (emailField) emailField.value = '';
+            if (passField) passField.value = '';
 
-        // Reset any error styling
-        loginSubmit.innerHTML = 'Giriş Yap';
-        loginSubmit.style.backgroundColor = '';
-        loginSubmit.classList.remove('loading');
+            // Reset any error styling
+            if (loginSubmit) {
+                loginSubmit.innerHTML = 'Giriş Yap';
+                loginSubmit.style.backgroundColor = '';
+                loginSubmit.classList.remove('loading');
+            }
 
-        // Reset form field highlighting
-        formInputs.forEach(input => {
-            input.value = '';
-            input.parentElement.classList.remove('active');
+            // Reset form field highlighting
+            formInputs.forEach(input => {
+                input.value = '';
+                input.parentElement.classList.remove('active');
+            });
         });
-    });
+    }
 
     // Form input odaklanma/çıkma işlemleri
     formInputs.forEach(input => {
@@ -215,10 +238,14 @@ export function initLogin() {
                     localStorage.setItem('wdiUserNickname', data.nickname);
 
                     setTimeout(() => {
-                        loginModal.classList.remove('active');
-                        document.body.style.overflow = '';
-                        document.getElementById('email').value = '';
-                        document.getElementById('password').value = '';
+                        if (loginModal) {
+                            loginModal.classList.remove('active');
+                            document.body.style.overflow = '';
+                        }
+                        const emailEl = document.getElementById('email');
+                        const passEl = document.getElementById('password');
+                        if (emailEl) emailEl.value = '';
+                        if (passEl) passEl.value = '';
                         window.location.reload();
                     }, 1500);
                 } else {

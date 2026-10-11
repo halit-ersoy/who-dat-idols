@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Repository
+@SuppressWarnings({"SqlResolve", "SqlNoDataSourceInspection"})
 public class FeedbackRepository {
 
     private final JdbcTemplate jdbcTemplate;
@@ -43,13 +44,12 @@ public class FeedbackRepository {
 
             UUID cookieUUID = UUID.fromString(cookie);
 
-            // Resolve PersonID from cookie
-            String findUserSql = "SELECT ID FROM [WhoDatIdols].[dbo].[Person] WHERE cookie = ?";
+            // Resolve PersonID from cookie (checks Person.cookie and UserSession)
+            String findUserSql = "SELECT [dbo].[ResolveUserIdByCookie](?)";
             UUID userId;
             try {
-                userId = jdbcTemplate.queryForObject(findUserSql,
-                        (rs, rowNum) -> UUID.fromString(rs.getString("ID")),
-                        cookieUUID.toString());
+                String idStr = jdbcTemplate.queryForObject(findUserSql, String.class, cookieUUID);
+                userId = (idStr != null) ? UUID.fromString(idStr) : null;
             } catch (Exception e) {
                 response.put("success", false);
                 response.put("message", "Geçersiz oturum. Lütfen tekrar giriş yapın.");

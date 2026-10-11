@@ -37,8 +37,8 @@ public class WatchHistoryController {
             } catch (Exception ignored) {
             }
 
-            String sql = "SELECT ID FROM Person WHERE cookie = ?";
-            String idStr = jdbcTemplate.queryForObject(sql, String.class, cookie);
+            String sql = "SELECT [dbo].[ResolveUserIdByCookie](?)";
+            String idStr = jdbcTemplate.queryForObject(sql, String.class, UUID.fromString(cookie.trim()));
             return idStr != null ? UUID.fromString(idStr) : null;
         } catch (Exception e) {
             return null;
@@ -50,7 +50,7 @@ public class WatchHistoryController {
             @CookieValue(name = "wdiAuth", required = false) String cookie) {
         UUID userId = resolveUserId(cookie);
         if (userId == null) {
-            return ResponseEntity.status(401).body(Map.of("success", false, "message", "Oturum a\u00e7\u0131n\u0131z."));
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "Oturum açınız."));
         }
 
         List<Map<String, Object>> history = watchHistoryRepository.getUserWatchHistory(userId);
@@ -64,7 +64,7 @@ public class WatchHistoryController {
         UUID userId = resolveUserId(cookie);
         if (userId == null) {
             // Unauthenticated user: not an error, just return ok without recording
-            return ResponseEntity.ok(Map.of("success", false, "message", "Misafir kullan\u0131c\u0131"));
+            return ResponseEntity.ok(Map.of("success", false, "message", "Misafir kullanıcı"));
         }
 
         watchHistoryRepository.recordWatch(userId, contentId);

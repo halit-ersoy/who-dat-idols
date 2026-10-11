@@ -268,11 +268,24 @@ public class HomeController {
     }
 
     @GetMapping("/{slug:[a-zA-Z0-9-'’]+}")
-    public ResponseEntity<Resource> watchPageBySlug(@PathVariable("slug") String slug) {
-        // If content is BL/GL, redirect to bldizi.com
+    public ResponseEntity<Resource> watchPageBySlug(
+            @PathVariable("slug") String slug,
+            @CookieValue(name = "wdiAuth", required = false) String cookie) {
+
+        // If content is BL/GL, redirect to bldizi.com with SSO ticket
         if (seriesService.isBlSlug(slug) || movieService.isBlSlug(slug)) {
+            String target = "https://bldizi.com/" + slug;
+            if (cookie != null && !cookie.isBlank()) {
+                try {
+                    String ticket = personRepository.createSsoTicket(cookie.trim(), "bldizi");
+                    if (ticket != null) {
+                        target = "https://bldizi.com/sso-login?ticket=" + ticket + "&redirect=/" + slug;
+                    }
+                } catch (Exception ignored) {
+                }
+            }
             return ResponseEntity.status(302)
-                    .header("Location", "https://bldizi.com/" + slug)
+                    .header("Location", target)
                     .build();
         }
 
@@ -839,9 +852,19 @@ public class HomeController {
     }
 
     @GetMapping("/bl-dizileri")
-    public ResponseEntity<Void> redirectToBlDizi() {
+    public ResponseEntity<Void> redirectToBlDizi(@CookieValue(name = "wdiAuth", required = false) String cookie) {
+        String target = "https://bldizi.com";
+        if (cookie != null && !cookie.isBlank()) {
+            try {
+                String ticket = personRepository.createSsoTicket(cookie.trim(), "bldizi");
+                if (ticket != null) {
+                    target = "https://bldizi.com/sso-login?ticket=" + ticket + "&redirect=/";
+                }
+            } catch (Exception ignored) {
+            }
+        }
         return ResponseEntity.status(HttpStatus.FOUND)
-                .location(URI.create("https://bldizi.com"))
+                .location(URI.create(target))
                 .build();
     }
 

@@ -12,6 +12,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/saved")
+@SuppressWarnings({"SqlResolve", "SqlNoDataSourceInspection"})
 public class SavedController {
     private final JdbcTemplate jdbcTemplate;
 
@@ -26,8 +27,7 @@ public class SavedController {
             jdbcTemplate.execute("""
                         IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='UserLists' AND xtype='U')
                         BEGIN
-                            CREATE TABLE UserLists (
-                                ID UNIQUEIDENTIFIER DEFAULT NEWID() PRIMARY KEY,
+                            CREATE TABLE UserLists (\n                                ID UNIQUEIDENTIFIER DEFAULT NEWID() PRIMARY KEY,
                                 UserID UNIQUEIDENTIFIER NOT NULL,
                                 Name NVARCHAR(255) NOT NULL,
                                 CreatedAt DATETIME DEFAULT GETDATE()
@@ -76,9 +76,9 @@ public class SavedController {
             } catch (Exception e) {
             }
 
-            // Otherwise resolve from cookie
-            String sql = "SELECT ID FROM Person WHERE cookie = ?";
-            String idStr = jdbcTemplate.queryForObject(sql, String.class, cookie);
+            // Otherwise resolve from cookie via ResolveUserIdByCookie
+            String sql = "SELECT [dbo].[ResolveUserIdByCookie](?)";
+            String idStr = jdbcTemplate.queryForObject(sql, String.class, UUID.fromString(cookie));
             return idStr != null ? UUID.fromString(idStr) : null;
         } catch (Exception e) {
             return null;
@@ -291,10 +291,6 @@ public class SavedController {
             UUID targetId = videoId;
 
             // Check if it's an episode -> resolve to series
-            // We can optimize by checking only if it's NOT in Movie/Series tables, OR just
-            // try to resolve
-            // Simplest robust way:
-            // 1. Check if Movie or Series exists with this ID
             Integer existDirect = jdbcTemplate.queryForObject(
                     "SELECT COUNT(*) FROM (SELECT ID FROM Movie UNION SELECT ID FROM Series) AS Combined WHERE ID = ?",
                     Integer.class, videoId.toString());
@@ -308,8 +304,6 @@ public class SavedController {
                         targetId = UUID.fromString(seriesIdStr);
                     }
                 } catch (Exception e) {
-                    // Not an episode either, or error. Proceed with original ID (will result in 0
-                    // rows deleted)
                 }
             }
 
