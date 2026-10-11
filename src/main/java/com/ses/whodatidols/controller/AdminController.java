@@ -2168,6 +2168,17 @@ public class AdminController {
 
 
 
+    @RequestMapping(value = "/delete-user", method = {RequestMethod.DELETE, RequestMethod.POST})
+    public ResponseEntity<String> deleteUser(@RequestParam("userId") UUID userId) {
+        try {
+            personRepository.deleteUser(userId);
+            return ResponseEntity.ok("Kullanıcı başarıyla silindi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+        }
+    }
+
+
         @GetMapping("/me")
     public ResponseEntity<Map<String, Object>> getCurrentUser(Authentication authentication) {
         if (authentication == null)

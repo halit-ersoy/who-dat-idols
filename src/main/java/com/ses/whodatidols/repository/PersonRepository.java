@@ -600,7 +600,37 @@ public class PersonRepository {
     }
 
     public void deleteUser(UUID userId) {
-        jdbcTemplate.update("DELETE FROM [WhoDatIdols].[dbo].[UserSession] WHERE UserId = ?", userId);
+        if (userId == null) return;
+        ensureSchema();
+
+        // 1. UserSession & SsoTicket
+        try { jdbcTemplate.update("DELETE FROM [WhoDatIdols].[dbo].[UserSession] WHERE UserId = ?", userId); } catch (Exception ignored) {}
+        try { jdbcTemplate.update("DELETE FROM [WhoDatIdols].[dbo].[SsoTicket] WHERE UserId = ?", userId); } catch (Exception ignored) {}
+
+        // 2. Feedback
+        try { jdbcTemplate.update("DELETE FROM [WhoDatIdols].[dbo].[Feedback] WHERE UserID = ?", userId); } catch (Exception ignored) {}
+
+        // 3. UserMessages, UserBlocks, UserReports
+        try { jdbcTemplate.update("DELETE FROM [WhoDatIdols].[dbo].[UserMessages] WHERE SenderID = ? OR ReceiverID = ?", userId, userId); } catch (Exception ignored) {}
+        try { jdbcTemplate.update("DELETE FROM [WhoDatIdols].[dbo].[UserBlocks] WHERE BlockerID = ? OR BlockedID = ?", userId, userId); } catch (Exception ignored) {}
+        try { jdbcTemplate.update("DELETE FROM [WhoDatIdols].[dbo].[UserReports] WHERE ReporterID = ? OR ReportedID = ?", userId, userId); } catch (Exception ignored) {}
+
+        // 4. VerificationCode
+        try { jdbcTemplate.update("DELETE FROM [WhoDatIdols].[dbo].[VerificationCode] WHERE ID = ?", userId); } catch (Exception ignored) {}
+
+        // 5. UserLists & UserListItems
+        try { jdbcTemplate.update("DELETE FROM [WhoDatIdols].[dbo].[UserListItems] WHERE ListID IN (SELECT ID FROM [WhoDatIdols].[dbo].[UserLists] WHERE UserID = ?)", userId); } catch (Exception ignored) {}
+        try { jdbcTemplate.update("DELETE FROM [WhoDatIdols].[dbo].[UserLists] WHERE UserID = ?", userId); } catch (Exception ignored) {}
+
+        // 6. UserWatchHistory
+        try { jdbcTemplate.update("DELETE FROM [WhoDatIdols].[dbo].[UserWatchHistory] WHERE UserID = ?", userId); } catch (Exception ignored) {}
+
+        // 7. Comments & CommentLikes
+        try { jdbcTemplate.update("DELETE FROM [WhoDatIdols].[dbo].[CommentLikes] WHERE UserId = ?", userId); } catch (Exception ignored) {}
+        try { jdbcTemplate.update("DELETE FROM [WhoDatIdols].[dbo].[CommentLikes] WHERE CommentId IN (SELECT ID FROM [WhoDatIdols].[dbo].[Comments] WHERE UserId = ?)", userId); } catch (Exception ignored) {}
+        try { jdbcTemplate.update("DELETE FROM [WhoDatIdols].[dbo].[Comments] WHERE UserId = ?", userId); } catch (Exception ignored) {}
+
+        // 8. Delete user from Person
         String sql = "DELETE FROM [WhoDatIdols].[dbo].[Person] WHERE ID = ?";
         jdbcTemplate.update(sql, userId.toString());
     }
