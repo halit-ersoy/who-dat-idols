@@ -541,19 +541,13 @@
                                             style="color: #f44336; margin-right: 5px;"></i> +18 İçerik</span>
                                 </div>
                             </div>
-                            <div class="form-group"
-                                style="display: flex; align-items: flex-end; justify-content: flex-start; margin-bottom: 15px;">
-                                <div class="toggle-switch-wrapper" style="margin-top: 25px;">
-                                    <label class="switch">
-                                        <input type="checkbox" id="movieIsBl" name="isBl">
-                                        <span class="slider round"></span>
-                                    </label>
-                                    <span
-                                        style="margin-left: 10px; font-weight: 500; color: #eee; cursor: pointer; user-select: none;"
-                                        onclick="document.getElementById('movieIsBl').click()"><i
-                                            class="fas fa-heart"
-                                            style="color: #e91e63; margin-right: 5px;"></i> BL / GL Film</span>
-                                </div>
+                            <div class="form-group">
+                                <label for="movieType">Film Türü</label>
+                                <select id="movieType">
+                                    <option value="Film">Film</option>
+                                    <option value="BL">BL</option>
+                                    <option value="GL">GL</option>
+                                </select>
                             </div>
                             <div class="form-group">
                                 <label for="movieCountry">Yapımcı Ülke</label>
@@ -826,9 +820,10 @@
                                 <div class="form-group">
                                     <label for="seriesType">Dizi Türü</label>
                                     <select id="seriesType">
-                                        <option value="BL">BL</option>
-                                        <option value="Program">Program</option>
                                         <option value="Dizi">Dizi</option>
+                                        <option value="Program">Program</option>
+                                        <option value="BL">BL</option>
+                                        <option value="GL">GL</option>
                                     </select>
                                 </div>
                                 <!-- Common Poster Field -->

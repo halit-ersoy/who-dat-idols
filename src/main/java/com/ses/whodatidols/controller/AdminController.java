@@ -551,15 +551,25 @@ public class AdminController {
 
             @RequestParam(value = "isBl", required = false) Boolean isBl,
 
+            @RequestParam(value = "movieType", required = false) String movieType,
+
             @RequestParam(value = "castData", required = false) String castData) {
 
         try {
 
             movie.setCountry(country);
 
-            if (isBl != null) {
+            if (movieType != null && !movieType.isBlank()) {
+
+                movie.setMovieType(movieType);
+
+                movie.setBl("BL".equalsIgnoreCase(movieType) || "GL".equalsIgnoreCase(movieType));
+
+            } else if (isBl != null) {
 
                 movie.setBl(isBl);
+
+                movie.setMovieType(isBl ? "BL" : "Film");
 
             }
 
@@ -623,6 +633,8 @@ public class AdminController {
 
             @RequestParam(value = "isBl", required = false) Boolean isBl,
 
+            @RequestParam(value = "movieType", required = false) String movieType,
+
             @RequestParam(value = "castData", required = false) String castData,
 
             @RequestParam(value = "overwrite", defaultValue = "false") boolean overwrite) {
@@ -641,9 +653,17 @@ public class AdminController {
 
             movie.setCountry(country);
 
-            if (isBl != null) {
+            if (movieType != null && !movieType.isBlank()) {
+
+                movie.setMovieType(movieType);
+
+                movie.setBl("BL".equalsIgnoreCase(movieType) || "GL".equalsIgnoreCase(movieType));
+
+            } else if (isBl != null) {
 
                 movie.setBl(isBl);
+
+                movie.setMovieType(isBl ? "BL" : "Film");
 
             }
 

@@ -17,6 +17,7 @@ public class Movie {
     private boolean isAdult;
     private boolean isHidden;
     private boolean isBl;
+    private String movieType = "Film";
 
     // Constructors
     public Movie() {
@@ -149,5 +150,13 @@ public class Movie {
 
     public void setIsBl(boolean isBl) {
         this.isBl = isBl;
+    }
+
+    public String getMovieType() {
+        return movieType;
+    }
+
+    public void setMovieType(String movieType) {
+        this.movieType = movieType;
     }
 }
