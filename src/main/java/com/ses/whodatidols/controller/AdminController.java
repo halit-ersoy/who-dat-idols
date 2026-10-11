@@ -1317,21 +1317,17 @@ public class AdminController {
 
 
     // HERO MANAGEMENT
-
     @GetMapping("/hero-videos")
-
-    public ResponseEntity<List<Map<String, Object>>> getAdminHeroVideos() {
-
-        return getHeroVideos();
-
+    public ResponseEntity<List<Map<String, Object>>> getAdminHeroVideos(
+            @RequestParam(value = "platform", required = false) String platform) {
+        return ResponseEntity.ok(heroRepository.getHeroVideosForAdmin(platform));
     }
 
-
-
-    private ResponseEntity<List<Map<String, Object>>> getHeroVideos() {
-
-        return ResponseEntity.ok(heroRepository.getHeroVideos());
-
+    @GetMapping("/hero/search-content")
+    public ResponseEntity<List<Map<String, Object>>> searchHeroContent(
+            @RequestParam(value = "q", required = false) String q,
+            @RequestParam(value = "platform", required = false) String platform) {
+        return ResponseEntity.ok(heroRepository.searchContentForHero(q, platform));
     }
 
 
@@ -1343,15 +1339,11 @@ public class AdminController {
     })
 
     @PostMapping("/add-hero")
-
     public ResponseEntity<String> addHero(
-
             @RequestParam("contentId") UUID contentId,
-
             @RequestParam("type") String type,
-
             @RequestParam("content") String content,
-
+            @RequestParam(value = "platform", defaultValue = "whodatidols") String platform,
             @RequestParam(value = "file", required = false) MultipartFile file) {
 
         try {
@@ -1384,7 +1376,7 @@ public class AdminController {
 
 
 
-            UUID heroId = heroRepository.addHero(contentId, content, type, isImage);
+            UUID heroId = heroRepository.addHero(contentId, content, type, isImage, platform);
 
 
 

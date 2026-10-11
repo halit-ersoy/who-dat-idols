@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -19,9 +20,10 @@ public class HeroController {
         this.heroRepository = heroRepository;
     }
 
-    @Cacheable("heroVideos")
+    @Cacheable(value = "heroVideos", key = "#platform != null ? #platform : 'whodatidols'")
     @GetMapping("/videos")
-    public ResponseEntity<List<Map<String, Object>>> getHeroVideos() {
-        return ResponseEntity.ok(heroRepository.getHeroVideos());
+    public ResponseEntity<List<Map<String, Object>>> getHeroVideos(
+            @RequestParam(value = "platform", defaultValue = "whodatidols") String platform) {
+        return ResponseEntity.ok(heroRepository.getHeroVideos(platform));
     }
 }

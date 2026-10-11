@@ -757,9 +757,10 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        const platform = document.querySelector('input[name="heroPlatform"]:checked')?.value || 'whodatidols';
         searchTimeout = setTimeout(async () => {
             try {
-                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const response = await fetch(`/admin/hero/search-content?q=${encodeURIComponent(query)}&platform=${encodeURIComponent(platform)}`);
                 const data = await response.json();
                 renderHeroSearchResults(data);
             } catch (error) {
@@ -768,26 +769,41 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 300);
     });
 
+    document.querySelectorAll('input[name="heroPlatform"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            const query = heroSearchInput.value.trim();
+            if (query.length >= 2) {
+                const platform = radio.value;
+                fetch(`/admin/hero/search-content?q=${encodeURIComponent(query)}&platform=${encodeURIComponent(platform)}`)
+                    .then(res => res.json())
+                    .then(renderHeroSearchResults)
+                    .catch(err => console.error('Search error:', err));
+            }
+        });
+    });
+
     function renderHeroSearchResults(results) {
         heroSearchResults.innerHTML = '';
-        if (results.length === 0) {
+        if (!results || results.length === 0) {
             heroSearchResults.innerHTML = '<div class="search-result-item">Sonuç bulunamadı</div>';
         } else {
             results.slice(0, 10).forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'search-result-item';
 
-                // API uses Name and Type (capitalized)
                 const name = item.Name || item.name;
                 const type = item.Type || item.type;
                 const id = item.ID || item.id;
+                const isBl = item.isBl === true || item.isBl === 1 || item.isBl === "1";
 
                 const isMovie = type && type.toLowerCase() === 'movie';
+                const typeLabel = isMovie ? 'Film' : 'Dizi';
+                const blBadge = isBl ? ' <span style="background: rgba(233, 30, 99, 0.2); color: #ff4081; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">BL</span>' : '';
 
                 div.innerHTML = `
                     <div class="result-info">
-                        <span style="font-weight: 600;">${name}</span>
-                        <span class="item-type">${isMovie ? 'Film' : 'Dizi'}</span>
+                        <span style="font-weight: 600;">${name}</span>${blBadge}
+                        <span class="item-type">${typeLabel}</span>
                     </div>
                 `;
                 div.onclick = () => selectHeroContent({ id, name, type });
@@ -807,12 +823,6 @@ document.addEventListener('DOMContentLoaded', function () {
         selectedContentDisplay.style.display = 'flex';
         heroSearchResults.style.display = 'none';
         heroSearchInput.value = '';
-
-        // Pre-fill content if possible (Optional but good UX)
-        // We can fetch the details to get the summary
-        // For now, let's just leave it empty or clear it, user wants custom text
-        // Or if you want to pre-fill:
-        // fetchDetailsAndFill(item.id, item.type);
     }
 
     document.querySelector('.btn-clear').onclick = () => {
@@ -827,6 +837,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const contentId = selectedContentIdInput.value;
         const type = selectedContentTypeInput.value;
         const file = document.getElementById('heroFile').files[0];
+        const platform = document.querySelector('input[name="heroPlatform"]:checked')?.value || 'whodatidols';
 
         if (!contentId) {
             alert("Lütfen arşivden bir içerik seçin!");
@@ -837,7 +848,10 @@ document.addEventListener('DOMContentLoaded', function () {
         formData.append('contentId', contentId);
         formData.append('type', type);
         formData.append('content', heroContentInput.value);
-        formData.append('file', file);
+        formData.append('platform', platform);
+        if (file) {
+            formData.append('file', file);
+        }
 
         uploadDataWithProgress('/admin/add-hero', formData, 'heroForm', 'progressWrapperHero', 'progressBarHero', 'percentHero', () => {
             fetchHeroVideos();
@@ -849,52 +863,23 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     function fetchHeroVideos() {
-        fetch('/admin/hero-videos')
+        const filterRadio = document.querySelector('input[name="heroArchiveFilter"]:checked');
+        const filterVal = filterRadio ? filterRadio.value : 'whodatidols';
+        const url = filterVal === 'all' ? '/admin/hero-videos' : `/admin/hero-videos?platform=${encodeURIComponent(filterVal)}`;
+        fetch(url)
             .then(res => res.json())
             .then(heroes => {
-                const tbody = document.querySelector('#heroTable tbody');
-                tbody.innerHTML = '';
-                heroes.forEach((hero, index) => {
-                    const tr = document.createElement('tr');
-                    tr.dataset.id = hero.ID || hero.id;
-                    const name = hero.name || hero.Name || 'Adsız';
-                    const type = hero.type || hero.Type || '-';
-                    const id = hero.ID || hero.id;
-                    const category = hero.category || hero.Category || '-';
-                    
-                    const isImageValue = hero.isImage !== undefined ? hero.isImage : (hero.IsImage !== undefined ? hero.IsImage : hero.ISIMAGE);
-                    const isImage = isImageValue === true || isImageValue === 1 || isImageValue === "1" || isImageValue === "true";
-                    const mediaType = isImage ? 'Resim' : 'Video';
-                    const typeText = `${type === 'Movie' ? 'Film' : 'Dizi'} (${mediaType})`;
-
-                    const isFirst = index === 0;
-                    const isLast = index === heroes.length - 1;
-
-                    tr.innerHTML = `
-                        <td>
-                            <div class="order-controls">
-                                <span class="order-index">${index + 1}</span>
-                                <button class="btn-order" onclick="moveHero(${index}, -1)" title="Yukarı Taşı" style="${isFirst ? 'visibility:hidden' : ''}">
-                                    <i class="fas fa-chevron-up"></i>
-                                </button>
-                                <button class="btn-order" onclick="moveHero(${index}, 1)" title="Aşağı Taşı" style="${isLast ? 'visibility:hidden' : ''}">
-                                    <i class="fas fa-chevron-down"></i>
-                                </button>
-                            </div>
-                        </td>
-                        <td style="font-weight: 600;">${name}</td>
-                        <td>${category}</td>
-                        <td>${typeText}</td>
-                        <td>
-                            <button class="btn btn-sm btn-danger" onclick='deleteHero("${id}", "${name.replace(/'/g, "\\'")}")'><i class="fas fa-trash"></i> SİL</button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                renderHeroesTable(heroes);
                 window.currentHeroes = heroes;
             })
-            .catch(err => console.error("Hero listesi hatası:", err));
+            .catch(err => console.error("Hero listesi hatasi:", err));
     }
+
+    document.querySelectorAll('input[name="heroArchiveFilter"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            fetchHeroVideos();
+        });
+    });
 
     window.moveHero = function (index, direction) {
         const heroes = window.currentHeroes;
@@ -925,6 +910,10 @@ document.addEventListener('DOMContentLoaded', function () {
     function renderHeroesTable(heroes) {
         const tbody = document.querySelector('#heroTable tbody');
         tbody.innerHTML = '';
+        if (!heroes || heroes.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 25px; color: var(--text-dim);"><i class="fas fa-info-circle"></i> Bu platform için kayıtlı hero içeriği bulunmuyor.</td></tr>';
+            return;
+        }
         heroes.forEach((hero, index) => {
             const tr = document.createElement('tr');
             tr.dataset.id = hero.ID || hero.id;
@@ -932,11 +921,17 @@ document.addEventListener('DOMContentLoaded', function () {
             const type = hero.type || hero.Type || '-';
             const id = hero.ID || hero.id;
             const category = hero.category || hero.Category || '-';
+            const platform = (hero.platform || hero.Platform || 'whodatidols').toLowerCase();
 
             const isImageValue = hero.isImage !== undefined ? hero.isImage : (hero.IsImage !== undefined ? hero.IsImage : hero.ISIMAGE);
             const isImage = isImageValue === true || isImageValue === 1 || isImageValue === "1" || isImageValue === "true";
             const mediaType = isImage ? 'Resim' : 'Video';
             const typeText = `${type === 'Movie' ? 'Film' : 'Dizi'} (${mediaType})`;
+
+            const isBldizi = platform === 'bldizi';
+            const platformBadge = isBldizi
+                ? '<span class="status-badge" style="background: rgba(233, 30, 99, 0.15); color: #ff4081; border: 1px solid rgba(255, 64, 129, 0.3); font-weight: 600;"><i class="fas fa-heart"></i> BL Dizi</span>'
+                : '<span class="status-badge" style="background: rgba(0, 200, 83, 0.15); color: #00e676; border: 1px solid rgba(0, 230, 118, 0.3); font-weight: 600;"><i class="fas fa-play-circle"></i> WhoDatIdols</span>';
 
             const isFirst = index === 0;
             const isLast = index === heroes.length - 1;
@@ -945,19 +940,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td>
                     <div class="order-controls">
                         <span class="order-index">${index + 1}</span>
-                        <button class="btn-order" onclick="moveHero(${index}, -1)" title="Yukarı Taşı" style="${isFirst ? 'visibility:hidden' : ''}">
+                        <button class="btn-order" onclick="moveHero(${index}, -1)" title="Yukari Tasi" style="${isFirst ? 'visibility:hidden' : ''}">
                              <i class="fas fa-chevron-up"></i>
                         </button>
-                        <button class="btn-order" onclick="moveHero(${index}, 1)" title="Aşağı Taşı" style="${isLast ? 'visibility:hidden' : ''}">
+                        <button class="btn-order" onclick="moveHero(${index}, 1)" title="Asagi Tasi" style="${isLast ? 'visibility:hidden' : ''}">
                              <i class="fas fa-chevron-down"></i>
                         </button>
                     </div>
                 </td>
                 <td style="font-weight: 600;">${name}</td>
+                <td>${platformBadge}</td>
                 <td>${category}</td>
                 <td>${typeText}</td>
                 <td>
-                    <button class="btn btn-sm btn-danger" onclick='deleteHero("${id}", "${name.replace(/'/g, "\\'")}")'><i class="fas fa-trash"></i> SİL</button>
+                    <button class="btn btn-sm btn-danger" onclick='deleteHero("${id}", "${name.replace(/'/g, "\'")}")'><i class="fas fa-trash"></i> SIL</button>
                 </td>
             `;
             tbody.appendChild(tr);

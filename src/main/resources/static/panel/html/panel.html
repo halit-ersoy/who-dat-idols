@@ -52,7 +52,7 @@
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.addEventListener('click', () => {
                     const sec = link.getAttribute('data-section');
-                    if (sec === 'archive-section' || sec === 'content-requests-section') {
+                    if (sec === 'archive-section' || sec === 'content-requests-section' || sec === 'hero-section') {
                         setTimeout(window.updateAllDynamicSliders, 50); // slight delay to allow display block to apply
                     }
                 });
@@ -277,6 +277,20 @@
                     </div>
                     <form id="heroForm" class="admin-form">
                         <div class="form-grid">
+                            <div class="form-group full-width">
+                                <label>Hedef Platform</label>
+                                <div class="filter-switch-container" style="margin: 0;">
+                                    <div class="dynamic-switch" id="heroPlatformSwitch">
+                                        <input type="radio" id="heroPlatformWhodat" name="heroPlatform" value="whodatidols" checked>
+                                        <label for="heroPlatformWhodat"><i class="fas fa-play-circle"></i> WhoDatIdols (whodatidols.com)</label>
+
+                                        <input type="radio" id="heroPlatformBldizi" name="heroPlatform" value="bldizi">
+                                        <label for="heroPlatformBldizi"><i class="fas fa-heart"></i> BL Dizi (bldizi.com)</label>
+
+                                        <div class="dynamic-slider"></div>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="form-group full-width">
                                 <label for="heroContentSearch">Arşivden İçerik Seç</label>
                                 <div class="search-select-wrapper">
@@ -1207,8 +1221,22 @@
 
                 <div class="archive-grid">
                     <div class="card" id="heroArchiveCard">
-                        <div class="card-header">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                             <h2><i class="fas fa-star"></i> Hero Arşivi</h2>
+                            <div class="filter-switch-container" style="margin: 0;">
+                                <div class="dynamic-switch" id="heroArchiveFilterSwitch">
+                                    <input type="radio" id="heroArchiveFilterAll" name="heroArchiveFilter" value="all">
+                                    <label for="heroArchiveFilterAll">Tümü</label>
+
+                                    <input type="radio" id="heroArchiveFilterWhodat" name="heroArchiveFilter" value="whodatidols" checked>
+                                    <label for="heroArchiveFilterWhodat">WhoDatIdols</label>
+
+                                    <input type="radio" id="heroArchiveFilterBldizi" name="heroArchiveFilter" value="bldizi">
+                                    <label for="heroArchiveFilterBldizi">BL Dizi</label>
+
+                                    <div class="dynamic-slider"></div>
+                                </div>
+                            </div>
                         </div>
                         <div class="table-container">
                             <table class="admin-table" id="heroTable">
@@ -1216,6 +1244,7 @@
                                     <tr>
                                         <th>Sıra</th>
                                         <th>İçerik</th>
+                                        <th>Platform</th>
                                         <th>Kategori</th>
                                         <th>Tip</th>
                                         <th>İşlem</th>
