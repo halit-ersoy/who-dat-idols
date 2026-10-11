@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
@@ -527,6 +528,42 @@ public class HomeController {
             errorResponse.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(errorResponse);
         }
+    }
+
+    @PostMapping(value = {"/api/user/logout", "/logout"})
+    @ResponseBody
+    public ResponseEntity<?> logoutUser(
+            @CookieValue(name = "wdiAuth", required = false) String cookie,
+            HttpServletResponse response) {
+        if (cookie != null && !cookie.isBlank()) {
+            personRepository.logoutUser(cookie);
+        }
+
+        ResponseCookie clearCookie = ResponseCookie.from("wdiAuth", "")
+                .httpOnly(true)
+                .path("/")
+                .maxAge(0)
+                .secure(true)
+                .sameSite("Lax")
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, clearCookie.toString());
+
+        Cookie legacyCookie = new Cookie("wdiAuth", "");
+        legacyCookie.setHttpOnly(true);
+        legacyCookie.setPath("/");
+        legacyCookie.setMaxAge(0);
+        legacyCookie.setSecure(true);
+        response.addCookie(legacyCookie);
+
+        return ResponseEntity.ok(Map.of("success", true, "message", "Çıkış başarılı"));
+    }
+
+    @GetMapping(value = {"/api/user/logout", "/logout"})
+    public String logoutUserGet(
+            @CookieValue(name = "wdiAuth", required = false) String cookie,
+            HttpServletResponse response) {
+        logoutUser(cookie, response);
+        return "redirect:/";
     }
 
     private String getClientIp() {

@@ -20,7 +20,7 @@ export function initLogin() {
 
                 // IF user is found but banned, clear everything and logout
                 if (data.isBanned) {
-                    handleLogout();
+                    await handleLogout();
                     return;
                 }
 
@@ -102,9 +102,9 @@ export function initLogin() {
 
                 const logoutBtn = document.getElementById('logout-btn');
                 if (logoutBtn) {
-                    logoutBtn.addEventListener('click', (e) => {
+                    logoutBtn.addEventListener('click', async (e) => {
                         e.preventDefault();
-                        handleLogout();
+                        await handleLogout();
                     });
                 }
             } else if (response.status === 401 || response.status === 404) {
@@ -119,7 +119,15 @@ export function initLogin() {
         }
     }
 
-    function handleLogout() {
+    async function handleLogout() {
+        try {
+            await fetch('/api/user/logout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+        } catch (e) {
+            console.error('Logout request failed:', e);
+        }
         localStorage.removeItem('wdiUserToken');
         localStorage.removeItem('wdiUserNickname');
         document.cookie = 'wdiAuth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';

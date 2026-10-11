@@ -286,13 +286,27 @@ public class PersonRepository {
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> loginUser(String usernameOrEmail, String password, String platform) {
-        Map<String, Object> result = jdbcTemplate.call(connection -> {
-            var callableStatement = connection.prepareCall("{call LoginAndSetCookie(?, ?, ?)}");
-            callableStatement.setString(1, usernameOrEmail);
-            callableStatement.setString(2, password);
-            callableStatement.setString(3, platform != null ? platform : "whodatidols");
-            return callableStatement;
-        }, new ArrayList<SqlParameter>());
+        Map<String, Object> result;
+        try {
+            result = jdbcTemplate.call(connection -> {
+                var callableStatement = connection.prepareCall("{call LoginAndSetCookie(?, ?, ?)}");
+                callableStatement.setString(1, usernameOrEmail);
+                callableStatement.setString(2, password);
+                callableStatement.setString(3, platform != null ? platform : "whodatidols");
+                return callableStatement;
+            }, new ArrayList<SqlParameter>());
+        } catch (Exception e) {
+            if (e.getMessage() != null && (e.getMessage().contains("too many arguments") || e.getMessage().contains("8144"))) {
+                result = jdbcTemplate.call(connection -> {
+                    var callableStatement = connection.prepareCall("{call LoginAndSetCookie(?, ?)}");
+                    callableStatement.setString(1, usernameOrEmail);
+                    callableStatement.setString(2, password);
+                    return callableStatement;
+                }, new ArrayList<SqlParameter>());
+            } else {
+                throw e;
+            }
+        }
 
         Map<String, Object> response = new HashMap<>();
         if (result.containsKey("#result-set-1")) {
@@ -315,6 +329,29 @@ public class PersonRepository {
                     else if (lowerKey.equals("banreason"))
                         response.put("banReason", value);
                     response.put(key, value);
+                }
+
+                Object successVal = response.get("success");
+                boolean isSuccess = Boolean.TRUE.equals(successVal) ||
+                        (successVal instanceof Number && ((Number) successVal).intValue() == 1) ||
+                        "true".equalsIgnoreCase(String.valueOf(successVal));
+                Object cookieVal = response.get("cookie");
+                if (isSuccess && cookieVal != null) {
+                    try {
+                        UUID token = UUID.fromString(cookieVal.toString());
+                        UUID userId = findUserIdByCookie(cookieVal.toString());
+                        if (userId != null) {
+                            jdbcTemplate.update("""
+                                IF NOT EXISTS (SELECT 1 FROM [WhoDatIdols].[dbo].[UserSession] WHERE Token = ?)
+                                BEGIN
+                                    INSERT INTO [WhoDatIdols].[dbo].[UserSession] ([UserId], [Token], [Platform], [CreatedAt], [LastActiveAt])
+                                    VALUES (?, ?, ?, GETDATE(), GETDATE())
+                                END
+                            """, token, userId, token, platform != null ? platform : "whodatidols");
+                        }
+                    } catch (Exception ex) {
+                        System.err.println("UserSession register error: " + ex.getMessage());
+                    }
                 }
             }
         }
@@ -668,6 +705,46 @@ public class PersonRepository {
                 END;
             """);
 
+            // LoginAndSetCookie Procedure (Multi-Session & Multi-Platform Support)
+            jdbcTemplate.execute("""
+                CREATE OR ALTER PROCEDURE [dbo].[LoginAndSetCookie]
+                    @UsernameOrEmail NVARCHAR(255),
+                    @Password NVARCHAR(255),
+                    @Platform NVARCHAR(50) = 'whodatidols'
+                AS
+                BEGIN
+                    SET NOCOUNT ON;
+                    DECLARE @UserId UNIQUEIDENTIFIER, @Nickname NVARCHAR(50), @NewCookie UNIQUEIDENTIFIER, @IsBanned BIT, @BanReason NVARCHAR(500);
+
+                    SELECT @UserId = ID, @Nickname = Nickname, @IsBanned = ISNULL(isBanned, 0), @BanReason = banReason
+                    FROM [dbo].[Person]
+                    WHERE (Email = @UsernameOrEmail OR Nickname = @UsernameOrEmail) AND Password = @Password;
+
+                    IF @UserId IS NOT NULL
+                    BEGIN
+                        IF @IsBanned = 1
+                        BEGIN
+                            SELECT CAST(0 AS BIT) as Result, ISNULL(@BanReason, 'Hesabiniz askiya alinmistir') as Message;
+                            RETURN;
+                        END
+
+                        SET @NewCookie = NEWID();
+
+                        INSERT INTO [dbo].[UserSession] ([UserId], [Token], [Platform], [CreatedAt], [LastActiveAt])
+                        VALUES (@UserId, @NewCookie, ISNULL(@Platform, 'whodatidols'), GETDATE(), GETDATE());
+
+                        UPDATE [dbo].[Person] SET cookie = @NewCookie WHERE ID = @UserId;
+
+                        DELETE FROM [dbo].[UserSession]
+                        WHERE UserId = @UserId AND LastActiveAt < DATEADD(DAY, -30, GETDATE());
+
+                        SELECT CAST(1 AS BIT) as Result, 'Giris basarili' as Message, @Nickname as Nickname, @NewCookie as Cookie;
+                    END
+                    ELSE
+                        SELECT CAST(0 AS BIT) as Result, 'Hatali kullanici adi veya sifre' as Message;
+                END;
+            """);
+
             // Ensure existing users have defaults set correctly
             jdbcTemplate.execute("UPDATE [WhoDatIdols].[dbo].[Person] SET allowMessages = 1 WHERE allowMessages IS NULL");
             jdbcTemplate.execute("UPDATE [WhoDatIdols].[dbo].[Person] SET isBanned = 0 WHERE isBanned IS NULL");
@@ -675,6 +752,18 @@ public class PersonRepository {
             jdbcTemplate.execute("UPDATE [WhoDatIdols].[dbo].[Person] SET isVerified = 0 WHERE isVerified IS NULL");
         } catch (Exception e) {
             System.err.println("PersonRepository ensureSchema error: " + e.getMessage());
+        }
+    }
+
+    public void logoutUser(String cookie) {
+        if (cookie == null || cookie.isBlank()) return;
+        try {
+            ensureSchema();
+            UUID token = UUID.fromString(cookie.trim());
+            jdbcTemplate.update("DELETE FROM [WhoDatIdols].[dbo].[UserSession] WHERE Token = ?", token);
+            jdbcTemplate.update("UPDATE [WhoDatIdols].[dbo].[Person] SET cookie = NULL WHERE cookie = ?", token);
+        } catch (Exception e) {
+            System.err.println("Logout user error: " + e.getMessage());
         }
     }
 
