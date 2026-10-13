@@ -35,7 +35,8 @@ public class ContentRequestRepository {
                 "Description NVARCHAR(1000) NULL," +
                 "Status NVARCHAR(50) DEFAULT 'PENDING'," +
                 "VoteCount INT DEFAULT 1," +
-                "CreatedAt DATETIME2 DEFAULT GETUTCDATE()" +
+                "CreatedAt DATETIME2 DEFAULT GETUTCDATE()," +
+                "CompletedAt DATETIME2 NULL" +
                 ")";
 
         String sqlVotes = "IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ContentRequestVote') " +
@@ -46,11 +47,48 @@ public class ContentRequestRepository {
                 "PRIMARY KEY (RequestId, UserId)" +
                 ")";
 
+        String sqlAddCompletedAt = "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('ContentRequest') AND name = 'CompletedAt') " +
+                "ALTER TABLE ContentRequest ADD CompletedAt DATETIME2 NULL";
+
+        String sqlBackfill = "UPDATE ContentRequest SET CompletedAt = GETUTCDATE() WHERE (Status = 'COMPLETED' OR Status = 'APPROVED' OR Status = 'EKLENDI') AND CompletedAt IS NULL";
+
         try {
             jdbcTemplate.execute(sqlRequests);
             jdbcTemplate.execute(sqlVotes);
+            jdbcTemplate.execute(sqlAddCompletedAt);
+            jdbcTemplate.execute(sqlBackfill);
         } catch (Exception e) {
             System.err.println("Error initializing ContentRequest tables: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Purges content requests that were marked as added/completed 24 hours ago.
+     */
+    public int cleanupExpiredCompletedRequests() {
+        try {
+            ensureTablesExist();
+            // Delete votes for requests that were marked as completed/added 24+ hours ago
+            jdbcTemplate.update("""
+                DELETE FROM ContentRequestVote 
+                WHERE RequestId IN (
+                    SELECT Id FROM ContentRequest 
+                    WHERE (Status = 'COMPLETED' OR Status = 'APPROVED' OR Status = 'EKLENDI') 
+                      AND CompletedAt IS NOT NULL 
+                      AND CompletedAt <= DATEADD(HOUR, -24, GETUTCDATE())
+                )
+            """);
+
+            // Delete requests marked as completed/added 24+ hours ago
+            return jdbcTemplate.update("""
+                DELETE FROM ContentRequest 
+                WHERE (Status = 'COMPLETED' OR Status = 'APPROVED' OR Status = 'EKLENDI') 
+                  AND CompletedAt IS NOT NULL 
+                  AND CompletedAt <= DATEADD(HOUR, -24, GETUTCDATE())
+            """);
+        } catch (Exception e) {
+            System.err.println("Error cleaning up expired completed requests: " + e.getMessage());
+            return 0;
         }
     }
 
@@ -148,18 +186,30 @@ public class ContentRequestRepository {
 
     public boolean updateStatus(UUID requestId, String status) {
         ensureTablesExist();
-        int rows = jdbcTemplate.update("UPDATE ContentRequest SET Status = ? WHERE Id = ?", status, requestId);
+        cleanupExpiredCompletedRequests();
+
+        String upperStatus = status != null ? status.trim().toUpperCase() : "PENDING";
+        int rows;
+        if ("COMPLETED".equals(upperStatus) || "APPROVED".equals(upperStatus) || "EKLENDI".equals(upperStatus)) {
+            rows = jdbcTemplate.update(
+                    "UPDATE ContentRequest SET Status = 'COMPLETED', CompletedAt = GETUTCDATE() WHERE Id = ?",
+                    requestId);
+        } else {
+            rows = jdbcTemplate.update(
+                    "UPDATE ContentRequest SET Status = ?, CompletedAt = NULL WHERE Id = ?",
+                    upperStatus, requestId);
+        }
         return rows > 0;
     }
 
     public List<ContentRequest> getRequests(String filterType, String sortBy, UUID currentUserId, int limit, int offset) {
-        ensureTablesExist();
+        cleanupExpiredCompletedRequests();
 
         StringBuilder sql = new StringBuilder();
         List<Object> params = new ArrayList<>();
 
         sql.append("SELECT r.Id, r.UserId, r.UserNickname, r.Title, r.ContentType, r.PosterUrl, ")
-           .append("r.ReleaseYear, r.TmdbId, r.TvMazeId, r.Description, r.Status, r.VoteCount, r.CreatedAt, ");
+           .append("r.ReleaseYear, r.TmdbId, r.TvMazeId, r.Description, r.Status, r.VoteCount, r.CreatedAt, r.CompletedAt, ");
 
         if (currentUserId != null) {
             sql.append("CASE WHEN EXISTS (SELECT 1 FROM ContentRequestVote v WHERE v.RequestId = r.Id AND v.UserId = ?) THEN 1 ELSE 0 END AS UserVoted ");
@@ -214,13 +264,18 @@ public class ContentRequestRepository {
                 r.setCreatedAt(ts.toInstant());
             }
 
+            Timestamp compTs = rs.getTimestamp("CompletedAt");
+            if (compTs != null) {
+                r.setCompletedAt(compTs.toInstant());
+            }
+
             r.setUserVoted(rs.getInt("UserVoted") == 1);
             return r;
         }, params.toArray());
     }
 
     public int countRequests(String filterType) {
-        ensureTablesExist();
+        cleanupExpiredCompletedRequests();
 
         String sql = "SELECT COUNT(*) FROM ContentRequest ";
         if ("movie".equalsIgnoreCase(filterType)) {
@@ -234,13 +289,13 @@ public class ContentRequestRepository {
     }
 
     public List<ContentRequest> getRequestsForAdmin(String filterType, String status, String search, int limit, int offset) {
-        ensureTablesExist();
+        cleanupExpiredCompletedRequests();
 
         StringBuilder sql = new StringBuilder();
         List<Object> params = new ArrayList<>();
 
         sql.append("SELECT r.Id, r.UserId, r.UserNickname, r.Title, r.ContentType, r.PosterUrl, ")
-           .append("r.ReleaseYear, r.TmdbId, r.TvMazeId, r.Description, r.Status, r.VoteCount, r.CreatedAt, 0 AS UserVoted ")
+           .append("r.ReleaseYear, r.TmdbId, r.TvMazeId, r.Description, r.Status, r.VoteCount, r.CreatedAt, r.CompletedAt, 0 AS UserVoted ")
            .append("FROM ContentRequest r WHERE 1=1 ");
 
         if (filterType != null && !filterType.isBlank() && !"all".equalsIgnoreCase(filterType)) {
@@ -291,12 +346,18 @@ public class ContentRequestRepository {
             if (ts != null) {
                 r.setCreatedAt(ts.toInstant());
             }
+
+            Timestamp compTs = rs.getTimestamp("CompletedAt");
+            if (compTs != null) {
+                r.setCompletedAt(compTs.toInstant());
+            }
+
             return r;
         }, params.toArray());
     }
 
     public int countRequestsForAdmin(String filterType, String status, String search) {
-        ensureTablesExist();
+        cleanupExpiredCompletedRequests();
 
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM ContentRequest r WHERE 1=1 ");
         List<Object> params = new ArrayList<>();
@@ -325,7 +386,7 @@ public class ContentRequestRepository {
 
     public Optional<ContentRequest> findById(UUID requestId) {
         ensureTablesExist();
-        String sql = "SELECT Id, UserId, UserNickname, Title, ContentType, PosterUrl, ReleaseYear, TmdbId, TvMazeId, Description, Status, VoteCount, CreatedAt, 0 as UserVoted FROM ContentRequest WHERE Id = ?";
+        String sql = "SELECT Id, UserId, UserNickname, Title, ContentType, PosterUrl, ReleaseYear, TmdbId, TvMazeId, Description, Status, VoteCount, CreatedAt, CompletedAt, 0 as UserVoted FROM ContentRequest WHERE Id = ?";
         return jdbcTemplate.query(sql, rs -> {
             if (rs.next()) {
                 ContentRequest r = new ContentRequest();
@@ -353,6 +414,12 @@ public class ContentRequestRepository {
                 if (ts != null) {
                     r.setCreatedAt(ts.toInstant());
                 }
+
+                Timestamp compTs = rs.getTimestamp("CompletedAt");
+                if (compTs != null) {
+                    r.setCompletedAt(compTs.toInstant());
+                }
+
                 return Optional.of(r);
             }
             return Optional.empty();

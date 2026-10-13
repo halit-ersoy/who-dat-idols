@@ -17,6 +17,7 @@ public class ContentRequest {
     private String status; // "PENDING", "APPROVED", "COMPLETED", "REJECTED"
     private int voteCount;
     private Instant createdAt;
+    private Instant completedAt;
     private boolean userVoted;
 
     public ContentRequest() {
@@ -124,6 +125,14 @@ public class ContentRequest {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Instant getCompletedAt() {
+        return completedAt;
+    }
+
+    public void setCompletedAt(Instant completedAt) {
+        this.completedAt = completedAt;
     }
 
     public boolean isUserVoted() {
