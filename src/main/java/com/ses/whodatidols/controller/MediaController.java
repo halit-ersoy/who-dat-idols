@@ -6,6 +6,7 @@ import com.ses.whodatidols.repository.ActorRepository;
 import com.ses.whodatidols.repository.VideoSourceRepository;
 import com.ses.whodatidols.repository.SystemSettingRepository;
 import com.ses.whodatidols.service.TrafficStatsService;
+import com.ses.whodatidols.util.FFmpegUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +58,7 @@ public class MediaController {
     @Value("${media.profile.images.path}")
     private String profileImagesPath;
 
-    @Value("${media.actor.images.path:D:\\SourceFiles\\mssql\\media\\images\\actors}")
+    @Value("${media.actor.images.path:D:\\\\SourceFiles\\\\mssql\\\\media\\\\images\\\\actors}")
     private String actorImagesPath;
 
     @Value("${media.source.upcoming.path}")
@@ -72,6 +73,7 @@ public class MediaController {
     private final SystemSettingRepository systemSettingRepository;
     private final TrafficStatsService trafficStatsService;
     private final ActorRepository actorRepository;
+    private final FFmpegUtils ffmpegUtils;
 
     // Cache to avoid repeated content type probing
     private final Map<String, MediaType> mediaTypeCache = new ConcurrentHashMap<>();
@@ -82,12 +84,13 @@ public class MediaController {
 
     public MediaController(JdbcTemplate jdbcTemplate, VideoSourceRepository videoSourceRepository,
             SystemSettingRepository systemSettingRepository, TrafficStatsService trafficStatsService,
-            ActorRepository actorRepository) {
+            ActorRepository actorRepository, FFmpegUtils ffmpegUtils) {
         this.jdbcTemplate = jdbcTemplate;
         this.videoSourceRepository = videoSourceRepository;
         this.systemSettingRepository = systemSettingRepository;
         this.trafficStatsService = trafficStatsService;
         this.actorRepository = actorRepository;
+        this.ffmpegUtils = ffmpegUtils;
     }
 
     // --- 1. STATİK RESİM SUNUCUSU ---
@@ -196,12 +199,12 @@ public class MediaController {
 
         logger.debug("Requesting video for id={}", id);
 
-        if (!systemSettingRepository.isMainVideoSourceEnabled()) {
+        String category = getContentTypeFromDatabase(id);
+        if (!"ad".equalsIgnoreCase(category) && !systemSettingRepository.isMainVideoSourceEnabled()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         try {
-            String category = getContentTypeFromDatabase(id);
             Path basePath = getBasePathForCategory(category);
 
             if (basePath == null) {
@@ -261,17 +264,29 @@ public class MediaController {
     @SuppressWarnings("null")
     @GetMapping("/video/{id}/playlist.m3u8")
     public ResponseEntity<Resource> getHlsPlaylist(@PathVariable("id") UUID id) {
-        if (!systemSettingRepository.isMainVideoSourceEnabled()) {
+        String category = getContentTypeFromDatabase(id);
+        if (!"ad".equalsIgnoreCase(category) && !systemSettingRepository.isMainVideoSourceEnabled()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         try {
-            String category = getContentTypeFromDatabase(id);
             Path basePath = getBasePathForCategory(category);
             if (basePath == null)
                 return ResponseEntity.notFound().build();
 
             // Try to find HLS directory: basePath/hls/{id}/playlist.m3u8
             Path hlsPath = basePath.resolve("hls").resolve(id.toString()).resolve("playlist.m3u8");
+
+            if (!Files.exists(hlsPath)) {
+                // Self-healing: if ad HLS is missing, convert on the fly if MP4 exists
+                Path mp4Path = basePath.resolve(id.toString() + ".mp4");
+                if ("ad".equalsIgnoreCase(category) && Files.exists(mp4Path)) {
+                    try {
+                        ffmpegUtils.convertToHls(mp4Path.toString(), basePath.resolve("hls").resolve(id.toString()).toString(), 2);
+                    } catch (Exception e) {
+                        logger.error("On-demand ad HLS generation failed for id {}: {}", id, e.getMessage());
+                    }
+                }
+            }
 
             if (!Files.exists(hlsPath)) {
                 return ResponseEntity.notFound().build();
@@ -292,11 +307,11 @@ public class MediaController {
     public ResponseEntity<Resource> getHlsSegment(
             @PathVariable("id") UUID id,
             @PathVariable("segment") String segment) {
-        if (!systemSettingRepository.isMainVideoSourceEnabled()) {
+        String category = getContentTypeFromDatabase(id);
+        if (!"ad".equalsIgnoreCase(category) && !systemSettingRepository.isMainVideoSourceEnabled()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         try {
-            String category = getContentTypeFromDatabase(id);
             Path basePath = getBasePathForCategory(category);
             if (basePath == null)
                 return ResponseEntity.notFound().build();
