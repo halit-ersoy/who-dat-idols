@@ -25,6 +25,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.Optional;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -45,6 +46,7 @@ public class HomeController {
     private final com.ses.whodatidols.repository.SystemSettingRepository systemSettingRepository;
     private final com.ses.whodatidols.service.LoginAttemptService loginAttemptService;
     private final jakarta.servlet.http.HttpServletRequest request;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @org.springframework.beans.factory.annotation.Value("${media.profile.images.path}")
     private String profileImagesPath;
@@ -53,7 +55,8 @@ public class HomeController {
             SeriesService seriesService, MovieRepository movieRepository,
             com.ses.whodatidols.repository.SystemSettingRepository systemSettingRepository,
             com.ses.whodatidols.service.LoginAttemptService loginAttemptService,
-            jakarta.servlet.http.HttpServletRequest request) {
+            jakarta.servlet.http.HttpServletRequest request,
+            org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
         this.personRepository = personRepository;
         this.movieService = movieService;
         this.seriesService = seriesService;
@@ -61,6 +64,7 @@ public class HomeController {
         this.systemSettingRepository = systemSettingRepository;
         this.loginAttemptService = loginAttemptService;
         this.request = request;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @GetMapping("/")
@@ -268,6 +272,21 @@ public class HomeController {
         }
     }
 
+    @GetMapping("/watch")
+    public ResponseEntity<Resource> getWatchPage() {
+        try {
+            ClassPathResource htmlPage = new ClassPathResource("static/watch/html/watch.html");
+            if (!htmlPage.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
+                    .body(htmlPage);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
     @GetMapping("/{slug:[a-zA-Z0-9-'’]+}")
     public ResponseEntity<Resource> watchPageBySlug(
             @PathVariable("slug") String slug,
@@ -290,8 +309,71 @@ public class HomeController {
                     .build();
         }
 
-        // Validate slug existence in Series, Movies, or Episodes
-        boolean isValid = seriesService.isValidSlug(slug) || movieService.isValidSlug(slug);
+        // Check if content is Upcoming
+        boolean isUpcoming = false;
+        try {
+            UUID uid = null;
+            try {
+                uid = UUID.fromString(slug);
+            } catch (Exception ignored) {
+            }
+
+            if (uid != null) {
+                Integer count = jdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM Upcoming WHERE ID = ?",
+                        Integer.class, uid);
+                if (count != null && count > 0) {
+                    isUpcoming = true;
+                }
+            } else {
+                Integer count = jdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM Upcoming WHERE slug = ? OR name = ?",
+                        Integer.class, slug, slug);
+                if (count != null && count > 0) {
+                    isUpcoming = true;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+
+        if (isUpcoming) {
+            try {
+                UUID uid = null;
+                try {
+                    uid = UUID.fromString(slug);
+                } catch (Exception ignored) {
+                }
+
+                Boolean isBl;
+                if (uid != null) {
+                    isBl = jdbcTemplate.queryForObject(
+                            "SELECT TOP 1 isBl FROM Upcoming WHERE ID = ?",
+                            Boolean.class, uid);
+                } else {
+                    isBl = jdbcTemplate.queryForObject(
+                            "SELECT TOP 1 isBl FROM Upcoming WHERE slug = ? OR name = ?",
+                            Boolean.class, slug, slug);
+                }
+
+                if (Boolean.TRUE.equals(isBl)) {
+                    String target = "https://bldizi.com/" + slug;
+                    if (cookie != null && !cookie.isBlank()) {
+                        try {
+                            String ticket = personRepository.createSsoTicket(cookie.trim(), "bldizi");
+                            if (ticket != null) {
+                                target = "https://bldizi.com/sso-login?ticket=" + ticket + "&redirect=/" + slug;
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    }
+                    return ResponseEntity.status(302).header("Location", target).build();
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        // Validate slug existence in Series, Movies, Episodes, or Upcoming
+        boolean isValid = seriesService.isValidSlug(slug) || movieService.isValidSlug(slug) || isUpcoming;
         if (!isValid) {
             return ResponseEntity.status(302)
                     .header("Location", "/")

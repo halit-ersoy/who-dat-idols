@@ -3028,6 +3028,16 @@ document.addEventListener('DOMContentLoaded', function () {
             const source = document.querySelector('input[name="upcomingSource"]:checked').value;
             searchMetadata(query, type, source);
         });
+
+        const upcomingNameInput = document.getElementById('upcomingName');
+        if (upcomingNameInput) {
+            upcomingNameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    fetchUpcomingTvMazeBtn.click();
+                }
+            });
+        }
     }
 
     async function searchMetadata(query, type, source) {
@@ -3157,7 +3167,41 @@ document.addEventListener('DOMContentLoaded', function () {
         };
         const mappedLang = langMap[language] || 'Korece';
 
-        if (type === 'movie' || type === 'Movie') {
+        if (currentFetchType === 'Upcoming') {
+            const upName = document.getElementById('upcomingName');
+            if (upName) upName.value = name;
+            const upImg = document.getElementById('upcomingImageUrl');
+            if (upImg) upImg.value = image;
+            lastFetchedPosterUrl = image;
+
+            const relDate = (source === 'tvmaze') ? data.premiered : (data.release_date || data.first_air_date);
+            const upDate = document.getElementById('upcomingDatetime');
+            if (upDate) {
+                if (relDate && relDate.length >= 10 && new Date(relDate).getTime() >= Date.now()) {
+                    upDate.value = `${relDate.substring(0, 10)}T18:00`;
+                } else {
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    const yyyy = tomorrow.getFullYear();
+                    const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+                    const dd = String(tomorrow.getDate()).padStart(2, '0');
+                    upDate.value = `${yyyy}-${mm}-${dd}T20:00`;
+                }
+            }
+
+            const checkStr = ((name || '') + ' ' + (category || '') + ' ' + (summary || '')).toLowerCase();
+            const genreSelect = document.getElementById('upcomingGenre');
+            if (genreSelect) {
+                if (/(gl|girls'?\s*love|yuri)/i.test(checkStr)) {
+                    genreSelect.value = 'GL';
+                } else if (/(bl|boys'?\s*love|yaoi)/i.test(checkStr)) {
+                    genreSelect.value = 'BL';
+                }
+            }
+
+            updatePosterPreview('upcoming', image);
+            return;
+        } else if (type === 'movie' || type === 'Movie') {
             document.getElementById('movieName').value = name;
             document.getElementById('movieYear').value = year;
             document.getElementById('movieSummary').value = summary;
@@ -3381,6 +3425,16 @@ document.addEventListener('DOMContentLoaded', function () {
                                 // Also pre-fill the name field
                                 document.getElementById('upcomingName').value = item.Name || item.name;
                                 document.getElementById('upcomingType').value = (item.Type === 'Movie' ? 'Movie' : 'SoapOpera');
+                                
+                                const isBlItem = item.isBl || item.SeriesType === 'BL' || item.MovieType === 'BL' || (item.category && item.category.includes('BL'));
+                                const isGlItem = item.SeriesType === 'GL' || item.MovieType === 'GL' || (item.category && item.category.includes('GL'));
+                                const genreEl = document.getElementById('upcomingGenre');
+                                if (genreEl) {
+                                    if (isBlItem) genreEl.value = 'BL';
+                                    else if (isGlItem) genreEl.value = 'GL';
+                                    else genreEl.value = 'Normal';
+                                }
+                                updatePosterPreview('upcoming', `/media/image/${item.ID || item.id}`);
                             };
                             upcomingSearchResults.appendChild(div);
                         });
@@ -3439,6 +3493,8 @@ document.addEventListener('DOMContentLoaded', function () {
             formData.append('category', 'Upcoming');
             formData.append('status', '');
             formData.append('datetime', document.getElementById('upcomingDatetime').value);
+            const genreInput = document.getElementById('upcomingGenre');
+            formData.append('genre', genreInput ? genreInput.value : 'Normal');
 
             const refId = upcomingRefIdInput.value;
             if (refId) formData.append('referenceId', refId);
@@ -3460,6 +3516,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }).then(res => {
                 if (res.ok) {
                     upcomingForm.reset();
+                    if (document.getElementById('upcomingGenre')) document.getElementById('upcomingGenre').value = 'Normal';
 
                     upcomingRefDisplay.style.display = 'none';
                     upcomingRefIdInput.value = '';
@@ -3477,17 +3534,41 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function fetchUpcoming() {
-        fetch('/admin/upcoming')
+        const filterEl = document.querySelector('input[name="upcomingTablePlatform"]:checked');
+        const platform = filterEl ? filterEl.value : 'all';
+        const url = (platform && platform !== 'all') ? `/admin/upcoming?platform=${encodeURIComponent(platform)}` : '/admin/upcoming';
+
+        fetch(url)
             .then(res => res.json())
             .then(data => {
                 const tbody = document.querySelector('#upcomingTable tbody');
                 if (!tbody) return;
                 tbody.innerHTML = '';
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 25px; color: rgba(255,255,255,0.4);">Kayıt bulunamadı.</td></tr>';
+                    return;
+                }
                 data.forEach(item => {
                     const tr = document.createElement('tr');
+                    let platformBadge = '';
+                    const isBl = item.isBl === true || item.isBl === 1 || item.Genre === 'BL' || item.Genre === 'GL';
+                    if (item.Genre === 'GL') {
+                        platformBadge = '<span class="badge" style="background: #9c27b0; color: #fff; padding: 4px 8px; border-radius: 4px; font-weight: 700;">GL (BL Dizi)</span>';
+                    } else if (item.Genre === 'BL' || isBl) {
+                        platformBadge = '<span class="badge" style="background: #e91e63; color: #fff; padding: 4px 8px; border-radius: 4px; font-weight: 700;">BL (BL Dizi)</span>';
+                    } else {
+                        platformBadge = '<span class="badge" style="background: #2196f3; color: #fff; padding: 4px 8px; border-radius: 4px; font-weight: 700;">WhoDatIdols</span>';
+                    }
+
                     tr.innerHTML = `
-                        <td style="font-weight: 600;">${item.name}</td>
+                        <td style="font-weight: 600;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <img src="/media/image/${item.upcomingId}" style="width: 34px; height: 50px; object-fit: cover; border-radius: 4px; background: rgba(255,255,255,0.05);" onerror="this.src=\'/images/placeholder.webp\'">
+                                <span>${item.name}</span>
+                            </div>
+                        </td>
                         <td>${item.type === 'Movie' ? 'Film' : 'Dizi'}</td>
+                        <td>${platformBadge}</td>
                         <td>${new Date(item.datetime).toLocaleString('tr-TR')}</td>
                         <td>
                             <button class="btn btn-sm btn-danger" onclick='deleteUpcoming("${item.upcomingId}")'><i class="fas fa-trash"></i> SİL</button>
@@ -3497,6 +3578,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             });
     }
+
+    document.querySelectorAll('input[name="upcomingTablePlatform"]').forEach(radio => {
+        radio.addEventListener('change', () => fetchUpcoming());
+    });
 
     window.addSourceField = function (type, name = '', url = '') {
         const container = document.getElementById(`${type}SourcesList`);

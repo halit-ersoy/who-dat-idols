@@ -85,11 +85,10 @@ public class SavedController {
         }
     }
 
-    @Cacheable("loadedEpisodes")
     @GetMapping("/loaded")
     public ResponseEntity<?> getLoadedEpisodes() {
         try {
-            List<Map<String, Object>> result = jdbcTemplate.queryForList("EXEC GetUpcoming 'Upcoming'");
+            List<Map<String, Object>> result = jdbcTemplate.queryForList("EXEC GetUpcoming 'Upcoming', 'whodatidols'");
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             Map<String, Object> error = new HashMap<>();

@@ -21,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,11 +39,13 @@ public class VideoController {
     private final ActorRepository actorRepository;
     private final CastSyncService castSyncService;
     private final SystemSettingRepository systemSettingRepository;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     public VideoController(VideoService videoService, TranscodingService transcodingService,
             MovieRepository movieRepository, SeriesRepository seriesRepository,
             ContentRepository contentRepository, AdRepository adRepository,
-            ActorRepository actorRepository, CastSyncService castSyncService, SystemSettingRepository systemSettingRepository) {
+            ActorRepository actorRepository, CastSyncService castSyncService, SystemSettingRepository systemSettingRepository,
+            org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
         this.videoService = videoService;
         this.transcodingService = transcodingService;
         this.movieRepository = movieRepository;
@@ -52,6 +55,7 @@ public class VideoController {
         this.actorRepository = actorRepository;
         this.castSyncService = castSyncService;
         this.systemSettingRepository = systemSettingRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @GetMapping("/details")
@@ -135,6 +139,133 @@ public class VideoController {
             return ResponseEntity.ok(response);
         }
 
+        // 3. Try Upcoming
+        try {
+            List<Map<String, Object>> upcomings = jdbcTemplate.queryForList(
+                    "SELECT TOP 1 * FROM Upcoming WHERE ID = ?", id);
+            if (!upcomings.isEmpty()) {
+                Map<String, Object> u = upcomings.get(0);
+                boolean isBl = Boolean.TRUE.equals(u.get("isBl"));
+                if (isBl) {
+                    return ResponseEntity.notFound().build();
+                }
+
+                String title = (String) u.get("name");
+                String upcomingType = (String) u.get("type");
+                boolean isMovie = upcomingType != null && upcomingType.equalsIgnoreCase("Movie");
+                Object refIdObj = u.get("ReferenceId");
+                UUID refId = refIdObj != null ? UUID.fromString(refIdObj.toString()) : null;
+
+                response.put("id", u.get("ID").toString());
+                response.put("title", title);
+                response.put("name", title);
+                response.put("type", "upcoming");
+                response.put("isUpcoming", true);
+                response.put("category", upcomingType);
+                response.put("datetime", u.get("datetime") != null ? u.get("datetime").toString() : "");
+                response.put("status", u.get("status"));
+                response.put("poster", "/media/image/" + u.get("ID"));
+                response.put("adult", false);
+
+                String plot = (String) u.get("Summary");
+                Object year = u.get("ReleaseYear");
+                String country = (String) u.get("Country");
+                String language = (String) u.get("Language");
+                String duration = (String) u.get("Duration");
+                String slug = (String) u.get("Slug");
+                List<String> genres = new ArrayList<>();
+                List<CastMemberDto> cast = Collections.emptyList();
+
+                Series linkedSeries = null;
+                Movie linkedMovie = null;
+
+                if (refId != null) {
+                    linkedSeries = seriesRepository.findSeriesById(refId);
+                    if (linkedSeries == null) {
+                        linkedMovie = movieRepository.findMovieById(refId);
+                    }
+                    if (linkedSeries == null && linkedMovie == null) {
+                        Episode ep = seriesRepository.findEpisodeById(refId);
+                        if (ep != null) {
+                            linkedSeries = seriesRepository.findSeriesByEpisodeId(ep.getId());
+                        }
+                    }
+                }
+
+                if (linkedSeries == null && linkedMovie == null && title != null) {
+                    linkedSeries = seriesRepository.findSeriesByName(title);
+                    if (linkedSeries == null) {
+                        linkedMovie = movieRepository.findMovieByName(title);
+                    }
+                }
+
+                if (linkedSeries != null) {
+                    if (plot == null || plot.isBlank()) plot = linkedSeries.getSummary();
+                    if (year == null && linkedSeries.getUploadDate() != null) {
+                        try {
+                            year = linkedSeries.getUploadDate().atZone(java.time.ZoneId.systemDefault()).getYear();
+                        } catch (Exception ignored) {}
+                    }
+                    if (country == null || country.isBlank()) country = linkedSeries.getCountry();
+                    if (language == null || language.isBlank()) language = linkedSeries.getLanguage();
+                    if (slug == null || slug.isBlank()) slug = linkedSeries.getSlug();
+                    if (linkedSeries.getCategory() != null && !linkedSeries.getCategory().isBlank()) {
+                        genres = List.of(linkedSeries.getCategory().split(","));
+                    }
+                    cast = actorRepository.getCastForSeries(linkedSeries.getId());
+                    if (cast.isEmpty()) {
+                        cast = castSyncService.syncCastForSeries(linkedSeries);
+                    }
+                } else if (linkedMovie != null) {
+                    if (plot == null || plot.isBlank()) plot = linkedMovie.getSummary();
+                    if (year == null) year = linkedMovie.getReleaseYear();
+                    if (country == null || country.isBlank()) country = linkedMovie.getCountry();
+                    if (language == null || language.isBlank()) language = linkedMovie.getLanguage();
+                    if (duration == null || duration.isBlank()) {
+                        duration = linkedMovie.getDurationMinutes() > 0 ? linkedMovie.getDurationMinutes() + " dk" : "";
+                    }
+                    if (slug == null || slug.isBlank()) slug = linkedMovie.getSlug();
+                    if (linkedMovie.getCategory() != null && !linkedMovie.getCategory().isBlank()) {
+                        genres = List.of(linkedMovie.getCategory().split(","));
+                    }
+                    cast = actorRepository.getCastForMovie(linkedMovie.getId());
+                    if (cast.isEmpty()) {
+                        cast = castSyncService.syncCastForMovie(linkedMovie);
+                    }
+                }
+
+                if (plot == null || plot.isBlank()) {
+                    plot = "Bu yapım çok yakında Who Dat Idols platformunda yayınlanacaktır. Yayın tarihini ve geri sayımı takip edebilirsiniz.";
+                }
+                if (genres.isEmpty()) {
+                    String g = (String) u.get("Genre");
+                    if (g != null && !g.isBlank() && !g.equalsIgnoreCase("Normal")) {
+                        genres = List.of(isMovie ? "Film" : "Dizi", g);
+                    } else {
+                        genres = List.of(isMovie ? "Film" : "Dizi");
+                    }
+                }
+                if (year == null && u.get("datetime") != null) {
+                    try {
+                        java.sql.Timestamp ts = (java.sql.Timestamp) u.get("datetime");
+                        year = ts.toInstant().atZone(java.time.ZoneId.systemDefault()).getYear();
+                    } catch (Exception ignored) {}
+                }
+
+                response.put("plot", plot);
+                response.put("year", year != null ? year.toString() : "");
+                response.put("country", country != null ? country : "");
+                response.put("language", language != null ? language : "");
+                response.put("duration", duration != null ? duration : "");
+                response.put("slug", slug != null ? slug : id.toString());
+                response.put("genres", genres);
+                response.put("cast", cast);
+
+                return ResponseEntity.ok(response);
+            }
+        } catch (Exception ignored) {
+        }
+
         return ResponseEntity.notFound().build();
     }
 
@@ -177,13 +308,25 @@ public class VideoController {
                 return ResponseEntity.ok(Map.of("id", m.getId().toString(), "type", "movie"));
             }
 
+            // Check Upcoming by ID
+            try {
+                List<Map<String, Object>> upcomings = jdbcTemplate.queryForList(
+                        "SELECT TOP 1 ID, isBl FROM Upcoming WHERE ID = ?", id);
+                if (!upcomings.isEmpty()) {
+                    boolean isBl = Boolean.TRUE.equals(upcomings.get(0).get("isBl"));
+                    if (!isBl) {
+                        return ResponseEntity.ok(Map.of("id", id.toString(), "type", "upcoming"));
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+
             return ResponseEntity.notFound().build();
         }
 
         // --- Slug-based lookup (exact match, no iteration) ---
 
-        // 1. Check if it's an episode slug (most specific — includes season/episode
-        // info)
+        // 1. Check if it's an episode slug (most specific — includes season/episode info)
         Episode episode = seriesRepository.findEpisodeBySlug(slug);
         if (episode != null) {
             Series parentSeries = seriesRepository.findSeriesByEpisodeId(episode.getId());
@@ -212,6 +355,19 @@ public class VideoController {
             if (firstEpId != null) {
                 return ResponseEntity.ok(Map.of("id", firstEpId.toString(), "type", "episode"));
             }
+        }
+
+        // 4. Check Upcoming by slug or name
+        try {
+            List<Map<String, Object>> upcomings = jdbcTemplate.queryForList(
+                    "SELECT TOP 1 ID, isBl FROM Upcoming WHERE slug = ? OR name = ?", slug, slug);
+            if (!upcomings.isEmpty()) {
+                boolean isBl = Boolean.TRUE.equals(upcomings.get(0).get("isBl"));
+                if (!isBl) {
+                    return ResponseEntity.ok(Map.of("id", upcomings.get(0).get("ID").toString(), "type", "upcoming"));
+                }
+            }
+        } catch (Exception ignored) {
         }
 
         return ResponseEntity.notFound().build();
@@ -245,6 +401,31 @@ public class VideoController {
         Episode episode = seriesRepository.findEpisodeById(id);
         if (episode != null && episode.getSeriesId() != null) {
             contentIdForSearch = episode.getSeriesId();
+        }
+
+        // Check if Upcoming
+        try {
+            List<Map<String, Object>> upcomings = jdbcTemplate.queryForList(
+                    "SELECT TOP 1 * FROM Upcoming WHERE ID = ?", id);
+            if (!upcomings.isEmpty()) {
+                Map<String, Object> u = upcomings.get(0);
+                Object refIdObj = u.get("ReferenceId");
+                if (refIdObj != null) {
+                    contentIdForSearch = UUID.fromString(refIdObj.toString());
+                } else {
+                    String name = (String) u.get("name");
+                    Series s = seriesRepository.findSeriesByName(name);
+                    if (s != null) {
+                        contentIdForSearch = s.getId();
+                    } else {
+                        Movie m = movieRepository.findMovieByName(name);
+                        if (m != null) {
+                            contentIdForSearch = m.getId();
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {
         }
 
         List<Map<String, Object>> similar = contentRepository.findSimilarContent(contentIdForSearch, 12);

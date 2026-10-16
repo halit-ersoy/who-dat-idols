@@ -43,8 +43,7 @@ public class ContentRepository {
                     WHERE M.isBl = 0 AND M.IsHidden = 0
                       AND (@NameTerm IS NULL OR M.Name LIKE @SearchName) 
                       AND (@YearTerm IS NULL OR M.ReleaseYear = @YearTerm)
-                      AND (@CategoryTerm IS NULL OR EXISTS (
-                          SELECT 1 FROM Categories C2 
+                      AND (@CategoryTerm IS NULL OR EXISTS (\n                          SELECT 1 FROM Categories C2 
                           JOIN MovieCategories MC2 ON MC2.CategoryID = C2.ID 
                           WHERE MC2.MovieID = M.ID AND C2.Name = @CategoryTerm
                       ))
@@ -156,7 +155,7 @@ public class ContentRepository {
                 """;
 
         try {
-            return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            List<Map<String, Object>> results = jdbcTemplate.query(sql, (rs, rowNum) -> {
                 Map<String, Object> map = new HashMap<>();
                 map.put("ID", rs.getString("ID"));
                 map.put("Name", rs.getString("Name"));
@@ -169,8 +168,49 @@ public class ContentRepository {
                 }
                 return map;
             }, contentId.toString(), contentId.toString(), contentId.toString(), contentId.toString(), limit);
+
+            if (results != null && !results.isEmpty()) {
+                return results;
+            }
+            return findTopPopularContent(limit);
         } catch (Exception e) {
             logger.error("Error finding similar content for {}: {}", contentId, e.getMessage());
+            return findTopPopularContent(limit);
+        }
+    }
+
+    public List<Map<String, Object>> findTopPopularContent(int limit) {
+        String sql = """
+                SELECT TOP (?) ID, Name, Type, Category, viewCount, slug FROM (
+                    SELECT S.ID, S.Name, 'soap_opera' as Type, S.viewCount,
+                           (SELECT STRING_AGG(C.Name, ', ') FROM Categories C JOIN SeriesCategories SC2 ON SC2.CategoryID = C.ID WHERE SC2.SeriesID = S.ID) as Category,
+                           (SELECT TOP 1 E.slug FROM Episode E WHERE E.SeriesId = S.ID ORDER BY SeasonNumber ASC, EpisodeNumber ASC) as slug
+                    FROM Series S
+                    WHERE S.isBl = 0 AND S.IsHidden = 0
+                    UNION ALL
+                    SELECT M.ID, M.Name, 'movie' as Type, M.viewCount,
+                           (SELECT STRING_AGG(C.Name, ', ') FROM Categories C JOIN MovieCategories MC2 ON MC2.CategoryID = C.ID WHERE MC2.MovieID = M.ID) as Category,
+                           M.slug as slug
+                    FROM Movie M
+                    WHERE M.isBl = 0 AND M.IsHidden = 0
+                ) Final
+                ORDER BY viewCount DESC
+                """;
+        try {
+            return jdbcTemplate.query(sql, (rs, rowNum) -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("ID", rs.getString("ID"));
+                map.put("Name", rs.getString("Name"));
+                map.put("Category", rs.getString("Category"));
+                map.put("Type", rs.getString("Type"));
+                map.put("viewCount", rs.getInt("viewCount"));
+                try {
+                    map.put("slug", rs.getString("slug"));
+                } catch (Exception e) {}
+                return map;
+            }, limit);
+        } catch (Exception e) {
+            logger.error("Error finding top popular content: {}", e.getMessage());
             return List.of();
         }
     }

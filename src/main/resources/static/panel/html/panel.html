@@ -1100,11 +1100,20 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="upcomingDatetime">Tahmini Yayın Tarihi</label>
+                                <label for="upcomingGenre">Yayın Platformu / Türü</label>
+                                <select id="upcomingGenre">
+                                    <option value="Normal">WhoDatIdols (Genel)</option>
+                                    <option value="BL">BL Dizi (BL)</option>
+                                    <option value="GL">BL Dizi (GL)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="upcomingDatetime">Hedef Yayın Tarihi & Saati</label>
                                 <input type="datetime-local" id="upcomingDatetime" required>
+                                <small style="display: block; margin-top: 5px; color: rgba(255,255,255,0.45); font-size: 11px;">* Geri sayım sayacının hedefi (Süre dolunca "Yakında Yüklenecek" yazar)</small>
                             </div>
                             <div class="form-group full-width">
-                                <label for="upcomingImage">Kapak Resmi</label>
+                                <label for="upcomingImage">Kapak Resmi (Dikey Format)</label>
                                 <div class="poster-control-container">
                                     <div class="poster-preview" id="upcomingPosterPreview">
                                         <i class="fas fa-image"></i>
@@ -1139,12 +1148,23 @@
                     </form>
 
                     <div class="table-container" style="margin-top: 30px;">
-                        <h3>Mevcut Yüklenecek Bölümler</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                            <h3 style="margin: 0;">Mevcut Yüklenecek Bölümler</h3>
+                            <div class="dynamic-switch" id="upcomingPlatformFilterSwitch" style="margin: 0;">
+                                <input type="radio" id="upcomingFilterAll" name="upcomingTablePlatform" value="all" checked>
+                                <label for="upcomingFilterAll">Tümü</label>
+                                <input type="radio" id="upcomingFilterWdi" name="upcomingTablePlatform" value="whodatidols">
+                                <label for="upcomingFilterWdi">WhoDatIdols</label>
+                                <input type="radio" id="upcomingFilterBldizi" name="upcomingTablePlatform" value="bldizi">
+                                <label for="upcomingFilterBldizi">BL Dizi</label>
+                            </div>
+                        </div>
                         <table class="admin-table" id="upcomingTable">
                             <thead>
                                 <tr>
                                     <th>İçerik</th>
                                     <th>Tip</th>
+                                    <th>Platform / Tür</th>
                                     <th>Yayın Tarihi</th>
                                     <th>İşlem</th>
                                 </tr>

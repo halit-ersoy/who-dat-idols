@@ -57,10 +57,23 @@ public class SystemSettingRepository {
         }
 
         try {
-            // Ensure GetUpcoming Stored Procedure exists and returns the Correct Slugs
+            // Ensure Upcoming Table schema columns exist
+            jdbcTemplate.execute("""
+                    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Upcoming' AND COLUMN_NAME = 'isBl')
+                    BEGIN
+                        ALTER TABLE Upcoming ADD isBl BIT DEFAULT 0;
+                    END
+                    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Upcoming' AND COLUMN_NAME = 'Genre')
+                    BEGIN
+                        ALTER TABLE Upcoming ADD Genre NVARCHAR(50) DEFAULT 'Normal';
+                    END
+                    """);
+
+            // Ensure GetUpcoming Stored Procedure exists and returns correct items and slugs
             jdbcTemplate.execute("""
                     CREATE OR ALTER PROCEDURE [dbo].[GetUpcoming]
-                        @Category NVARCHAR(50) = NULL
+                        @Category NVARCHAR(50) = NULL,
+                        @Platform NVARCHAR(50) = NULL
                     AS
                     BEGIN
                         SET NOCOUNT ON;
@@ -72,17 +85,55 @@ public class SystemSettingRepository {
                             u.[Status] AS [status],
                             u.[Datetime] AS [datetime],
                             u.Category,
+                            ISNULL(u.isBl, 0) AS isBl,
+                            ISNULL(u.Genre, 'Normal') AS Genre,
                             COALESCE(s.slug, m.slug, e.slug) AS slug
                         FROM Upcoming u
                         LEFT JOIN Series s ON u.ReferenceId = s.ID
                         LEFT JOIN Movie m ON u.ReferenceId = m.ID
                         LEFT JOIN Episode e ON u.ReferenceId = e.ID
+                        LEFT JOIN Series es ON e.SeriesId = es.ID
                         WHERE (@Category IS NULL OR u.Category = @Category)
+                          AND (
+                              @Platform IS NULL 
+                              OR (@Platform = 'bldizi' AND (
+                                  u.Genre IN ('BL', 'GL') OR u.isBl = 1
+                                  OR s.SeriesType IN ('BL', 'GL') OR s.isBl = 1 OR EXISTS (SELECT 1 FROM SeriesCategories sc WHERE sc.SeriesID = s.ID AND sc.CategoryID IN (52, 63))
+                                  OR m.MovieType IN ('BL', 'GL') OR m.isBl = 1 OR EXISTS (SELECT 1 FROM MovieCategories mc WHERE mc.MovieID = m.ID AND mc.CategoryID IN (52, 63))
+                                  OR es.SeriesType IN ('BL', 'GL') OR es.isBl = 1 OR EXISTS (SELECT 1 FROM SeriesCategories esc WHERE esc.SeriesID = es.ID AND esc.CategoryID IN (52, 63))
+                              ))
+                              OR (@Platform = 'whodatidols' AND (
+                                  (u.Genre IS NULL OR u.Genre NOT IN ('BL', 'GL')) AND (u.isBl = 0 OR u.isBl IS NULL)
+                                  AND (s.ID IS NULL OR ((s.isBl = 0 OR s.isBl IS NULL) AND (s.SeriesType IS NULL OR s.SeriesType NOT IN ('BL', 'GL')) AND NOT EXISTS (SELECT 1 FROM SeriesCategories sc WHERE sc.SeriesID = s.ID AND sc.CategoryID IN (52, 63))))
+                                  AND (m.ID IS NULL OR ((m.isBl = 0 OR m.isBl IS NULL) AND (m.MovieType IS NULL OR m.MovieType NOT IN ('BL', 'GL')) AND NOT EXISTS (SELECT 1 FROM MovieCategories mc WHERE mc.MovieID = m.ID AND mc.CategoryID IN (52, 63))))
+                                  AND (es.ID IS NULL OR ((es.isBl = 0 OR es.isBl IS NULL) AND (es.SeriesType IS NULL OR es.SeriesType NOT IN ('BL', 'GL')) AND NOT EXISTS (SELECT 1 FROM SeriesCategories esc WHERE esc.SeriesID = es.ID AND esc.CategoryID IN (52, 63))))
+                              ))
+                          )
                         ORDER BY u.[datetime];
                     END
                     """);
+
+            // Ensure AddUpcomingCustom Stored Procedure supports genre and isBl
+            jdbcTemplate.execute("""
+                    CREATE OR ALTER PROCEDURE [dbo].[AddUpcomingCustom]
+                        @ID UNIQUEIDENTIFIER,
+                        @Name NVARCHAR(255),
+                        @Type NVARCHAR(50),
+                        @Status NVARCHAR(100),
+                        @Datetime DATETIME,
+                        @ReferenceId UNIQUEIDENTIFIER = NULL,
+                        @Category NVARCHAR(50) = 'Upcoming',
+                        @Genre NVARCHAR(50) = 'Normal',
+                        @IsBl BIT = 0
+                    AS
+                    BEGIN
+                        SET NOCOUNT ON;
+                        INSERT INTO Upcoming (ID, Name, [Type], [Status], [Datetime], ReferenceId, Category, Genre, isBl)
+                        VALUES (@ID, @Name, @Type, @Status, @Datetime, @ReferenceId, @Category, @Genre, @IsBl);
+                    END
+                    """);
         } catch (Exception e) {
-            logger.error("Failed to ensure GetUpcoming procedure schema", e);
+            logger.error("Failed to ensure Upcoming procedure and schema", e);
         }
     }
 

@@ -1733,109 +1733,124 @@ public class AdminController {
     // UPCOMING MANAGEMENT
 
     @GetMapping("/upcoming")
-
-    public ResponseEntity<List<Map<String, Object>>> getUpcoming() {
-
+    public ResponseEntity<List<Map<String, Object>>> getUpcoming(
+            @RequestParam(value = "platform", required = false) String platform) {
+        if (platform != null && !platform.trim().isEmpty() && !"all".equalsIgnoreCase(platform.trim())) {
+            return ResponseEntity.ok(jdbcTemplate.queryForList("EXEC GetUpcoming NULL, ?", platform.trim()));
+        }
         return ResponseEntity.ok(jdbcTemplate.queryForList("EXEC GetUpcoming"));
-
     }
 
 
 
+    @Caching(evict = {
+            @CacheEvict(value = "loadedEpisodes", allEntries = true)
+    })
     @PostMapping("/add-upcoming")
-
     public ResponseEntity<String> addUpcoming(
-
             @RequestParam("name") String name,
-
             @RequestParam("type") String type,
-
             @RequestParam(value = "category", defaultValue = "Upcoming") String category,
-
             @RequestParam(value = "status", required = false, defaultValue = "") String status,
-
             @RequestParam("datetime") String datetimeStr,
-
             @RequestParam(value = "referenceId", required = false) String referenceId,
-
+            @RequestParam(value = "genre", required = false, defaultValue = "Normal") String genre,
+            @RequestParam(value = "summary", required = false) String summary,
+            @RequestParam(value = "releaseYear", required = false) String releaseYear,
+            @RequestParam(value = "country", required = false) String country,
+            @RequestParam(value = "language", required = false) String language,
+            @RequestParam(value = "duration", required = false) String duration,
+            @RequestParam(value = "slug", required = false) String slug,
             @RequestParam(value = "image", required = false) MultipartFile image,
-
             @RequestParam(value = "imageUrl", required = false) String imageUrl) {
 
         try {
-
             java.sql.Timestamp timestamp = null;
-
             if (datetimeStr != null && !datetimeStr.isEmpty()) {
-
                 String formatted = datetimeStr.replace("T", " ");
-
                 if (formatted.length() == 16) {
-
                     formatted += ":00";
-
                 }
-
                 timestamp = java.sql.Timestamp.valueOf(formatted);
-
             }
-
-
 
             UUID uuid = null;
-
             if (referenceId != null && !referenceId.isEmpty()) {
-
                 uuid = UUID.fromString(referenceId);
-
             }
 
+            boolean isBl = "BL".equalsIgnoreCase(genre) || "GL".equalsIgnoreCase(genre);
 
+            if (uuid != null) {
+                try {
+                    List<Map<String, Object>> seriesList = jdbcTemplate.queryForList("SELECT TOP 1 * FROM Series WHERE ID = ?", uuid);
+                    if (!seriesList.isEmpty()) {
+                        Map<String, Object> s = seriesList.get(0);
+                        if (summary == null || summary.isBlank()) summary = (String) s.get("Summary");
+                        if (country == null || country.isBlank()) country = (String) s.get("Country");
+                        if (language == null || language.isBlank()) language = (String) s.get("Language");
+                        if (slug == null || slug.isBlank()) slug = (String) s.get("slug");
+                    } else {
+                        List<Map<String, Object>> movieList = jdbcTemplate.queryForList("SELECT TOP 1 * FROM Movie WHERE ID = ?", uuid);
+                        if (!movieList.isEmpty()) {
+                            Map<String, Object> m = movieList.get(0);
+                            if (summary == null || summary.isBlank()) summary = (String) m.get("Summary");
+                            if (releaseYear == null || releaseYear.isBlank()) {
+                                Object yr = m.get("ReleaseYear");
+                                if (yr != null) releaseYear = yr.toString();
+                            }
+                            if (country == null || country.isBlank()) country = (String) m.get("Country");
+                            if (language == null || language.isBlank()) language = (String) m.get("Language");
+                            if (duration == null || duration.isBlank()) {
+                                Object dur = m.get("DurationMinutes");
+                                if (dur != null) duration = dur.toString();
+                            }
+                            if (slug == null || slug.isBlank()) slug = (String) m.get("slug");
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+
+            if (slug == null || slug.isBlank()) {
+                slug = com.ses.whodatidols.util.SlugUtil.toSlug(name);
+            }
 
             UUID upcomingId = UUID.randomUUID();
 
-
-
-            jdbcTemplate.update("EXEC AddUpcomingCustom ?, ?, ?, ?, ?, ?, ?",
-
+            jdbcTemplate.update("EXEC AddUpcomingCustom ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?",
                     upcomingId,
-
                     name,
-
                     type,
-
                     status,
-
                     timestamp,
-
                     uuid,
-
-                    category);
-
-
+                    category,
+                    genre,
+                    isBl,
+                    summary,
+                    releaseYear,
+                    country,
+                    language,
+                    duration,
+                    slug);
 
             if (image != null && !image.isEmpty()) {
-
                 saveUpcomingImage(upcomingId, image, uuid);
-
             } else if (imageUrl != null && !imageUrl.isEmpty()) {
-
                 saveUpcomingImageFromUrl(upcomingId, imageUrl, uuid);
-
             }
 
-
+            if (cacheManager != null) {
+                org.springframework.cache.Cache c = cacheManager.getCache("loadedEpisodes");
+                if (c != null) c.clear();
+            }
 
             return ResponseEntity.ok("Yüklenecek bölüm eklendi.");
 
         } catch (Exception e) {
-
             e.printStackTrace();
-
             return ResponseEntity.status(500).body("Ekleme hatası: " + e.getMessage());
-
         }
-
     }
 
 
@@ -1922,15 +1937,18 @@ public class AdminController {
 
 
 
+    @Caching(evict = {
+            @CacheEvict(value = "loadedEpisodes", allEntries = true)
+    })
     @DeleteMapping("/delete-upcoming")
-
     public ResponseEntity<String> deleteUpcoming(@RequestParam("id") UUID id) {
-
         try {
-
             jdbcTemplate.update("EXEC DeleteUpcoming ?", id);
-
-            return ResponseEntity.ok("Beklenen bölüm silindi.");
+            if (cacheManager != null) {
+                org.springframework.cache.Cache c = cacheManager.getCache("loadedEpisodes");
+                if (c != null) c.clear();
+            }
+            return ResponseEntity.ok("Yüklenecek bölüm silindi.");
 
         } catch (Exception e) {
 

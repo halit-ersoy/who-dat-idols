@@ -55,7 +55,11 @@ async function loadContentDetails(id) {
         }
 
         // Update document title with SEO keyword
-        document.title = `${data.title} İzle - Who Dat Idols?`;
+        if (data.isUpcoming || data.type === 'upcoming') {
+            document.title = `${data.title} - Yakında Who Dat Idols`;
+        } else {
+            document.title = `${data.title} İzle - Who Dat Idols?`;
+        }
 
         // SEO: Update Meta Description and Canonical
         if (data.plot) {
@@ -94,7 +98,7 @@ async function loadContentDetails(id) {
             // Main content schema
             const contentSchema = {
                 "@context": "https://schema.org",
-                "@type": data.type === 'movie' ? "Movie" : "Episode",
+                "@type": data.type === 'movie' ? "Movie" : (data.isUpcoming || data.type === 'upcoming' ? "CreativeWork" : "Episode"),
                 "name": data.title,
                 "url": contentUrl,
                 "description": sanitizeText(data.plot),
@@ -119,7 +123,9 @@ async function loadContentDetails(id) {
                 { "@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": baseUrl }
             ];
 
-            if (data.type === 'movie') {
+            if (data.isUpcoming || data.type === 'upcoming') {
+                breadcrumbItems.push({ "@type": "ListItem", "position": 2, "name": "Yüklenecek Bölümler", "item": `${baseUrl}/#upcoming` });
+            } else if (data.type === 'movie') {
                 breadcrumbItems.push({ "@type": "ListItem", "position": 2, "name": "Filmler", "item": `${baseUrl}/filmler` });
             } else {
                 breadcrumbItems.push({ "@type": "ListItem", "position": 2, "name": "Diziler", "item": `${baseUrl}/diziler` });
@@ -134,6 +140,15 @@ async function loadContentDetails(id) {
             };
 
             structuredDataEl.textContent = JSON.stringify([contentSchema, breadcrumbSchema]);
+        }
+
+        const ratingBadge = document.querySelector('.rating-badge');
+        if (ratingBadge) {
+            if (data.isUpcoming || data.type === 'upcoming') {
+                ratingBadge.style.display = 'none';
+            } else {
+                ratingBadge.style.display = '';
+            }
         }
 
         const posterImg = document.getElementById('contentPoster');

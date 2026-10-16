@@ -38,6 +38,45 @@ public class CommentRepository {
 
     public List<CommentViewModel> getComments(UUID contentId, String cookie) {
         String sql = """
+                    WITH TargetContent AS (
+                        SELECT TRY_CAST(? AS UNIQUEIDENTIFIER) AS ID
+                    ),
+                    RelatedIDs AS (
+                        SELECT ID FROM TargetContent WHERE ID IS NOT NULL
+                        UNION
+                        SELECT e.SeriesId FROM Episode e JOIN TargetContent t ON e.ID = t.ID WHERE e.SeriesId IS NOT NULL
+                        UNION
+                        SELECT e.ID FROM Episode e JOIN TargetContent t ON e.SeriesId = t.ID WHERE e.SeasonNumber = 1 AND e.EpisodeNumber = 1
+                        UNION
+                        SELECT e1.ID FROM Episode ep JOIN TargetContent t ON ep.ID = t.ID JOIN Episode e1 ON e1.SeriesId = ep.SeriesId WHERE e1.SeasonNumber = 1 AND e1.EpisodeNumber = 1
+                        UNION
+                        SELECT u.ID FROM Upcoming u
+                        JOIN Episode e ON e.ID IN (SELECT ID FROM TargetContent)
+                        JOIN Series s ON e.SeriesId = s.ID
+                        WHERE u.Name COLLATE Latin1_General_CI_AI = s.Name COLLATE Latin1_General_CI_AI
+                           OR u.ReferenceId = s.ID
+                           OR u.ReferenceId = e.ID
+                        UNION
+                        SELECT u.ID FROM Upcoming u
+                        JOIN Series s ON s.ID IN (SELECT ID FROM TargetContent)
+                        WHERE u.Name COLLATE Latin1_General_CI_AI = s.Name COLLATE Latin1_General_CI_AI
+                           OR u.ReferenceId = s.ID
+                        UNION
+                        SELECT u.ID FROM Upcoming u
+                        JOIN Movie m ON m.ID IN (SELECT ID FROM TargetContent)
+                        WHERE u.Name COLLATE Latin1_General_CI_AI = m.Name COLLATE Latin1_General_CI_AI
+                           OR u.ReferenceId = m.ID
+                        UNION
+                        SELECT u.ReferenceId FROM Upcoming u JOIN TargetContent t ON u.ID = t.ID WHERE u.ReferenceId IS NOT NULL
+                        UNION
+                        SELECT s.ID FROM Series s JOIN Upcoming u ON s.Name COLLATE Latin1_General_CI_AI = u.Name COLLATE Latin1_General_CI_AI JOIN TargetContent t ON u.ID = t.ID
+                        UNION
+                        SELECT e.ID FROM Episode e JOIN Series s ON e.SeriesId = s.ID JOIN Upcoming u ON s.Name COLLATE Latin1_General_CI_AI = u.Name COLLATE Latin1_General_CI_AI JOIN TargetContent t ON u.ID = t.ID WHERE e.SeasonNumber = 1 AND e.EpisodeNumber = 1
+                        UNION
+                        SELECT e.ID FROM Episode e JOIN Upcoming u ON e.SeriesId = u.ReferenceId JOIN TargetContent t ON u.ID = t.ID WHERE e.SeasonNumber = 1 AND e.EpisodeNumber = 1
+                        UNION
+                        SELECT m.ID FROM Movie m JOIN Upcoming u ON m.Name COLLATE Latin1_General_CI_AI = u.Name COLLATE Latin1_General_CI_AI JOIN TargetContent t ON u.ID = t.ID
+                    )
                     SELECT
                         c.ID, c.Text as comment, c.CreatedAt as date, c.Spoiler,
                         COALESCE(p.Nickname, c.Nickname) as nickname,
@@ -54,13 +93,13 @@ public class CommentRepository {
                     LEFT JOIN Person p ON c.UserId = p.ID
                     LEFT JOIN Person p_me ON p_me.ID = [dbo].[ResolveUserIdByCookie](TRY_CAST(? AS UNIQUEIDENTIFIER))
                     LEFT JOIN CommentLikes cl ON c.ID = cl.CommentId AND cl.UserId = p_me.ID
-                    WHERE c.ContentId = ? AND (c.IsApproved = 1 OR c.UserId = p_me.ID)
+                    WHERE c.ContentId IN (SELECT ID FROM RelatedIDs) AND (c.IsApproved = 1 OR c.UserId = p_me.ID)
                     ORDER BY c.CreatedAt DESC
                 """;
 
         List<CommentViewModel> allComments = jdbcTemplate.query(sql, new CommentRowMapper(),
-                cookie,
-                contentId.toString());
+                contentId != null ? contentId.toString() : null,
+                cookie);
 
         return buildCommentTree(allComments);
     }
@@ -120,8 +159,8 @@ public class CommentRepository {
                         0 as isLiked,
                         0 as isAuthor,
                         c.IsApproved,
-                        COALESCE(m.Name, s.Name, (e.name + ' S' + CAST(e.SeasonNumber AS VARCHAR) + 'E' + CAST(e.EpisodeNumber AS VARCHAR))) as ContentName,
-                        COALESCE(m.Slug, e.Slug, CAST(c.ContentId AS VARCHAR(36))) as ContentSlug,
+                        COALESCE(m.Name, s.Name, (e.name + ' S' + CAST(e.SeasonNumber AS VARCHAR) + 'E' + CAST(e.EpisodeNumber AS VARCHAR)), (u.Name + ' (Beklenen)')) as ContentName,
+                        COALESCE(m.Slug, e.Slug, u.Slug, CAST(c.ContentId AS VARCHAR(36))) as ContentSlug,
                         p.Role,
                         p.isVerified
                     FROM Comments c
@@ -129,6 +168,7 @@ public class CommentRepository {
                     LEFT JOIN Movie m ON c.ContentId = m.ID
                     LEFT JOIN Series s ON c.ContentId = s.ID
                     LEFT JOIN Episode e ON c.ContentId = e.ID
+                    LEFT JOIN Upcoming u ON c.ContentId = u.ID
                     WHERE c.IsApproved = 0
                     ORDER BY c.CreatedAt ASC
                 """;
@@ -147,8 +187,8 @@ public class CommentRepository {
                         0 as isLiked,
                         0 as isAuthor,
                         c.IsApproved,
-                        COALESCE(m.Name, s.Name, (e.name + ' S' + CAST(e.SeasonNumber AS VARCHAR) + 'E' + CAST(e.EpisodeNumber AS VARCHAR))) as ContentName,
-                        COALESCE(m.Slug, e.Slug, CAST(c.ContentId AS VARCHAR(36))) as ContentSlug,
+                        COALESCE(m.Name, s.Name, (e.name + ' S' + CAST(e.SeasonNumber AS VARCHAR) + 'E' + CAST(e.EpisodeNumber AS VARCHAR)), (u.Name + ' (Beklenen)')) as ContentName,
+                        COALESCE(m.Slug, e.Slug, u.Slug, CAST(c.ContentId AS VARCHAR(36))) as ContentSlug,
                         p.Role,
                         p.isVerified
                     FROM Comments c
@@ -156,6 +196,7 @@ public class CommentRepository {
                     LEFT JOIN Movie m ON c.ContentId = m.ID
                     LEFT JOIN Series s ON c.ContentId = s.ID
                     LEFT JOIN Episode e ON c.ContentId = e.ID
+                    LEFT JOIN Upcoming u ON c.ContentId = u.ID
                     WHERE c.IsApproved = 1
                     ORDER BY c.CreatedAt DESC
                 """;
@@ -298,53 +339,61 @@ public class CommentRepository {
                     vm.setAuthorId(UUID.fromString(authorIdStr));
                 }
             } catch (SQLException e) {
-                // Ignore if authorId does not exist
             }
 
             try {
-                vm.setApproved(rs.getBoolean("IsApproved"));
+                String contentIdStr = rs.getString("ContentId");
+                if (contentIdStr != null) {
+                    vm.setContentId(UUID.fromString(contentIdStr));
+                }
             } catch (SQLException e) {
-                vm.setApproved(true);
             }
 
             try {
-                vm.setRole(rs.getString("Role"));
+                String parentIdStr = rs.getString("ParentId");
+                if (parentIdStr != null) {
+                    vm.setParentId(UUID.fromString(parentIdStr));
+                }
             } catch (SQLException e) {
-                vm.setRole("USER");
+            }
+
+            try {
+                String contentName = rs.getString("ContentName");
+                if (contentName != null) {
+                    vm.setContentName(contentName);
+                }
+            } catch (SQLException ignored) {
+            }
+
+            try {
+                String contentSlug = rs.getString("ContentSlug");
+                if (contentSlug != null) {
+                    vm.setContentSlug(contentSlug);
+                }
+            } catch (SQLException ignored) {
+            }
+
+            try {
+                String role = rs.getString("Role");
+                if (role != null) {
+                    vm.setRole(role);
+                }
+            } catch (SQLException ignored) {
             }
 
             try {
                 vm.setVerified(rs.getBoolean("isVerified"));
-            } catch (SQLException e) {
-                vm.setVerified(false);
-            }
-
-            String parentIdStr = rs.getString("ParentId");
-            if (parentIdStr != null) {
-                vm.setParentId(UUID.fromString(parentIdStr));
+            } catch (SQLException ignored) {
             }
 
             try {
-                vm.setContentName(rs.getString("ContentName"));
-            } catch (SQLException e) {
-                vm.setContentName(null);
+                java.sql.Timestamp ts = rs.getTimestamp("date");
+                if (ts != null) {
+                    vm.setDate(ts.toInstant());
+                }
+            } catch (SQLException ignored) {
             }
 
-            String contentIdStr = rs.getString("ContentId");
-            if (contentIdStr != null) {
-                vm.setContentId(UUID.fromString(contentIdStr));
-            }
-
-            try {
-                vm.setContentSlug(rs.getString("ContentSlug"));
-            } catch (SQLException e) {
-                vm.setContentSlug(null);
-            }
-
-            java.sql.Timestamp ts = rs.getTimestamp("date");
-            if (ts != null) {
-                vm.setDate(ts.toInstant());
-            }
             return vm;
         }
     }
