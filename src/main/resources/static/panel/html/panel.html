@@ -1054,7 +1054,7 @@
             <section id="upcoming-section" class="admin-section" style="display: none;">
                 <div class="card">
                     <div class="card-header">
-                        <h2><i class="fas fa-clock"></i> Upcoming (Yüklenecek Bölümler) Yönetimi</h2>
+                        <h2><i class="fas fa-clock"></i> Yüklenecek Bölümler</h2>
                     </div>
                     <form id="upcomingForm" class="admin-form">
                         <div class="form-grid">
@@ -1099,30 +1099,6 @@
                                     <option value="Movie">Film</option>
                                 </select>
                             </div>
-                            <div class="form-group full-width">
-                                <label>Bölüm Kategorisi</label>
-                                <div class="mode-toggle-container">
-                                    <div class="mode-toggle">
-                                        <input type="radio" name="upcomingCategory" id="catTranslated"
-                                            value="Translated" checked onchange="toggleUpcomingCategory()">
-                                        <label for="catTranslated">
-                                            <i class="fas fa-language"></i> Çevrilenler
-                                        </label>
-
-                                        <input type="radio" name="upcomingCategory" id="catUpcoming" value="Upcoming"
-                                            onchange="toggleUpcomingCategory()">
-                                        <label for="catUpcoming">
-                                            <i class="fas fa-calendar-alt"></i> Beklenenler
-                                        </label>
-
-                                        <div class="mode-slider upcoming-slider"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="form-group" id="upcomingStatusGroup">
-                                <label for="upcomingStatus">Durum / Yüzde</label>
-                                <input type="text" id="upcomingStatus" placeholder="Örn: 75% veya Çevriliyor">
-                            </div>
                             <div class="form-group">
                                 <label for="upcomingDatetime">Tahmini Yayın Tarihi</label>
                                 <input type="datetime-local" id="upcomingDatetime" required>
@@ -1163,13 +1139,12 @@
                     </form>
 
                     <div class="table-container" style="margin-top: 30px;">
-                        <h3>Mevcut Bekleyenler</h3>
+                        <h3>Mevcut Yüklenecek Bölümler</h3>
                         <table class="admin-table" id="upcomingTable">
                             <thead>
                                 <tr>
                                     <th>İçerik</th>
                                     <th>Tip</th>
-                                    <th>Durum</th>
                                     <th>Yayın Tarihi</th>
                                     <th>İşlem</th>
                                 </tr>

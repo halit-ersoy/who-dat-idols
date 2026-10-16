@@ -23,7 +23,6 @@ public class CacheConfig {
             "weeklyBestSeries",
             "recentSeries",
             "recentMovies",
-            "translatedEpisodes",
             "loadedEpisodes"
     }, allEntries = true)
     @Scheduled(fixedRateString = "${cache.dynamic.ttl:900000}") // 900000 ms = 15 minutes

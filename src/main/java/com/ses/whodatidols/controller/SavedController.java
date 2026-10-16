@@ -85,20 +85,6 @@ public class SavedController {
         }
     }
 
-    @Cacheable("translatedEpisodes")
-    @GetMapping("/translated")
-    public ResponseEntity<?> getTranslatedEpisodes() {
-        try {
-            List<Map<String, Object>> result = jdbcTemplate.queryForList("EXEC GetUpcoming 'Translated'");
-            return ResponseEntity.ok(result);
-        } catch (Exception e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("success", false);
-            error.put("message", "Error fetching translated episodes: " + e.getMessage());
-            return ResponseEntity.status(500).body(error);
-        }
-    }
-
     @Cacheable("loadedEpisodes")
     @GetMapping("/loaded")
     public ResponseEntity<?> getLoadedEpisodes() {

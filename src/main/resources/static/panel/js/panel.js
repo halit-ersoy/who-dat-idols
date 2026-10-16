@@ -2546,20 +2546,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    window.toggleUpcomingCategory = function () {
-        const category = document.querySelector('input[name="upcomingCategory"]:checked').value;
-        const statusGroup = document.getElementById('upcomingStatusGroup');
-        const statusInput = document.getElementById('upcomingStatus');
-
-        if (category === 'Upcoming') {
-            statusGroup.style.display = 'none';
-            statusInput.required = false;
-            statusInput.value = ""; // Clear if hidden
-        } else {
-            statusGroup.style.display = 'block';
-            statusInput.required = true;
-        }
-    };
+    window.toggleUpcomingCategory = function () {};
 
     function parseEpisodesFromXML(xmlString, seriesName, cat, summ, lang, year) {
         if (!xmlString) return [];
@@ -3365,7 +3352,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (upcomingForm) {
         fetchUpcoming();
-        toggleUpcomingCategory();
 
         // Search logic for upcoming reference
         upcomingSearchInput.addEventListener('input', function () {
@@ -3450,8 +3436,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const formData = new FormData();
             formData.append('name', document.getElementById('upcomingName').value);
             formData.append('type', document.getElementById('upcomingType').value);
-            formData.append('category', document.querySelector('input[name="upcomingCategory"]:checked').value);
-            formData.append('status', document.getElementById('upcomingStatus').value);
+            formData.append('category', 'Upcoming');
+            formData.append('status', '');
             formData.append('datetime', document.getElementById('upcomingDatetime').value);
 
             const refId = upcomingRefIdInput.value;
@@ -3474,9 +3460,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }).then(res => {
                 if (res.ok) {
                     upcomingForm.reset();
-                    // Reset toggle to default (Translated)
-                    document.getElementById('catTranslated').checked = true;
-                    toggleUpcomingCategory();
 
                     upcomingRefDisplay.style.display = 'none';
                     upcomingRefIdInput.value = '';
@@ -3502,14 +3485,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 tbody.innerHTML = '';
                 data.forEach(item => {
                     const tr = document.createElement('tr');
-                    const catBadge = item.Category === 'Translated' ?
-                        '<span class="badge" style="background: var(--primary-color); color: #fff; padding: 4px 8px; border-radius: 4px; font-weight: 700;">ÇEVRİLEN</span>' :
-                        '<span class="badge" style="background: #6c757d; color: #fff; padding: 4px 8px; border-radius: 4px; font-weight: 700;">BEKLENEN</span>';
-
                     tr.innerHTML = `
                         <td style="font-weight: 600;">${item.name}</td>
-                        <td>${item.type === 'Movie' ? 'Film' : 'Dizi'} ${catBadge}</td>
-                        <td><span class="badge" style="background: rgba(var(--primary-rgb), 0.15); color: var(--primary); padding: 4px 8px; border-radius: 4px; font-weight: 700;">${item.status}</span></td>
+                        <td>${item.type === 'Movie' ? 'Film' : 'Dizi'}</td>
                         <td>${new Date(item.datetime).toLocaleString('tr-TR')}</td>
                         <td>
                             <button class="btn btn-sm btn-danger" onclick='deleteUpcoming("${item.upcomingId}")'><i class="fas fa-trash"></i> SİL</button>

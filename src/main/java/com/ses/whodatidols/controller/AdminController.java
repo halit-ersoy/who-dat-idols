@@ -1750,9 +1750,9 @@ public class AdminController {
 
             @RequestParam("type") String type,
 
-            @RequestParam("category") String category,
+            @RequestParam(value = "category", defaultValue = "Upcoming") String category,
 
-            @RequestParam("status") String status,
+            @RequestParam(value = "status", required = false, defaultValue = "") String status,
 
             @RequestParam("datetime") String datetimeStr,
 
@@ -1826,7 +1826,7 @@ public class AdminController {
 
 
 
-            return ResponseEntity.ok("Beklenen bölüm eklendi.");
+            return ResponseEntity.ok("Yüklenecek bölüm eklendi.");
 
         } catch (Exception e) {
 

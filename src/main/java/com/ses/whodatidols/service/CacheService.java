@@ -28,7 +28,6 @@ public class CacheService {
                 "featuredMovies",
                 "featuredTv",
                 "loadedEpisodes",
-                "translatedEpisodes",
                 "calendar",
                 "weeklyBestMovies",
                 "weeklyBestSeries",
