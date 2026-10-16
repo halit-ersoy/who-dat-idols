@@ -52,7 +52,7 @@
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.addEventListener('click', () => {
                     const sec = link.getAttribute('data-section');
-                    if (sec === 'archive-section' || sec === 'content-requests-section' || sec === 'hero-section') {
+                    if (sec === 'archive-section' || sec === 'content-requests-section' || sec === 'hero-section' || sec === 'view-management-section') {
                         setTimeout(window.updateAllDynamicSliders, 50); // slight delay to allow display block to apply
                     }
                 });
@@ -1308,8 +1308,19 @@
             <section id="view-management-section" class="admin-section" style="display: none;">
                 <!-- Haftanın En İyileri (Haftalık Özet Kartları) -->
                 <div class="card" style="margin-bottom: 30px;">
-                    <div class="card-header">
+                    <div class="card-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
                         <h2><i class="fas fa-trophy" style="color: #ffc107;"></i> Haftanın En İyileri (Güncel Liste)</h2>
+                        <div class="filter-switch-container" style="margin: 0;">
+                            <div class="dynamic-switch" id="weeklyBestPlatformSwitch">
+                                <input type="radio" id="weeklyBestWhodat" name="weeklyBestPlatform" value="whodatidols" checked>
+                                <label for="weeklyBestWhodat"><i class="fas fa-play-circle" style="margin-right: 6px;"></i> WhoDatIdols</label>
+
+                                <input type="radio" id="weeklyBestBldizi" name="weeklyBestPlatform" value="bldizi">
+                                <label for="weeklyBestBldizi"><i class="fas fa-heart" style="margin-right: 6px;"></i> BL Dizi</label>
+
+                                <div class="dynamic-slider"></div>
+                            </div>
+                        </div>
                     </div>
                     <div class="weekly-best-admin-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; padding: 20px;">
                         <div>

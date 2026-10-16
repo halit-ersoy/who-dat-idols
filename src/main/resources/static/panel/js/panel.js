@@ -3670,9 +3670,26 @@ document.addEventListener('DOMContentLoaded', function () {
         viewStatsSearchInput.addEventListener('input', updateViewStatsVisibility);
     }
 
-    function fetchViewStats() {
+    let currentWeeklyBestPlatform = 'whodatidols';
+
+    function initWeeklyBestPlatformSwitch() {
+        const radios = document.querySelectorAll('input[name="weeklyBestPlatform"]');
+        radios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                currentWeeklyBestPlatform = e.target.value;
+                fetchViewStats(currentWeeklyBestPlatform);
+            });
+        });
+    }
+
+    function fetchViewStats(platform) {
+        if (platform) {
+            currentWeeklyBestPlatform = platform;
+        }
+        const activePlatform = currentWeeklyBestPlatform || 'whodatidols';
+
         // Fetch weekly best stats for the side-by-side tables
-        fetch('/admin/weekly-best-stats')
+        fetch(`/admin/weekly-best-stats?platform=${encodeURIComponent(activePlatform)}`)
             .then(res => res.json())
             .then(data => {
                 const moviesList = document.getElementById('weeklyBestMoviesList');
@@ -3729,7 +3746,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .catch(err => console.error("Weekly best stats error:", err));
 
         // Fetch main view stats
-        fetch('/admin/view-stats')
+        fetch(`/admin/view-stats?platform=${encodeURIComponent(activePlatform)}`)
             .then(res => res.json())
             .then(stats => {
                 const tbody = document.querySelector('#viewStatsTable tbody');
@@ -3764,6 +3781,8 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch(err => console.error("View stats error:", err));
     }
+
+    initWeeklyBestPlatformSwitch();
 
     // Filter Logic for View Management
     const vsFilterRadios = document.querySelectorAll('input[name="viewStatsFilter"]');

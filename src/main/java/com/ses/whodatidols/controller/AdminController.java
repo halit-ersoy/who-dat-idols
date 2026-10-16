@@ -1943,158 +1943,108 @@ public class AdminController {
 
 
     @GetMapping("/weekly-best-stats")
+    public ResponseEntity<Map<String, Object>> getWeeklyBestStats(
+            @RequestParam(value = "platform", defaultValue = "whodatidols") String platform) {
 
-    public ResponseEntity<Map<String, Object>> getWeeklyBestStats() {
+        boolean isBldizi = "bldizi".equalsIgnoreCase(platform);
+
+        String moviesWhere = isBldizi
+                ? "WHERE (M.IsHidden = 0 OR M.IsHidden IS NULL) AND (M.MovieType IN ('BL', 'GL') OR M.isBl = 1 OR EXISTS (SELECT 1 FROM MovieCategories MC WHERE MC.MovieID = M.ID AND MC.CategoryID IN (52, 63))) "
+                : "WHERE (M.IsHidden = 0 OR M.IsHidden IS NULL) AND (M.isBl = 0 OR M.isBl IS NULL) AND (M.MovieType IS NULL OR M.MovieType NOT IN ('BL', 'GL')) AND NOT EXISTS (SELECT 1 FROM MovieCategories MC WHERE MC.MovieID = M.ID AND MC.CategoryID IN (52, 63)) ";
+
+        String seriesWhere = isBldizi
+                ? "WHERE (S.IsHidden = 0 OR S.IsHidden IS NULL) AND (S.SeriesType IN ('BL', 'GL') OR S.isBl = 1 OR EXISTS (SELECT 1 FROM SeriesCategories SC WHERE SC.SeriesID = S.ID AND SC.CategoryID IN (52, 63))) "
+                : "WHERE (S.IsHidden = 0 OR S.IsHidden IS NULL) AND (S.isBl = 0 OR S.isBl IS NULL) AND (S.SeriesType IS NULL OR S.SeriesType NOT IN ('BL', 'GL')) AND NOT EXISTS (SELECT 1 FROM SeriesCategories SC WHERE SC.SeriesID = S.ID AND SC.CategoryID IN (52, 63)) ";
 
         String moviesSql = """
-
                 SELECT TOP 6 M.ID, M.name, ISNULL(V.WeeklyViews, 0) as weeklyViewCount
-
                 FROM [WhoDatIdols].[dbo].[Movie] M
-
                 LEFT JOIN (
-
                     SELECT ContentId, COUNT(*) as WeeklyViews
-
                     FROM [dbo].[ContentViewLog]
-
                     WHERE [ViewedAt] >= DATEADD(day, -7, GETDATE())
-
                     GROUP BY ContentId
-
                 ) V ON M.ID = V.ContentId
-
-                WHERE M.IsHidden = 0
-
+                """ + moviesWhere + """
                 ORDER BY ISNULL(V.WeeklyViews, 0) DESC, M.viewCount DESC, M.name
-
                 """;
-
-
 
         String seriesSql = """
-
                 SELECT TOP 6 S.ID, S.name, ISNULL(V.WeeklyViews, 0) as weeklyViewCount
-
                 FROM Series S
-
                 LEFT JOIN (
-
                     SELECT SeriesId, COUNT(*) as WeeklyViews
-
                     FROM (
-
                         SELECT E.SeriesId
-
                         FROM Episode E
-
                         JOIN [dbo].[ContentViewLog] VL ON E.ID = VL.ContentId
-
                         WHERE VL.ViewedAt >= DATEADD(day, -7, GETDATE())
-
                         UNION ALL
-
                         SELECT VL.ContentId as SeriesId
-
                         FROM [dbo].[ContentViewLog] VL
-
                         WHERE VL.ViewedAt >= DATEADD(day, -7, GETDATE())
-
                           AND EXISTS (SELECT 1 FROM Series WHERE ID = VL.ContentId)
-
                     ) Combined
-
                     GROUP BY SeriesId
-
                 ) V ON S.ID = V.SeriesId
-
-                WHERE S.IsHidden = 0
-
+                """ + seriesWhere + """
                 ORDER BY ISNULL(V.WeeklyViews, 0) DESC, S.viewCount DESC, S.name
-
                 """;
-
-
 
         Map<String, Object> response = new HashMap<>();
-
         response.put("movies", jdbcTemplate.queryForList(moviesSql));
-
         response.put("series", jdbcTemplate.queryForList(seriesSql));
-
         return ResponseEntity.ok(response);
-
     }
-
-
 
     @GetMapping("/view-stats")
+    public ResponseEntity<List<Map<String, Object>>> getViewStats(
+            @RequestParam(value = "platform", defaultValue = "whodatidols") String platform) {
 
-    public ResponseEntity<List<Map<String, Object>>> getViewStats() {
+        boolean isBldizi = "bldizi".equalsIgnoreCase(platform);
+        boolean isAll = "all".equalsIgnoreCase(platform);
+
+        String moviesWhere = isAll ? "" : (isBldizi
+                ? "WHERE (M.MovieType IN ('BL', 'GL') OR M.isBl = 1 OR EXISTS (SELECT 1 FROM MovieCategories MC WHERE MC.MovieID = M.ID AND MC.CategoryID IN (52, 63))) "
+                : "WHERE (M.isBl = 0 OR M.isBl IS NULL) AND (M.MovieType IS NULL OR M.MovieType NOT IN ('BL', 'GL')) AND NOT EXISTS (SELECT 1 FROM MovieCategories MC WHERE MC.MovieID = M.ID AND MC.CategoryID IN (52, 63)) ");
+
+        String seriesWhere = isAll ? "" : (isBldizi
+                ? "WHERE (S.SeriesType IN ('BL', 'GL') OR S.isBl = 1 OR EXISTS (SELECT 1 FROM SeriesCategories SC WHERE SC.SeriesID = S.ID AND SC.CategoryID IN (52, 63))) "
+                : "WHERE (S.isBl = 0 OR S.isBl IS NULL) AND (S.SeriesType IS NULL OR S.SeriesType NOT IN ('BL', 'GL')) AND NOT EXISTS (SELECT 1 FROM SeriesCategories SC WHERE SC.SeriesID = S.ID AND SC.CategoryID IN (52, 63)) ");
 
         String sql = """
-
                 SELECT M.ID, M.Name, 'Movie' as Type, M.viewCount, ISNULL(V.WeeklyViews, 0) as weeklyViewCount
-
                 FROM Movie M
-
                 LEFT JOIN (
-
                     SELECT ContentId, COUNT(*) as WeeklyViews
-
                     FROM [dbo].[ContentViewLog]
-
                     WHERE [ViewedAt] >= DATEADD(day, -7, GETDATE())
-
                     GROUP BY ContentId
-
                 ) V ON M.ID = V.ContentId
-
+                """ + moviesWhere + """
                 UNION ALL
-
                 SELECT S.ID, S.Name, 'SoapOpera' as Type, S.viewCount, ISNULL(V.WeeklyViews, 0) as weeklyViewCount
-
                 FROM Series S
-
                 LEFT JOIN (
-
                     SELECT SeriesId, COUNT(*) as WeeklyViews
-
                     FROM (
-
                         SELECT E.SeriesId
-
                         FROM Episode E
-
                         JOIN [dbo].[ContentViewLog] VL ON E.ID = VL.ContentId
-
                         WHERE VL.ViewedAt >= DATEADD(day, -7, GETDATE())
-
                         UNION ALL
-
                         SELECT VL.ContentId as SeriesId
-
                         FROM [dbo].[ContentViewLog] VL
-
                         WHERE VL.ViewedAt >= DATEADD(day, -7, GETDATE())
-
                           AND EXISTS (SELECT 1 FROM Series WHERE ID = VL.ContentId)
-
                     ) Combined
-
                     GROUP BY SeriesId
-
                 ) V ON S.ID = V.SeriesId
-
+                """ + seriesWhere + """
                 ORDER BY weeklyViewCount DESC, viewCount DESC, Name
-
                 """;
-
         return ResponseEntity.ok(jdbcTemplate.queryForList(sql));
-
     }
-
-
 
     @Caching(evict = {
 

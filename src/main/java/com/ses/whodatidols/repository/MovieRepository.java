@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
+@SuppressWarnings({"SqlResolve", "SqlNoDataSourceInspection"})
 public class MovieRepository {
     private final JdbcTemplate jdbcTemplate;
 
@@ -406,7 +407,7 @@ public class MovieRepository {
                     WHERE [ViewedAt] >= DATEADD(day, -7, GETDATE())
                     GROUP BY ContentId
                 ) V ON M.ID = V.ContentId
-                WHERE M.IsHidden = 0 AND M.isBl = 0
+                WHERE M.IsHidden = 0 AND (M.isBl = 0 OR M.isBl IS NULL) AND (M.MovieType IS NULL OR M.MovieType NOT IN ('BL', 'GL')) AND NOT EXISTS (SELECT 1 FROM MovieCategories MC WHERE MC.MovieID = M.ID AND MC.CategoryID IN (52, 63))
                 ORDER BY ISNULL(V.WeeklyViews, 0) DESC, M.viewCount DESC, M.name ASC
                 """;
         return jdbcTemplate.query(sql, new MovieRowMapper());

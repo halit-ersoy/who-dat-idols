@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
+@SuppressWarnings({"SqlResolve", "SqlNoDataSourceInspection"})
 public class SeriesRepository {
 
     private final JdbcTemplate jdbcTemplate;
@@ -696,7 +697,7 @@ public class SeriesRepository {
     }
 
     public List<Episode> findTop6EpisodesByCount() {
-        String sql = "SELECT TOP 6 E.* FROM Episode E JOIN Series S ON E.SeriesId = S.ID WHERE E.IsHidden = 0 AND S.IsHidden = 0 AND S.isBl = 0 ORDER BY E.viewCount DESC";
+        String sql = "SELECT TOP 6 E.* FROM Episode E JOIN Series S ON E.SeriesId = S.ID WHERE E.IsHidden = 0 AND S.IsHidden = 0 AND (S.isBl = 0 OR S.isBl IS NULL) AND (S.SeriesType IS NULL OR S.SeriesType NOT IN ('BL', 'GL')) AND NOT EXISTS (SELECT 1 FROM SeriesCategories SC WHERE SC.SeriesID = S.ID AND SC.CategoryID IN (52, 63)) ORDER BY E.viewCount DESC";
         return jdbcTemplate.query(sql, episodeRowMapper);
     }
 
@@ -723,7 +724,7 @@ public class SeriesRepository {
                     ) Combined
                     GROUP BY SeriesId
                 ) V ON S.ID = V.SeriesId
-                WHERE S.IsHidden = 0
+                WHERE S.IsHidden = 0 AND (S.isBl = 0 OR S.isBl IS NULL) AND (S.SeriesType IS NULL OR S.SeriesType NOT IN ('BL', 'GL')) AND NOT EXISTS (SELECT 1 FROM SeriesCategories SC WHERE SC.SeriesID = S.ID AND SC.CategoryID IN (52, 63))
                 ORDER BY ISNULL(V.WeeklyViews, 0) DESC, S.viewCount DESC, S.name ASC
                 """;
         return jdbcTemplate.query(sql, seriesRowMapper);
