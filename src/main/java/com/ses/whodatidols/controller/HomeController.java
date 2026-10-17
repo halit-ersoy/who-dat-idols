@@ -413,9 +413,13 @@ public class HomeController {
         // Validate slug existence in Series, Movies, Episodes, or Upcoming
         boolean isValid = seriesService.isValidSlug(slug) || movieService.isValidSlug(slug) || isUpcoming;
         if (!isValid) {
-            return ResponseEntity.status(302)
-                    .header("Location", "/")
-                    .build();
+            Resource notFoundPage = new ClassPathResource("static/error/html/error.html");
+            if (notFoundPage.exists()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
+                        .body(notFoundPage);
+            }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
         try {

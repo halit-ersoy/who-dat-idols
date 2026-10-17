@@ -20,28 +20,23 @@ public class CustomErrorController implements ErrorController {
         Object status = request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
 
         try {
-            if (status != null) {
-                Integer statusCode = Integer.valueOf(status.toString());
-                if (statusCode == 404) {
-                    return "redirect:/";
-                }
-            }
-
             Resource htmlPage = new ClassPathResource("static/error/html/error.html");
             if (!htmlPage.exists()) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
 
-            HttpStatus httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+            HttpStatus httpStatus = HttpStatus.NOT_FOUND;
             if (status != null) {
-                httpStatus = HttpStatus.valueOf(Integer.parseInt(status.toString()));
+                try {
+                    httpStatus = HttpStatus.valueOf(Integer.parseInt(status.toString()));
+                } catch (Exception ignored) {}
             }
 
             return ResponseEntity.status(httpStatus)
                     .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
                     .body(htmlPage);
         } catch (Exception e) {
-            return ResponseEntity.status(500).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }

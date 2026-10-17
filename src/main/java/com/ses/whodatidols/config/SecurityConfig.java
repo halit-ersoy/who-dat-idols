@@ -32,7 +32,7 @@ public class SecurityConfig {
                                                 org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
                                 .csrf(csrf -> csrf.disable())
                                 .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers("/sitemap.xml", "/robots.txt").permitAll()
+                                                .requestMatchers("/sitemap.xml", "/sitemap-*.xml", "/robots.txt").permitAll()
                                                 .requestMatchers("/admin/users", "/admin/ban-user",
                                                                 "/admin/update-role", "/admin/delete-user",
                                                                 "/admin/messages/**")

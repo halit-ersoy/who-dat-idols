@@ -34,7 +34,8 @@ public class CacheService {
                 "videoDetails",
                 "resolvedSlugs",
                 "similarContent",
-                "featuredContent");
+                "featuredContent",
+                "sitemaps");
 
         logger.info("Evicting content caches for instant update...");
         for (String cacheName : cachesToEvict) {

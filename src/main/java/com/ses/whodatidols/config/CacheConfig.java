@@ -37,7 +37,8 @@ public class CacheConfig {
     @CacheEvict(value = {
             "updateNotes",
             "calendar",
-            "announcements"
+            "announcements",
+            "sitemaps"
     }, allEntries = true)
     @Scheduled(fixedRateString = "${cache.static.ttl:43200000}") // 43200000 ms = 12 hours
     public void evictStaticCaches() {
