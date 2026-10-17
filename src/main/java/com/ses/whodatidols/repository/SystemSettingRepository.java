@@ -45,11 +45,11 @@ public class SystemSettingRepository {
             if (count == null || count == 0) {
                 logger.info("Creating SystemSettings table...");
                 jdbcTemplate.execute("""
-                        CREATE TABLE SystemSettings (\
-                            SettingKey NVARCHAR(50) PRIMARY KEY,\
-                            SettingValue NVARCHAR(MAX),\
-                            Description NVARCHAR(255)\
-                        )\
+                        CREATE TABLE SystemSettings (
+                            SettingKey NVARCHAR(50) PRIMARY KEY,
+                            SettingValue NVARCHAR(MAX),
+                            Description NVARCHAR(255)
+                        )
                         """);
             }
         } catch (Exception e) {
@@ -66,6 +66,30 @@ public class SystemSettingRepository {
                     IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Upcoming' AND COLUMN_NAME = 'Genre')
                     BEGIN
                         ALTER TABLE Upcoming ADD Genre NVARCHAR(50) DEFAULT 'Normal';
+                    END
+                    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Upcoming' AND COLUMN_NAME = 'Summary')
+                    BEGIN
+                        ALTER TABLE Upcoming ADD Summary NVARCHAR(MAX) NULL;
+                    END
+                    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Upcoming' AND COLUMN_NAME = 'ReleaseYear')
+                    BEGIN
+                        ALTER TABLE Upcoming ADD ReleaseYear NVARCHAR(50) NULL;
+                    END
+                    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Upcoming' AND COLUMN_NAME = 'Country')
+                    BEGIN
+                        ALTER TABLE Upcoming ADD Country NVARCHAR(50) NULL;
+                    END
+                    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Upcoming' AND COLUMN_NAME = 'Language')
+                    BEGIN
+                        ALTER TABLE Upcoming ADD [Language] NVARCHAR(50) NULL;
+                    END
+                    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Upcoming' AND COLUMN_NAME = 'Duration')
+                    BEGIN
+                        ALTER TABLE Upcoming ADD Duration NVARCHAR(50) NULL;
+                    END
+                    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Upcoming' AND COLUMN_NAME = 'Slug')
+                    BEGIN
+                        ALTER TABLE Upcoming ADD Slug NVARCHAR(255) NULL;
                     END
                     """);
 
@@ -87,7 +111,7 @@ public class SystemSettingRepository {
                             u.Category,
                             ISNULL(u.isBl, 0) AS isBl,
                             ISNULL(u.Genre, 'Normal') AS Genre,
-                            COALESCE(s.slug, m.slug, e.slug) AS slug
+                            COALESCE(u.Slug, s.slug, m.slug, e.slug) AS slug
                         FROM Upcoming u
                         LEFT JOIN Series s ON u.ReferenceId = s.ID
                         LEFT JOIN Movie m ON u.ReferenceId = m.ID
@@ -113,7 +137,7 @@ public class SystemSettingRepository {
                     END
                     """);
 
-            // Ensure AddUpcomingCustom Stored Procedure supports genre and isBl
+            // Ensure AddUpcomingCustom Stored Procedure supports all 15 parameters
             jdbcTemplate.execute("""
                     CREATE OR ALTER PROCEDURE [dbo].[AddUpcomingCustom]
                         @ID UNIQUEIDENTIFIER,
@@ -124,12 +148,44 @@ public class SystemSettingRepository {
                         @ReferenceId UNIQUEIDENTIFIER = NULL,
                         @Category NVARCHAR(50) = 'Upcoming',
                         @Genre NVARCHAR(50) = 'Normal',
-                        @IsBl BIT = 0
+                        @IsBl BIT = 0,
+                        @Summary NVARCHAR(MAX) = NULL,
+                        @ReleaseYear NVARCHAR(50) = NULL,
+                        @Country NVARCHAR(50) = NULL,
+                        @Language NVARCHAR(50) = NULL,
+                        @Duration NVARCHAR(50) = NULL,
+                        @Slug NVARCHAR(255) = NULL
                     AS
                     BEGIN
                         SET NOCOUNT ON;
-                        INSERT INTO Upcoming (ID, Name, [Type], [Status], [Datetime], ReferenceId, Category, Genre, isBl)
-                        VALUES (@ID, @Name, @Type, @Status, @Datetime, @ReferenceId, @Category, @Genre, @IsBl);
+                        INSERT INTO Upcoming (ID, Name, [Type], [Status], [Datetime], ReferenceId, Category, Genre, isBl, Summary, ReleaseYear, Country, [Language], Duration, Slug)
+                        VALUES (@ID, @Name, @Type, @Status, @Datetime, @ReferenceId, @Category, @Genre, @IsBl, @Summary, @ReleaseYear, @Country, @Language, @Duration, @Slug);
+                    END
+                    """);
+
+            // Ensure DeleteUpcoming Stored Procedure exists and supports comment transfer
+            jdbcTemplate.execute("""
+                    CREATE OR ALTER PROCEDURE [dbo].[DeleteUpcoming]
+                        @ID UNIQUEIDENTIFIER,
+                        @TargetContentId UNIQUEIDENTIFIER = NULL
+                    AS
+                    BEGIN
+                        SET NOCOUNT ON;
+
+                        UPDATE c
+                        SET c.ContentId = COALESCE(
+                            @TargetContentId,
+                            u.ReferenceId,
+                            (SELECT TOP 1 e.ID FROM Episode e JOIN Series s ON e.SeriesId = s.ID WHERE s.Name = u.Name AND e.SeasonNumber = 1 AND e.EpisodeNumber = 1),
+                            (SELECT TOP 1 s.ID FROM Series s WHERE s.Name = u.Name),
+                            (SELECT TOP 1 m.ID FROM Movie m WHERE m.Name = u.Name),
+                            c.ContentId
+                        )
+                        FROM Comments c
+                        JOIN Upcoming u ON c.ContentId = u.ID
+                        WHERE u.ID = @ID;
+
+                        DELETE FROM Upcoming WHERE ID = @ID;
                     END
                     """);
         } catch (Exception e) {
@@ -140,7 +196,7 @@ public class SystemSettingRepository {
     private void initDefaults() {
         if (getValue("announcement_text") == null) {
             // Default announcement text from existing HTML
-            String defaultText = "DUYURU: Sitemizde bulunan \"BL Drama Turkey, Asian Drama House, Asian Drama Alarm\" içerikleri kendi sitemiz ve ortak olduğumuz sitelerdir. Çalma veya emek hırsızlığı gibi bir durum yoktur!";
+            String defaultText = "DUYURU: Sitemizde bulunan \\\"BL Drama Turkey, Asian Drama House, Asian Drama Alarm\\\" içerikleri kendi sitemiz ve ortak olduğumuz sitelerdir. Çalma veya emek hırsızlığı gibi bir durum yoktur!";
             setValue("announcement_text", defaultText);
         }
 
