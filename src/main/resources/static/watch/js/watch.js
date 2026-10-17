@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Check if content is upcoming
     let detailsData = null;
     try {
-        const dRes = await fetch(`/api/video/details?id=${videoId}`);
+        const dRes = await fetch(`/api/video/details?id=${encodeURIComponent(videoId)}`);
         if (dRes.ok) {
             detailsData = await dRes.json();
         }
@@ -47,19 +47,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (detailsData && detailsData.isUpcoming) {
+        const canonicalId = detailsData.id || videoId;
         setupUpcomingWatch(detailsData);
-        initListModal(videoId);
-        initCommentsSection(videoId);
-        initContentDetails(videoId);
-        initSimilarContent(videoId);
+        initListModal(canonicalId);
+        initCommentsSection(canonicalId);
+        initContentDetails(canonicalId);
+        initSimilarContent(canonicalId);
 
-        // Auto-expand content details section for upcoming content
-        const detailsToggle = document.querySelector('.details-toggle');
-        const detailsContainer = document.querySelector('.content-details-container');
-        if (detailsToggle && detailsContainer) {
-            detailsToggle.classList.add('active');
-            detailsContainer.classList.add('open');
-        }
+
 
         document.querySelectorAll('.rec-card .rec-image img').forEach(img => {
             handleImageSkeleton(img);
@@ -85,9 +80,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function incrementViewCount(id) {
     try {
-        const res = await fetch(`/api/video/increment-view?id=${id}`, { method: 'POST' });
+        const res = await fetch(`/api/video/increment-view?id=${encodeURIComponent(id)}`, { method: 'POST' });
         if (!res.ok) console.error('View count artırılamadı');
-    } catch (err) {\n        console.error('View count hatası:', err);
+    } catch (err) {
+        console.error('View count hatası:', err);
     }
 }
 

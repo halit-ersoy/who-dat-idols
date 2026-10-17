@@ -36,10 +36,18 @@ public class CommentRepository {
         }
     }
 
-    public List<CommentViewModel> getComments(UUID contentId, String cookie) {
+    public List<CommentViewModel> getComments(String idOrSlug, String cookie) {
         String sql = """
                     WITH TargetContent AS (
                         SELECT TRY_CAST(? AS UNIQUEIDENTIFIER) AS ID
+                        UNION
+                        SELECT ID FROM Upcoming WHERE Slug = ? OR Name = ?
+                        UNION
+                        SELECT ID FROM Series WHERE Slug = ? OR Name = ?
+                        UNION
+                        SELECT ID FROM Movie WHERE Slug = ? OR Name = ?
+                        UNION
+                        SELECT ID FROM Episode WHERE Slug = ? OR Name = ?
                     ),
                     RelatedIDs AS (
                         SELECT ID FROM TargetContent WHERE ID IS NOT NULL
@@ -98,10 +106,14 @@ public class CommentRepository {
                 """;
 
         List<CommentViewModel> allComments = jdbcTemplate.query(sql, new CommentRowMapper(),
-                contentId != null ? contentId.toString() : null,
+                idOrSlug, idOrSlug, idOrSlug, idOrSlug, idOrSlug, idOrSlug, idOrSlug, idOrSlug, idOrSlug,
                 cookie);
 
         return buildCommentTree(allComments);
+    }
+
+    public List<CommentViewModel> getComments(UUID contentId, String cookie) {
+        return getComments(contentId != null ? contentId.toString() : null, cookie);
     }
 
     private List<CommentViewModel> buildCommentTree(List<CommentViewModel> flatComments) {
@@ -128,14 +140,20 @@ public class CommentRepository {
         return roots;
     }
 
-    public void addComment(UUID contentId, String cookie, String text, boolean spoiler, UUID parentId) {
+    public void addComment(String idOrSlug, String cookie, String text, boolean spoiler, UUID parentId) {
         String sql = """
                     INSERT INTO Comments (ContentId, UserId, Text, Spoiler, Nickname, ParentId, IsApproved, CreatedAt)
-                    SELECT ?, ID, ?, ?, Nickname, ?, CASE WHEN Role IN ('ADMIN', 'SUPER_ADMIN', 'KURUCU', 'GELISTIRICI') THEN 1 ELSE 0 END, ?
+                    SELECT COALESCE(
+                        TRY_CAST(? AS UNIQUEIDENTIFIER),
+                        (SELECT TOP 1 ID FROM Upcoming WHERE Slug = ? OR Name = ?),
+                        (SELECT TOP 1 ID FROM Episode WHERE Slug = ? OR Name = ?),
+                        (SELECT TOP 1 ID FROM Series WHERE Slug = ? OR Name = ?),
+                        (SELECT TOP 1 ID FROM Movie WHERE Slug = ? OR Name = ?)
+                    ), ID, ?, ?, Nickname, TRY_CAST(? AS UNIQUEIDENTIFIER), CASE WHEN Role IN ('ADMIN', 'SUPER_ADMIN', 'KURUCU', 'GELISTIRICI') THEN 1 ELSE 0 END, ?
                     FROM Person WHERE ID = [dbo].[ResolveUserIdByCookie](TRY_CAST(? AS UNIQUEIDENTIFIER)) AND isBanned = 0
                 """;
         int affected = jdbcTemplate.update(sql,
-                contentId.toString(),
+                idOrSlug, idOrSlug, idOrSlug, idOrSlug, idOrSlug, idOrSlug, idOrSlug, idOrSlug, idOrSlug,
                 text,
                 spoiler,
                 parentId != null ? parentId.toString() : null,
@@ -145,6 +163,10 @@ public class CommentRepository {
         if (affected == 0) {
             throw new RuntimeException("Unauthorized or Banned");
         }
+    }
+
+    public void addComment(UUID contentId, String cookie, String text, boolean spoiler, UUID parentId) {
+        addComment(contentId != null ? contentId.toString() : null, cookie, text, spoiler, parentId);
     }
 
     public List<CommentViewModel> getPendingComments() {
@@ -332,6 +354,11 @@ public class CommentRepository {
             vm.setLikeCount(rs.getInt("LikeCount"));
             vm.setLikedByCurrentUser(rs.getInt("isLiked") > 0);
             vm.setAuthor(rs.getInt("isAuthor") > 0);
+
+            try {
+                vm.setApproved(rs.getBoolean("IsApproved"));
+            } catch (SQLException ignored) {
+            }
 
             try {
                 String authorIdStr = rs.getString("authorId");

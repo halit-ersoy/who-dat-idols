@@ -38,6 +38,7 @@ import javax.imageio.ImageIO;
 import com.ses.whodatidols.viewmodel.PageResponse;
 
 @Controller
+@SuppressWarnings({"SqlResolve", "SqlNoDataSourceInspection"})
 public class HomeController {
     private final PersonRepository personRepository;
     private final MovieService movieService;
@@ -292,6 +293,71 @@ public class HomeController {
             @PathVariable("slug") String slug,
             @CookieValue(name = "wdiAuth", required = false) String cookie) {
 
+        // If requested slug is actually a UUID, redirect 301 to its clean slug
+        UUID uid = null;
+        try {
+            uid = UUID.fromString(slug);
+        } catch (Exception ignored) {
+        }
+
+        if (uid != null) {
+            // 1. Check Upcoming by UUID
+            try {
+                List<Map<String, Object>> rows = jdbcTemplate.queryForList(
+                        "SELECT TOP 1 Slug, Name, isBl FROM Upcoming WHERE ID = ?", uid);
+                if (!rows.isEmpty()) {
+                    Map<String, Object> row = rows.get(0);
+                    Boolean isBl = (Boolean) row.get("isBl");
+                    String targetSlug = (String) row.get("Slug");
+                    if (targetSlug == null || targetSlug.isBlank()) {
+                        String name = (String) row.get("Name");
+                        if (name != null) {
+                            targetSlug = name.toLowerCase(java.util.Locale.ROOT)
+                                    .replaceAll("[^a-z0-9]+", "-")
+                                    .replaceAll("^-+|-+$", "");
+                        }
+                    }
+                    if (targetSlug != null && !targetSlug.isBlank()) {
+                        if (Boolean.TRUE.equals(isBl)) {
+                            String target = "https://bldizi.com/" + targetSlug;
+                            if (cookie != null && !cookie.isBlank()) {
+                                try {
+                                    String ticket = personRepository.createSsoTicket(cookie.trim(), "bldizi");
+                                    if (ticket != null) {
+                                        target = "https://bldizi.com/sso-login?ticket=" + ticket + "&redirect=/" + targetSlug;
+                                    }
+                                } catch (Exception ignored) {}
+                            }
+                            return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY).header(HttpHeaders.LOCATION, target).build();
+                        }
+                        return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+                                .header(HttpHeaders.LOCATION, "/" + targetSlug)
+                                .build();
+                    }
+                }
+            } catch (Exception ignored) {}
+
+            // 2. Check Movie by UUID
+            try {
+                String movieSlug = jdbcTemplate.queryForObject("SELECT TOP 1 slug FROM Movie WHERE ID = ?", String.class, uid);
+                if (movieSlug != null && !movieSlug.isBlank()) {
+                    return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+                            .header(HttpHeaders.LOCATION, "/" + movieSlug)
+                            .build();
+                }
+            } catch (Exception ignored) {}
+
+            // 3. Check Episode by UUID
+            try {
+                String epSlug = jdbcTemplate.queryForObject("SELECT TOP 1 slug FROM Episode WHERE ID = ?", String.class, uid);
+                if (epSlug != null && !epSlug.isBlank()) {
+                    return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+                            .header(HttpHeaders.LOCATION, "/" + epSlug)
+                            .build();
+                }
+            } catch (Exception ignored) {}
+        }
+
         // If content is BL/GL, redirect to bldizi.com with SSO ticket
         if (seriesService.isBlSlug(slug) || movieService.isBlSlug(slug)) {
             String target = "https://bldizi.com/" + slug;
@@ -312,48 +378,20 @@ public class HomeController {
         // Check if content is Upcoming
         boolean isUpcoming = false;
         try {
-            UUID uid = null;
-            try {
-                uid = UUID.fromString(slug);
-            } catch (Exception ignored) {
-            }
-
-            if (uid != null) {
-                Integer count = jdbcTemplate.queryForObject(
-                        "SELECT COUNT(*) FROM Upcoming WHERE ID = ?",
-                        Integer.class, uid);
-                if (count != null && count > 0) {
-                    isUpcoming = true;
-                }
-            } else {
-                Integer count = jdbcTemplate.queryForObject(
-                        "SELECT COUNT(*) FROM Upcoming WHERE slug = ? OR name = ?",
-                        Integer.class, slug, slug);
-                if (count != null && count > 0) {
-                    isUpcoming = true;
-                }
+            Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM Upcoming WHERE slug = ? OR name = ? OR LOWER(REPLACE(REPLACE(name, ' ', '-'), '''', '')) = ?",
+                    Integer.class, slug, slug, slug);
+            if (count != null && count > 0) {
+                isUpcoming = true;
             }
         } catch (Exception ignored) {
         }
 
         if (isUpcoming) {
             try {
-                UUID uid = null;
-                try {
-                    uid = UUID.fromString(slug);
-                } catch (Exception ignored) {
-                }
-
-                Boolean isBl;
-                if (uid != null) {
-                    isBl = jdbcTemplate.queryForObject(
-                            "SELECT TOP 1 isBl FROM Upcoming WHERE ID = ?",
-                            Boolean.class, uid);
-                } else {
-                    isBl = jdbcTemplate.queryForObject(
-                            "SELECT TOP 1 isBl FROM Upcoming WHERE slug = ? OR name = ?",
-                            Boolean.class, slug, slug);
-                }
+                Boolean isBl = jdbcTemplate.queryForObject(
+                        "SELECT TOP 1 isBl FROM Upcoming WHERE slug = ? OR name = ? OR LOWER(REPLACE(REPLACE(name, ' ', '-'), '''', '')) = ?",
+                        Boolean.class, slug, slug, slug);
 
                 if (Boolean.TRUE.equals(isBl)) {
                     String target = "https://bldizi.com/" + slug;
@@ -393,7 +431,7 @@ public class HomeController {
         }
     }
 
-    @PostMapping("/register")
+        @PostMapping("/register")
     @ResponseBody
     public ResponseEntity<?> registerUser(@RequestBody Person person, HttpServletResponse response) {
         try {

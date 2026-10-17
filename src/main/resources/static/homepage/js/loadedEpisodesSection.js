@@ -1,4 +1,4 @@
-﻿import { handleImageSkeleton } from '../../elements/userLogged.js';
+import { handleImageSkeleton } from '../../elements/userLogged.js';
 
 export function initLoadedEpisodesSection() {
     const carousel = document.getElementById('upcoming-episodes-carousel');
@@ -93,6 +93,19 @@ export function initLoadedEpisodesSection() {
                 console.error('Error fetching loaded episodes:', error);
                 return [];
             });
+    }
+
+    function slugify(text) {
+        if (!text) return '';
+        return text.toString().toLowerCase()
+            .replace(/ğ/g, 'g')
+            .replace(/ü/g, 'u')
+            .replace(/ş/g, 's')
+            .replace(/ı/g, 'i')
+            .replace(/ö/g, 'o')
+            .replace(/ç/g, 'c')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
     }
 
     function formatDateTime(dateString) {
@@ -198,7 +211,8 @@ export function initLoadedEpisodesSection() {
                 const card = document.createElement('div');
                 card.className = 'upcoming-card';
                 card.onclick = () => {
-                    const path = `/${episode.slug || episode.upcomingId || episode.ID}`;
+                    const slug = episode.slug || slugify(episode.name) || episode.upcomingId || episode.ID;
+                    const path = `/${slug}`;
                     window.location.href = path;
                 };
 

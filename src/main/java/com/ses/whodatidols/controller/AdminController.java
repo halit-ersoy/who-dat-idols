@@ -553,7 +553,9 @@ public class AdminController {
 
             @RequestParam(value = "movieType", required = false) String movieType,
 
-            @RequestParam(value = "castData", required = false) String castData) {
+            @RequestParam(value = "castData", required = false) String castData,
+
+            @RequestParam(value = "upcomingPublishId", required = false) UUID upcomingPublishId) {
 
         try {
 
@@ -581,10 +583,22 @@ public class AdminController {
 
                 movieService.saveImageFromUrl(movie.getId(), imageUrl);
 
+            } else if ((image == null || image.isEmpty()) && upcomingPublishId != null) {
+
+                copyUpcomingPosterToTarget(upcomingPublishId, movie.getId(), "Movie");
+
             }
 
             if (castData != null && !castData.isEmpty()) {
                 castSyncService.saveCastFromJson(movie.getId(), "movie", castData);
+            }
+
+            if (upcomingPublishId != null) {
+                jdbcTemplate.update("EXEC DeleteUpcoming ?, ?", upcomingPublishId, movie.getId());
+                if (cacheManager != null) {
+                    org.springframework.cache.Cache c = cacheManager.getCache("loadedEpisodes");
+                    if (c != null) c.clear();
+                }
             }
 
             return ResponseEntity.ok("{\"id\": \"" + movie.getId() + "\", \"message\": \"Film başarıyla işlendi.\"}");
@@ -825,7 +839,9 @@ public class AdminController {
 
             @RequestParam(value = "isAdult", defaultValue = "false") boolean isAdult,
 
-            @RequestParam(value = "castData", required = false) String castData) {
+            @RequestParam(value = "castData", required = false) String castData,
+
+            @RequestParam(value = "upcomingPublishId", required = false) UUID upcomingPublishId) {
 
         try {
 
@@ -876,6 +892,23 @@ public class AdminController {
             if (actualSeriesId == null) {
                 Series p = seriesService.findSeriesByName(seriesInfo.getName());
                 if (p != null) actualSeriesId = p.getId();
+            }
+
+            if (existingSeriesId == null && (image == null || image.isEmpty()) && upcomingPublishId != null && actualSeriesId != null) {
+                copyUpcomingPosterToTarget(upcomingPublishId, actualSeriesId, "SoapOpera");
+            }
+
+            if (upcomingPublishId != null) {
+                UUID targetId = episodeId != null ? episodeId : actualSeriesId;
+                if (targetId != null) {
+                    jdbcTemplate.update("EXEC DeleteUpcoming ?, ?", upcomingPublishId, targetId);
+                } else {
+                    jdbcTemplate.update("EXEC DeleteUpcoming ?", upcomingPublishId);
+                }
+                if (cacheManager != null) {
+                    org.springframework.cache.Cache c = cacheManager.getCache("loadedEpisodes");
+                    if (c != null) c.clear();
+                }
             }
 
             return ResponseEntity.ok("{\"id\": \"" + episodeId + "\", \"seriesId\": \"" + (actualSeriesId != null ? actualSeriesId.toString() : "") + "\", \"message\": \"Bölüm başarıyla işlendi (S"
@@ -1730,6 +1763,28 @@ public class AdminController {
 
 
 
+
+    private void copyUpcomingPosterToTarget(UUID upcomingId, UUID targetId, String targetType) {
+        if (upcomingId == null || targetId == null) return;
+        try {
+            Path upcomingBase = Paths.get(upcomingPath).toAbsolutePath().normalize();
+            Path targetBase = Paths.get("Movie".equalsIgnoreCase(targetType) ? moviesPath : soapOperasPath).toAbsolutePath().normalize();
+            if (!Files.exists(targetBase)) {
+                Files.createDirectories(targetBase);
+            }
+            String[] extensions = { ".jpg", ".jpeg", ".png", ".webp" };
+            for (String ext : extensions) {
+                Path src = upcomingBase.resolve(upcomingId.toString() + ext);
+                if (Files.exists(src)) {
+                    Files.copy(src, targetBase.resolve(targetId.toString() + ext), StandardCopyOption.REPLACE_EXISTING);
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Upcoming resmi kopyalanamadı: " + e.getMessage());
+        }
+    }
+
     // UPCOMING MANAGEMENT
 
     @GetMapping("/upcoming")
@@ -1941,9 +1996,15 @@ public class AdminController {
             @CacheEvict(value = "loadedEpisodes", allEntries = true)
     })
     @DeleteMapping("/delete-upcoming")
-    public ResponseEntity<String> deleteUpcoming(@RequestParam("id") UUID id) {
+    public ResponseEntity<String> deleteUpcoming(
+            @RequestParam("id") UUID id,
+            @RequestParam(value = "targetContentId", required = false) UUID targetContentId) {
         try {
-            jdbcTemplate.update("EXEC DeleteUpcoming ?", id);
+            if (targetContentId != null) {
+                jdbcTemplate.update("EXEC DeleteUpcoming ?, ?", id, targetContentId);
+            } else {
+                jdbcTemplate.update("EXEC DeleteUpcoming ?", id);
+            }
             if (cacheManager != null) {
                 org.springframework.cache.Cache c = cacheManager.getCache("loadedEpisodes");
                 if (c != null) c.clear();

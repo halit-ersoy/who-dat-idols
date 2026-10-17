@@ -481,6 +481,18 @@
                     <form id="movieForm" class="admin-form">
                         <input type="hidden" id="movieId">
                         <input type="hidden" id="movieCastData">
+                        <input type="hidden" id="movieUpcomingPublishId">
+
+                        <div id="movieUpcomingPublishBanner" class="alert-banner" style="display: none; background: rgba(33, 150, 243, 0.15); border: 1px solid #2196f3; color: #fff; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; align-items: center; justify-content: space-between; gap: 15px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <i class="fas fa-bullhorn" style="color: #64b5f6; font-size: 1.3rem;"></i>
+                                <div>
+                                    <div style="font-weight: 700; color: #90caf9;">Yüklenecek Bölümden Yayınlanıyor</div>
+                                    <div style="font-size: 0.9rem; color: rgba(255,255,255,0.85);"><span id="movieUpcomingPublishTitle" style="font-weight: 600; color: #fff;"></span> içeriği yayınlandığında Yüklenecek Bölümler listesinden otomatik olarak kaldırılacaktır.</div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="cancelMovieUpcomingPublish()" style="white-space: nowrap;"><i class="fas fa-times"></i> Vazgeç</button>
+                        </div>
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="movieName">Film Adı</label>
@@ -682,6 +694,18 @@
                         <input type="hidden" id="seriesId">
                         <input type="hidden" id="episodeId">
                         <input type="hidden" id="seriesCastData">
+                        <input type="hidden" id="seriesUpcomingPublishId">
+
+                        <div id="seriesUpcomingPublishBanner" class="alert-banner" style="display: none; background: rgba(33, 150, 243, 0.15); border: 1px solid #2196f3; color: #fff; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; align-items: center; justify-content: space-between; gap: 15px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <i class="fas fa-bullhorn" style="color: #64b5f6; font-size: 1.3rem;"></i>
+                                <div>
+                                    <div style="font-weight: 700; color: #90caf9;">Yüklenecek Bölümden Yayınlanıyor</div>
+                                    <div style="font-size: 0.9rem; color: rgba(255,255,255,0.85);"><span id="seriesUpcomingPublishTitle" style="font-weight: 600; color: #fff;"></span> içeriği yayınlandığında Yüklenecek Bölümler listesinden otomatik olarak kaldırılacaktır.</div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="cancelSeriesUpcomingPublish()" style="white-space: nowrap;"><i class="fas fa-times"></i> Vazgeç</button>
+                        </div>
 
                         <div id="seriesFormStatus" class="form-status-badge" style="display: none;">
                             <span>İşlem: <strong id="seriesFormModeText">-</strong></span>

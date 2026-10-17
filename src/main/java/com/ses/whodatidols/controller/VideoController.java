@@ -29,6 +29,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/video")
+@SuppressWarnings({"SqlResolve", "SqlNoDataSourceInspection"})
 public class VideoController {
     private final VideoService videoService;
     private final TranscodingService transcodingService;
@@ -58,91 +59,125 @@ public class VideoController {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    @GetMapping("/details")
-    @Cacheable("videoDetails")
-    public ResponseEntity<Map<String, Object>> getDetails(@RequestParam("id") UUID id) {
-        Map<String, Object> response = new HashMap<>();
+    private UUID resolveToUuid(String idOrSlug) {
+        if (idOrSlug == null || idOrSlug.isBlank()) return null;
+        try {
+            return UUID.fromString(idOrSlug.trim());
+        } catch (IllegalArgumentException ignored) {}
 
-        // 1. Try Episode
-        Episode episode = seriesRepository.findEpisodeById(id);
-        if (episode != null && !episode.isHidden()) {
-            response.put("title", episode.getName());
-            response.put("duration", episode.getDurationMinutes() > 0 ? episode.getDurationMinutes() + " dk" : "");
-            response.put("year", episode.getReleaseYear());
-            // Descriptions are usually on the Series parent, but maybe Episode has it?
-            // Model doesn't have description for Episode.
-            // Let's fetch parent series for category and description
-            List<CastMemberDto> cast = Collections.emptyList();
-            try {
-                var series = seriesRepository.findSeriesByEpisodeId(id);
-                if (series != null) {
-                    if (series.isBl()) {
-                        return ResponseEntity.notFound().build();
-                    }
-                    // Update title to be "Series Name - X. Sezon Y. Bölüm"
-                    String formattedTitle = series.getName() + " - " + episode.getSeasonNumber() + ". Sezon "
-                            + episode.getEpisodeNumber() + ". Bölüm";
-                    response.put("title", formattedTitle);
+        String slug = idOrSlug.trim();
+        Episode ep = seriesRepository.findEpisodeBySlug(slug);
+        if (ep != null) return ep.getId();
 
-                    response.put("plot", series.getSummary());
-                    response.put("genres",
-                            series.getCategory() != null ? List.of(series.getCategory().split(",")) : List.of());
-                    response.put("language", series.getLanguage());
-                    response.put("country", series.getCountry());
-                    response.put("finalStatus", series.getFinalStatus());
-                    response.put("adult", episode.isAdult());
+        Movie m = movieRepository.findMovieBySlug(slug);
+        if (m != null) return m.getId();
 
-                    cast = actorRepository.getCastForSeries(series.getId());
-                    if (cast.isEmpty()) {
-                        cast = castSyncService.syncCastForSeries(series);
-                    }
-                } else {
-                    response.put("title", episode.getName());
-                    response.put("adult", episode.isAdult());
-                }
-            } catch (Exception e) {
-                // Ignore if parent not found
-            }
-
-            response.put("cast", cast);
-            response.put("season", episode.getSeasonNumber());
-            response.put("episode", episode.getEpisodeNumber());
-            response.put("type", "episode");
-            response.put("seriesId", episode.getSeriesId()); // Added for frontend list check
-            response.put("slug", episode.getSlug());
-            return ResponseEntity.ok(response);
+        Series s = seriesRepository.findSeriesBySlug(slug);
+        if (s != null) {
+            UUID firstEpId = seriesRepository.findFirstEpisodeIdBySeriesId(s.getId());
+            return firstEpId != null ? firstEpId : s.getId();
         }
 
-        // 2. Try Movie
-        Movie movie = movieRepository.findMovieById(id);
-        if (movie != null && !movie.isHidden()) {
-            if (movie.isBl()) {
-                return ResponseEntity.notFound().build();
+        try {
+            List<Map<String, Object>> upcomings = jdbcTemplate.queryForList(
+                    "SELECT TOP 1 ID FROM Upcoming WHERE ID = TRY_CAST(? AS UNIQUEIDENTIFIER) OR Slug = ? OR Name = ? OR LOWER(REPLACE(REPLACE(Name, ' ', '-'), '''', '')) = ?",
+                    slug, slug, slug, slug);
+            if (!upcomings.isEmpty()) {
+                Object uidObj = upcomings.get(0).get("ID");
+                if (uidObj instanceof UUID) return (UUID) uidObj;
+                if (uidObj != null) return UUID.fromString(uidObj.toString());
             }
-            response.put("title", movie.getName());
-            response.put("duration", movie.getDurationMinutes() > 0 ? movie.getDurationMinutes() + " dk" : "");
-            response.put("year", movie.getReleaseYear());
-            response.put("plot", movie.getSummary());
-            response.put("genres",
-                    movie.getCategory() != null ? List.of(movie.getCategory().split(",")) : List.of());
-            response.put("language", movie.getLanguage());
-            response.put("country", movie.getCountry());
-            response.put("type", "movie");
-            response.put("slug", movie.getSlug());
-            response.put("adult", movie.isAdult());
+        } catch (Exception ignored) {}
 
-            List<CastMemberDto> movieCast = actorRepository.getCastForMovie(movie.getId());
-            if (movieCast.isEmpty()) {
-                movieCast = castSyncService.syncCastForMovie(movie);
+        return null;
+    }
+
+    @GetMapping("/details")
+    @Cacheable("videoDetails")
+    public ResponseEntity<Map<String, Object>> getDetails(@RequestParam("id") String idOrSlug) {
+        Map<String, Object> response = new HashMap<>();
+        UUID id = resolveToUuid(idOrSlug);
+
+        // 1. Try Episode
+        if (id != null) {
+            Episode episode = seriesRepository.findEpisodeById(id);
+            if (episode != null && !episode.isHidden()) {
+                response.put("title", episode.getName());
+                response.put("duration", episode.getDurationMinutes() > 0 ? episode.getDurationMinutes() + " dk" : "");
+                response.put("year", episode.getReleaseYear());
+                List<CastMemberDto> cast = Collections.emptyList();
+                try {
+                    var series = seriesRepository.findSeriesByEpisodeId(id);
+                    if (series != null) {
+                        if (series.isBl()) {
+                            return ResponseEntity.notFound().build();
+                        }
+                        String formattedTitle = series.getName() + " - " + episode.getSeasonNumber() + ". Sezon "
+                                + episode.getEpisodeNumber() + ". Bölüm";
+                        response.put("title", formattedTitle);
+
+                        response.put("plot", series.getSummary());
+                        response.put("genres",
+                                series.getCategory() != null ? List.of(series.getCategory().split(",")) : List.of());
+                        response.put("language", series.getLanguage());
+                        response.put("country", series.getCountry());
+                        response.put("finalStatus", series.getFinalStatus());
+                        response.put("adult", episode.isAdult());
+
+                        cast = actorRepository.getCastForSeries(series.getId());
+                        if (cast.isEmpty()) {
+                            cast = castSyncService.syncCastForSeries(series);
+                        }
+                    } else {
+                        response.put("title", episode.getName());
+                        response.put("adult", episode.isAdult());
+                    }
+                } catch (Exception e) {
+                    // Ignore if parent not found
+                }
+
+                response.put("cast", cast);
+                response.put("season", episode.getSeasonNumber());
+                response.put("episode", episode.getEpisodeNumber());
+                response.put("type", "episode");
+                response.put("seriesId", episode.getSeriesId());
+                response.put("slug", episode.getSlug());
+                return ResponseEntity.ok(response);
             }
-            response.put("cast", movieCast);
-            return ResponseEntity.ok(response);
+
+            // 2. Try Movie
+            Movie movie = movieRepository.findMovieById(id);
+            if (movie != null && !movie.isHidden()) {
+                if (movie.isBl()) {
+                    return ResponseEntity.notFound().build();
+                }
+                response.put("title", movie.getName());
+                response.put("duration", movie.getDurationMinutes() > 0 ? movie.getDurationMinutes() + " dk" : "");
+                response.put("year", movie.getReleaseYear());
+                response.put("plot", movie.getSummary());
+                response.put("genres",
+                        movie.getCategory() != null ? List.of(movie.getCategory().split(",")) : List.of());
+                response.put("language", movie.getLanguage());
+                response.put("country", movie.getCountry());
+                response.put("type", "movie");
+                response.put("slug", movie.getSlug());
+                response.put("adult", movie.isAdult());
+
+                List<CastMemberDto> movieCast = actorRepository.getCastForMovie(movie.getId());
+                if (movieCast.isEmpty()) {
+                    movieCast = castSyncService.syncCastForMovie(movie);
+                }
+                response.put("cast", movieCast);
+                return ResponseEntity.ok(response);
+            }
         }
 
         // 3. Try Upcoming
         try {
             List<Map<String, Object>> upcomings = jdbcTemplate.queryForList(
-                    "SELECT TOP 1 * FROM Upcoming WHERE ID = ?", id);
+                    "SELECT TOP 1 * FROM Upcoming WHERE ID = TRY_CAST(? AS UNIQUEIDENTIFIER) OR Slug = ? OR Name = ? OR LOWER(REPLACE(REPLACE(Name, ' ', '-'), '''', '')) = ?",
+                    idOrSlug, idOrSlug, idOrSlug, idOrSlug);
+
             if (!upcomings.isEmpty()) {
                 Map<String, Object> u = upcomings.get(0);
                 boolean isBl = Boolean.TRUE.equals(u.get("isBl"));
@@ -150,21 +185,28 @@ public class VideoController {
                     return ResponseEntity.notFound().build();
                 }
 
-                String title = (String) u.get("name");
-                String upcomingType = (String) u.get("type");
+                String title = u.containsKey("Name") && u.get("Name") != null ? (String) u.get("Name") : (String) u.get("name");
+                String upcomingType = u.containsKey("Type") && u.get("Type") != null ? (String) u.get("Type") : (String) u.get("type");
                 boolean isMovie = upcomingType != null && upcomingType.equalsIgnoreCase("Movie");
                 Object refIdObj = u.get("ReferenceId");
                 UUID refId = refIdObj != null ? UUID.fromString(refIdObj.toString()) : null;
 
-                response.put("id", u.get("ID").toString());
+                Object upcomingIdObj = u.get("ID");
+                String upcomingIdStr = upcomingIdObj != null ? upcomingIdObj.toString() : "";
+
+                response.put("id", upcomingIdStr);
                 response.put("title", title);
                 response.put("name", title);
                 response.put("type", "upcoming");
                 response.put("isUpcoming", true);
                 response.put("category", upcomingType);
-                response.put("datetime", u.get("datetime") != null ? u.get("datetime").toString() : "");
-                response.put("status", u.get("status"));
-                response.put("poster", "/media/image/" + u.get("ID"));
+
+                Object dtObj = u.containsKey("Datetime") && u.get("Datetime") != null ? u.get("Datetime") : u.get("datetime");
+                response.put("datetime", dtObj != null ? dtObj.toString() : "");
+
+                Object stObj = u.containsKey("Status") && u.get("Status") != null ? u.get("Status") : u.get("status");
+                response.put("status", stObj);
+                response.put("poster", "/media/image/" + upcomingIdStr);
                 response.put("adult", false);
 
                 String plot = (String) u.get("Summary");
@@ -245,9 +287,9 @@ public class VideoController {
                         genres = List.of(isMovie ? "Film" : "Dizi");
                     }
                 }
-                if (year == null && u.get("datetime") != null) {
+                if (year == null && dtObj != null) {
                     try {
-                        java.sql.Timestamp ts = (java.sql.Timestamp) u.get("datetime");
+                        java.sql.Timestamp ts = (java.sql.Timestamp) dtObj;
                         year = ts.toInstant().atZone(java.time.ZoneId.systemDefault()).getYear();
                     } catch (Exception ignored) {}
                 }
@@ -257,7 +299,7 @@ public class VideoController {
                 response.put("country", country != null ? country : "");
                 response.put("language", language != null ? language : "");
                 response.put("duration", duration != null ? duration : "");
-                response.put("slug", slug != null ? slug : id.toString());
+                response.put("slug", slug != null ? slug : upcomingIdStr);
                 response.put("genres", genres);
                 response.put("cast", cast);
 
@@ -311,11 +353,11 @@ public class VideoController {
             // Check Upcoming by ID
             try {
                 List<Map<String, Object>> upcomings = jdbcTemplate.queryForList(
-                        "SELECT TOP 1 ID, isBl FROM Upcoming WHERE ID = ?", id);
+                        "SELECT TOP 1 ID, isBl FROM Upcoming WHERE ID = TRY_CAST(? AS UNIQUEIDENTIFIER)", slug);
                 if (!upcomings.isEmpty()) {
                     boolean isBl = Boolean.TRUE.equals(upcomings.get(0).get("isBl"));
                     if (!isBl) {
-                        return ResponseEntity.ok(Map.of("id", id.toString(), "type", "upcoming"));
+                        return ResponseEntity.ok(Map.of("id", upcomings.get(0).get("ID").toString(), "type", "upcoming"));
                     }
                 }
             } catch (Exception ignored) {
@@ -360,7 +402,8 @@ public class VideoController {
         // 4. Check Upcoming by slug or name
         try {
             List<Map<String, Object>> upcomings = jdbcTemplate.queryForList(
-                    "SELECT TOP 1 ID, isBl FROM Upcoming WHERE slug = ? OR name = ?", slug, slug);
+                    "SELECT TOP 1 ID, isBl FROM Upcoming WHERE Slug = ? OR Name = ? OR LOWER(REPLACE(REPLACE(Name, ' ', '-'), '''', '')) = ?",
+                    slug, slug, slug);
             if (!upcomings.isEmpty()) {
                 boolean isBl = Boolean.TRUE.equals(upcomings.get(0).get("isBl"));
                 if (!isBl) {
@@ -384,36 +427,44 @@ public class VideoController {
 
     @CacheEvict(value = { "weeklyBestMovies", "weeklyBestSeries" }, allEntries = true)
     @PostMapping("/increment-view")
-    public ResponseEntity<?> incrementViewCount(@RequestParam("id") UUID id) {
+    public ResponseEntity<?> incrementViewCount(@RequestParam("id") String idOrSlug) {
         try {
+            UUID id = resolveToUuid(idOrSlug);
+            if (id == null) {
+                return ResponseEntity.ok().build();
+            }
             videoService.incrementViewCount(id);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Failed to increment view count");
+            return ResponseEntity.ok().build();
         }
     }
 
     @GetMapping("/similar")
     @Cacheable("similarContent")
-    public ResponseEntity<List<Map<String, Object>>> getSimilarContent(@RequestParam("id") UUID id) {
-        // If the ID is an episode, we should find recommendations based on the series
+    public ResponseEntity<List<Map<String, Object>>> getSimilarContent(@RequestParam("id") String idOrSlug) {
+        UUID id = resolveToUuid(idOrSlug);
         UUID contentIdForSearch = id;
-        Episode episode = seriesRepository.findEpisodeById(id);
-        if (episode != null && episode.getSeriesId() != null) {
-            contentIdForSearch = episode.getSeriesId();
+
+        if (id != null) {
+            Episode episode = seriesRepository.findEpisodeById(id);
+            if (episode != null && episode.getSeriesId() != null) {
+                contentIdForSearch = episode.getSeriesId();
+            }
         }
 
         // Check if Upcoming
         try {
             List<Map<String, Object>> upcomings = jdbcTemplate.queryForList(
-                    "SELECT TOP 1 * FROM Upcoming WHERE ID = ?", id);
+                    "SELECT TOP 1 * FROM Upcoming WHERE ID = TRY_CAST(? AS UNIQUEIDENTIFIER) OR Slug = ? OR Name = ? OR LOWER(REPLACE(REPLACE(Name, ' ', '-'), '''', '')) = ?",
+                    idOrSlug, idOrSlug, idOrSlug, idOrSlug);
             if (!upcomings.isEmpty()) {
                 Map<String, Object> u = upcomings.get(0);
                 Object refIdObj = u.get("ReferenceId");
                 if (refIdObj != null) {
                     contentIdForSearch = UUID.fromString(refIdObj.toString());
                 } else {
-                    String name = (String) u.get("name");
+                    String name = u.containsKey("Name") && u.get("Name") != null ? (String) u.get("Name") : (String) u.get("name");
                     Series s = seriesRepository.findSeriesByName(name);
                     if (s != null) {
                         contentIdForSearch = s.getId();
@@ -426,6 +477,10 @@ public class VideoController {
                 }
             }
         } catch (Exception ignored) {
+        }
+
+        if (contentIdForSearch == null) {
+            return ResponseEntity.ok(contentRepository.findTopPopularContent(12));
         }
 
         List<Map<String, Object>> similar = contentRepository.findSimilarContent(contentIdForSearch, 12);

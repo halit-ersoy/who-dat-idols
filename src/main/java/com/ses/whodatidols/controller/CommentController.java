@@ -21,7 +21,7 @@ public class CommentController {
 
     @GetMapping("/comments")
     public ResponseEntity<List<CommentViewModel>> getComments(
-            @RequestParam("id") UUID id,
+            @RequestParam("id") String id,
             @CookieValue(value = "wdiAuth", required = false) String cookie) {
         try {
             return ResponseEntity.ok(commentRepository.getComments(id, cookie));
@@ -32,7 +32,7 @@ public class CommentController {
 
     @PostMapping("/comment")
     public ResponseEntity<Void> addComment(
-            @RequestParam("id") UUID id,
+            @RequestParam("id") String id,
             @RequestParam(value = "spoiler", defaultValue = "false") boolean spoiler,
             @RequestParam(value = "parentId", required = false) UUID parentId,
             @RequestBody String text,
@@ -68,10 +68,7 @@ public class CommentController {
             commentRepository.likeComment(commentId, cookie);
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
-            if (e.getMessage() != null && e.getMessage().contains("Unauthorized or Banned")) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
@@ -88,14 +85,11 @@ public class CommentController {
 
         try {
             boolean deleted = commentRepository.deleteComment(commentId, cookie);
-            if (!deleted) {
-                // If deletion failed, it's either because:
-                // 1. Comment doesn't exist (handled by queryForObject exception in repo)
-                // 2. User doesn't own it
-                // We'll return 403 as the most likely security reason if authorization failed.
+            if (deleted) {
+                return ResponseEntity.ok().build();
+            } else {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
-            return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

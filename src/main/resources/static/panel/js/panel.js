@@ -1229,6 +1229,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (document.getElementById('movieCastData') && document.getElementById('movieCastData').value) {
                 formData.append('castData', document.getElementById('movieCastData').value);
             }
+            const movieUpId = document.getElementById('movieUpcomingPublishId') ? document.getElementById('movieUpcomingPublishId').value : '';
+            if (movieUpId) {
+                formData.append('upcomingPublishId', movieUpId);
+            }
 
             movieSubmitBtn.innerText = "KONTROL EDİLİYOR...";
             movieSubmitBtn.disabled = true;
@@ -1323,6 +1327,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             if (data.id) await saveExternalSources(data.id, 'movie');
                         } catch (e) { console.error("Source save error:", e); } // Keep original error logging
                         resetMovieForm(); fetchMovies();
+                        if (typeof fetchUpcoming === 'function') fetchUpcoming();
                     });
                 }).catch(err => {
                     alert("Hata: " + err.message);
@@ -1456,6 +1461,10 @@ document.addEventListener('DOMContentLoaded', function () {
         movieForm.reset();
         if (document.getElementById('movieCastData')) document.getElementById('movieCastData').value = '';
         movieIdInput.value = "";
+        const movieUpBanner = document.getElementById('movieUpcomingPublishBanner');
+        if (movieUpBanner) movieUpBanner.style.display = 'none';
+        const movieUpId = document.getElementById('movieUpcomingPublishId');
+        if (movieUpId) movieUpId.value = '';
         document.getElementById('movieSourcesList').innerHTML = '';
         movieSubmitBtn.innerText = "FİLMİ KAYDET";
         movieSubmitBtn.classList.add('btn-primary');
@@ -1752,6 +1761,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (document.getElementById('seriesCastData') && document.getElementById('seriesCastData').value) {
                         formData.append('castData', document.getElementById('seriesCastData').value);
                     }
+                    const seriesUpId = document.getElementById('seriesUpcomingPublishId') ? document.getElementById('seriesUpcomingPublishId').value : '';
+                    if (seriesUpId) {
+                        formData.append('upcomingPublishId', seriesUpId);
+                    }
                 } else {
                     formData.append('existingSeriesId', currentSeriesId);
                 }
@@ -1810,6 +1823,7 @@ document.addEventListener('DOMContentLoaded', function () {
             alert(`Tebrikler! Toplam ${total} adet bölüm başarıyla eklendi.`);
             resetSeriesForm();
             fetchSeries();
+            if (typeof fetchUpcoming === 'function') fetchUpcoming();
             if (currentSeriesId) {
                 setTimeout(() => {
                     const groups = document.querySelectorAll('#seriesAccordion .series-group');
@@ -2815,6 +2829,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (document.getElementById('seriesCastData')) document.getElementById('seriesCastData').value = '';
         seriesIdInput.value = "";
         episodeIdInput.value = "";
+        const seriesUpBanner = document.getElementById('seriesUpcomingPublishBanner');
+        if (seriesUpBanner) seriesUpBanner.style.display = 'none';
+        const seriesUpId = document.getElementById('seriesUpcomingPublishId');
+        if (seriesUpId) seriesUpId.value = '';
 
         document.getElementById('seriesFormStatus').style.display = 'none';
         document.getElementById('seriesFormModeText').innerText = "-";
@@ -3571,7 +3589,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         <td>${platformBadge}</td>
                         <td>${new Date(item.datetime).toLocaleString('tr-TR')}</td>
                         <td>
-                            <button class="btn btn-sm btn-danger" onclick='deleteUpcoming("${item.upcomingId}")'><i class="fas fa-trash"></i> SİL</button>
+                            <div style="display: flex; gap: 6px; align-items: center;">
+                                <button class="btn btn-sm btn-success" onclick='publishUpcoming(${JSON.stringify(item).replace(/'/g, "&#39;")})'><i class="fas fa-upload"></i> YAYINLA</button>
+                                <button class="btn btn-sm btn-danger" onclick='deleteUpcoming("${item.upcomingId}")'><i class="fas fa-trash"></i> SİL</button>
+                            </div>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -3715,6 +3736,123 @@ document.addEventListener('DOMContentLoaded', function () {
             alert("Kaynaklar kaydedilirken bir hata oluştu. Lütfen konsolu kontrol edin.");
         }
     }
+
+    window.publishUpcoming = function (item) {
+        if (!item) return;
+
+        const isMovie = item.type === 'Movie' || item.type === 'Film';
+        if (isMovie) {
+            document.querySelectorAll('.admin-section').forEach(s => s.style.display = 'none');
+            const movieSection = document.getElementById('movie-section');
+            if (movieSection) movieSection.style.display = 'block';
+            document.querySelectorAll('.admin-nav-item').forEach(b => b.classList.remove('active'));
+            const navBtn = document.querySelector('.admin-nav-item[data-target="movie-section"]');
+            if (navBtn) navBtn.classList.add('active');
+
+            resetMovieForm();
+
+            const upIdInput = document.getElementById('movieUpcomingPublishId');
+            if (upIdInput) upIdInput.value = item.upcomingId;
+            const upTitle = document.getElementById('movieUpcomingPublishTitle');
+            if (upTitle) upTitle.innerText = item.name || '';
+            const upBanner = document.getElementById('movieUpcomingPublishBanner');
+            if (upBanner) upBanner.style.display = 'flex';
+
+            const nameEl = document.getElementById('movieName');
+            if (nameEl) nameEl.value = item.name || '';
+            const summaryEl = document.getElementById('movieSummary');
+            if (summaryEl && item.summary) summaryEl.value = item.summary;
+            const yearEl = document.getElementById('movieYear');
+            if (yearEl && item.releaseYear) yearEl.value = item.releaseYear;
+            const langEl = document.getElementById('movieLanguage');
+            if (langEl && item.language) langEl.value = item.language;
+            const countryEl = document.getElementById('movieCountry');
+            if (countryEl && item.country) countryEl.value = item.country.toLowerCase();
+
+            const typeEl = document.getElementById('movieType');
+            if (typeEl) {
+                if (item.Genre === 'GL') typeEl.value = 'GL';
+                else if (item.Genre === 'BL' || item.isBl === 1 || item.isBl === true) typeEl.value = 'BL';
+                else typeEl.value = 'Film';
+            }
+
+            if (typeof updatePosterPreview === 'function') {
+                updatePosterPreview('movie', '/media/image/' + item.upcomingId);
+            }
+
+            const submitBtn = document.getElementById('movieSubmitBtn');
+            if (submitBtn) {
+                submitBtn.innerHTML = '<i class="fas fa-upload"></i> FİLMİ YAYINLA VE LİSTEDEN KALDIR';
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            document.querySelectorAll('.admin-section').forEach(s => s.style.display = 'none');
+            const seriesSection = document.getElementById('series-section');
+            if (seriesSection) seriesSection.style.display = 'block';
+            document.querySelectorAll('.admin-nav-item').forEach(b => b.classList.remove('active'));
+            const navBtn = document.querySelector('.admin-nav-item[data-target="series-section"]');
+            if (navBtn) navBtn.classList.add('active');
+
+            resetSeriesForm();
+
+            const upIdInput = document.getElementById('seriesUpcomingPublishId');
+            if (upIdInput) upIdInput.value = item.upcomingId;
+            const upTitle = document.getElementById('seriesUpcomingPublishTitle');
+            if (upTitle) upTitle.innerText = item.name || '';
+            const upBanner = document.getElementById('seriesUpcomingPublishBanner');
+            if (upBanner) upBanner.style.display = 'flex';
+
+            const nameEl = document.getElementById('seriesName');
+            if (nameEl) nameEl.value = item.name || '';
+            const summaryEl = document.getElementById('seriesSummary');
+            if (summaryEl && item.summary) summaryEl.value = item.summary;
+            const yearEl = document.getElementById('seriesYear');
+            if (yearEl && item.releaseYear) yearEl.value = item.releaseYear;
+            const langEl = document.getElementById('seriesLanguage');
+            if (langEl && item.language) langEl.value = item.language;
+            const countryEl = document.getElementById('seriesCountry');
+            if (countryEl && item.country) countryEl.value = item.country.toLowerCase();
+
+            const typeEl = document.getElementById('seriesType');
+            if (typeEl) {
+                if (item.Genre === 'GL') typeEl.value = 'GL';
+                else if (item.Genre === 'BL' || item.isBl === 1 || item.isBl === true) typeEl.value = 'BL';
+                else typeEl.value = 'Dizi';
+            }
+
+            if (typeof updatePosterPreview === 'function') {
+                updatePosterPreview('series', '/media/image/' + item.upcomingId);
+            }
+
+            const submitBtn = document.getElementById('seriesSubmitBtn');
+            if (submitBtn) {
+                submitBtn.innerHTML = '<i class="fas fa-upload"></i> DİZİYİ YAYINLA VE LİSTEDEN KALDIR';
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
+
+    window.cancelMovieUpcomingPublish = function () {
+        const upIdInput = document.getElementById('movieUpcomingPublishId');
+        if (upIdInput) upIdInput.value = '';
+        const upBanner = document.getElementById('movieUpcomingPublishBanner');
+        if (upBanner) upBanner.style.display = 'none';
+        const submitBtn = document.getElementById('movieSubmitBtn');
+        if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> FİLMİ KAYDET';
+        resetMovieForm();
+    };
+
+    window.cancelSeriesUpcomingPublish = function () {
+        const upIdInput = document.getElementById('seriesUpcomingPublishId');
+        if (upIdInput) upIdInput.value = '';
+        const upBanner = document.getElementById('seriesUpcomingPublishBanner');
+        if (upBanner) upBanner.style.display = 'none';
+        const submitBtn = document.getElementById('seriesSubmitBtn');
+        if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> BÖLÜMÜ / DİZİYİ KAYDET';
+        resetSeriesForm();
+    };
 
     window.deleteUpcoming = function (id) {
         if (!confirm("Bunu silmek istediğinize emin misiniz?")) return;
