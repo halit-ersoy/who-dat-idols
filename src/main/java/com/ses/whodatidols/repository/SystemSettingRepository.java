@@ -91,6 +91,14 @@ public class SystemSettingRepository {
                     BEGIN
                         ALTER TABLE Upcoming ADD Slug NVARCHAR(255) NULL;
                     END
+                    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Upcoming' AND COLUMN_NAME = 'CastData')
+                    BEGIN
+                        ALTER TABLE Upcoming ADD CastData NVARCHAR(MAX) NULL;
+                    END
+                    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Upcoming' AND COLUMN_NAME = 'Categories')
+                    BEGIN
+                        ALTER TABLE Upcoming ADD Categories NVARCHAR(500) NULL;
+                    END
                     """);
 
             // Ensure GetUpcoming Stored Procedure exists and returns correct items and slugs
@@ -109,6 +117,7 @@ public class SystemSettingRepository {
                             u.[Status] AS [status],
                             u.[Datetime] AS [datetime],
                             u.Category,
+                            u.Categories,
                             ISNULL(u.isBl, 0) AS isBl,
                             ISNULL(u.Genre, 'Normal') AS Genre,
                             COALESCE(u.Slug, s.slug, m.slug, e.slug) AS slug
@@ -137,7 +146,7 @@ public class SystemSettingRepository {
                     END
                     """);
 
-            // Ensure AddUpcomingCustom Stored Procedure supports all 15 parameters
+            // Ensure AddUpcomingCustom Stored Procedure supports all parameters
             jdbcTemplate.execute("""
                     CREATE OR ALTER PROCEDURE [dbo].[AddUpcomingCustom]
                         @ID UNIQUEIDENTIFIER,
@@ -154,12 +163,14 @@ public class SystemSettingRepository {
                         @Country NVARCHAR(50) = NULL,
                         @Language NVARCHAR(50) = NULL,
                         @Duration NVARCHAR(50) = NULL,
-                        @Slug NVARCHAR(255) = NULL
+                        @Slug NVARCHAR(255) = NULL,
+                        @CastData NVARCHAR(MAX) = NULL,
+                        @Categories NVARCHAR(500) = NULL
                     AS
                     BEGIN
                         SET NOCOUNT ON;
-                        INSERT INTO Upcoming (ID, Name, [Type], [Status], [Datetime], ReferenceId, Category, Genre, isBl, Summary, ReleaseYear, Country, [Language], Duration, Slug)
-                        VALUES (@ID, @Name, @Type, @Status, @Datetime, @ReferenceId, @Category, @Genre, @IsBl, @Summary, @ReleaseYear, @Country, @Language, @Duration, @Slug);
+                        INSERT INTO Upcoming (ID, Name, [Type], [Status], [Datetime], ReferenceId, Category, Genre, isBl, Summary, ReleaseYear, Country, [Language], Duration, Slug, CastData, Categories)
+                        VALUES (@ID, @Name, @Type, @Status, @Datetime, @ReferenceId, @Category, @Genre, @IsBl, @Summary, @ReleaseYear, @Country, @Language, @Duration, @Slug, @CastData, @Categories);
                     END
                     """);
 

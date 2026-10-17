@@ -3192,6 +3192,21 @@ document.addEventListener('DOMContentLoaded', function () {
             if (upImg) upImg.value = image;
             lastFetchedPosterUrl = image;
 
+            const upSummary = document.getElementById('upcomingSummary');
+            if (upSummary) upSummary.value = summary || '';
+            const upCats = document.getElementById('upcomingCategories');
+            if (upCats) upCats.value = category || '';
+            const upCast = document.getElementById('upcomingCastData');
+            if (upCast && data.cast) upCast.value = JSON.stringify(data.cast);
+            const upYear = document.getElementById('upcomingReleaseYear');
+            if (upYear) upYear.value = year || '';
+            const upCountry = document.getElementById('upcomingCountry');
+            if (upCountry) upCountry.value = mappedCountry || '';
+            const upLang = document.getElementById('upcomingLanguage');
+            if (upLang) upLang.value = mappedLang || '';
+            const upDur = document.getElementById('upcomingDuration');
+            if (upDur && data.runtime) upDur.value = data.runtime;
+
             const relDate = (source === 'tvmaze') ? data.premiered : (data.release_date || data.first_air_date);
             const upDate = document.getElementById('upcomingDatetime');
             if (upDate) {
@@ -3210,9 +3225,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const checkStr = ((name || '') + ' ' + (category || '') + ' ' + (summary || '')).toLowerCase();
             const genreSelect = document.getElementById('upcomingGenre');
             if (genreSelect) {
-                if (/(gl|girls'?\s*love|yuri)/i.test(checkStr)) {
+                if (/\b(gl|girls'?\s*love|yuri|lesbian)\b/i.test(checkStr)) {
                     genreSelect.value = 'GL';
-                } else if (/(bl|boys'?\s*love|yaoi)/i.test(checkStr)) {
+                } else if (/\b(bl|boys'?\s*love|yaoi|shounen\s*ai|gay|lgbt|lgbtq)\b/i.test(checkStr)) {
                     genreSelect.value = 'BL';
                 }
             }
@@ -3255,6 +3270,12 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (type === 'Upcoming' || type === 'upcoming') {
             document.getElementById('upcomingName').value = name;
             document.getElementById('upcomingImageUrl').value = image;
+            if (document.getElementById('upcomingSummary')) document.getElementById('upcomingSummary').value = summary || '';
+            if (document.getElementById('upcomingCastData') && data.cast) document.getElementById('upcomingCastData').value = JSON.stringify(data.cast);
+            if (document.getElementById('upcomingReleaseYear')) document.getElementById('upcomingReleaseYear').value = year || '';
+            if (document.getElementById('upcomingCountry')) document.getElementById('upcomingCountry').value = mappedCountry || '';
+            if (document.getElementById('upcomingLanguage')) document.getElementById('upcomingLanguage').value = mappedLang || '';
+            if (document.getElementById('upcomingDuration') && data.runtime) document.getElementById('upcomingDuration').value = data.runtime;
             updatePosterPreview('upcoming', image);
         }
     }
@@ -3443,6 +3464,12 @@ document.addEventListener('DOMContentLoaded', function () {
                                 // Also pre-fill the name field
                                 document.getElementById('upcomingName').value = item.Name || item.name;
                                 document.getElementById('upcomingType').value = (item.Type === 'Movie' ? 'Movie' : 'SoapOpera');
+                                if (document.getElementById('upcomingSummary') && (item.Summary || item.summary)) {
+                                    document.getElementById('upcomingSummary').value = item.Summary || item.summary;
+                                }
+                                if (document.getElementById('upcomingCategories')) {
+                                    document.getElementById('upcomingCategories').value = item.Category || item.category || '';
+                                }
                                 
                                 const isBlItem = item.isBl || item.SeriesType === 'BL' || item.MovieType === 'BL' || (item.category && item.category.includes('BL'));
                                 const isGlItem = item.SeriesType === 'GL' || item.MovieType === 'GL' || (item.category && item.category.includes('GL'));
@@ -3465,6 +3492,14 @@ document.addEventListener('DOMContentLoaded', function () {
             upcomingRefIdInput.value = '';
             upcomingRefTypeInput.value = '';
             upcomingRefDisplay.style.display = 'none';
+            if (document.getElementById('upcomingSummary')) document.getElementById('upcomingSummary').value = '';
+            if (document.getElementById('upcomingCategories')) document.getElementById('upcomingCategories').value = '';
+            if (document.getElementById('upcomingCastData')) document.getElementById('upcomingCastData').value = '';
+            if (document.getElementById('upcomingReleaseYear')) document.getElementById('upcomingReleaseYear').value = '';
+            if (document.getElementById('upcomingCountry')) document.getElementById('upcomingCountry').value = '';
+            if (document.getElementById('upcomingLanguage')) document.getElementById('upcomingLanguage').value = '';
+            if (document.getElementById('upcomingDuration')) document.getElementById('upcomingDuration').value = '';
+            if (document.getElementById('upcomingSlug')) document.getElementById('upcomingSlug').value = '';
         };
 
         // File selection UI handler for upcoming
@@ -3517,6 +3552,23 @@ document.addEventListener('DOMContentLoaded', function () {
             const refId = upcomingRefIdInput.value;
             if (refId) formData.append('referenceId', refId);
 
+            const summaryVal = document.getElementById('upcomingSummary') ? document.getElementById('upcomingSummary').value.trim() : '';
+            if (summaryVal) formData.append('summary', summaryVal);
+            const catsVal = document.getElementById('upcomingCategories') ? document.getElementById('upcomingCategories').value.trim() : '';
+            if (catsVal) formData.append('categories', catsVal);
+            const castVal = document.getElementById('upcomingCastData') ? document.getElementById('upcomingCastData').value.trim() : '';
+            if (castVal) formData.append('castData', castVal);
+            const yrVal = document.getElementById('upcomingReleaseYear') ? document.getElementById('upcomingReleaseYear').value.trim() : '';
+            if (yrVal) formData.append('releaseYear', yrVal);
+            const cntryVal = document.getElementById('upcomingCountry') ? document.getElementById('upcomingCountry').value.trim() : '';
+            if (cntryVal) formData.append('country', cntryVal);
+            const lngVal = document.getElementById('upcomingLanguage') ? document.getElementById('upcomingLanguage').value.trim() : '';
+            if (lngVal) formData.append('language', lngVal);
+            const durVal = document.getElementById('upcomingDuration') ? document.getElementById('upcomingDuration').value.trim() : '';
+            if (durVal) formData.append('duration', durVal);
+            const slgVal = document.getElementById('upcomingSlug') ? document.getElementById('upcomingSlug').value.trim() : '';
+            if (slgVal) formData.append('slug', slgVal);
+
             const imageFile = upcomingImageInput.files[0];
             const manualImageUrl = document.getElementById('upcomingImageUrl').value.trim();
 
@@ -3539,6 +3591,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     upcomingRefDisplay.style.display = 'none';
                     upcomingRefIdInput.value = '';
                     if (document.getElementById('upcomingImageUrl')) document.getElementById('upcomingImageUrl').value = '';
+                    if (document.getElementById('upcomingSummary')) document.getElementById('upcomingSummary').value = '';
+                    if (document.getElementById('upcomingCategories')) document.getElementById('upcomingCategories').value = '';
+                    if (document.getElementById('upcomingCastData')) document.getElementById('upcomingCastData').value = '';
+                    if (document.getElementById('upcomingReleaseYear')) document.getElementById('upcomingReleaseYear').value = '';
+                    if (document.getElementById('upcomingCountry')) document.getElementById('upcomingCountry').value = '';
+                    if (document.getElementById('upcomingLanguage')) document.getElementById('upcomingLanguage').value = '';
+                    if (document.getElementById('upcomingDuration')) document.getElementById('upcomingDuration').value = '';
+                    if (document.getElementById('upcomingSlug')) document.getElementById('upcomingSlug').value = '';
                     upcomingImageName.innerText = "Resim seçin veya sürükleyin";
                     document.getElementById('upcomingImageContainer').classList.remove('has-file');
                     updatePosterPreview('upcoming', null);

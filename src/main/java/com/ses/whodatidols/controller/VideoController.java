@@ -3,6 +3,8 @@ package com.ses.whodatidols.controller;
 import com.ses.whodatidols.model.CastMemberDto;
 import com.ses.whodatidols.repository.ActorRepository;
 import com.ses.whodatidols.service.CastSyncService;
+import com.ses.whodatidols.service.TmdbService;
+import com.ses.whodatidols.service.TvMazeService;
 import java.util.Collections;
 
 import com.ses.whodatidols.service.TranscodingService;
@@ -39,13 +41,18 @@ public class VideoController {
     private final AdRepository adRepository;
     private final ActorRepository actorRepository;
     private final CastSyncService castSyncService;
+    private final TmdbService tmdbService;
+    private final TvMazeService tvMazeService;
     private final SystemSettingRepository systemSettingRepository;
     private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
     public VideoController(VideoService videoService, TranscodingService transcodingService,
             MovieRepository movieRepository, SeriesRepository seriesRepository,
             ContentRepository contentRepository, AdRepository adRepository,
-            ActorRepository actorRepository, CastSyncService castSyncService, SystemSettingRepository systemSettingRepository,
+            ActorRepository actorRepository, CastSyncService castSyncService,
+            TmdbService tmdbService, TvMazeService tvMazeService,
+            SystemSettingRepository systemSettingRepository,
             org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
         this.videoService = videoService;
         this.transcodingService = transcodingService;
@@ -55,6 +62,8 @@ public class VideoController {
         this.adRepository = adRepository;
         this.actorRepository = actorRepository;
         this.castSyncService = castSyncService;
+        this.tmdbService = tmdbService;
+        this.tvMazeService = tvMazeService;
         this.systemSettingRepository = systemSettingRepository;
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -218,6 +227,16 @@ public class VideoController {
                 List<String> genres = new ArrayList<>();
                 List<CastMemberDto> cast = Collections.emptyList();
 
+                // If CastData column exists in Upcoming table, try parsing it
+                if (u.containsKey("CastData") && u.get("CastData") != null) {
+                    try {
+                        String cdStr = u.get("CastData").toString();
+                        if (!cdStr.isBlank()) {
+                            cast = objectMapper.readValue(cdStr, new com.fasterxml.jackson.core.type.TypeReference<List<CastMemberDto>>() {});
+                        }
+                    } catch (Exception ignored) {}
+                }
+
                 Series linkedSeries = null;
                 Movie linkedMovie = null;
 
@@ -254,9 +273,11 @@ public class VideoController {
                     if (linkedSeries.getCategory() != null && !linkedSeries.getCategory().isBlank()) {
                         genres = List.of(linkedSeries.getCategory().split(","));
                     }
-                    cast = actorRepository.getCastForSeries(linkedSeries.getId());
-                    if (cast.isEmpty()) {
-                        cast = castSyncService.syncCastForSeries(linkedSeries);
+                    if (cast == null || cast.isEmpty()) {
+                        cast = actorRepository.getCastForSeries(linkedSeries.getId());
+                        if (cast.isEmpty()) {
+                            cast = castSyncService.syncCastForSeries(linkedSeries);
+                        }
                     }
                 } else if (linkedMovie != null) {
                     if (plot == null || plot.isBlank()) plot = linkedMovie.getSummary();
@@ -270,9 +291,105 @@ public class VideoController {
                     if (linkedMovie.getCategory() != null && !linkedMovie.getCategory().isBlank()) {
                         genres = List.of(linkedMovie.getCategory().split(","));
                     }
-                    cast = actorRepository.getCastForMovie(linkedMovie.getId());
-                    if (cast.isEmpty()) {
-                        cast = castSyncService.syncCastForMovie(linkedMovie);
+                    if (cast == null || cast.isEmpty()) {
+                        cast = actorRepository.getCastForMovie(linkedMovie.getId());
+                        if (cast.isEmpty()) {
+                            cast = castSyncService.syncCastForMovie(linkedMovie);
+                        }
+                    }
+                }
+
+                // If plot or cast is still missing/placeholder, do on-the-fly fetch from TMDB or TVMaze!
+                if ((plot == null || plot.isBlank() || plot.contains("Bu yapım çok yakında") || cast == null || cast.isEmpty()) && title != null && !title.isBlank()) {
+                    try {
+                        String searchType = isMovie ? "movie" : "tv";
+                        List<Map<String, Object>> tmdbResults = tmdbService.search(title, searchType);
+                        if (tmdbResults != null && !tmdbResults.isEmpty()) {
+                            Map<String, Object> first = tmdbResults.get(0);
+                            if (plot == null || plot.isBlank() || plot.contains("Bu yapım çok yakında")) {
+                                String overview = (String) first.get("overview");
+                                if (overview != null && !overview.isBlank()) {
+                                    plot = overview;
+                                }
+                            }
+                            if (year == null) {
+                                String d = (String) first.get(isMovie ? "release_date" : "first_air_date");
+                                if (d != null && d.length() >= 4) {
+                                    year = d.substring(0, 4);
+                                }
+                            }
+                            if (country == null || country.isBlank()) {
+                                @SuppressWarnings("unchecked")
+                                List<String> oc = (List<String>) first.get("origin_country");
+                                if (oc != null && !oc.isEmpty()) {
+                                    country = oc.get(0);
+                                }
+                            }
+                            if (language == null || language.isBlank()) {
+                                language = (String) first.get("original_language");
+                            }
+                            if (cast == null || cast.isEmpty()) {
+                                Object tmdbIdObj = first.get("id");
+                                if (tmdbIdObj instanceof Number) {
+                                    int tmdbId = ((Number) tmdbIdObj).intValue();
+                                    List<CastMemberDto> fetchedCast = tmdbService.getCast(tmdbId, searchType);
+                                    if (fetchedCast != null && !fetchedCast.isEmpty()) {
+                                        cast = fetchedCast;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Try TVMaze fallback if still missing
+                        if ((plot == null || plot.isBlank() || plot.contains("Bu yapım çok yakında") || cast == null || cast.isEmpty()) && !isMovie) {
+                            List<Map<String, Object>> tvmazeResults = tvMazeService.searchSeries(title);
+                            if (tvmazeResults != null && !tvmazeResults.isEmpty()) {
+                                Map<String, Object> first = tvmazeResults.get(0);
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> show = first.containsKey("show") ? (Map<String, Object>) first.get("show") : first;
+                                if (plot == null || plot.isBlank() || plot.contains("Bu yapım çok yakında")) {
+                                    String sSummary = (String) show.get("summary");
+                                    if (sSummary != null && !sSummary.isBlank()) {
+                                        plot = sSummary.replaceAll("<[^>]*>", "").trim();
+                                    }
+                                }
+                                if (cast == null || cast.isEmpty()) {
+                                    Object tvmazeIdObj = show.get("id");
+                                    if (tvmazeIdObj instanceof Number) {
+                                        int tvmazeId = ((Number) tvmazeIdObj).intValue();
+                                        List<CastMemberDto> fetchedCast = tvMazeService.getShowCast(tvmazeId);
+                                        if (fetchedCast != null && !fetchedCast.isEmpty()) {
+                                            cast = fetchedCast;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Background persist so future loads are instant
+                        if (plot != null || (cast != null && !cast.isEmpty())) {
+                            final String pToSave = (plot != null && !plot.contains("Bu yapım çok yakında")) ? plot : null;
+                            final List<CastMemberDto> cToSave = cast;
+                            final String idToSave = upcomingIdStr;
+                            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                                try {
+                                    String cJson = (cToSave != null && !cToSave.isEmpty()) ?
+                                            objectMapper.writeValueAsString(cToSave) : null;
+                                    if (pToSave != null && cJson != null) {
+                                        jdbcTemplate.update("UPDATE Upcoming SET Summary = COALESCE(Summary, ?), CastData = COALESCE(CastData, ?) WHERE ID = ?",
+                                                pToSave, cJson, UUID.fromString(idToSave));
+                                    } else if (pToSave != null) {
+                                        jdbcTemplate.update("UPDATE Upcoming SET Summary = COALESCE(Summary, ?) WHERE ID = ?",
+                                                pToSave, UUID.fromString(idToSave));
+                                    } else if (cJson != null) {
+                                        jdbcTemplate.update("UPDATE Upcoming SET CastData = COALESCE(CastData, ?) WHERE ID = ?",
+                                                cJson, UUID.fromString(idToSave));
+                                    }
+                                } catch (Exception ignored) {}
+                            });
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Upcoming metadata on-the-fly fetch error: " + e.getMessage());
                     }
                 }
 
@@ -280,12 +397,22 @@ public class VideoController {
                     plot = "Bu yapım çok yakında Who Dat Idols platformunda yayınlanacaktır. Yayın tarihini ve geri sayımı takip edebilirsiniz.";
                 }
                 if (genres.isEmpty()) {
+                    List<String> list = new ArrayList<>();
+                    list.add(isMovie ? "Film" : "Dizi");
                     String g = (String) u.get("Genre");
                     if (g != null && !g.isBlank() && !g.equalsIgnoreCase("Normal")) {
-                        genres = List.of(isMovie ? "Film" : "Dizi", g);
-                    } else {
-                        genres = List.of(isMovie ? "Film" : "Dizi");
+                        list.add(g);
                     }
+                    String cats = (String) u.get("Categories");
+                    if (cats != null && !cats.isBlank()) {
+                        for (String c : cats.split(",")) {
+                            String trimmed = c.trim();
+                            if (!trimmed.isEmpty() && !list.contains(trimmed)) {
+                                list.add(trimmed);
+                            }
+                        }
+                    }
+                    genres = list;
                 }
                 if (year == null && dtObj != null) {
                     try {
@@ -300,8 +427,23 @@ public class VideoController {
                 response.put("language", language != null ? language : "");
                 response.put("duration", duration != null ? duration : "");
                 response.put("slug", slug != null ? slug : upcomingIdStr);
+                if (cast != null && !cast.isEmpty()) {
+                    for (CastMemberDto member : cast) {
+                        if (member.getActorId() == null && member.getName() != null && !member.getName().isBlank()) {
+                            try {
+                                UUID aId = actorRepository.findOrCreateActor(
+                                        member.getName(),
+                                        member.getPhotoUrl(),
+                                        member.getTmdbId(),
+                                        member.getTvmazeId());
+                                member.setActorId(aId);
+                            } catch (Exception ignored) {}
+                        }
+                    }
+                }
+
                 response.put("genres", genres);
-                response.put("cast", cast);
+                response.put("cast", cast != null ? cast : Collections.emptyList());
 
                 return ResponseEntity.ok(response);
             }
@@ -498,12 +640,12 @@ public class VideoController {
             return ResponseEntity.noContent().build();
         }
 
-        List<Ad> ads = adRepository.findVisible();
+        List<com.ses.whodatidols.model.Ad> ads = adRepository.findVisible();
         if (ads.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
         int randomIndex = new java.util.Random().nextInt(ads.size());
-        Ad selectedAd = ads.get(randomIndex);
+        com.ses.whodatidols.model.Ad selectedAd = ads.get(randomIndex);
         Map<String, Object> response = new HashMap<>();
         response.put("id", selectedAd.getId());
         response.put("name", selectedAd.getName());

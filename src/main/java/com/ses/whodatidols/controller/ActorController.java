@@ -24,7 +24,22 @@ public class ActorController {
         this.translationService = translationService;
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/resolve")
+    public ResponseEntity<Map<String, Object>> resolveActor(
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "tmdbId", required = false) Integer tmdbId,
+            @RequestParam(value = "photoUrl", required = false) String photoUrl) {
+        if ((name == null || name.isBlank()) && (tmdbId == null || tmdbId <= 0)) {
+            return ResponseEntity.badRequest().build();
+        }
+        UUID actorId = actorRepository.findOrCreateActor(name, photoUrl, tmdbId, null);
+        if (actorId != null) {
+            return getActorDetails(actorId);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/{id:[0-9a-fA-F\\-]{36}}")
     @Cacheable(value = "actorDetails", key = "#id")
     public ResponseEntity<Map<String, Object>> getActorDetails(@PathVariable("id") UUID id) {
         Actor actor = actorRepository.findById(id);

@@ -271,9 +271,10 @@ async function loadContentDetails(id) {
                     member.setAttribute('title', `${actor.name || 'Oyuncu'} detaylarını görüntüle`);
 
                     // Attach click handler to open actor details modal
-                    if (actor.actorId) {
+                    const canOpenModal = actor.actorId || actor.tmdbId || (actor.name && actor.name.trim().length > 0);
+                    if (canOpenModal) {
                         const triggerModal = () => {
-                            openActorModal(actor.actorId, actor.name, actor.photoUrl, actor.characterName);
+                            openActorModal(actor.actorId, actor.name, actor.photoUrl, actor.characterName, actor.tmdbId);
                         };
                         member.addEventListener('click', triggerModal);
                         member.addEventListener('keydown', (e) => {
@@ -377,7 +378,7 @@ function getOrCreateActorModal() {
     return overlay;
 }
 
-async function openActorModal(actorId, fallbackName, fallbackPhoto, contextCharacter) {
+async function openActorModal(actorId, fallbackName, fallbackPhoto, contextCharacter, tmdbId) {
     const overlay = getOrCreateActorModal();
     const modalBody = overlay.querySelector('#actorModalBody');
     const defaultAvatarSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='70' height='70' viewBox='0 0 24 24' fill='%23666'><path d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/></svg>";
@@ -408,7 +409,18 @@ async function openActorModal(actorId, fallbackName, fallbackPhoto, contextChara
     document.addEventListener('keydown', overlay._handleKeydown);
 
     try {
-        const res = await fetch(`/api/actor/${actorId}`);
+        let endpoint = '';
+        if (actorId) {
+            endpoint = `/api/actor/${actorId}`;
+        } else {
+            const params = new URLSearchParams();
+            if (fallbackName) params.append('name', fallbackName);
+            if (tmdbId) params.append('tmdbId', tmdbId);
+            if (fallbackPhoto) params.append('photoUrl', fallbackPhoto);
+            endpoint = `/api/actor/resolve?${params.toString()}`;
+        }
+
+        const res = await fetch(endpoint);
         if (!res.ok) {
             throw new Error('Actor info could not be retrieved');
         }

@@ -589,6 +589,15 @@ public class AdminController {
 
             }
 
+            if ((castData == null || castData.isEmpty()) && upcomingPublishId != null) {
+                try {
+                    List<String> cd = jdbcTemplate.queryForList("SELECT CastData FROM Upcoming WHERE ID = ?", String.class, upcomingPublishId);
+                    if (!cd.isEmpty() && cd.get(0) != null && !cd.get(0).isBlank()) {
+                        castData = cd.get(0);
+                    }
+                } catch (Exception ignored) {}
+            }
+
             if (castData != null && !castData.isEmpty()) {
                 castSyncService.saveCastFromJson(movie.getId(), "movie", castData);
             }
@@ -875,6 +884,15 @@ public class AdminController {
 
                 }
 
+            }
+
+            if ((castData == null || castData.isEmpty()) && upcomingPublishId != null) {
+                try {
+                    List<String> cd = jdbcTemplate.queryForList("SELECT CastData FROM Upcoming WHERE ID = ?", String.class, upcomingPublishId);
+                    if (!cd.isEmpty() && cd.get(0) != null && !cd.get(0).isBlank()) {
+                        castData = cd.get(0);
+                    }
+                } catch (Exception ignored) {}
             }
 
             if (castData != null && !castData.isEmpty()) {
@@ -1806,6 +1824,7 @@ public class AdminController {
             @RequestParam("name") String name,
             @RequestParam("type") String type,
             @RequestParam(value = "category", defaultValue = "Upcoming") String category,
+            @RequestParam(value = "categories", required = false) String categories,
             @RequestParam(value = "status", required = false, defaultValue = "") String status,
             @RequestParam("datetime") String datetimeStr,
             @RequestParam(value = "referenceId", required = false) String referenceId,
@@ -1816,6 +1835,7 @@ public class AdminController {
             @RequestParam(value = "language", required = false) String language,
             @RequestParam(value = "duration", required = false) String duration,
             @RequestParam(value = "slug", required = false) String slug,
+            @RequestParam(value = "castData", required = false) String castData,
             @RequestParam(value = "image", required = false) MultipartFile image,
             @RequestParam(value = "imageUrl", required = false) String imageUrl) {
 
@@ -1835,6 +1855,20 @@ public class AdminController {
             }
 
             boolean isBl = "BL".equalsIgnoreCase(genre) || "GL".equalsIgnoreCase(genre);
+            if (!isBl && categories != null && !categories.isBlank()) {
+                String lowerCat = categories.toLowerCase();
+                if (lowerCat.contains("bl") || lowerCat.contains("boys love") || lowerCat.contains("boy's love") || lowerCat.contains("yaoi") || lowerCat.contains("gay") || lowerCat.contains("lgbt")) {
+                    isBl = true;
+                    if ("Normal".equalsIgnoreCase(genre)) {
+                        genre = "BL";
+                    }
+                } else if (lowerCat.contains("gl") || lowerCat.contains("girls love") || lowerCat.contains("girl's love") || lowerCat.contains("yuri") || lowerCat.contains("lesbian")) {
+                    isBl = true;
+                    if ("Normal".equalsIgnoreCase(genre)) {
+                        genre = "GL";
+                    }
+                }
+            }
 
             if (uuid != null) {
                 try {
@@ -1872,7 +1906,7 @@ public class AdminController {
 
             UUID upcomingId = UUID.randomUUID();
 
-            jdbcTemplate.update("EXEC AddUpcomingCustom ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?",
+            jdbcTemplate.update("EXEC AddUpcomingCustom ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?",
                     upcomingId,
                     name,
                     type,
@@ -1887,7 +1921,9 @@ public class AdminController {
                     country,
                     language,
                     duration,
-                    slug);
+                    slug,
+                    castData,
+                    categories);
 
             if (image != null && !image.isEmpty()) {
                 saveUpcomingImage(upcomingId, image, uuid);
