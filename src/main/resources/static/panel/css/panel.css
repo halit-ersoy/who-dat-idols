@@ -3828,3 +3828,55 @@ input[type='checkbox']:hover {
 .ep-frame-item:hover {
     border-color: rgba(var(--primary-rgb), 0.4) !important;
 }
+
+
+/* ==========================================================================
+   REKLAM YONETIMI BUTONLARI & BILESENLERI
+   ========================================================================== */
+.btn-bulk-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    user-select: none;
+}
+
+.btn-bulk-open {
+    background: rgba(16, 185, 129, 0.14);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    color: #10b981;
+}
+
+.btn-bulk-open:hover {
+    background: #10b981;
+    border-color: #10b981;
+    color: #0c1417;
+    box-shadow: 0 4px 18px rgba(16, 185, 129, 0.45);
+    transform: translateY(-2px);
+}
+
+.btn-bulk-close {
+    background: rgba(239, 68, 68, 0.14);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #ef4444;
+}
+
+.btn-bulk-close:hover {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: #ffffff;
+    box-shadow: 0 4px 18px rgba(239, 68, 68, 0.45);
+    transform: translateY(-2px);
+}
+
+.btn-bulk-toggle:active {
+    transform: translateY(0);
+}

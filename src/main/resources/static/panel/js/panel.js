@@ -1186,7 +1186,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const statusEl = document.getElementById(`adStatus_${key}`);
         if (!statusEl) return;
         if (enabled) {
-            statusEl.innerText = 'A?IK';
+            statusEl.innerText = 'AÇIK';
             statusEl.style.color = '#10b981';
         } else {
             statusEl.innerText = 'KAPALI';

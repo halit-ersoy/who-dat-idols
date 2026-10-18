@@ -348,26 +348,26 @@
                 <div class="card" style="margin-bottom: 30px; position: relative; overflow: hidden; border: 1px solid rgba(var(--primary-rgb), 0.25); box-shadow: var(--shadow-card);">
                     <div style="position: absolute; top:0; left:0; width: 4px; height: 100%; background: linear-gradient(180deg, var(--primary), #3b82f6);"></div>
                     
-                    <div class="card-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="card-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+                        <div style="display: flex; align-items: center; gap: 14px;">
                             <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(var(--primary-rgb), 0.15); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
                                 <i class="fas fa-toggle-on"></i>
                             </div>
                             <div>
                                 <h2 style="margin: 0; font-size: 1.25rem; color: #fff;">
-                                    <i class="fas fa-layer-group"></i> Reklam T?rleri A?ma / Kapatma Kontrol?
+                                    <i class="fas fa-layer-group"></i> Reklam Türleri Açma / Kapatma Kontrolü
                                 </h2>
                                 <span style="font-size: 0.82rem; color: var(--text-dim);">
-                                    Sitede g?sterilen her bir reklam format?n? tek t?kla an?nda a??p kapatabilirsiniz.
+                                    Sitede gösterilen her bir reklam formatını tek tıkla anında açıp kapatabilirsiniz.
                                 </span>
                             </div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            <button type="button" class="btn btn-outline" onclick="toggleAllAds(true)" style="padding: 6px 14px; font-size: 0.8rem;">
-                                <i class="fas fa-check-double"></i> T?m?n? A?
+                            <button type="button" class="btn-bulk-toggle btn-bulk-open" onclick="toggleAllAds(true)">
+                                <i class="fas fa-check-circle"></i> Tümünü Aç
                             </button>
-                            <button type="button" class="btn btn-outline" onclick="toggleAllAds(false)" style="padding: 6px 14px; font-size: 0.8rem; border-color: rgba(239, 68, 68, 0.4); color: #ef4444;">
-                                <i class="fas fa-ban"></i> T?m?n? Kapat
+                            <button type="button" class="btn-bulk-toggle btn-bulk-close" onclick="toggleAllAds(false)">
+                                <i class="fas fa-power-off"></i> Tümünü Kapat
                             </button>
                         </div>
                     </div>
@@ -375,15 +375,15 @@
                     <div style="padding: 24px;">
                         <div class="ad-types-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px;">
                             
-                            <!-- 1. Video ?n? Reklamlar -->
+                            <!-- 1. Video Önü Reklamlar -->
                             <div class="ad-type-item" style="background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; transition: all 0.25s ease;">
                                 <div style="display: flex; align-items: flex-start; gap: 14px;">
                                     <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(59, 130, 246, 0.12); color: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; margin-top: 2px;">
                                         <i class="fas fa-play-circle"></i>
                                     </div>
                                     <div>
-                                        <div style="font-weight: 600; font-size: 0.98rem; color: #fff; margin-bottom: 4px;">Video ?n? Reklamlar</div>
-                                        <div style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.4;">Video ba?lamadan ?nce oynat?lan HLS video reklamlar.</div>
+                                        <div style="font-weight: 600; font-size: 0.98rem; color: #fff; margin-bottom: 4px;">Video Önü Reklamlar</div>
+                                        <div style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.4;">Video başlamadan önce oynatılan HLS video reklamlar.</div>
                                     </div>
                                 </div>
                                 <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0;">
@@ -403,7 +403,7 @@
                                     </div>
                                     <div>
                                         <div style="font-weight: 600; font-size: 0.98rem; color: #fff; margin-bottom: 4px;">Social Bar (Adsterra)</div>
-                                        <div style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.4;">?zleme ekran?nda sa? ?stte beliren bildirim/push reklam?.</div>
+                                        <div style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.4;">İzleme ekranında sağ üstte beliren bildirim/push reklamı.</div>
                                     </div>
                                 </div>
                                 <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0;">
@@ -415,15 +415,15 @@
                                 </div>
                             </div>
 
-                            <!-- 3. Kule (Skyscraper) Reklamlar? -->
+                            <!-- 3. Kule (Skyscraper) Reklamları -->
                             <div class="ad-type-item" style="background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; transition: all 0.25s ease;">
                                 <div style="display: flex; align-items: flex-start; gap: 14px;">
                                     <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(234, 179, 8, 0.12); color: #eab308; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; margin-top: 2px;">
                                         <i class="fas fa-columns"></i>
                                     </div>
                                     <div>
-                                        <div style="font-weight: 600; font-size: 0.98rem; color: #fff; margin-bottom: 4px;">Kule (Skyscraper) Reklamlar?</div>
-                                        <div style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.4;">?zleme sayfas?n?n sa? ve sol kenar?ndaki 160x600 dikey reklamlar.</div>
+                                        <div style="font-weight: 600; font-size: 0.98rem; color: #fff; margin-bottom: 4px;">Kule (Skyscraper) Reklamları</div>
+                                        <div style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.4;">İzleme sayfasının sağ ve sol kenarındaki 160x600 dikey reklamlar.</div>
                                     </div>
                                 </div>
                                 <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0;">
@@ -435,15 +435,15 @@
                                 </div>
                             </div>
 
-                            <!-- 4. Sayfa ??i Banner Reklamlar? -->
+                            <!-- 4. Sayfa İçi Banner Reklamları -->
                             <div class="ad-type-item" style="background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; transition: all 0.25s ease;">
                                 <div style="display: flex; align-items: flex-start; gap: 14px;">
                                     <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(16, 185, 129, 0.12); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; margin-top: 2px;">
                                         <i class="fas fa-rectangle-ad"></i>
                                     </div>
                                     <div>
-                                        <div style="font-weight: 600; font-size: 0.98rem; color: #fff; margin-bottom: 4px;">Sayfa ??i Banner Reklamlar?</div>
-                                        <div style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.4;">Oynat?c? alt? (728x90) ve b?l?m alt? (3x 300x250) banner kutular?.</div>
+                                        <div style="font-weight: 600; font-size: 0.98rem; color: #fff; margin-bottom: 4px;">Sayfa İçi Banner Reklamları</div>
+                                        <div style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.4;">Oynatıcı altı (728x90) ve bölüm altı (3x 300x250) banner kutuları.</div>
                                     </div>
                                 </div>
                                 <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0;">
@@ -463,7 +463,7 @@
                                     </div>
                                     <div>
                                         <div style="font-weight: 600; font-size: 0.98rem; color: #fff; margin-bottom: 4px;">Bize Destek Olun Butonu (Smartlink)</div>
-                                        <div style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.4;">?zleme sayfas? ?st men?s?ndeki ak?ll? reklam linki butonu.</div>
+                                        <div style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.4;">İzleme sayfası üst menüsündeki akıllı reklam linki butonu.</div>
                                     </div>
                                 </div>
                                 <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0;">
@@ -479,10 +479,10 @@
 
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 10px;">
                             <span style="font-size: 0.8rem; color: var(--text-muted);">
-                                <i class="fas fa-info-circle"></i> De?i?iklikler yap?ld??? anda an?nda otomatik olarak kaydedilir ve yay?na girer.
+                                <i class="fas fa-info-circle"></i> Değişiklikler yapıldığı anda anında otomatik olarak kaydedilir ve yayına girer.
                             </span>
                             <span id="adSettingsAutoSaveMsg" style="font-size: 0.85rem; color: var(--primary); font-weight: 600; display: none;">
-                                <i class="fas fa-check-circle"></i> Ayar Ba?ar?yla G?ncellendi
+                                <i class="fas fa-check-circle"></i> Ayar Başarıyla Güncellendi
                             </span>
                         </div>
                     </div>
