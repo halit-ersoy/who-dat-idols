@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', function () {
             } else if (targetId === 'ad-section' || targetId === 'commercial-section') {
                 fetchCommercials();
                 fetchCommercialProbability();
+                fetchAdFormatSettings();
             } else if (targetId === 'movie-section') {
                 fetchMovies();
             } else if (targetId === 'series-section') {
@@ -1169,6 +1170,85 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     };
     window.saveAdProbability = window.saveCommercialProbability;
+
+    /* ===========================================================
+       REKLAM TURLERI ACMA / KAPATMA YONETIMI
+       =========================================================== */
+    let currentAdSettings = {
+        videoAds: true,
+        socialBar: true,
+        skyscraperAds: true,
+        bannerAds: true,
+        supportButton: true
+    };
+
+    function updateAdStatusBadge(key, enabled) {
+        const statusEl = document.getElementById(`adStatus_${key}`);
+        if (!statusEl) return;
+        if (enabled) {
+            statusEl.innerText = 'A?IK';
+            statusEl.style.color = '#10b981';
+        } else {
+            statusEl.innerText = 'KAPALI';
+            statusEl.style.color = '#ef4444';
+        }
+    }
+
+    function fetchAdFormatSettings() {
+        fetch('/admin/settings/ads')
+            .then(res => {
+                if (!res.ok) throw new Error('Ayar alinamadi');
+                return res.json();
+            })
+            .then(data => {
+                currentAdSettings = Object.assign(currentAdSettings, data);
+                ['videoAds', 'socialBar', 'skyscraperAds', 'bannerAds', 'supportButton'].forEach(key => {
+                    const toggle = document.getElementById(`adToggle_${key}`);
+                    if (toggle) {
+                        toggle.checked = !!currentAdSettings[key];
+                        updateAdStatusBadge(key, toggle.checked);
+                    }
+                });
+            })
+            .catch(err => console.error('Reklam ayarlari alinamadi:', err));
+    }
+    window.fetchAdFormatSettings = fetchAdFormatSettings;
+
+    window.onAdToggleChange = function (key, checked) {
+        currentAdSettings[key] = checked;
+        updateAdStatusBadge(key, checked);
+        saveAdSettingsPayload({ [key]: checked });
+    };
+
+    window.toggleAllAds = function (enable) {
+        const keys = ['videoAds', 'socialBar', 'skyscraperAds', 'bannerAds', 'supportButton'];
+        const payload = {};
+        keys.forEach(k => {
+            currentAdSettings[k] = enable;
+            payload[k] = enable;
+            const toggle = document.getElementById(`adToggle_${k}`);
+            if (toggle) toggle.checked = enable;
+            updateAdStatusBadge(k, enable);
+        });
+        saveAdSettingsPayload(payload);
+    };
+
+    function saveAdSettingsPayload(payload) {
+        const msgEl = document.getElementById('adSettingsAutoSaveMsg');
+        fetch('/admin/settings/ads', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Kaydedilemedi');
+            if (msgEl) {
+                msgEl.style.display = 'inline-flex';
+                setTimeout(() => { msgEl.style.display = 'none'; }, 2500);
+            }
+        })
+        .catch(err => alert('Ayar kaydedilirken hata olustu: ' + err.message));
+    }
 
     /* ===========================================================
        FİLM YÖNETİMİ

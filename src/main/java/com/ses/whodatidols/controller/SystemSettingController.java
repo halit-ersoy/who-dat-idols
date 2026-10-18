@@ -17,6 +17,11 @@ public class SystemSettingController {
         this.repository = repository;
     }
 
+    @GetMapping("/api/settings/ads")
+    public ResponseEntity<Map<String, Object>> getAdSettings() {
+        return ResponseEntity.ok(repository.getAdSettings());
+    }
+
     /**
      * Public endpoint to get the current announcement.
      * Used by the Homepage.

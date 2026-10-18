@@ -244,6 +244,12 @@ public class SystemSettingRepository {
             // Default ad display probability to 30%
             setValue("ad_probability", "30");
         }
+
+        if (getValue("ad_video_enabled") == null) setValue("ad_video_enabled", "true");
+        if (getValue("ad_socialbar_enabled") == null) setValue("ad_socialbar_enabled", "true");
+        if (getValue("ad_skyscraper_enabled") == null) setValue("ad_skyscraper_enabled", "true");
+        if (getValue("ad_banner_enabled") == null) setValue("ad_banner_enabled", "true");
+        if (getValue("ad_support_btn_enabled") == null) setValue("ad_support_btn_enabled", "true");
     }
 
     public String getValue(String key) {
@@ -348,5 +354,64 @@ public class SystemSettingRepository {
     public void setAdProbability(int probability) {
         int clamped = Math.max(0, Math.min(100, probability));
         setValue("ad_probability", String.valueOf(clamped));
+    }
+
+    // ==========================================
+    // REKLAM TURLERI ACMA / KAPATMA AYARLARI
+    // ==========================================
+    public boolean isAdVideoEnabled() {
+        String val = getValue("ad_video_enabled");
+        return val == null || "true".equalsIgnoreCase(val.trim());
+    }
+
+    public void setAdVideoEnabled(boolean enabled) {
+        setValue("ad_video_enabled", String.valueOf(enabled));
+    }
+
+    public boolean isAdSocialBarEnabled() {
+        String val = getValue("ad_socialbar_enabled");
+        return val == null || "true".equalsIgnoreCase(val.trim());
+    }
+
+    public void setAdSocialBarEnabled(boolean enabled) {
+        setValue("ad_socialbar_enabled", String.valueOf(enabled));
+    }
+
+    public boolean isAdSkyscraperEnabled() {
+        String val = getValue("ad_skyscraper_enabled");
+        return val == null || "true".equalsIgnoreCase(val.trim());
+    }
+
+    public void setAdSkyscraperEnabled(boolean enabled) {
+        setValue("ad_skyscraper_enabled", String.valueOf(enabled));
+    }
+
+    public boolean isAdBannerEnabled() {
+        String val = getValue("ad_banner_enabled");
+        return val == null || "true".equalsIgnoreCase(val.trim());
+    }
+
+    public void setAdBannerEnabled(boolean enabled) {
+        setValue("ad_banner_enabled", String.valueOf(enabled));
+    }
+
+    public boolean isAdSupportBtnEnabled() {
+        String val = getValue("ad_support_btn_enabled");
+        return val == null || "true".equalsIgnoreCase(val.trim());
+    }
+
+    public void setAdSupportBtnEnabled(boolean enabled) {
+        setValue("ad_support_btn_enabled", String.valueOf(enabled));
+    }
+
+    public Map<String, Object> getAdSettings() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("videoAds", isAdVideoEnabled());
+        map.put("socialBar", isAdSocialBarEnabled());
+        map.put("skyscraperAds", isAdSkyscraperEnabled());
+        map.put("bannerAds", isAdBannerEnabled());
+        map.put("supportButton", isAdSupportBtnEnabled());
+        map.put("probability", getAdProbability());
+        return map;
     }
 }

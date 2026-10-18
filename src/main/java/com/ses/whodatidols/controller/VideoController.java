@@ -631,6 +631,9 @@ public class VideoController {
 
     @GetMapping({"/ad/random", "/commercial/random"})
     public ResponseEntity<Map<String, Object>> getRandomAd() {
+        if (!systemSettingRepository.isAdVideoEnabled()) {
+            return ResponseEntity.noContent().build();
+        }
         int probability = systemSettingRepository.getAdProbability();
         if (probability <= 0) {
             return ResponseEntity.noContent().build();

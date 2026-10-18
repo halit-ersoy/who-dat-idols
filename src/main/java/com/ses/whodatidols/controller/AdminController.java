@@ -2740,6 +2740,43 @@ public class AdminController {
 
 
 
+    @GetMapping({"/settings/ads", "/settings/ad-formats"})
+    public ResponseEntity<Map<String, Object>> getAdminAdSettings() {
+        return ResponseEntity.ok(systemSettingRepository.getAdSettings());
+    }
+
+    @PostMapping({"/settings/ads", "/settings/ad-formats"})
+    public ResponseEntity<String> updateAdminAdSettings(@RequestBody Map<String, Object> payload) {
+        try {
+            if (payload.containsKey("videoAds")) {
+                systemSettingRepository.setAdVideoEnabled(Boolean.parseBoolean(String.valueOf(payload.get("videoAds"))));
+            }
+            if (payload.containsKey("socialBar")) {
+                systemSettingRepository.setAdSocialBarEnabled(Boolean.parseBoolean(String.valueOf(payload.get("socialBar"))));
+            }
+            if (payload.containsKey("skyscraperAds")) {
+                systemSettingRepository.setAdSkyscraperEnabled(Boolean.parseBoolean(String.valueOf(payload.get("skyscraperAds"))));
+            }
+            if (payload.containsKey("bannerAds")) {
+                systemSettingRepository.setAdBannerEnabled(Boolean.parseBoolean(String.valueOf(payload.get("bannerAds"))));
+            }
+            if (payload.containsKey("supportButton")) {
+                systemSettingRepository.setAdSupportBtnEnabled(Boolean.parseBoolean(String.valueOf(payload.get("supportButton"))));
+            }
+            if (payload.containsKey("probability")) {
+                try {
+                    int p = Integer.parseInt(String.valueOf(payload.get("probability")));
+                    if (p >= 0 && p <= 100) {
+                        systemSettingRepository.setAdProbability(p);
+                    }
+                } catch (Exception ignored) {}
+            }
+            return ResponseEntity.ok("Reklam ayarlar? ba?ar?yla g?ncellendi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+        }
+    }
+
     @GetMapping({"/settings/ad-probability", "/settings/commercial-probability"})
     public ResponseEntity<Map<String, Object>> getAdProbability() {
         return ResponseEntity.ok(Map.of("probability", systemSettingRepository.getAdProbability()));
