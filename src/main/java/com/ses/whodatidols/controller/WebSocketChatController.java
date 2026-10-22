@@ -4,6 +4,8 @@ import com.ses.whodatidols.model.Message;
 import com.ses.whodatidols.model.Person;
 import com.ses.whodatidols.repository.MessageRepository;
 import com.ses.whodatidols.repository.PersonRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -15,6 +17,8 @@ import java.util.UUID;
 
 @Controller
 public class WebSocketChatController {
+
+    private static final Logger logger = LoggerFactory.getLogger(WebSocketChatController.class);
 
     private final MessageRepository messageRepository;
     private final PersonRepository personRepository;
@@ -68,8 +72,7 @@ public class WebSocketChatController {
             messagingTemplate.convertAndSend("/topic/messages/" + receiverNickname, savedMessage);
             messagingTemplate.convertAndSend("/topic/messages/" + senderNickname, savedMessage);
         } catch (Exception e) {
-            System.err.println("Error processing WebSocket send message: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error processing WebSocket send message: {}", e.getMessage(), e);
         }
     }
 
@@ -102,8 +105,7 @@ public class WebSocketChatController {
                 messagingTemplate.convertAndSend("/topic/messages/" + otherNickname, readEventPayload);
             }
         } catch (Exception e) {
-            System.err.println("Error processing WebSocket read status: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error processing WebSocket read status: {}", e.getMessage(), e);
         }
     }
 }
