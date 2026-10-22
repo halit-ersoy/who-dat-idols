@@ -9,7 +9,6 @@ import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -56,20 +55,18 @@ public class WebSocketChatController {
                 return; // User is blocked
             }
 
-            // Save to database exactly as before using the repository
-            messageRepository.sendMessage(senderId, receiver.get().getId(), content);
+            // Save to database and retrieve the freshly created Message directly with exact ID and timestamp
+            Message savedMessage = messageRepository.sendMessage(senderId, receiver.get().getId(), content);
+            savedMessage.setSenderNickname(senderNickname);
+            savedMessage.setReceiverNickname(receiverNickname);
+            savedMessage.setSenderRole(sessionAttributes.get("role") != null ? sessionAttributes.get("role").toString() : null);
+            savedMessage.setReceiverRole(receiver.get().getRole());
+            savedMessage.setSenderVerified(Boolean.TRUE.equals(sessionAttributes.get("isVerified")));
+            savedMessage.setReceiverVerified(receiver.get().isVerified());
 
-            // Fetch the chat history to retrieve the newly saved message (with correct database ID and timestamp)
-            List<Message> history = messageRepository.getChatHistory(senderId, receiver.get().getId());
-            if (!history.isEmpty()) {
-                Message savedMessage = history.get(history.size() - 1);
-                if (savedMessage != null) {
-                    Object msgObj = savedMessage;
-                    // Publish message to both receiver and sender topics
-                    messagingTemplate.convertAndSend("/topic/messages/" + receiverNickname, msgObj);
-                    messagingTemplate.convertAndSend("/topic/messages/" + senderNickname, msgObj);
-                }
-            }
+            // Publish message to both receiver and sender topics directly
+            messagingTemplate.convertAndSend("/topic/messages/" + receiverNickname, savedMessage);
+            messagingTemplate.convertAndSend("/topic/messages/" + senderNickname, savedMessage);
         } catch (Exception e) {
             System.err.println("Error processing WebSocket send message: " + e.getMessage());
             e.printStackTrace();
