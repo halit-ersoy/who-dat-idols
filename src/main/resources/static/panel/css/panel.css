@@ -3880,3 +3880,303 @@ input[type='checkbox']:hover {
 .btn-bulk-toggle:active {
     transform: translateY(0);
 }
+
+
+/* ==========================================================================
+   MEVCUT REKLAMLAR - AŞAĞIYA AÇILABİLİR BAĞLANTI BUTONU YÖNETİMİ
+   ========================================================================== */
+.ad-expand-subrow {
+    background: rgba(12, 12, 16, 0.95) !important;
+}
+
+.ad-expand-subrow > td {
+    padding: 0 !important;
+    border-top: none !important;
+    border-bottom: 2px solid rgba(var(--primary-rgb), 0.35) !important;
+}
+
+.ad-expand-box {
+    padding: 22px 28px;
+    background: linear-gradient(180deg, rgba(20, 20, 26, 0.98) 0%, rgba(14, 14, 18, 0.98) 100%);
+    border-left: 4px solid var(--primary);
+    box-shadow: inset 0 4px 16px rgba(0, 0, 0, 0.55);
+    animation: adExpandSlideDown 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes adExpandSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ad-expand-header {
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ad-expand-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ad-expand-title i {
+    color: var(--primary);
+    font-size: 1.15rem;
+}
+
+.ad-expand-subtitle {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    margin-top: 5px;
+    line-height: 1.4;
+}
+
+.ad-expand-rows-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ad-expand-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 16px;
+    margin-top: 18px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.1);
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.ad-expand-footer-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.ad-expand-footer-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ad-expand-save-msg {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    animation: fadeIn 0.3s ease;
+}
+
+/* Butonlar / Genişletme Tetikleyici Buton */
+.btn-expand-ad-links {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    background: rgba(var(--primary-rgb), 0.12) !important;
+    border: 1px solid rgba(var(--primary-rgb), 0.35) !important;
+    color: var(--primary) !important;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.btn-expand-ad-links:hover {
+    background: var(--primary) !important;
+    color: #000000 !important;
+    border-color: var(--primary) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.3);
+}
+
+.btn-expand-ad-links i.fa-chevron-down {
+    transition: transform 0.25s ease;
+    font-size: 0.72rem;
+}
+
+.btn-expand-ad-links.open {
+    background: var(--primary) !important;
+    color: #000000 !important;
+    border-color: var(--primary) !important;
+}
+
+.btn-expand-ad-links.open i.fa-chevron-down {
+    transform: rotate(180deg);
+}
+
+/* Satır Formu Öğesi */
+.ad-link-row-item {
+    display: grid;
+    grid-template-columns: 210px 190px 1fr 44px;
+    gap: 12px;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 14px 16px;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.ad-link-row-item:hover {
+    border-color: rgba(var(--primary-rgb), 0.35);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.ad-link-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.ad-link-field-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ad-link-select,
+.ad-link-input {
+    width: 100%;
+    padding: 9px 12px;
+    background: var(--bg-input, #121217);
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+    border-radius: 8px;
+    color: #fff;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ad-link-select:focus,
+.ad-link-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.25);
+}
+
+.ad-link-select option {
+    background: #181820;
+    color: #fff;
+}
+
+.btn-remove-link-row {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 18px;
+}
+
+.btn-remove-link-row:hover {
+    background: #ef4444;
+    color: #fff;
+    transform: scale(1.05);
+}
+
+.btn-add-link-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    background: rgba(var(--primary-rgb), 0.12);
+    border: 1px dashed rgba(var(--primary-rgb), 0.55);
+    color: var(--primary);
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-add-link-row:hover {
+    background: rgba(var(--primary-rgb), 0.22);
+    border-color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.2);
+}
+
+/* Tablo İçerisindeki Bağlantı Rozetleri (Chips) */
+.ad-links-badge-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    max-width: 320px;
+}
+
+.ad-link-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 9px;
+    border-radius: 6px;
+    font-size: 0.73rem;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #e2e8f0;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.ad-link-chip:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.ad-link-chip.chip-appstore { color: #f1f5f9; border-color: rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.08); }
+.ad-link-chip.chip-googleplay { color: #00e676; border-color: rgba(0, 230, 118, 0.35); background: rgba(0, 230, 118, 0.08); }
+.ad-link-chip.chip-website { color: #60a5fa; border-color: rgba(96, 165, 250, 0.35); background: rgba(96, 165, 250, 0.08); }
+.ad-link-chip.chip-download { color: #34d399; border-color: rgba(52, 211, 153, 0.35); background: rgba(52, 211, 153, 0.08); }
+.ad-link-chip.chip-instagram { color: #f472b6; border-color: rgba(244, 114, 182, 0.35); background: rgba(244, 114, 182, 0.08); }
+.ad-link-chip.chip-youtube { color: #f87171; border-color: rgba(248, 113, 113, 0.35); background: rgba(248, 113, 113, 0.08); }
+.ad-link-chip.chip-discord { color: #818cf8; border-color: rgba(129, 140, 248, 0.35); background: rgba(129, 140, 248, 0.08); }
+.ad-link-chip.chip-telegram { color: #38bdf8; border-color: rgba(56, 189, 248, 0.35); background: rgba(56, 189, 248, 0.08); }
+.ad-link-chip.chip-twitter { color: #f8fafc; border-color: rgba(248, 250, 252, 0.25); background: rgba(255, 255, 255, 0.06); }
+.ad-link-chip.chip-shop { color: #fbbf24; border-color: rgba(251, 191, 36, 0.35); background: rgba(251, 191, 36, 0.08); }
+.ad-link-chip.chip-custom { color: var(--primary); border-color: rgba(var(--primary-rgb), 0.35); background: rgba(var(--primary-rgb), 0.08); }
+
+.ad-link-none-badge {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+@media (max-width: 768px) {
+    .ad-link-row-item {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    .btn-remove-link-row {
+        margin-top: 0;
+        width: 100%;
+        height: 34px;
+    }
+    .ad-expand-box {
+        padding: 16px;
+    }
+}

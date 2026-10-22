@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
+@SuppressWarnings({"SqlResolve", "SqlNoDataSourceInspection"})
 public class AdRepository {
     private static final Logger logger = LoggerFactory.getLogger(AdRepository.class);
     private final JdbcTemplate jdbcTemplate;
@@ -40,7 +41,14 @@ public class AdRepository {
                     "    ALTER TABLE Ad ADD IsHidden BIT NOT NULL DEFAULT 0; " +
                     "END"
             );
-            logger.info("Ad table schema verified successfully.");
+            // Migration: Add LinkButtons column if it doesn't exist
+            jdbcTemplate.execute(
+                    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Ad') AND name = 'LinkButtons') " +
+                    "BEGIN " +
+                    "    ALTER TABLE Ad ADD LinkButtons NVARCHAR(MAX) NULL; " +
+                    "END"
+            );
+            logger.info("Ad table schema verified successfully with LinkButtons support.");
         } catch (Exception e) {
             logger.error("Ad schema update failed: {}", e.getMessage());
         }
@@ -56,21 +64,24 @@ public class AdRepository {
             ad.setUploadDate(ts.toInstant());
         }
         ad.setHidden(rs.getBoolean("IsHidden"));
+        try {
+            ad.setLinkButtons(rs.getString("LinkButtons"));
+        } catch (Exception ignored) {}
         return ad;
     };
 
     public List<Ad> findAll() {
-        String sql = "SELECT ID, Name, UploadDate, IsHidden FROM Ad ORDER BY UploadDate DESC";
+        String sql = "SELECT ID, Name, UploadDate, IsHidden, LinkButtons FROM Ad ORDER BY UploadDate DESC";
         return jdbcTemplate.query(sql, rowMapper);
     }
 
     public List<Ad> findVisible() {
-        String sql = "SELECT ID, Name, UploadDate, IsHidden FROM Ad WHERE IsHidden = 0 ORDER BY UploadDate DESC";
+        String sql = "SELECT ID, Name, UploadDate, IsHidden, LinkButtons FROM Ad WHERE IsHidden = 0 ORDER BY UploadDate DESC";
         return jdbcTemplate.query(sql, rowMapper);
     }
 
     public Ad findById(UUID id) {
-        String sql = "SELECT ID, Name, UploadDate, IsHidden FROM Ad WHERE ID = ?";
+        String sql = "SELECT ID, Name, UploadDate, IsHidden, LinkButtons FROM Ad WHERE ID = ?";
         try {
             return jdbcTemplate.queryForObject(sql, rowMapper, id.toString());
         } catch (Exception e) {
@@ -82,18 +93,24 @@ public class AdRepository {
         if (ad.getId() == null) {
             ad.setId(UUID.randomUUID());
         }
-        String sql = "INSERT INTO Ad (ID, Name, UploadDate, IsHidden) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO Ad (ID, Name, UploadDate, IsHidden, LinkButtons) VALUES (?, ?, ?, ?, ?)";
         jdbcTemplate.update(sql,
                 ad.getId().toString(),
                 ad.getName(),
                 ad.getUploadDate() != null ? java.sql.Timestamp.from(ad.getUploadDate()) : java.sql.Timestamp.from(java.time.Instant.now()),
-                ad.isHidden() ? 1 : 0
+                ad.isHidden() ? 1 : 0,
+                ad.getLinkButtons()
         );
     }
 
     public void updateHidden(UUID id, boolean isHidden) {
         String sql = "UPDATE Ad SET IsHidden = ? WHERE ID = ?";
         jdbcTemplate.update(sql, isHidden ? 1 : 0, id.toString());
+    }
+
+    public void updateLinkButtons(UUID id, String linkButtons) {
+        String sql = "UPDATE Ad SET LinkButtons = ? WHERE ID = ?";
+        jdbcTemplate.update(sql, linkButtons, id.toString());
     }
 
     public void deleteById(UUID id) {

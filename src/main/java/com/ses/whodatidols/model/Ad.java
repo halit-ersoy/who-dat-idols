@@ -8,6 +8,7 @@ public class Ad {
     private String name;
     private Instant uploadDate;
     private boolean isHidden;
+    private String linkButtons;
 
     public Ad() {
     }
@@ -24,6 +25,14 @@ public class Ad {
         this.name = name;
         this.uploadDate = uploadDate;
         this.isHidden = isHidden;
+    }
+
+    public Ad(UUID id, String name, Instant uploadDate, boolean isHidden, String linkButtons) {
+        this.id = id;
+        this.name = name;
+        this.uploadDate = uploadDate;
+        this.isHidden = isHidden;
+        this.linkButtons = linkButtons;
     }
 
     public UUID getId() {
@@ -56,5 +65,13 @@ public class Ad {
 
     public void setHidden(boolean hidden) {
         this.isHidden = hidden;
+    }
+
+    public String getLinkButtons() {
+        return linkButtons;
+    }
+
+    public void setLinkButtons(String linkButtons) {
+        this.linkButtons = linkButtons;
     }
 }

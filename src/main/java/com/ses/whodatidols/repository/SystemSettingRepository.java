@@ -20,8 +20,8 @@ public class SystemSettingRepository {
     public SystemSettingRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
         ensureSchema();
-        initDefaults();
         refreshCache();
+        initDefaults();
     }
 
     public void refreshCache() {
@@ -45,12 +45,7 @@ public class SystemSettingRepository {
             if (count == null || count == 0) {
                 logger.info("Creating SystemSettings table...");
                 jdbcTemplate.execute("""
-                        CREATE TABLE SystemSettings (
-                            SettingKey NVARCHAR(50) PRIMARY KEY,
-                            SettingValue NVARCHAR(MAX),
-                            Description NVARCHAR(255)
-                        )
-                        """);
+                        CREATE TABLE SystemSettings (\n                            SettingKey NVARCHAR(50) PRIMARY KEY,\n                            SettingValue NVARCHAR(MAX),\n                            Description NVARCHAR(255)\n                        )\n                        """);
             }
         } catch (Exception e) {
             logger.error("Failed to ensure SystemSettings schema", e);
@@ -205,51 +200,51 @@ public class SystemSettingRepository {
     }
 
     private void initDefaults() {
-        if (getValue("announcement_text") == null) {
+        if (!settingsCache.containsKey("announcement_text")) {
             // Default announcement text from existing HTML
             String defaultText = "DUYURU: Sitemizde bulunan \\\"BL Drama Turkey, Asian Drama House, Asian Drama Alarm\\\" içerikleri kendi sitemiz ve ortak olduğumuz sitelerdir. Çalma veya emek hırsızlığı gibi bir durum yoktur!";
             setValue("announcement_text", defaultText);
         }
 
-        if (getValue("announcement_active") == null) {
+        if (!settingsCache.containsKey("announcement_active")) {
             // Default to true (active)
             setValue("announcement_active", "true");
         }
 
-        if (getValue("maintenance_mode") == null) {
+        if (!settingsCache.containsKey("maintenance_mode")) {
             // Default to false (production active)
             setValue("maintenance_mode", "false");
         }
 
-        if (getValue("maintenance_mode_wdi") == null) {
+        if (!settingsCache.containsKey("maintenance_mode_wdi")) {
             String existing = getValue("maintenance_mode");
             setValue("maintenance_mode_wdi", existing != null ? existing : "false");
         }
 
-        if (getValue("maintenance_mode_bldizi") == null) {
+        if (!settingsCache.containsKey("maintenance_mode_bldizi")) {
             setValue("maintenance_mode_bldizi", "false");
         }
 
-        if (getValue("registration_enabled") == null) {
+        if (!settingsCache.containsKey("registration_enabled")) {
             // Default to true (registration open)
             setValue("registration_enabled", "true");
         }
 
-        if (getValue("main_video_source_enabled") == null) {
+        if (!settingsCache.containsKey("main_video_source_enabled")) {
             // Default to true (enabled)
             setValue("main_video_source_enabled", "true");
         }
 
-        if (getValue("ad_probability") == null) {
+        if (!settingsCache.containsKey("ad_probability")) {
             // Default ad display probability to 30%
             setValue("ad_probability", "30");
         }
 
-        if (getValue("ad_video_enabled") == null) setValue("ad_video_enabled", "true");
-        if (getValue("ad_socialbar_enabled") == null) setValue("ad_socialbar_enabled", "true");
-        if (getValue("ad_skyscraper_enabled") == null) setValue("ad_skyscraper_enabled", "true");
-        if (getValue("ad_banner_enabled") == null) setValue("ad_banner_enabled", "true");
-        if (getValue("ad_support_btn_enabled") == null) setValue("ad_support_btn_enabled", "true");
+        if (!settingsCache.containsKey("ad_video_enabled")) setValue("ad_video_enabled", "true");
+        if (!settingsCache.containsKey("ad_socialbar_enabled")) setValue("ad_socialbar_enabled", "true");
+        if (!settingsCache.containsKey("ad_skyscraper_enabled")) setValue("ad_skyscraper_enabled", "true");
+        if (!settingsCache.containsKey("ad_banner_enabled")) setValue("ad_banner_enabled", "true");
+        if (!settingsCache.containsKey("ad_support_btn_enabled")) setValue("ad_support_btn_enabled", "true");
     }
 
     public String getValue(String key) {

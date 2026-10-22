@@ -69,6 +69,10 @@ public class AdService {
     }
 
     public void saveAd(String name, MultipartFile file) throws IOException {
+        saveAd(name, file, null);
+    }
+
+    public void saveAd(String name, MultipartFile file, String linkButtons) throws IOException {
         UUID id = UUID.randomUUID();
         Path uploadPath = Paths.get(adsPath).toAbsolutePath().normalize();
         if (!Files.exists(uploadPath)) {
@@ -93,8 +97,12 @@ public class AdService {
         });
 
         // Save metadata
-        Ad ad = new Ad(id, name, Instant.now());
+        Ad ad = new Ad(id, name, Instant.now(), false, linkButtons);
         adRepository.save(ad);
+    }
+
+    public void updateAdLinkButtons(UUID id, String linkButtons) {
+        adRepository.updateLinkButtons(id, linkButtons);
     }
 
     public void toggleAdHidden(UUID id, boolean isHidden) {

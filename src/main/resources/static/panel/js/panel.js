@@ -971,8 +971,112 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     /* ===========================================================
-       REKLAM / COMMERCIAL YÖNETİMİ (anti-adblock safe naming)
+       REKLAM / COMMERCIAL YÖNETİMİ & BAĞLANTI BUTONLARI (Call-to-Action)
        =========================================================== */
+    const AD_LINK_TYPES = [
+        { type: 'appstore', name: 'App Store (Apple)', icon: 'fab fa-apple', defaultTitle: "App Store'dan İndir", chipClass: 'chip-appstore', placeholder: 'https://apps.apple.com/...' },
+        { type: 'googleplay', name: 'Google Play Store', icon: 'fab fa-google-play', defaultTitle: "Google Play'den İndir", chipClass: 'chip-googleplay', placeholder: 'https://play.google.com/...' },
+        { type: 'website', name: 'Web Sitesi', icon: 'fas fa-globe', defaultTitle: 'Siteyi Ziyaret Et', chipClass: 'chip-website', placeholder: 'https://...' },
+        { type: 'download', name: 'Hemen İndir (APK / Dosya)', icon: 'fas fa-download', defaultTitle: 'Hemen İndir', chipClass: 'chip-download', placeholder: 'https://...' },
+        { type: 'instagram', name: 'Instagram', icon: 'fab fa-instagram', defaultTitle: "Instagram'da İncele", chipClass: 'chip-instagram', placeholder: 'https://instagram.com/...' },
+        { type: 'youtube', name: 'YouTube', icon: 'fab fa-youtube', defaultTitle: "YouTube'da İzle", chipClass: 'chip-youtube', placeholder: 'https://youtube.com/...' },
+        { type: 'discord', name: 'Discord', icon: 'fab fa-discord', defaultTitle: "Discord'a Katıl", chipClass: 'chip-discord', placeholder: 'https://discord.gg/...' },
+        { type: 'telegram', name: 'Telegram', icon: 'fab fa-telegram', defaultTitle: "Telegram'a Katıl", chipClass: 'chip-telegram', placeholder: 'https://t.me/...' },
+        { type: 'twitter', name: 'X (Twitter)', icon: 'fab fa-x-twitter', defaultTitle: "X'te Takip Et", chipClass: 'chip-twitter', placeholder: 'https://x.com/...' },
+        { type: 'shop', name: 'Mağaza / Alışveriş', icon: 'fas fa-shopping-bag', defaultTitle: 'Satın Al / İncele', chipClass: 'chip-shop', placeholder: 'https://...' },
+        { type: 'custom', name: 'Özel Link (Diğer)', icon: 'fas fa-external-link-alt', defaultTitle: 'Detaylı Bilgi', chipClass: 'chip-custom', placeholder: 'https://...' }
+    ];
+
+    function createAdLinkRowHtml(prefix, index, data = {}) {
+        const selectedType = data.type || 'appstore';
+        const titleVal = data.title || '';
+        const urlVal = data.url || '';
+        const typeConfig = AD_LINK_TYPES.find(t => t.type === selectedType) || AD_LINK_TYPES[0];
+
+        const optionsHtml = AD_LINK_TYPES.map(t =>
+            `<option value="${t.type}" ${t.type === selectedType ? 'selected' : ''}>${t.name}</option>`
+        ).join('');
+
+        return `
+            <div class="ad-link-row-item" id="${prefix}Row_${index}">
+                <div class="ad-link-field-group">
+                    <span class="ad-link-field-label"><i class="fas fa-tag"></i> Link Tipi</span>
+                    <select class="ad-link-select ${prefix}-type-select" onchange="onAdLinkTypeChange('${prefix}', ${index}, this.value)">
+                        ${optionsHtml}
+                    </select>
+                </div>
+                <div class="ad-link-field-group">
+                    <span class="ad-link-field-label"><i class="fas fa-heading"></i> Buton Metni</span>
+                    <input type="text" class="ad-link-input ${prefix}-title-input" id="${prefix}Title_${index}"
+                        value="${titleVal ? escapeHtml(titleVal) : ''}"
+                        placeholder="${typeConfig.defaultTitle}">
+                </div>
+                <div class="ad-link-field-group">
+                    <span class="ad-link-field-label"><i class="fas fa-globe"></i> Hedef URL</span>
+                    <input type="url" class="ad-link-input ${prefix}-url-input" id="${prefix}Url_${index}"
+                        value="${urlVal ? escapeHtml(urlVal) : ''}"
+                        placeholder="${typeConfig.placeholder}">
+                </div>
+                <button type="button" class="btn-remove-link-row" onclick="removeAdLinkRow('${prefix}', ${index})" title="Bu Butonu Sil">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+    }
+
+    window.removeAdLinkRow = function (prefix, index) {
+        const row = document.getElementById(`${prefix}Row_${index}`);
+        if (row) {
+            row.remove();
+        }
+    };
+
+    window.onAdLinkTypeChange = function (prefix, index, newType) {
+        const titleInput = document.getElementById(`${prefix}Title_${index}`);
+        const urlInput = document.getElementById(`${prefix}Url_${index}`);
+        const typeConfig = AD_LINK_TYPES.find(t => t.type === newType);
+        if (!typeConfig) return;
+
+        if (titleInput && (!titleInput.value || AD_LINK_TYPES.some(t => t.defaultTitle === titleInput.value.trim()))) {
+            titleInput.placeholder = typeConfig.defaultTitle;
+        }
+        if (urlInput) {
+            urlInput.placeholder = typeConfig.placeholder;
+        }
+    };
+
+    function collectAdLinkButtons(containerId, prefix) {
+        const container = document.getElementById(containerId);
+        if (!container) return [];
+        const rows = container.querySelectorAll('.ad-link-row-item');
+        const links = [];
+
+        rows.forEach(row => {
+            const typeSelect = row.querySelector(`.${prefix}-type-select`);
+            const titleInput = row.querySelector(`.${prefix}-title-input`);
+            const urlInput = row.querySelector(`.${prefix}-url-input`);
+
+            const type = typeSelect ? typeSelect.value : 'website';
+            const typeConfig = AD_LINK_TYPES.find(t => t.type === type) || AD_LINK_TYPES[0];
+            let title = titleInput ? titleInput.value.trim() : '';
+            if (!title) {
+                title = typeConfig.defaultTitle;
+            }
+            const url = urlInput ? urlInput.value.trim() : '';
+
+            if (url) {
+                links.push({
+                    type: type,
+                    title: title,
+                    url: url
+                });
+            }
+        });
+        return links;
+    }
+
+    let globalCommercialsCache = [];
+
     const commercialForm = document.getElementById('commercialForm') || document.getElementById('adForm');
     if (commercialForm) {
         commercialForm.addEventListener('submit', function (e) {
@@ -1014,19 +1118,45 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch('/admin/commercials')
             .then(res => res.json())
             .then(ads => {
+                globalCommercialsCache = ads || [];
                 const tbody = commTable.querySelector('tbody');
                 if (!tbody) return;
                 tbody.innerHTML = '';
                 ads.forEach(ad => {
-                    const tr = document.createElement('tr');
                     const uploadDate = ad.uploadDate ? new Date(ad.uploadDate).toLocaleString('tr-TR') : '-';
                     const hiddenClass = ad.hidden ? 'btn-success' : 'btn-secondary';
                     const hiddenIcon = ad.hidden ? 'fa-eye' : 'fa-eye-slash';
                     const hiddenText = ad.hidden ? 'GÖSTER' : 'GİZLE';
+
+                    // Parse link buttons
+                    let links = [];
+                    if (ad.linkButtons) {
+                        try {
+                            links = typeof ad.linkButtons === 'string' ? JSON.parse(ad.linkButtons) : ad.linkButtons;
+                        } catch (e) {}
+                    }
+
+                    let linksHtml = '';
+                    if (Array.isArray(links) && links.length > 0) {
+                        linksHtml = '<div class="ad-links-badge-group">' + links.map(l => {
+                            const cfg = AD_LINK_TYPES.find(t => t.type === l.type) || { icon: 'fas fa-link', chipClass: 'chip-custom' };
+                            return `<span class="ad-link-chip ${cfg.chipClass}" title="${escapeHtml(l.url || '')}"><i class="${cfg.icon}"></i> ${escapeHtml(l.title || l.type)}</span>`;
+                        }).join('') + '</div>';
+                    } else {
+                        linksHtml = '<span class="ad-link-none-badge">Buton Yok</span>';
+                    }
+
+                    // Main Row
+                    const tr = document.createElement('tr');
+                    tr.id = `adMainRow_${ad.id}`;
                     tr.innerHTML = `
-                        <td style="font-weight: 600;">${ad.name}</td>
+                        <td style="font-weight: 600;">${escapeHtml(ad.name)}</td>
                         <td>${uploadDate}</td>
+                        <td id="adLinksBadgesCell_${ad.id}">${linksHtml}</td>
                         <td>
+                            <button class="btn btn-sm btn-expand-ad-links" id="btnExpandAd_${ad.id}" onclick="toggleExpandAdRow('${ad.id}')" title="Bağlantı Butonlarını Yönet">
+                                <i class="fas fa-chevron-down"></i> <span>Bağlantılar</span>
+                            </button>
                             <button class="btn btn-sm toggle-btn ${hiddenClass}" onclick='toggleCommercialHidden("${ad.id}", ${ad.hidden}, this)'>
                                 <i class="fas ${hiddenIcon}"></i> <span>${hiddenText}</span>
                             </button>
@@ -1034,12 +1164,161 @@ document.addEventListener('DOMContentLoaded', function () {
                         </td>
                     `;
                     tbody.appendChild(tr);
+
+                    // Expandable sub-row directly beneath
+                    const expandTr = document.createElement('tr');
+                    expandTr.id = `adExpandRow_${ad.id}`;
+                    expandTr.className = 'ad-expand-subrow';
+                    expandTr.style.display = 'none';
+                    expandTr.innerHTML = `
+                        <td colspan="4">
+                            <div class="ad-expand-box">
+                                <div class="ad-expand-header">
+                                    <div class="ad-expand-title">
+                                        <i class="fas fa-link"></i>
+                                        <span><strong>${escapeHtml(ad.name)}</strong> — Reklam Bağlantı Butonları</span>
+                                    </div>
+                                    <div class="ad-expand-subtitle">
+                                        Bu reklam videosu oynatılırken sol üstte <strong>"Reklam"</strong> rozetinin yanında animasyonlu olarak açılacak bağlantı butonlarını (App Store, Google Play, Web Sitesi vb.) buradan ekleyip düzenleyebilirsiniz.
+                                    </div>
+                                </div>
+                                <div class="ad-expand-rows-list" id="adExpandRowsContainer_${ad.id}">
+                                    <!-- Dinamik satırlar -->
+                                </div>
+                                <div class="ad-expand-footer">
+                                    <div class="ad-expand-footer-left">
+                                        <button type="button" class="btn-add-link-row" onclick="addAdExpandRowItem('${ad.id}')">
+                                            <i class="fas fa-plus-circle"></i> Yeni Bağlantı Butonu Ekle
+                                        </button>
+                                    </div>
+                                    <div class="ad-expand-footer-right">
+                                        <span id="adExpandSaveStatus_${ad.id}" class="ad-expand-save-msg" style="display: none;"></span>
+                                        <button type="button" class="btn btn-sm btn-primary" id="btnSaveAdExpand_${ad.id}" onclick="saveAdExpandLinks('${ad.id}')">
+                                            <i class="fas fa-save"></i> DEĞİŞİKLİKLERİ KAYDET
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(expandTr);
                 });
             })
             .catch(err => console.error("Reklam listesi hatası:", err));
     }
     window.fetchCommercials = fetchCommercials;
     window.fetchAds = fetchCommercials;
+
+    /* Reklam Bağlantı Butonlarını Tablo Altında Aşağıya Genişletme & Yönetme */
+    let expandRowCounter = 0;
+    window.toggleExpandAdRow = function (adId) {
+        const subRow = document.getElementById(`adExpandRow_${adId}`);
+        const btn = document.getElementById(`btnExpandAd_${adId}`);
+        if (!subRow) return;
+
+        const isClosed = subRow.style.display === 'none' || !subRow.style.display;
+        if (isClosed) {
+            subRow.style.display = 'table-row';
+            if (btn) btn.classList.add('open');
+
+            const container = document.getElementById(`adExpandRowsContainer_${adId}`);
+            if (container) {
+                container.innerHTML = '';
+                const ad = globalCommercialsCache.find(a => String(a.id) === String(adId));
+                let links = [];
+                if (ad && ad.linkButtons) {
+                    try {
+                        links = typeof ad.linkButtons === 'string' ? JSON.parse(ad.linkButtons) : ad.linkButtons;
+                    } catch (e) {}
+                }
+
+                if (Array.isArray(links) && links.length > 0) {
+                    links.forEach(l => {
+                        expandRowCounter++;
+                        container.insertAdjacentHTML('beforeend', createAdLinkRowHtml(`adExp_${adId}`, expandRowCounter, l));
+                    });
+                } else {
+                    expandRowCounter++;
+                    container.insertAdjacentHTML('beforeend', createAdLinkRowHtml(`adExp_${adId}`, expandRowCounter, {}));
+                }
+            }
+        } else {
+            subRow.style.display = 'none';
+            if (btn) btn.classList.remove('open');
+        }
+    };
+
+    window.addAdExpandRowItem = function (adId) {
+        const container = document.getElementById(`adExpandRowsContainer_${adId}`);
+        if (!container) return;
+        expandRowCounter++;
+        container.insertAdjacentHTML('beforeend', createAdLinkRowHtml(`adExp_${adId}`, expandRowCounter, {}));
+    };
+
+    window.saveAdExpandLinks = function (adId) {
+        const links = collectAdLinkButtons(`adExpandRowsContainer_${adId}`, `adExp_${adId}`);
+        const saveBtn = document.getElementById(`btnSaveAdExpand_${adId}`);
+        const statusSpan = document.getElementById(`adExpandSaveStatus_${adId}`);
+
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kaydediliyor...';
+        }
+
+        const formData = new URLSearchParams();
+        formData.append('id', adId);
+        formData.append('linkButtons', JSON.stringify(links));
+
+        fetch('/admin/update-commercial-links', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: formData.toString()
+        })
+            .then(res => {
+                if (!res.ok) throw new Error('Sunucu hatası: ' + res.status);
+                return res.text();
+            })
+            .then(() => {
+                // Update local cache
+                const ad = globalCommercialsCache.find(a => String(a.id) === String(adId));
+                if (ad) {
+                    ad.linkButtons = JSON.stringify(links);
+                }
+
+                // Update chips badge cell in the main row immediately
+                const cell = document.getElementById(`adLinksBadgesCell_${adId}`);
+                if (cell) {
+                    if (links.length > 0) {
+                        cell.innerHTML = '<div class="ad-links-badge-group">' + links.map(l => {
+                            const cfg = AD_LINK_TYPES.find(t => t.type === l.type) || { icon: 'fas fa-link', chipClass: 'chip-custom' };
+                            return `<span class="ad-link-chip ${cfg.chipClass}" title="${escapeHtml(l.url || '')}"><i class="${cfg.icon}"></i> ${escapeHtml(l.title || l.type)}</span>`;
+                        }).join('') + '</div>';
+                    } else {
+                        cell.innerHTML = '<span class="ad-link-none-badge">Buton Yok</span>';
+                    }
+                }
+
+                if (statusSpan) {
+                    statusSpan.style.display = 'inline-flex';
+                    statusSpan.innerHTML = '<i class="fas fa-check-circle"></i> Başarıyla Kaydedildi!';
+                    setTimeout(() => {
+                        statusSpan.style.display = 'none';
+                    }, 3500);
+                }
+            })
+            .catch(err => {
+                console.error('Bağlantı güncelleme hatası:', err);
+                alert('Bağlantılar kaydedilirken hata oluştu: ' + err.message);
+            })
+            .finally(() => {
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> DEĞİŞİKLİKLERİ KAYDET';
+                }
+            });
+    };
 
     window.deleteCommercial = function (id, name) {
         if (!confirm(`'${name}' reklamını silmek istediğinize emin misiniz?`)) return;

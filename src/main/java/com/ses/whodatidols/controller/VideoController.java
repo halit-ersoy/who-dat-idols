@@ -652,6 +652,7 @@ public class VideoController {
         Map<String, Object> response = new HashMap<>();
         response.put("id", selectedAd.getId());
         response.put("name", selectedAd.getName());
+        response.put("linkButtons", selectedAd.getLinkButtons());
         return ResponseEntity.ok(response);
     }
 

@@ -1666,33 +1666,32 @@ public class AdminController {
 
 
     @PostMapping({"/add-ad", "/add-commercial"})
-
     public ResponseEntity<String> addAd(
-
             @RequestParam("name") String name,
-
-            @RequestParam("file") MultipartFile file) {
-
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "linkButtons", required = false) String linkButtons) {
         try {
-
             if (file == null || file.isEmpty()) {
-
                 return ResponseEntity.badRequest().body("Hata: Dosya yüklenmelidir.");
-
             }
-
-            adService.saveAd(name, file);
-
+            adService.saveAd(name, file, linkButtons);
             return ResponseEntity.ok("Reklam başarıyla eklendi.");
-
         } catch (Exception e) {
-
             e.printStackTrace();
-
             return ResponseEntity.status(500).body("Hata: " + e.getMessage());
-
         }
+    }
 
+    @PostMapping({"/update-ad-links", "/update-commercial-links"})
+    public ResponseEntity<String> updateAdLinks(
+            @RequestParam("id") UUID id,
+            @RequestParam(value = "linkButtons", required = false) String linkButtons) {
+        try {
+            adService.updateAdLinkButtons(id, linkButtons);
+            return ResponseEntity.ok("Reklam bağlantı butonları başarıyla güncellendi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Bağlantı güncelleme hatası: " + e.getMessage());
+        }
     }
 
 
