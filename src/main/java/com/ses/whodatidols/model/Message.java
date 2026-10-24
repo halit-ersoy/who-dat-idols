@@ -9,6 +9,7 @@ public class Message {
     private UUID receiverId;
     private String content;
     private Instant timestamp;
+    private Long msgOrder;
     private boolean isRead;
     private boolean isDelivered;
 
@@ -61,6 +62,14 @@ public class Message {
 
     public void setTimestamp(Instant timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public Long getMsgOrder() {
+        return msgOrder;
+    }
+
+    public void setMsgOrder(Long msgOrder) {
+        this.msgOrder = msgOrder;
     }
 
     public boolean isRead() {

@@ -5714,6 +5714,12 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(res => res.json())
             .then(messages => {
                 if (!messagesContainer) return;
+                if (Array.isArray(messages)) {
+                    messages.sort((a, b) => {
+                        if (a.msgOrder && b.msgOrder) return a.msgOrder - b.msgOrder;
+                        return new Date(a.timestamp) - new Date(b.timestamp);
+                    });
+                }
                 messagesContainer.innerHTML = '';
                 messages.forEach(msg => {
                     const bubble = document.createElement('div');
