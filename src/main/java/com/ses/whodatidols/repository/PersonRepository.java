@@ -14,6 +14,7 @@ public class PersonRepository {
 
     private final JdbcTemplate jdbcTemplate;
     private final EmailService emailService;
+    private static volatile boolean schemaEnsured = false;
 
     @Autowired
     public PersonRepository(JdbcTemplate jdbcTemplate, EmailService emailService) {
@@ -646,17 +647,20 @@ public class PersonRepository {
     }
 
     public void ensureSchema() {
-        try {
+        if (schemaEnsured) return;
+        synchronized (PersonRepository.class) {
+            if (schemaEnsured) return;
+            try {
             // Columns on Person
-            jdbcTemplate.execute(
+            executeSqlWithRetry(
                     "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('[WhoDatIdols].[dbo].[Person]') AND name = 'role') ALTER TABLE [WhoDatIdols].[dbo].[Person] ADD role NVARCHAR(50) DEFAULT 'USER'");
-            jdbcTemplate.execute(
+            executeSqlWithRetry(
                     "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('[WhoDatIdols].[dbo].[Person]') AND name = 'allowMessages') ALTER TABLE [WhoDatIdols].[dbo].[Person] ADD allowMessages BIT DEFAULT 1");
-            jdbcTemplate.execute(
+            executeSqlWithRetry(
                     "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('[WhoDatIdols].[dbo].[Person]') AND name = 'isVerified') ALTER TABLE [WhoDatIdols].[dbo].[Person] ADD isVerified BIT DEFAULT 0");
 
             // UserSession table
-            jdbcTemplate.execute("""
+            executeSqlWithRetry("""
                 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='UserSession' AND xtype='U')
                 BEGIN
                     CREATE TABLE [dbo].[UserSession] (
@@ -674,7 +678,7 @@ public class PersonRepository {
             """);
 
             // SsoTicket table
-            jdbcTemplate.execute("""
+            executeSqlWithRetry("""
                 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='SsoTicket' AND xtype='U')
                 BEGIN
                     CREATE TABLE [dbo].[SsoTicket] (
@@ -690,7 +694,7 @@ public class PersonRepository {
             """);
 
             // ResolveUserIdByCookie function
-            jdbcTemplate.execute("""
+            executeSqlWithRetry("""
                 CREATE OR ALTER FUNCTION [dbo].[ResolveUserIdByCookie](@cookie UNIQUEIDENTIFIER)
                 RETURNS UNIQUEIDENTIFIER
                 AS
@@ -710,7 +714,7 @@ public class PersonRepository {
             """);
 
             // CreateSsoTicket Procedure
-            jdbcTemplate.execute("""
+            executeSqlWithRetry("""
                 CREATE OR ALTER PROCEDURE [dbo].[CreateSsoTicket]
                     @Cookie UNIQUEIDENTIFIER,
                     @TargetPlatform NVARCHAR(50) = NULL
@@ -736,7 +740,7 @@ public class PersonRepository {
             """);
 
             // ConsumeSsoTicket Procedure
-            jdbcTemplate.execute("""
+            executeSqlWithRetry("""
                 CREATE OR ALTER PROCEDURE [dbo].[ConsumeSsoTicket]
                     @Ticket UNIQUEIDENTIFIER,
                     @Platform NVARCHAR(50) = 'whodatidols'
@@ -776,7 +780,7 @@ public class PersonRepository {
             """);
 
             // LoginAndSetCookie Procedure (Multi-Session & Multi-Platform Support)
-            jdbcTemplate.execute("""
+            executeSqlWithRetry("""
                 CREATE OR ALTER PROCEDURE [dbo].[LoginAndSetCookie]
                     @UsernameOrEmail NVARCHAR(255),
                     @Password NVARCHAR(255),
@@ -816,7 +820,7 @@ public class PersonRepository {
             """);
 
             // RegisterUser Procedure (Multi-Platform Support)
-            jdbcTemplate.execute("""
+            executeSqlWithRetry("""
                 CREATE OR ALTER PROCEDURE [dbo].[RegisterUser]
                     @Nickname NVARCHAR(50),
                     @Name NVARCHAR(100),
@@ -847,12 +851,31 @@ public class PersonRepository {
             """);
 
             // Ensure existing users have defaults set correctly
-            jdbcTemplate.execute("UPDATE [WhoDatIdols].[dbo].[Person] SET allowMessages = 1 WHERE allowMessages IS NULL");
-            jdbcTemplate.execute("UPDATE [WhoDatIdols].[dbo].[Person] SET isBanned = 0 WHERE isBanned IS NULL");
-            jdbcTemplate.execute("UPDATE [WhoDatIdols].[dbo].[Person] SET role = 'USER' WHERE role IS NULL");
-            jdbcTemplate.execute("UPDATE [WhoDatIdols].[dbo].[Person] SET isVerified = 0 WHERE isVerified IS NULL");
+            executeSqlWithRetry("UPDATE [WhoDatIdols].[dbo].[Person] SET allowMessages = 1 WHERE allowMessages IS NULL");
+            executeSqlWithRetry("UPDATE [WhoDatIdols].[dbo].[Person] SET isBanned = 0 WHERE isBanned IS NULL");
+            executeSqlWithRetry("UPDATE [WhoDatIdols].[dbo].[Person] SET role = 'USER' WHERE role IS NULL");
+            executeSqlWithRetry("UPDATE [WhoDatIdols].[dbo].[Person] SET isVerified = 0 WHERE isVerified IS NULL");
+            schemaEnsured = true;
         } catch (Exception e) {
             System.err.println("PersonRepository ensureSchema error: " + e.getMessage());
+        }
+        }
+    }
+
+    private void executeSqlWithRetry(String sql) {
+        int maxRetries = 3;
+        for (int i = 0; i < maxRetries; i++) {
+            try {
+                jdbcTemplate.execute(sql);
+                return;
+            } catch (Exception e) {
+                if (i == maxRetries - 1) {
+                    throw e;
+                }
+                try {
+                    Thread.sleep(250);
+                } catch (InterruptedException ignored) {}
+            }
         }
     }
 
