@@ -522,6 +522,16 @@ header.at-top .search-button {
         letter-spacing: 2px;
         color: var(--primary-color);
         font-family: 'Montserrat', sans-serif;
+        text-decoration: none;
+        display: inline-block;
+        cursor: pointer;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .nav-menu-logo:hover,
+    .nav-menu-logo:active {
+        opacity: 0.9;
+        transform: scale(1.05);
     }
 
     .nav-menu-close {

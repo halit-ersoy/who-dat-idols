@@ -38,31 +38,57 @@ export function initHeaderInteractions() {
     const navMenuClose = document.getElementById('nav-menu-close');
 
     if (mobileMenuToggle && navMenu) {
-        mobileMenuToggle.addEventListener('click', () => {
-            navMenu.classList.add('active');
-            document.body.style.overflow = 'hidden'; // Prevent scroll
+        mobileMenuToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (navMenu.classList.contains('active')) {
+                navMenu.classList.remove('active');
+                document.body.style.overflow = '';
+            } else {
+                navMenu.classList.add('active');
+                document.body.style.overflow = 'hidden'; // Prevent scroll
+            }
         });
     }
 
     if (navMenuClose && navMenu) {
-        navMenuClose.addEventListener('click', () => {
+        navMenuClose.addEventListener('click', (e) => {
+            e.stopPropagation();
             navMenu.classList.remove('active');
             document.body.style.overflow = ''; // Restore scroll
         });
     }
 
-    // Close on click outside
-    document.addEventListener('mousedown', (e) => {
+    // Close on click or touch outside
+    const handleOutside = (e) => {
         if (navMenu && navMenu.classList.contains('active')) {
             if (!navMenu.contains(e.target) && !mobileMenuToggle.contains(e.target)) {
                 navMenu.classList.remove('active');
                 document.body.style.overflow = '';
             }
         }
+    };
+
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('touchstart', handleOutside, { passive: true });
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && navMenu && navMenu.classList.contains('active')) {
+            navMenu.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    });
+
+    // Close when window resized past mobile breakpoint
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 992 && navMenu && navMenu.classList.contains('active')) {
+            navMenu.classList.remove('active');
+            document.body.style.overflow = '';
+        }
     });
 
     // Close on link click (for SPA feel or just to clean up)
-    const drawerLinks = navMenu ? navMenu.querySelectorAll('.nav-link') : [];
+    const drawerLinks = navMenu ? navMenu.querySelectorAll('a') : [];
     drawerLinks.forEach(link => {
         link.addEventListener('click', () => {
             navMenu.classList.remove('active');
@@ -120,9 +146,9 @@ export function initHeaderInteractions() {
 
         if (!Array.isArray(results) || results.length === 0) {
             container.innerHTML = `
-                <div class=\"no-results\">Sonuç bulunamadı</div>
-                <div class=\"search-ai-shortcut\" id=\"trigger-ai-notfound\">
-                    <i class=\"fas fa-wand-magic-sparkles\"></i>
+                <div class="no-results">Sonuç bulunamadı</div>
+                <div class="search-ai-shortcut" id="trigger-ai-notfound">
+                    <i class="fas fa-wand-magic-sparkles"></i>
                     <span>Moduna göre mi arıyorsun? <strong>AI Vibe Arama</strong>'yı dene!</span>
                 </div>
             `;
@@ -153,9 +179,9 @@ export function initHeaderInteractions() {
             const yearInfo = year ? `(${year})` : '';
 
             resultItem.innerHTML = `
-                <div class=\"result-info\">
-                    <div class=\"result-name\">${name} ${yearInfo}</div>
-                    <div class=\"result-meta\">${typeLabel} • ${category}</div>
+                <div class="result-info">
+                    <div class="result-name">${name} ${yearInfo}</div>
+                    <div class="result-meta">${typeLabel} • ${category}</div>
                 </div>
             `;
 
@@ -173,7 +199,7 @@ export function initHeaderInteractions() {
         const aiFooter = document.createElement('div');
         aiFooter.className = 'search-ai-shortcut';
         aiFooter.innerHTML = `
-            <i class=\"fas fa-wand-magic-sparkles\"></i>
+            <i class="fas fa-wand-magic-sparkles"></i>
             <span>Hislerine göre film bulmak için <strong>AI Vibe</strong>'a tıkla</span>
         `;
         aiFooter.addEventListener('mousedown', (e) => {
@@ -188,7 +214,7 @@ export function initHeaderInteractions() {
 
     // Highlight current page in navigation
     const currentPath = window.location.pathname;
-    const allNavLinks = document.querySelectorAll('.nav-link');
+    const allNavLinks = document.querySelectorAll('.nav-menu .nav-link');
 
     allNavLinks.forEach(link => {
         const href = link.getAttribute('href');

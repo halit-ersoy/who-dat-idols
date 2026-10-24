@@ -54,9 +54,19 @@ async function loadContentDetails(id) {
             }
         }
 
+        // Determine whether user is on a series landing/overview URL (e.g. /alice-in-borderland or /boys-ii-planet)
+        const currentPath = window.location.pathname.replace(/^\/+|\/+$/g, '');
+        const isSeriesPage = Boolean(data.seriesSlug && (currentPath === data.seriesSlug || (data.seriesId && currentPath === data.seriesId)));
+        const expectedSlug = isSeriesPage ? data.seriesSlug : (data.slug || currentPath);
+        const baseUrl = 'https://whodatidols.com';
+        const expectedCanonicalUrl = `${baseUrl}/${expectedSlug}`;
+
         // Update document title with SEO keyword
         if (data.isUpcoming || data.type === 'upcoming') {
             document.title = `${data.title} - Yakında Who Dat Idols`;
+        } else if (isSeriesPage) {
+            const seriesDisplayName = data.seriesName || data.name || (data.title ? data.title.split(' - ')[0] : 'Dizi');
+            document.title = `${seriesDisplayName} İzle - Who Dat Idols?`;
         } else {
             document.title = `${data.title} İzle - Who Dat Idols?`;
         }
@@ -68,9 +78,11 @@ async function loadContentDetails(id) {
         }
 
         const canonicalLink = document.getElementById('canonicalLink');
-        if (canonicalLink && data.slug) {
-            // Fix: remove '/watch/' for root-level slugs
-            canonicalLink.setAttribute('href', `https://whodatidols.com/${data.slug}`);
+        if (canonicalLink && expectedSlug) {
+            const currentHref = canonicalLink.getAttribute('href');
+            if (!currentHref || currentHref !== expectedCanonicalUrl) {
+                canonicalLink.setAttribute('href', expectedCanonicalUrl);
+            }
         }
 
         // SEO: Structured Data (JSON-LD)
@@ -91,55 +103,130 @@ async function loadContentDetails(id) {
                 return match ? `PT${match[1]}M` : undefined;
             };
 
-            const baseUrl = 'https://whodatidols.com';
-            const slug = data.slug || id;
-            const contentUrl = `${baseUrl}/${slug}`;
+            // First check if server-generated SSR structured data already matches this page
+            let matchesSsr = false;
+            const existingRaw = structuredDataEl.textContent ? structuredDataEl.textContent.trim() : '';
+            if (existingRaw) {
+                try {
+                    const parsed = JSON.parse(existingRaw);
+                    if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]['@context']) {
+                        const main = parsed[0];
+                        const expectedType = (data.isUpcoming || data.type === 'upcoming') ? 'CreativeWork'
+                            : (data.type === 'movie' ? 'Movie'
+                            : (isSeriesPage ? 'TVSeries' : 'TVEpisode'));
 
-            // Main content schema
-            const contentSchema = {
-                "@context": "https://schema.org",
-                "@type": data.type === 'movie' ? "Movie" : (data.isUpcoming || data.type === 'upcoming' ? "CreativeWork" : "Episode"),
-                "name": data.title,
-                "url": contentUrl,
-                "description": sanitizeText(data.plot),
-                "image": `${baseUrl}/media/image/${id}`,
-                "datePublished": data.year ? String(data.year) : undefined,
-                "duration": formatDuration(data.duration),
-                "potentialAction": {
-                    "@type": "WatchAction",
-                    "target": contentUrl
+                        if (main['@type'] === expectedType && main.url === expectedCanonicalUrl) {
+                            if (expectedType === 'Movie' || expectedType === 'TVEpisode') {
+                                if (main.video && main.video['@type'] === 'VideoObject') {
+                                    matchesSsr = true;
+                                }
+                            } else {
+                                matchesSsr = true;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    matchesSsr = false;
                 }
-            };
+            }
 
-            if (data.type === 'episode' && data.season) {
-                contentSchema.partOfSeason = {
-                    "@type": "CreativeWorkSeason",
-                    "seasonNumber": data.season
+            // Only rebuild on client if SSR is missing, corrupted, or during an SPA transition
+            if (!matchesSsr) {
+                // Clear old schema first to prevent stale data lingering
+                structuredDataEl.textContent = '';
+
+                let schemaType;
+                let isPlayable = false;
+                if (data.isUpcoming || data.type === 'upcoming') {
+                    schemaType = 'CreativeWork';
+                } else if (data.type === 'movie') {
+                    schemaType = 'Movie';
+                    isPlayable = true;
+                } else if (isSeriesPage) {
+                    schemaType = 'TVSeries';
+                    isPlayable = false;
+                } else {
+                    schemaType = 'TVEpisode';
+                    isPlayable = true;
+                }
+
+                const entityTitle = isSeriesPage ? (data.seriesName || data.name || (data.title ? data.title.split(' - ')[0] : 'Dizi')) : data.title;
+                const entityDesc = sanitizeText(data.plot);
+                const entityImageId = (isSeriesPage && data.seriesId) ? data.seriesId : (data.seriesId || id);
+                const entityImage = `${baseUrl}/media/image/${entityImageId}`;
+
+                // Main content schema
+                const contentSchema = {
+                    "@context": "https://schema.org",
+                    "@type": schemaType,
+                    "name": entityTitle,
+                    "url": expectedCanonicalUrl,
+                    "description": entityDesc,
+                    "image": entityImage,
+                    "potentialAction": {
+                        "@type": "WatchAction",
+                        "target": expectedCanonicalUrl
+                    }
                 };
+
+                if (data.year) {
+                    contentSchema.datePublished = String(data.year);
+                }
+
+                if (data.duration) {
+                    const dur = formatDuration(data.duration);
+                    if (dur) contentSchema.duration = dur;
+                }
+
+                if (schemaType === 'TVEpisode' && data.season) {
+                    contentSchema.partOfSeason = {
+                        "@type": "CreativeWorkSeason",
+                        "seasonNumber": data.season
+                    };
+                }
+
+                // VideoObject strictly for playable items (Movie and TVEpisode)
+                // NEVER for TVSeries or CreativeWork
+                if (isPlayable) {
+                    const videoObject = {
+                        "@type": "VideoObject",
+                        "name": entityTitle,
+                        "description": entityDesc,
+                        "thumbnailUrl": entityImage,
+                        "potentialAction": {
+                            "@type": "WatchAction",
+                            "target": expectedCanonicalUrl
+                        }
+                    };
+                    if (data.uploadDate) {
+                        videoObject.uploadDate = data.uploadDate;
+                    }
+                    contentSchema.video = videoObject;
+                }
+
+                // BreadcrumbList
+                const breadcrumbItems = [
+                    { "@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": baseUrl }
+                ];
+
+                if (data.isUpcoming || data.type === 'upcoming') {
+                    breadcrumbItems.push({ "@type": "ListItem", "position": 2, "name": "Yüklenecek Bölümler", "item": `${baseUrl}/#upcoming` });
+                } else if (data.type === 'movie') {
+                    breadcrumbItems.push({ "@type": "ListItem", "position": 2, "name": "Filmler", "item": `${baseUrl}/filmler` });
+                } else {
+                    breadcrumbItems.push({ "@type": "ListItem", "position": 2, "name": "Diziler", "item": `${baseUrl}/diziler` });
+                }
+
+                breadcrumbItems.push({ "@type": "ListItem", "position": 3, "name": entityTitle, "item": expectedCanonicalUrl });
+
+                const breadcrumbSchema = {
+                    "@context": "https://schema.org",
+                    "@type": "BreadcrumbList",
+                    "itemListElement": breadcrumbItems
+                };
+
+                structuredDataEl.textContent = JSON.stringify([contentSchema, breadcrumbSchema]);
             }
-
-            // BreadcrumbList
-            const breadcrumbItems = [
-                { "@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": baseUrl }
-            ];
-
-            if (data.isUpcoming || data.type === 'upcoming') {
-                breadcrumbItems.push({ "@type": "ListItem", "position": 2, "name": "Yüklenecek Bölümler", "item": `${baseUrl}/#upcoming` });
-            } else if (data.type === 'movie') {
-                breadcrumbItems.push({ "@type": "ListItem", "position": 2, "name": "Filmler", "item": `${baseUrl}/filmler` });
-            } else {
-                breadcrumbItems.push({ "@type": "ListItem", "position": 2, "name": "Diziler", "item": `${baseUrl}/diziler` });
-            }
-
-            breadcrumbItems.push({ "@type": "ListItem", "position": 3, "name": data.title, "item": contentUrl });
-
-            const breadcrumbSchema = {
-                "@context": "https://schema.org",
-                "@type": "BreadcrumbList",
-                "itemListElement": breadcrumbItems
-            };
-
-            structuredDataEl.textContent = JSON.stringify([contentSchema, breadcrumbSchema]);
         }
 
         const ratingBadge = document.querySelector('.rating-badge');

@@ -137,6 +137,8 @@ public class VideoController {
                         if (cast.isEmpty()) {
                             cast = castSyncService.syncCastForSeries(series);
                         }
+                        response.put("seriesSlug", series.getSlug());
+                        response.put("seriesName", series.getName());
                     } else {
                         response.put("title", episode.getName());
                         response.put("adult", episode.isAdult());
@@ -177,6 +179,32 @@ public class VideoController {
                     movieCast = castSyncService.syncCastForMovie(movie);
                 }
                 response.put("cast", movieCast);
+                return ResponseEntity.ok(response);
+            }
+
+            // 3. Try Series
+            Series series = seriesRepository.findSeriesById(id);
+            if (series != null && !series.isHidden()) {
+                if (series.isBl()) {
+                    return ResponseEntity.notFound().build();
+                }
+                response.put("title", series.getName());
+                response.put("plot", series.getSummary());
+                response.put("genres",
+                        series.getCategory() != null ? List.of(series.getCategory().split(",")) : List.of());
+                response.put("language", series.getLanguage());
+                response.put("country", series.getCountry());
+                response.put("finalStatus", series.getFinalStatus());
+                response.put("type", "series");
+                response.put("seriesId", series.getId().toString());
+                response.put("seriesSlug", series.getSlug());
+                response.put("seriesName", series.getName());
+                response.put("slug", series.getSlug());
+                List<CastMemberDto> seriesCast = actorRepository.getCastForSeries(series.getId());
+                if (seriesCast.isEmpty()) {
+                    seriesCast = castSyncService.syncCastForSeries(series);
+                }
+                response.put("cast", seriesCast);
                 return ResponseEntity.ok(response);
             }
         }
@@ -537,7 +565,12 @@ public class VideoController {
             }
             UUID firstEpId = seriesRepository.findFirstEpisodeIdBySeriesId(series.getId());
             if (firstEpId != null) {
-                return ResponseEntity.ok(Map.of("id", firstEpId.toString(), "type", "episode"));
+                Map<String, String> res = new HashMap<>();
+                res.put("id", firstEpId.toString());
+                res.put("type", "episode");
+                res.put("seriesSlug", series.getSlug());
+                res.put("seriesName", series.getName());
+                return ResponseEntity.ok(res);
             }
         }
 

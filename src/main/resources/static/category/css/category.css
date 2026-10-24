@@ -1,11 +1,62 @@
 /* category.css */
 
+/* Header styling - matching watch section style */
+header#header,
+header {
+    background: rgba(14, 14, 18, 0.88) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    padding: 14px 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    z-index: 100 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    box-sizing: border-box !important;
+}
+
+header .logo-link {
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+}
+
+header .logo {
+    font-size: 1.75rem !important;
+    font-weight: 700 !important;
+    color: var(--primary-color) !important;
+    font-family: 'Montserrat', sans-serif !important;
+    letter-spacing: 0.5px !important;
+    text-shadow: 0 0 10px rgba(var(--primary-rgb), 0.4) !important;
+}
+
+@media (max-width: 768px) {
+    header#header,
+    header {
+        padding: 12px 5% !important;
+    }
+
+    header .logo-link {
+        display: inline-flex !important;
+    }
+}
+
+@media (max-width: 576px) {
+    header .logo {
+        font-size: 24px !important;
+    }
+}
+
 /* Global Category Layout */
 .category-main {
     padding: 100px 5% 40px;
     min-height: calc(100vh - 120px);
-    background-color: var(--bg-color, var(--bg-input));
-    color: var(--text-primary, var(--white));
+    background-color: var(--bg-main, #0f0f0f);
+    color: var(--white);
 }
 
 .back-button {
@@ -337,4 +388,45 @@
     color: rgba(255, 255, 255, 0.7);
     font-size: 0.8rem;
     font-weight: 500;
+}
+
+/* Crawlable SEO Pagination Navigation */
+.pagination-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 25px;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.pagination-nav a, .pagination-nav span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 38px;
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--color-e0e0e0);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.pagination-nav a:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+}
+
+.pagination-nav .current-page {
+    background: var(--primary-color, #ff3366);
+    color: #ffffff;
+    border-color: transparent;
+    font-weight: 600;
 }

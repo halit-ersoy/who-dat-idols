@@ -6,6 +6,10 @@ Disallow: /favorites
 Disallow: /history
 Disallow: /panel
 Disallow: /login-admin
+Allow: /api/video/
+Allow: /api/featured-content/
+Allow: /api/metadata/
+Allow: /api/options
 Disallow: /api/
 Allow: /
 

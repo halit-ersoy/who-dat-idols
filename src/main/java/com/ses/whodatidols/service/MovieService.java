@@ -291,7 +291,7 @@ public class MovieService {
 
     public boolean isValidSlug(String slug) {
         var m = movieRepository.findMovieBySlug(slug);
-        return m != null && !m.isBl();
+        return m != null && !m.isBl() && !m.isHidden();
     }
 
     public boolean isBlSlug(String slug) {

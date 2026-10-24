@@ -23,8 +23,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('filter-status-container').style.display = 'none';
     }
 
-    document.getElementById('page-title').textContent = pageTitle;
-    document.title = `${pageTitle} - Who Dat Idols?`;
+    const currentDocTitle = document.title;
+    if (!currentDocTitle || currentDocTitle.includes('Kategori') || currentDocTitle === `${pageTitle} - Who Dat Idols?`) {
+        document.getElementById('page-title').textContent = pageTitle;
+        document.title = `${pageTitle} - Who Dat Idols?`;
+    } else {
+        const baseDocTitle = currentDocTitle.replace(' - Who Dat Idols?', '').trim();
+        document.getElementById('page-title').textContent = baseDocTitle;
+    }
 
     // State
     const state = {
@@ -61,14 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
         parseUrlParams();
         loadContent(true);
         setupEventListeners();
-
-        // Initialize calendar modal for the "Takvim" link in the navigation menu
-        try {
-            const calendarModule = await import('/homepage/js/calendar.js?v=2');
-            calendarModule.initCalendar();
-        } catch (error) {
-            console.error('Failed to initialize calendar:', error);
-        }
     }
 
     function parseUrlParams() {
@@ -97,6 +95,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (params.has('sort')) {
             state.sort = params.get('sort');
             els.filterSort.value = state.sort;
+        }
+
+        if (params.has('page')) {
+            const p = parseInt(params.get('page'), 10);
+            if (!isNaN(p) && p > 0) {
+                state.page = p;
+            }
         }
     }
 
@@ -221,6 +226,19 @@ document.addEventListener('DOMContentLoaded', () => {
             state.year = els.filterYear.value;
             state.country = els.filterCountry.value;
             state.sort = els.filterSort.value;
+
+            const selectedOpt = els.filterCat.options[els.filterCat.selectedIndex];
+            const catName = selectedOpt && selectedOpt.value ? selectedOpt.textContent.trim() : '';
+            if (catName) {
+                const suffix = contentType === 'movie' ? 'Filmleri' : (seriesType === 'Program' ? 'Programları' : 'Dizileri');
+                const catTitle = `${catName} ${suffix}`;
+                document.getElementById('page-title').textContent = catTitle;
+                document.title = `${catTitle} - Who Dat Idols?`;
+            } else {
+                document.getElementById('page-title').textContent = pageTitle;
+                document.title = `${pageTitle} - Who Dat Idols?`;
+            }
+
             loadContent(true);
         };
 

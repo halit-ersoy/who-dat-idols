@@ -6,6 +6,7 @@ import com.ses.whodatidols.repository.MovieRepository;
 import com.ses.whodatidols.repository.PersonRepository;
 import com.ses.whodatidols.service.MovieService;
 import com.ses.whodatidols.service.SeriesService;
+import com.ses.whodatidols.service.SeoService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.io.ClassPathResource;
@@ -48,6 +49,7 @@ public class HomeController {
     private final com.ses.whodatidols.service.LoginAttemptService loginAttemptService;
     private final jakarta.servlet.http.HttpServletRequest request;
     private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+    private final SeoService seoService;
 
     @org.springframework.beans.factory.annotation.Value("${media.profile.images.path}")
     private String profileImagesPath;
@@ -57,7 +59,8 @@ public class HomeController {
             com.ses.whodatidols.repository.SystemSettingRepository systemSettingRepository,
             com.ses.whodatidols.service.LoginAttemptService loginAttemptService,
             jakarta.servlet.http.HttpServletRequest request,
-            org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
+            org.springframework.jdbc.core.JdbcTemplate jdbcTemplate,
+            SeoService seoService) {
         this.personRepository = personRepository;
         this.movieService = movieService;
         this.seriesService = seriesService;
@@ -66,6 +69,7 @@ public class HomeController {
         this.loginAttemptService = loginAttemptService;
         this.request = request;
         this.jdbcTemplate = jdbcTemplate;
+        this.seoService = seoService;
     }
 
     @GetMapping("/")
@@ -274,22 +278,32 @@ public class HomeController {
     }
 
     @GetMapping("/watch")
-    public ResponseEntity<Resource> getWatchPage() {
-        try {
-            ClassPathResource htmlPage = new ClassPathResource("static/watch/html/watch.html");
-            if (!htmlPage.exists()) {
-                return ResponseEntity.notFound().build();
-            }
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
-                    .body(htmlPage);
-        } catch (Exception e) {
-            return ResponseEntity.status(500).build();
+    public ResponseEntity<?> getWatchPage(
+            @RequestParam(value = "id", required = false) String id,
+            @RequestParam(value = "slug", required = false) String slug) {
+        if (slug != null && !slug.isBlank()) {
+            return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+                    .header(HttpHeaders.LOCATION, "/" + slug.trim())
+                    .build();
         }
+        if (id != null && !id.isBlank()) {
+            String resolvedSlug = seoService.resolveIdToSlug(id.trim());
+            if (resolvedSlug != null && !resolvedSlug.isBlank()) {
+                return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+                        .header(HttpHeaders.LOCATION, "/" + resolvedSlug)
+                        .build();
+            }
+            return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+                    .header(HttpHeaders.LOCATION, "/" + id.trim())
+                    .build();
+        }
+        return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+                .header(HttpHeaders.LOCATION, "/")
+                .build();
     }
 
-    @GetMapping("/{slug:[a-zA-Z0-9-'’]+}")
-    public ResponseEntity<Resource> watchPageBySlug(
+    @GetMapping("/{slug:[a-zA-Z0-9-'’→]+}")
+    public ResponseEntity<?> watchPageBySlug(
             @PathVariable("slug") String slug,
             @CookieValue(name = "wdiAuth", required = false) String cookie) {
 
@@ -413,6 +427,18 @@ public class HomeController {
         // Validate slug existence in Series, Movies, Episodes, or Upcoming
         boolean isValid = seriesService.isValidSlug(slug) || movieService.isValidSlug(slug) || isUpcoming;
         if (!isValid) {
+            String canonicalSlug = seoService.resolveCanonicalSlug(slug);
+            if (canonicalSlug != null && !canonicalSlug.equalsIgnoreCase(slug)) {
+                if (seriesService.isBlSlug(canonicalSlug) || movieService.isBlSlug(canonicalSlug)) {
+                    return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+                            .header(HttpHeaders.LOCATION, "https://bldizi.com/" + canonicalSlug)
+                            .build();
+                }
+                return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+                        .header(HttpHeaders.LOCATION, "/" + canonicalSlug)
+                        .build();
+            }
+
             Resource notFoundPage = new ClassPathResource("static/error/html/error.html");
             if (notFoundPage.exists()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -423,6 +449,13 @@ public class HomeController {
         }
 
         try {
+            String renderedHtml = seoService.buildWatchPageHtml(slug);
+            if (renderedHtml != null) {
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
+                        .body(renderedHtml);
+            }
+
             ClassPathResource htmlPage = new ClassPathResource("static/watch/html/watch.html");
             if (!htmlPage.exists()) {
                 return ResponseEntity.notFound().build();
@@ -1069,15 +1102,28 @@ public class HomeController {
     }
 
     @GetMapping({ "/programlar", "/diziler", "/filmler" })
-    public ResponseEntity<Resource> getCategoryPage() {
+    public ResponseEntity<String> getCategoryPage(
+            jakarta.servlet.http.HttpServletRequest request,
+            @RequestParam(value = "categoryId", required = false) Integer categoryId,
+            @RequestParam(value = "country", required = false) String country,
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "sort", required = false) String sort,
+            @RequestParam(value = "page", required = false) Integer page) {
         try {
-            Resource htmlPage = new ClassPathResource("static/category/html/category.html");
-            if (!htmlPage.exists()) {
-                return ResponseEntity.notFound().build();
+            String renderedHtml = seoService.buildCategoryPageHtml(
+                    request.getRequestURI(), categoryId, country, year, sort, page);
+            if (renderedHtml != null) {
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
+                        .body(renderedHtml);
             }
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
-                    .body(htmlPage);
+            Resource notFoundPage = new ClassPathResource("static/error/html/error.html");
+            if (notFoundPage.exists()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
+                        .body(new String(notFoundPage.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+            }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (Exception e) {
             return ResponseEntity.status(500).build();
         }

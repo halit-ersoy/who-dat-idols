@@ -765,11 +765,12 @@ public class SeriesService {
     public boolean isValidSlug(String slug) {
         var ep = repository.findEpisodeBySlug(slug);
         if (ep != null) {
+            if (ep.isHidden()) return false;
             var s = repository.findSeriesByEpisodeId(ep.getId());
-            return s != null && !s.isBl();
+            return s != null && !s.isBl() && !s.isHidden();
         }
         var s = repository.findSeriesBySlug(slug);
-        return s != null && !s.isBl();
+        return s != null && !s.isBl() && !s.isHidden();
     }
 
     public boolean isBlSlug(String slug) {
