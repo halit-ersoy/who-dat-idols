@@ -4,6 +4,7 @@ import com.ses.whodatidols.model.Message;
 import com.ses.whodatidols.model.Person;
 import com.ses.whodatidols.repository.MessageRepository;
 import com.ses.whodatidols.repository.PersonRepository;
+import com.ses.whodatidols.service.WebPushOutboxService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -22,11 +23,15 @@ public class MessageController {
 
     private final MessageRepository messageRepository;
     private final PersonRepository personRepository;
+    private final WebPushOutboxService webPushOutboxService;
 
     @Autowired
-    public MessageController(MessageRepository messageRepository, PersonRepository personRepository) {
+    public MessageController(MessageRepository messageRepository,
+                             PersonRepository personRepository,
+                             WebPushOutboxService webPushOutboxService) {
         this.messageRepository = messageRepository;
         this.personRepository = personRepository;
+        this.webPushOutboxService = webPushOutboxService;
     }
 
     @GetMapping("/messages")
@@ -85,7 +90,8 @@ public class MessageController {
                                 "Bu kullanıcı ile mesajlaşamazsınız (Engelleme mevcut)."));
             }
 
-            messageRepository.sendMessage(senderId, receiver.get().getId(), content);
+            Message savedMessage = messageRepository.sendMessage(senderId, receiver.get().getId(), content);
+            webPushOutboxService.enqueueDirectMessageNotification(savedMessage.getId(), senderId, receiver.get().getId(), content);
 
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {

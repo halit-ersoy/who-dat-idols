@@ -4,6 +4,7 @@ import com.ses.whodatidols.model.Message;
 import com.ses.whodatidols.model.Person;
 import com.ses.whodatidols.repository.MessageRepository;
 import com.ses.whodatidols.repository.PersonRepository;
+import com.ses.whodatidols.service.WebPushOutboxService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -23,13 +24,16 @@ public class WebSocketChatController {
     private final MessageRepository messageRepository;
     private final PersonRepository personRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final WebPushOutboxService webPushOutboxService;
 
     public WebSocketChatController(MessageRepository messageRepository,
                                    PersonRepository personRepository,
-                                   SimpMessagingTemplate messagingTemplate) {
+                                   SimpMessagingTemplate messagingTemplate,
+                                   WebPushOutboxService webPushOutboxService) {
         this.messageRepository = messageRepository;
         this.personRepository = personRepository;
         this.messagingTemplate = messagingTemplate;
+        this.webPushOutboxService = webPushOutboxService;
     }
 
     @MessageMapping("/chat.send")
@@ -71,6 +75,9 @@ public class WebSocketChatController {
             // Publish message to both receiver and sender topics directly
             messagingTemplate.convertAndSend("/topic/messages/" + receiverNickname, savedMessage);
             messagingTemplate.convertAndSend("/topic/messages/" + senderNickname, savedMessage);
+
+            // Enqueue Web Push notification in transactional outbox
+            webPushOutboxService.enqueueDirectMessageNotification(savedMessage.getId(), senderId, receiver.get().getId(), content);
         } catch (Exception e) {
             logger.error("Error processing WebSocket send message: {}", e.getMessage(), e);
         }

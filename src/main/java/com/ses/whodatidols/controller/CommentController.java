@@ -1,6 +1,7 @@
 package com.ses.whodatidols.controller;
 
 import com.ses.whodatidols.repository.CommentRepository;
+import com.ses.whodatidols.service.WebPushOutboxService;
 import com.ses.whodatidols.viewmodel.CommentViewModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,9 +15,11 @@ import java.util.UUID;
 public class CommentController {
 
     private final CommentRepository commentRepository;
+    private final WebPushOutboxService webPushOutboxService;
 
-    public CommentController(CommentRepository commentRepository) {
+    public CommentController(CommentRepository commentRepository, WebPushOutboxService webPushOutboxService) {
         this.commentRepository = commentRepository;
+        this.webPushOutboxService = webPushOutboxService;
     }
 
     @GetMapping("/comments")
@@ -43,7 +46,11 @@ public class CommentController {
         }
 
         try {
-            commentRepository.addComment(id, cookie, text, spoiler, parentId);
+            UUID newCommentId = commentRepository.addComment(id, cookie, text, spoiler, parentId);
+            if (parentId != null) {
+                // If comment is auto-approved (e.g. staff), this enqueues push; if not approved yet, it silently returns
+                webPushOutboxService.enqueueCommentReplyNotification(newCommentId);
+            }
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
             if (e.getMessage() != null && e.getMessage().contains("Unauthorized or Banned")) {

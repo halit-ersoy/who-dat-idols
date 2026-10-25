@@ -1,12 +1,14 @@
 import { initHeaderScroll } from '/homepage/js/headerScroll.js';
 
-// Main initialization on DOMContentLoaded
-document.addEventListener('DOMContentLoaded', () => {
+function hideLoadingScreen() {
     const loadingScreen = document.getElementById('loading-screen');
     if (loadingScreen) {
         loadingScreen.style.display = 'none';
     }
+}
 
+function initSettingsPage() {
+    hideLoadingScreen();
     initHeaderScroll();
 
     setupProfileSection()
@@ -14,14 +16,30 @@ document.addEventListener('DOMContentLoaded', () => {
             initSettingsNavigation();
             initPasswordForm();
             initNotificationToggles();
+            try {
+                initWebPushSettings();
+            } catch (e) {
+                console.warn('Web Push initialization error:', e);
+            }
             initMessageToggles(userData.allowMessages);
             setupProfilePhotoUpload(userData);
             initThemeSelector();
+            hideLoadingScreen();
         })
         .catch(error => {
             console.error('Initialization error:', error);
+            hideLoadingScreen();
         });
-});
+}
+
+// Ensure execution whether document is still loading or already parsed
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSettingsPage);
+} else {
+    initSettingsPage();
+}
+
+window.addEventListener('load', hideLoadingScreen);
 
 /**
  * Fetches user profile data and populates settings UI.
@@ -145,9 +163,6 @@ async function handleProfileUpdate(e) {
             updateBtn.innerHTML = '<i class="fas fa-check"></i> Başarılı';
             // Update sidebar info
             document.getElementById('user-fullname').innerText = `${payload.name} ${payload.surname}`;
-            // Keep the tick if it was there. We don't have isVerified in payload, 
-            // but we can check if it exists in the current innerHTML or re-fetch.
-            // Simplified: just check if the icon was there.
             const wasVerified = document.getElementById('user-nickname').querySelector('.fa-check-circle') !== null;
             const verifiedBadge = wasVerified ? ' <i class="fas fa-check-circle" style="color: #1DA1F2; font-size: 0.85rem; margin-left: 4px;" title="Doğrulanmış Hesap"></i>' : '';
             document.getElementById('user-nickname').innerHTML = `@${payload.nickname}${verifiedBadge}`;
@@ -251,7 +266,6 @@ function initVerification() {
 
                     setTimeout(() => {
                         modal.style.display = 'none';
-                        // Refresh the UI by fetching profile again, or just reload the page for simplicity
                         window.location.reload();
                     }, 1500);
                 } else {
@@ -365,13 +379,12 @@ function resetPasswordInputs(...inputs) {
 }
 
 /**
- * Initializes notification toggle buttons with permission handling.
+ * Initializes notification toggle buttons with permission handling (legacy placeholder).
  */
 function initNotificationToggles() {
     const onBtn = document.getElementById('notifications-on');
     const offBtn = document.getElementById('notifications-off');
     if (!onBtn || !offBtn) {
-        console.error('Notification toggle buttons not found');
         return;
     }
 
@@ -401,7 +414,8 @@ function checkNotificationStatus() {
     const pref = localStorage.getItem('wdiNotificationsEnabled') === 'true';
     if (!('Notification' in window)) {
         setNotificationUIState(false);
-        document.getElementById('notifications-on').disabled = true;
+        const onBtn = document.getElementById('notifications-on');
+        if (onBtn) onBtn.disabled = true;
         return;
     }
     setNotificationUIState(Notification.permission === 'granted' && pref);
@@ -410,12 +424,219 @@ function checkNotificationStatus() {
 function setNotificationPreference(enabled) {
     localStorage.setItem('wdiNotificationsEnabled', enabled);
     setNotificationUIState(enabled);
-    // TODO: saveNotificationPreferenceToServer(enabled);
 }
 
 function setNotificationUIState(enabled) {
-    document.getElementById('notifications-on').classList.toggle('active', enabled);
-    document.getElementById('notifications-off').classList.toggle('active', !enabled);
+    const onBtn = document.getElementById('notifications-on');
+    const offBtn = document.getElementById('notifications-off');
+    if (onBtn) onBtn.classList.toggle('active', enabled);
+    if (offBtn) offBtn.classList.toggle('active', !enabled);
+}
+
+/**
+ * Initializes Web Push notification settings, status badge, action button, and sub-preferences.
+ */
+async function initWebPushSettings() {
+    try {
+        const statusBadge = document.getElementById('push-status-badge');
+        const statusDesc = document.getElementById('push-status-desc');
+        const actionBtn = document.getElementById('push-action-btn');
+        const iosNote = document.getElementById('push-ios-note');
+        const subPrefsContainer = document.getElementById('push-sub-preferences');
+
+        const dmOffBtn = document.getElementById('push-dm-off');
+        const dmOnBtn = document.getElementById('push-dm-on');
+        const commentOffBtn = document.getElementById('push-comment-off');
+        const commentOnBtn = document.getElementById('push-comment-on');
+        const previewOffBtn = document.getElementById('push-preview-off');
+        const previewOnBtn = document.getElementById('push-preview-on');
+
+        if (!statusBadge || !actionBtn) return;
+
+        if (window.WebPushManager && window.WebPushManager.isIosNeedsPwa()) {
+            if (iosNote) iosNote.style.display = 'flex';
+        }
+
+        let isUpdating = false;
+
+        function renderStatus(info) {
+            statusBadge.className = 'push-status-badge';
+
+            if (!info || info.status === 'unsupported') {
+                statusBadge.classList.add('unsupported');
+                statusBadge.innerText = 'Desteklenmiyor';
+                if (statusDesc) statusDesc.innerText = 'Bu tarayıcı veya cihaz Web Push bildirimlerini desteklemiyor.';
+                actionBtn.disabled = true;
+                actionBtn.className = 'settings-btn';
+                actionBtn.innerText = 'Desteklenmiyor';
+                if (subPrefsContainer) subPrefsContainer.style.display = 'none';
+                return;
+            }
+
+            if (info.status === 'denied') {
+                statusBadge.classList.add('denied');
+                statusBadge.innerText = 'Engellendi';
+                if (statusDesc) statusDesc.innerText = 'Bildirim izni tarayıcı ayarlarından engellenmiş. Adres çubuğundaki kilit simgesinden izni açabilirsiniz.';
+                actionBtn.disabled = true;
+                actionBtn.className = 'settings-btn';
+                actionBtn.innerText = 'Tarayıcıdan İzin Verin';
+                if (subPrefsContainer) subPrefsContainer.style.display = 'none';
+                return;
+            }
+
+            if (info.status === 'subscribed') {
+                statusBadge.classList.add('subscribed');
+                statusBadge.innerText = 'Aktif';
+                if (statusDesc) statusDesc.innerText = 'Bu cihazda bildirimler aktif. Bildirim detaylarını aşağıdan yönetebilirsiniz.';
+                actionBtn.disabled = false;
+                actionBtn.className = 'settings-btn';
+                actionBtn.style.background = 'rgba(231, 76, 60, 0.15)';
+                actionBtn.style.color = '#e74c3c';
+                actionBtn.style.borderColor = 'rgba(231, 76, 60, 0.3)';
+                actionBtn.innerHTML = '<i class="fas fa-bell-slash"></i> Bu Cihazda Kapat';
+
+                if (subPrefsContainer) {
+                    subPrefsContainer.style.display = 'flex';
+                }
+                loadAndRenderPreferences();
+                return;
+            }
+
+            // unsubscribed / default
+            statusBadge.classList.add('default');
+            statusBadge.innerText = 'Kapalı';
+            if (statusDesc) statusDesc.innerText = 'Site sekmesi kapalıyken bile anlık bildirim almak için tarayıcı bildirimlerini açabilirsiniz.';
+            actionBtn.disabled = false;
+            actionBtn.className = 'settings-btn btn-primary-glow';
+            actionBtn.style.background = '';
+            actionBtn.style.color = '';
+            actionBtn.style.borderColor = '';
+            actionBtn.innerHTML = '<i class="fas fa-bell"></i> Bildirimleri Aç';
+            if (subPrefsContainer) subPrefsContainer.style.display = 'none';
+        }
+
+        async function refreshStatus() {
+            if (!window.WebPushManager || !window.WebPushManager.isSupported()) {
+                renderStatus({ status: 'unsupported' });
+                return;
+            }
+
+            try {
+                const statusPromise = window.WebPushManager.checkSubscriptionStatus();
+                const timeoutPromise = new Promise(resolve => setTimeout(() => {
+                    resolve({ status: (window.Notification && Notification.permission === 'granted') ? 'subscribed' : 'unsubscribed' });
+                }, 1500));
+                const info = await Promise.race([statusPromise, timeoutPromise]);
+                renderStatus(info);
+            } catch (e) {
+                console.warn('refreshStatus error:', e);
+                renderStatus({ status: 'unsubscribed' });
+            }
+        }
+
+        async function loadAndRenderPreferences() {
+            try {
+                const prefs = await window.WebPushManager.getPreferences();
+                if (dmOnBtn && dmOffBtn) {
+                    dmOnBtn.classList.toggle('active', !!prefs.allowDirectMessagePush);
+                    dmOffBtn.classList.toggle('active', !prefs.allowDirectMessagePush);
+                }
+                if (commentOnBtn && commentOffBtn) {
+                    commentOnBtn.classList.toggle('active', !!prefs.allowCommentReplyPush);
+                    commentOffBtn.classList.toggle('active', !prefs.allowCommentReplyPush);
+                }
+                if (previewOnBtn && previewOffBtn) {
+                    previewOnBtn.classList.toggle('active', !!prefs.showContentPreview);
+                    previewOffBtn.classList.toggle('active', !prefs.showContentPreview);
+                }
+            } catch (e) {
+                console.warn('Error loading preferences:', e);
+            }
+        }
+
+        actionBtn.addEventListener('click', async () => {
+            if (isUpdating || !window.WebPushManager) return;
+            isUpdating = true;
+            const currentInfo = await window.WebPushManager.checkSubscriptionStatus();
+
+            if (currentInfo.status === 'subscribed') {
+                actionBtn.disabled = true;
+                actionBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kapatılıyor...';
+                const res = await window.WebPushManager.unsubscribe();
+                isUpdating = false;
+                if (!res.success) {
+                    alert(res.message || 'Bildirim aboneliği kapatılırken bir hata oluştu.');
+                }
+                await refreshStatus();
+            } else if (currentInfo.status === 'unsubscribed') {
+                actionBtn.disabled = true;
+                actionBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Açılıyor...';
+                const res = await window.WebPushManager.subscribe();
+                isUpdating = false;
+                if (!res.success) {
+                    alert(res.message || 'Bildirim izni alınamadı veya abonelik oluşturulamadı.');
+                }
+                await refreshStatus();
+            } else {
+                isUpdating = false;
+            }
+        });
+
+        if (dmOnBtn && dmOffBtn) {
+            dmOnBtn.addEventListener('click', async () => {
+                const res = await window.WebPushManager.updatePreferences({ allowDirectMessagePush: true });
+                if (res && res.success) {
+                    dmOnBtn.classList.add('active');
+                    dmOffBtn.classList.remove('active');
+                }
+            });
+            dmOffBtn.addEventListener('click', async () => {
+                const res = await window.WebPushManager.updatePreferences({ allowDirectMessagePush: false });
+                if (res && res.success) {
+                    dmOffBtn.classList.add('active');
+                    dmOnBtn.classList.remove('active');
+                }
+            });
+        }
+
+        if (commentOnBtn && commentOffBtn) {
+            commentOnBtn.addEventListener('click', async () => {
+                const res = await window.WebPushManager.updatePreferences({ allowCommentReplyPush: true });
+                if (res && res.success) {
+                    commentOnBtn.classList.add('active');
+                    commentOffBtn.classList.remove('active');
+                }
+            });
+            commentOffBtn.addEventListener('click', async () => {
+                const res = await window.WebPushManager.updatePreferences({ allowCommentReplyPush: false });
+                if (res && res.success) {
+                    commentOffBtn.classList.add('active');
+                    commentOnBtn.classList.remove('active');
+                }
+            });
+        }
+
+        if (previewOnBtn && previewOffBtn) {
+            previewOnBtn.addEventListener('click', async () => {
+                const res = await window.WebPushManager.updatePreferences({ showContentPreview: true });
+                if (res && res.success) {
+                    previewOnBtn.classList.add('active');
+                    previewOffBtn.classList.remove('active');
+                }
+            });
+            previewOffBtn.addEventListener('click', async () => {
+                const res = await window.WebPushManager.updatePreferences({ showContentPreview: false });
+                if (res && res.success) {
+                    previewOffBtn.classList.add('active');
+                    previewOnBtn.classList.remove('active');
+                }
+            });
+        }
+
+        await refreshStatus();
+    } catch (e) {
+        console.warn('initWebPushSettings error:', e);
+    }
 }
 
 /**
@@ -654,8 +875,6 @@ function setupProfilePhotoUpload(userData) {
                     userAvatar.style.color = '#000';
                     userAvatar.style.backgroundColor = '';
 
-                    // Trigger a custom event or let the user refresh to see changes globally
-                    // A simple window reload does the trick to refresh header too
                     setTimeout(() => window.location.reload(), 500);
                 } else {
                     showButtonError(removePhotoBtn, 'Hata', originalText);

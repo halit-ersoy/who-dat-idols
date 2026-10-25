@@ -33,6 +33,11 @@ dependencies {
     
     // Performance: Caffeine Cache for ultra-fast local memory caching
     implementation 'com.github.ben-manes.caffeine:caffeine'
+
+    // Web Push (VAPID / RFC 8291 / RFC 8292)
+    implementation 'nl.martijndwars:web-push:5.1.1'
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.80'
+    implementation 'org.bouncycastle:bcpkix-jdk18on:1.80'
 }
 
 tasks.named('test') {

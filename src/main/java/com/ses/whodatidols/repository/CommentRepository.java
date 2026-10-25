@@ -38,71 +38,7 @@ public class CommentRepository {
 
     public List<CommentViewModel> getComments(String idOrSlug, String cookie) {
         String sql = """
-                    WITH TargetContent AS (
-                        SELECT TRY_CAST(? AS UNIQUEIDENTIFIER) AS ID
-                        UNION
-                        SELECT ID FROM Upcoming WHERE Slug = ? OR Name = ?
-                        UNION
-                        SELECT ID FROM Series WHERE Slug = ? OR Name = ?
-                        UNION
-                        SELECT ID FROM Movie WHERE Slug = ? OR Name = ?
-                        UNION
-                        SELECT ID FROM Episode WHERE Slug = ? OR Name = ?
-                    ),
-                    RelatedIDs AS (
-                        SELECT ID FROM TargetContent WHERE ID IS NOT NULL
-                        UNION
-                        SELECT e.SeriesId FROM Episode e JOIN TargetContent t ON e.ID = t.ID WHERE e.SeriesId IS NOT NULL
-                        UNION
-                        SELECT e.ID FROM Episode e JOIN TargetContent t ON e.SeriesId = t.ID WHERE e.SeasonNumber = 1 AND e.EpisodeNumber = 1
-                        UNION
-                        SELECT e1.ID FROM Episode ep JOIN TargetContent t ON ep.ID = t.ID JOIN Episode e1 ON e1.SeriesId = ep.SeriesId WHERE e1.SeasonNumber = 1 AND e1.EpisodeNumber = 1
-                        UNION
-                        SELECT u.ID FROM Upcoming u
-                        JOIN Episode e ON e.ID IN (SELECT ID FROM TargetContent)
-                        JOIN Series s ON e.SeriesId = s.ID
-                        WHERE u.Name COLLATE Latin1_General_CI_AI = s.Name COLLATE Latin1_General_CI_AI
-                           OR u.ReferenceId = s.ID
-                           OR u.ReferenceId = e.ID
-                        UNION
-                        SELECT u.ID FROM Upcoming u
-                        JOIN Series s ON s.ID IN (SELECT ID FROM TargetContent)
-                        WHERE u.Name COLLATE Latin1_General_CI_AI = s.Name COLLATE Latin1_General_CI_AI
-                           OR u.ReferenceId = s.ID
-                        UNION
-                        SELECT u.ID FROM Upcoming u
-                        JOIN Movie m ON m.ID IN (SELECT ID FROM TargetContent)
-                        WHERE u.Name COLLATE Latin1_General_CI_AI = m.Name COLLATE Latin1_General_CI_AI
-                           OR u.ReferenceId = m.ID
-                        UNION
-                        SELECT u.ReferenceId FROM Upcoming u JOIN TargetContent t ON u.ID = t.ID WHERE u.ReferenceId IS NOT NULL
-                        UNION
-                        SELECT s.ID FROM Series s JOIN Upcoming u ON s.Name COLLATE Latin1_General_CI_AI = u.Name COLLATE Latin1_General_CI_AI JOIN TargetContent t ON u.ID = t.ID
-                        UNION
-                        SELECT e.ID FROM Episode e JOIN Series s ON e.SeriesId = s.ID JOIN Upcoming u ON s.Name COLLATE Latin1_General_CI_AI = u.Name COLLATE Latin1_General_CI_AI JOIN TargetContent t ON u.ID = t.ID WHERE e.SeasonNumber = 1 AND e.EpisodeNumber = 1
-                        UNION
-                        SELECT e.ID FROM Episode e JOIN Upcoming u ON e.SeriesId = u.ReferenceId JOIN TargetContent t ON u.ID = t.ID WHERE e.SeasonNumber = 1 AND e.EpisodeNumber = 1
-                        UNION
-                        SELECT m.ID FROM Movie m JOIN Upcoming u ON m.Name COLLATE Latin1_General_CI_AI = u.Name COLLATE Latin1_General_CI_AI JOIN TargetContent t ON u.ID = t.ID
-                    )
-                    SELECT
-                        c.ID, c.Text as comment, c.CreatedAt as date, c.Spoiler,
-                        COALESCE(p.Nickname, c.Nickname) as nickname,
-                        c.UserId as authorId,
-                        c.LikeCount,
-                        c.ParentId,
-                        c.ContentId,
-                        CASE WHEN cl.UserId IS NOT NULL THEN 1 ELSE 0 END as isLiked,
-                        CASE WHEN c.UserId = p_me.ID THEN 1 ELSE 0 END as isAuthor,
-                        c.IsApproved,
-                        p.Role,
-                        p.isVerified
-                    FROM Comments c
-                    LEFT JOIN Person p ON c.UserId = p.ID
-                    LEFT JOIN Person p_me ON p_me.ID = [dbo].[ResolveUserIdByCookie](TRY_CAST(? AS UNIQUEIDENTIFIER))
-                    LEFT JOIN CommentLikes cl ON c.ID = cl.CommentId AND cl.UserId = p_me.ID
-                    WHERE c.ContentId IN (SELECT ID FROM RelatedIDs) AND (c.IsApproved = 1 OR c.UserId = p_me.ID)
-                    ORDER BY c.CreatedAt DESC
+                    WITH TargetContent AS (\n                        SELECT TRY_CAST(? AS UNIQUEIDENTIFIER) AS ID\n                        UNION\n                        SELECT ID FROM Upcoming WHERE Slug = ? OR Name = ?\n                        UNION\n                        SELECT ID FROM Series WHERE Slug = ? OR Name = ?\n                        UNION\n                        SELECT ID FROM Movie WHERE Slug = ? OR Name = ?\n                        UNION\n                        SELECT ID FROM Episode WHERE Slug = ? OR Name = ?\n                    ),\n                    RelatedIDs AS (\n                        SELECT ID FROM TargetContent WHERE ID IS NOT NULL\n                        UNION\n                        SELECT e.SeriesId FROM Episode e JOIN TargetContent t ON e.ID = t.ID WHERE e.SeriesId IS NOT NULL\n                        UNION\n                        SELECT e.ID FROM Episode e JOIN TargetContent t ON e.SeriesId = t.ID WHERE e.SeasonNumber = 1 AND e.EpisodeNumber = 1\n                        UNION\n                        SELECT e1.ID FROM Episode ep JOIN TargetContent t ON ep.ID = t.ID JOIN Episode e1 ON e1.SeriesId = ep.SeriesId WHERE e1.SeasonNumber = 1 AND e1.EpisodeNumber = 1\n                        UNION\n                        SELECT u.ID FROM Upcoming u\n                        JOIN Episode e ON e.ID IN (SELECT ID FROM TargetContent)\n                        JOIN Series s ON e.SeriesId = s.ID\n                        WHERE u.Name COLLATE Latin1_General_CI_AI = s.Name COLLATE Latin1_General_CI_AI\n                           OR u.ReferenceId = s.ID\n                           OR u.ReferenceId = e.ID\n                        UNION\n                        SELECT u.ID FROM Upcoming u\n                        JOIN Series s ON s.ID IN (SELECT ID FROM TargetContent)\n                        WHERE u.Name COLLATE Latin1_General_CI_AI = s.Name COLLATE Latin1_General_CI_AI\n                           OR u.ReferenceId = s.ID\n                        UNION\n                        SELECT u.ID FROM Upcoming u\n                        JOIN Movie m ON m.ID IN (SELECT ID FROM TargetContent)\n                        WHERE u.Name COLLATE Latin1_General_CI_AI = m.Name COLLATE Latin1_General_CI_AI\n                           OR u.ReferenceId = m.ID\n                        UNION\n                        SELECT u.ReferenceId FROM Upcoming u JOIN TargetContent t ON u.ID = t.ID WHERE u.ReferenceId IS NOT NULL\n                        UNION\n                        SELECT s.ID FROM Series s JOIN Upcoming u ON s.Name COLLATE Latin1_General_CI_AI = u.Name COLLATE Latin1_General_CI_AI JOIN TargetContent t ON u.ID = t.ID\n                        UNION\n                        SELECT e.ID FROM Episode e JOIN Series s ON e.SeriesId = s.ID JOIN Upcoming u ON s.Name COLLATE Latin1_General_CI_AI = u.Name COLLATE Latin1_General_CI_AI JOIN TargetContent t ON u.ID = t.ID WHERE e.SeasonNumber = 1 AND e.EpisodeNumber = 1\n                        UNION\n                        SELECT e.ID FROM Episode e JOIN Upcoming u ON e.SeriesId = u.ReferenceId JOIN TargetContent t ON u.ID = t.ID WHERE e.SeasonNumber = 1 AND e.EpisodeNumber = 1\n                        UNION\n                        SELECT m.ID FROM Movie m JOIN Upcoming u ON m.Name COLLATE Latin1_General_CI_AI = u.Name COLLATE Latin1_General_CI_AI JOIN TargetContent t ON u.ID = t.ID\n                    )\n                    SELECT\n                        c.ID, c.Text as comment, c.CreatedAt as date, c.Spoiler,\n                        COALESCE(p.Nickname, c.Nickname) as nickname,\n                        c.UserId as authorId,\n                        c.LikeCount,\n                        c.ParentId,\n                        c.ContentId,\n                        CASE WHEN cl.UserId IS NOT NULL THEN 1 ELSE 0 END as isLiked,\n                        CASE WHEN c.UserId = p_me.ID THEN 1 ELSE 0 END as isAuthor,\n                        c.IsApproved,\n                        p.Role,\n                        p.isVerified\n                    FROM Comments c\n                    LEFT JOIN Person p ON c.UserId = p.ID\n                    LEFT JOIN Person p_me ON p_me.ID = [dbo].[ResolveUserIdByCookie](TRY_CAST(? AS UNIQUEIDENTIFIER))\n                    LEFT JOIN CommentLikes cl ON c.ID = cl.CommentId AND cl.UserId = p_me.ID\n                    WHERE c.ContentId IN (SELECT ID FROM RelatedIDs) AND (c.IsApproved = 1 OR c.UserId = p_me.ID)\n                    ORDER BY c.CreatedAt DESC
                 """;
 
         List<CommentViewModel> allComments = jdbcTemplate.query(sql, new CommentRowMapper(),
@@ -140,10 +76,11 @@ public class CommentRepository {
         return roots;
     }
 
-    public void addComment(String idOrSlug, String cookie, String text, boolean spoiler, UUID parentId) {
+    public UUID addComment(String idOrSlug, String cookie, String text, boolean spoiler, UUID parentId) {
+        UUID newCommentId = UUID.randomUUID();
         String sql = """
-                    INSERT INTO Comments (ContentId, UserId, Text, Spoiler, Nickname, ParentId, IsApproved, CreatedAt)
-                    SELECT COALESCE(
+                    INSERT INTO Comments (ID, ContentId, UserId, Text, Spoiler, Nickname, ParentId, IsApproved, CreatedAt)
+                    SELECT ?, COALESCE(
                         TRY_CAST(? AS UNIQUEIDENTIFIER),
                         (SELECT TOP 1 ID FROM Upcoming WHERE Slug = ? OR Name = ?),
                         (SELECT TOP 1 ID FROM Episode WHERE Slug = ? OR Name = ?),
@@ -153,6 +90,7 @@ public class CommentRepository {
                     FROM Person WHERE ID = [dbo].[ResolveUserIdByCookie](TRY_CAST(? AS UNIQUEIDENTIFIER)) AND isBanned = 0
                 """;
         int affected = jdbcTemplate.update(sql,
+                newCommentId.toString(),
                 idOrSlug, idOrSlug, idOrSlug, idOrSlug, idOrSlug, idOrSlug, idOrSlug, idOrSlug, idOrSlug,
                 text,
                 spoiler,
@@ -163,10 +101,11 @@ public class CommentRepository {
         if (affected == 0) {
             throw new RuntimeException("Unauthorized or Banned");
         }
+        return newCommentId;
     }
 
-    public void addComment(UUID contentId, String cookie, String text, boolean spoiler, UUID parentId) {
-        addComment(contentId != null ? contentId.toString() : null, cookie, text, spoiler, parentId);
+    public UUID addComment(UUID contentId, String cookie, String text, boolean spoiler, UUID parentId) {
+        return addComment(contentId != null ? contentId.toString() : null, cookie, text, spoiler, parentId);
     }
 
     public List<CommentViewModel> getPendingComments() {

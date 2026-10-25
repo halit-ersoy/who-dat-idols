@@ -152,6 +152,8 @@ public class AdminController {
     private final AdService adService;
     private final CastSyncService castSyncService;
     private final ContentRequestRepository contentRequestRepository;
+    @Autowired(required = false)
+    private com.ses.whodatidols.service.WebPushOutboxService webPushOutboxService;
 
 
 
@@ -2350,6 +2352,9 @@ public class AdminController {
         try {
 
             commentRepository.approveComment(commentId);
+            if (webPushOutboxService != null) {
+                webPushOutboxService.enqueueCommentReplyNotification(commentId);
+            }
 
             return ResponseEntity.ok("Yorum onaylandı.");
 

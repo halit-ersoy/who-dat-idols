@@ -121,6 +121,14 @@ export function initLogin() {
 
     async function handleLogout() {
         try {
+            if (window.WebPushManager && typeof window.WebPushManager.unsubscribe === 'function') {
+                await window.WebPushManager.unsubscribe().catch(() => {});
+            }
+        } catch (e) {
+            console.warn('WebPush unsubscribe on logout failed:', e);
+        }
+
+        try {
             await fetch('/api/user/logout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }

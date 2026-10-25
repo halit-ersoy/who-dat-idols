@@ -360,6 +360,30 @@ public class PersonRepository {
         return response;
     }
 
+    public Optional<Person> findById(UUID id) {
+        if (id == null) return Optional.empty();
+        ensureSchema();
+        String sql = "SELECT ID, nickname, name, surname, email, password, isBanned, banReason, role, allowMessages, isVerified FROM [WhoDatIdols].[dbo].[Person] WHERE ID = ?";
+        return jdbcTemplate.query(sql, (rs) -> {
+            if (rs.next()) {
+                Person p = new Person();
+                p.setId(UUID.fromString(rs.getString("ID")));
+                p.setNickname(rs.getString("nickname"));
+                p.setName(rs.getString("name"));
+                p.setSurname(rs.getString("surname"));
+                p.setEmail(rs.getString("email"));
+                p.setPassword(rs.getString("password"));
+                p.setBanned(rs.getBoolean("isBanned"));
+                p.setBanReason(rs.getString("banReason"));
+                p.setRole(rs.getString("role"));
+                p.setAllowMessages(rs.getBoolean("allowMessages"));
+                p.setVerified(rs.getBoolean("isVerified"));
+                return Optional.of(p);
+            }
+            return Optional.empty();
+        }, id.toString());
+    }
+
     public Optional<Person> findByNicknameOrEmail(String usernameOrEmail) {
         ensureSchema();
         String sql = "SELECT ID, nickname, name, surname, email, password, isBanned, banReason, role, allowMessages, isVerified FROM [WhoDatIdols].[dbo].[Person] WHERE nickname = ? OR email = ?";
@@ -462,10 +486,7 @@ public class PersonRepository {
         String sql = """
             SELECT TOP 1 P.ID, P.nickname, P.name, P.surname, P.email, P.isBanned, P.banReason, P.role, P.allowMessages, P.isVerified 
             FROM [WhoDatIdols].[dbo].[Person] P 
-            WHERE P.cookie = ? OR EXISTS (
-                SELECT 1 FROM [WhoDatIdols].[dbo].[UserSession] US 
-                WHERE US.UserId = P.ID AND US.Token = ?
-            )
+            WHERE P.cookie = ? OR EXISTS (\n                SELECT 1 FROM [WhoDatIdols].[dbo].[UserSession] US \n                WHERE US.UserId = P.ID AND US.Token = ?\n            )
         """;
         return jdbcTemplate.queryForMap(sql, cookieUuid, cookieUuid);
     }
@@ -631,7 +652,12 @@ public class PersonRepository {
         try { jdbcTemplate.update("DELETE FROM [WhoDatIdols].[dbo].[CommentLikes] WHERE CommentId IN (SELECT ID FROM [WhoDatIdols].[dbo].[Comments] WHERE UserId = ?)", userId); } catch (Exception ignored) {}
         try { jdbcTemplate.update("DELETE FROM [WhoDatIdols].[dbo].[Comments] WHERE UserId = ?", userId); } catch (Exception ignored) {}
 
-        // 8. Delete user from Person
+        // 8. Push Subscriptions, Preferences & Outbox
+        try { jdbcTemplate.update("DELETE FROM [WhoDatIdols].[dbo].[PushSubscriptions] WHERE UserId = ?", userId); } catch (Exception ignored) {}
+        try { jdbcTemplate.update("DELETE FROM [WhoDatIdols].[dbo].[PushPreferences] WHERE UserId = ?", userId); } catch (Exception ignored) {}
+        try { jdbcTemplate.update("DELETE FROM [WhoDatIdols].[dbo].[PushOutbox] WHERE UserId = ?", userId); } catch (Exception ignored) {}
+
+        // 9. Delete user from Person
         String sql = "DELETE FROM [WhoDatIdols].[dbo].[Person] WHERE ID = ?";
         jdbcTemplate.update(sql, userId.toString());
     }
