@@ -1822,11 +1822,6 @@ document.addEventListener('DOMContentLoaded', function () {
         movieCancelBtn.style.display = "block";
         movieFileInput.removeAttribute('required');
 
-        const movieStatus = document.getElementById('movieFormStatus');
-        if (movieStatus) movieStatus.style.display = 'flex';
-        const movieModeText = document.getElementById('movieFormModeText');
-        if (movieModeText) movieModeText.innerText = `Film: ${movie.name}`;
-
         // Switch to movie section
         const movieLink = document.querySelector('.nav-link[data-section="movie-section"]');
         if (movieLink) movieLink.click();
@@ -1846,10 +1841,6 @@ document.addEventListener('DOMContentLoaded', function () {
         movieForm.reset();
         if (document.getElementById('movieCastData')) document.getElementById('movieCastData').value = '';
         movieIdInput.value = "";
-        const movieStatus = document.getElementById('movieFormStatus');
-        if (movieStatus) movieStatus.style.display = 'none';
-        const movieModeText = document.getElementById('movieFormModeText');
-        if (movieModeText) movieModeText.innerText = "-";
         const movieUpBanner = document.getElementById('movieUpcomingPublishBanner');
         if (movieUpBanner) movieUpBanner.style.display = 'none';
         const movieUpId = document.getElementById('movieUpcomingPublishId');
@@ -2012,33 +2003,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (epId !== "") {
             // EPISODE EDIT MODE
-            const season = document.getElementById('seasonNum').value;
-            const episodeNum = document.getElementById('episodeNum').value;
-
-            if (!season || isNaN(parseInt(season)) || parseInt(season) < 1) {
-                alert("Lütfen geçerli bir sezon numarası giriniz!");
-                document.getElementById('seasonNum').focus();
-                return;
-            }
-            if (!episodeNum || isNaN(parseInt(episodeNum)) || parseInt(episodeNum) < 1) {
-                alert("Lütfen geçerli bir bölüm numarası giriniz!");
-                document.getElementById('episodeNum').focus();
-                return;
-            }
-
             const formData = new FormData();
             formData.append('episodeId', epId);
-            formData.append('season', season);
-            formData.append('episodeNum', episodeNum);
+            formData.append('season', document.getElementById('seasonNum').value);
+            formData.append('episodeNum', document.getElementById('episodeNum').value);
 
             // Add finalStatus even in episode edit mode
             let finalStatus = 0;
-            const episodeSeriesStatusEl = document.getElementById('episodeSeriesStatus');
             const seriesStatusEl = document.getElementById('seriesStatus');
-            if (episodeSeriesStatusEl && episodeSeriesStatusEl.offsetParent !== null) {
-                finalStatus = episodeSeriesStatusEl.value;
-            } else if (seriesStatusEl && seriesStatusEl.offsetParent !== null) {
+            const episodeSeriesStatusEl = document.getElementById('episodeSeriesStatus');
+            if (seriesStatusEl && seriesStatusEl.offsetParent !== null) {
                 finalStatus = seriesStatusEl.value;
+            } else if (episodeSeriesStatusEl && episodeSeriesStatusEl.offsetParent !== null) {
+                finalStatus = episodeSeriesStatusEl.value;
             }
             formData.append('finalStatus', finalStatus);
             formData.append('isAdult', document.getElementById('episodeIsAdult') && document.getElementById('episodeIsAdult').checked ? 'true' : 'false');
@@ -2050,14 +2027,13 @@ document.addEventListener('DOMContentLoaded', function () {
             seriesSubmitBtn.innerText = "KONTROL EDİLİYOR...";
             seriesSubmitBtn.disabled = true;
 
-            const checkUrl = `/admin/check-episode-collision?seriesId=${encodeURIComponent(sId)}&season=${season}&episodeNum=${episodeNum}&excludeId=${epId}`;
-            fetch(checkUrl)
-                .then(r => {
-                    if (!r.ok) return { collision: false };
-                    return r.json().catch(() => ({ collision: false }));
-                })
+            const season = document.getElementById('seasonNum').value;
+            const episodeNum = document.getElementById('episodeNum').value;
+
+            fetch(`/admin/check-episode-collision?seriesId=${sId}&season=${season}&episodeNum=${episodeNum}&excludeId=${epId}`)
+                .then(r => r.json())
                 .then(check => {
-                    if (check && check.collision) {
+                    if (check.collision) {
                         if (!confirm(check.message)) {
                             seriesSubmitBtn.innerText = "BÖLÜMÜ GÜNCELLE";
                             seriesSubmitBtn.disabled = false;
@@ -2072,8 +2048,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         fetchSeries();
                     });
                 }).catch(err => {
-                    alert("Hata: " + (err.message || err));
-                    seriesSubmitBtn.innerText = "BÖLÜMÜ GÜNCELLE";
+                    alert("Hata: " + err.message);
                     seriesSubmitBtn.disabled = false;
                 });
             return;
@@ -3031,18 +3006,13 @@ document.addEventListener('DOMContentLoaded', function () {
             panel.innerHTML = '<div style="padding:15px; color:#666;"><i class="fas fa-spinner fa-spin"></i> Bölümler yükleniyor...</div>';
             panel.style.maxHeight = "auto";
 
-            const seriesName = element.querySelector('.series-title-wrapper h3')?.innerText?.trim() || '';
-
             fetch(`/admin/episodes-by-series?seriesId=${seriesId}`)
                 .then(r => r.json())
                 .then(episodes => {
                     if (episodes.length === 0) {
                         panel.innerHTML = '<div style="padding:15px; color:#666;">Bölüm bulunamadı.</div>';
                     } else {
-                        panel.innerHTML = episodes.map(ep => {
-                            ep.seriesId = ep.seriesId || seriesId;
-                            ep.seriesName = ep.seriesName || seriesName;
-                            return `
+                        panel.innerHTML = episodes.map(ep => `
                             <div class="episode-item">
                                 <div class="episode-title">
                                     <strong>Sezon ${ep.seasonNumber || ep.season || '-'} - Bölüm ${ep.episodeNumber || ep.episode || '-'}</strong>
@@ -3051,12 +3021,12 @@ document.addEventListener('DOMContentLoaded', function () {
                                     <button class="btn btn-sm toggle-btn ${ep.hidden ? 'btn-success' : 'btn-secondary'}" onclick='window.toggleEpisodeHidden("${ep.id}", ${ep.hidden}, "${seriesId}", this)'>
                                         <i class="fas ${ep.hidden ? 'fa-eye' : 'fa-eye-slash'}"></i> <span>${ep.hidden ? 'GÖSTER' : 'GİZLE'}</span>
                                     </button>
-                                    <button class="btn btn-sm btn-edit" onclick='editEpisode(${JSON.stringify(ep).replace(/'/g, "&#39;")}, event, "${seriesId}", ${JSON.stringify(seriesName)})'><i class="fas fa-edit"></i> DÜZENLE</button>
+                                    <button class="btn btn-sm btn-edit" onclick='editEpisode(${JSON.stringify(ep).replace(/'/g, "&#39;")}, event)'><i class="fas fa-edit"></i> DÜZENLE</button>
                                     <button class="btn btn-sm btn-edit" style="background:#6c757d;" onclick='preloadEpisodeForm(${JSON.stringify(ep).replace(/'/g, "&#39;")})'><i class="fas fa-copy"></i> KOPYALA</button>
                                     <button class="btn btn-sm btn-danger" onclick='deleteEpisode("${ep.id}")'><i class="fas fa-trash"></i> SİL</button>
                                 </div>
                             </div>
-                        `;}).join('');
+                        `).join('');
                     }
                     panel.style.maxHeight = panel.scrollHeight + "px";
                 })
@@ -3118,8 +3088,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (document.getElementById('bulkEpisodeFields')) document.getElementById('bulkEpisodeFields').style.display = 'none';
         document.getElementById('seriesPosterGroup').style.display = 'block';
 
-        document.getElementById('seriesFormStatus').style.display = 'flex';
-        document.getElementById('seriesFormModeText').innerText = `Dizi: ${series.name}`;
+        document.getElementById('seriesFormStatus').style.display = 'block';
+        document.getElementById('seriesFormModeText').innerText = "Dizi Bilgilerini Düzenle";
 
         setupSeriesEditMode("DİZİ BİLGİSİNİ GÜNCELLE");
 
@@ -3127,85 +3097,33 @@ document.addEventListener('DOMContentLoaded', function () {
         if (seriesLink) seriesLink.click();
     };
 
-    window.updateSingleEditTag = function () {
-        const s = document.getElementById('seasonNum').value || 1;
-        const e = document.getElementById('episodeNum').value || 1;
-        const modeText = document.getElementById('seriesFormModeText');
-        if (modeText) {
-            const title = window.currentEditingSeriesTitle;
-            if (title) {
-                modeText.innerText = `Dizi: ${title} - ${s}. Sezon ${e}. Bölüm`;
-            } else {
-                modeText.innerText = `Dizi: ${s}. Sezon ${e}. Bölüm`;
-            }
-        }
-    };
-
-    window.editEpisode = function (ep, event, parentSeriesId, parentSeriesName) {
+    window.editEpisode = function (ep, event) {
         if (event && (event.shiftKey || event.ctrlKey || event.metaKey)) {
             const url = new URL(window.location.href);
             url.searchParams.set('editEpisode', ep.id);
+            // We need parent info to fully preload it in a new tab, but for now we'll fetch it on load if possible
             window.open(url.toString(), '_blank');
             return;
         }
         resetSeriesForm();
         episodeIdInput.value = ep.id;
-        const sId = ep.seriesId || parentSeriesId || "";
-        seriesIdInput.value = sId;
-
-        const seasonVal = ep.seasonNumber ?? ep.season ?? 1;
-        const episodeVal = ep.episodeNumber ?? ep.episode ?? 1;
-        document.getElementById('seasonNum').value = seasonVal;
-        document.getElementById('episodeNum').value = episodeVal;
+        document.getElementById('seasonNum').value = ep.season;
+        document.getElementById('episodeNum').value = ep.episode;
 
         const epIsAdultCheckbox = document.getElementById('episodeIsAdult');
         if (epIsAdultCheckbox) epIsAdultCheckbox.checked = ep.isAdult || ep.adult || false;
-
-        const epStatusEl = document.getElementById('episodeSeriesStatus');
-        if (epStatusEl) {
-            epStatusEl.value = (ep.finalStatus !== undefined && ep.finalStatus !== null) ? ep.finalStatus : (ep.seriesStatus || "0");
-        }
 
         // Form Layout for Episode Edit
         document.getElementById('seriesModeGroup').style.display = 'none';
         if (document.getElementById('episodeMethodGroup')) document.getElementById('episodeMethodGroup').style.display = 'none';
         document.getElementById('newSeriesFields').style.display = 'none';
         if (document.getElementById('episodeBuilderSection')) document.getElementById('episodeBuilderSection').style.display = 'none';
-        if (document.getElementById('episodeSingleEditFields')) document.getElementById('episodeSingleEditFields').style.display = 'block';
+        if (document.getElementById('episodeSingleEditFields')) document.getElementById('episodeSingleEditFields').style.display = 'grid';
         if (document.getElementById('bulkEpisodeFields')) document.getElementById('bulkEpisodeFields').style.display = 'none';
         document.getElementById('seriesPosterGroup').style.display = 'none';
 
-        // Determine real series name cleanly
-        let seriesTitle = (parentSeriesName || ep.seriesName || '').trim();
-        let rawEpName = (ep.name || '').trim();
-
-        if (!seriesTitle) {
-            const match = rawEpName.match(/^(.*?)(?:\s*-\s*|\s+)?(\d+)\.\s*sezon\s*(\d+)\.\s*bölüm/i);
-            if (match && match[1] && match[1].trim()) {
-                seriesTitle = match[1].trim();
-            } else if (!match && rawEpName && !/^\d+\.\s*sezon/i.test(rawEpName)) {
-                seriesTitle = rawEpName;
-            }
-        }
-        window.currentEditingSeriesTitle = seriesTitle;
-
-        let displayText = "";
-        if (seriesTitle) {
-            displayText = `Dizi: ${seriesTitle} - ${seasonVal}. Sezon ${episodeVal}. Bölüm`;
-        } else if (rawEpName) {
-            if (/(\d+)\.\s*sezon\s*(\d+)\.\s*bölüm/i.test(rawEpName)) {
-                displayText = `Dizi: ${rawEpName}`;
-            } else {
-                displayText = `Dizi: ${rawEpName} - ${seasonVal}. Sezon ${episodeVal}. Bölüm`;
-            }
-        } else {
-            displayText = `Dizi: ${seasonVal}. Sezon ${episodeVal}. Bölüm`;
-        }
-
-        const formStatus = document.getElementById('seriesFormStatus');
-        if (formStatus) formStatus.style.display = 'flex';
-        const modeText = document.getElementById('seriesFormModeText');
-        if (modeText) modeText.innerText = displayText;
+        document.getElementById('seriesFormStatus').style.display = 'block';
+        document.getElementById('seriesFormModeText').innerText = `Bölüm Düzenle (${ep.name})`;
 
         setupSeriesEditMode("BÖLÜMÜ GÜNCELLE");
 
@@ -3405,14 +3323,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         xhr.addEventListener("load", async function () {
             if (xhr.status === 200) {
-                let okMsg = "İşlem Başarılı!";
-                try {
-                    const parsed = JSON.parse(xhr.responseText);
-                    if (parsed.message) okMsg = parsed.message;
-                } catch (e) {
-                    if (xhr.responseText && xhr.responseText.trim()) okMsg = xhr.responseText;
-                }
-                alert(okMsg);
+                alert("İşlem Başarılı!\n" + xhr.responseText);
 
                 // CRITICAL FIX: Run callback (save sources) BEFORE resetting the form!
                 if (successCallback) {

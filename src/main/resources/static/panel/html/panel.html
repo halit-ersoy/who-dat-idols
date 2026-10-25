@@ -627,19 +627,6 @@
                         <input type="hidden" id="movieCastData">
                         <input type="hidden" id="movieUpcomingPublishId">
 
-                        <div id="movieFormStatus" class="form-status-badge" style="display: none;">
-                            <div class="status-content">
-                                <div class="status-icon"><i class="fas fa-edit"></i></div>
-                                <div>
-                                    <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.85;">Düzenlenen Film</div>
-                                    <strong id="movieFormModeText">-</strong>
-                                </div>
-                            </div>
-                            <button type="button" class="btn btn-sm btn-secondary" onclick="resetMovieForm()" style="white-space: nowrap; border-radius: 8px;">
-                                <i class="fas fa-times"></i> Düzenlemeyi İptal Et
-                            </button>
-                        </div>
-
                         <div id="movieUpcomingPublishBanner" class="alert-banner" style="display: none; background: rgba(33, 150, 243, 0.15); border: 1px solid #2196f3; color: #fff; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; align-items: center; justify-content: space-between; gap: 15px;">
                             <div style="display: flex; align-items: center; gap: 12px;">
                                 <i class="fas fa-bullhorn" style="color: #64b5f6; font-size: 1.3rem;"></i>
@@ -865,16 +852,7 @@
                         </div>
 
                         <div id="seriesFormStatus" class="form-status-badge" style="display: none;">
-                            <div class="status-content">
-                                <div class="status-icon"><i class="fas fa-edit"></i></div>
-                                <div>
-                                    <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.85;">Düzenlenen İçerik</div>
-                                    <strong id="seriesFormModeText">-</strong>
-                                </div>
-                            </div>
-                            <button type="button" class="btn btn-sm btn-secondary" onclick="resetSeriesForm()" style="white-space: nowrap; border-radius: 8px;">
-                                <i class="fas fa-times"></i> Düzenlemeyi İptal Et
-                            </button>
+                            <span>İşlem: <strong id="seriesFormModeText">-</strong></span>
                         </div>
 
                         <div class="form-grid">
@@ -1100,67 +1078,64 @@
                             </div>
 
                             <!-- TEK BÖLÜM DÜZENLEME MODU ALANI (Mevcut Bölüm Düzenlenirken Açılır) -->
-                            <div id="episodeSingleEditFields" class="full-width episode-card-item single-episode-edit-card" style="display: none;">
-                                <div class="ep-card-content">
-                                    <div class="ep-meta-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 20px;">
-                                        <div class="form-group ep-num-group">
-                                            <label for="seasonNum"><i class="fas fa-layer-group"></i> Sezon No</label>
-                                            <input type="number" id="seasonNum" value="1" min="1" oninput="updateSingleEditTag()">
-                                        </div>
-                                        <div class="form-group ep-num-group">
-                                            <label for="episodeNum"><i class="fas fa-video"></i> Bölüm No</label>
-                                            <input type="number" id="episodeNum" value="1" min="1" oninput="updateSingleEditTag()">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="episodeSeriesStatus"><i class="fas fa-info-circle"></i> Dizi Durumu</label>
-                                            <select id="episodeSeriesStatus">
-                                                <option value="0">Devam Ediyor</option>
-                                                <option value="1">Final</option>
-                                                <option value="2">Sezon Finali</option>
-                                            </select>
-                                        </div>
-                                        <div class="form-group ep-adult-group" style="display: flex; align-items: center; padding-top: 24px;">
-                                            <label class="switch">
-                                                <input type="checkbox" id="episodeIsAdult" name="isAdult">
-                                                <span class="slider round"></span>
-                                            </label>
-                                            <span class="switch-text" onclick="document.getElementById('episodeIsAdult').click();" style="margin-left: 10px; cursor: pointer; color: #eee; font-size: 0.9rem;">
-                                                <i class="fas fa-exclamation-triangle" style="color: #f44336; margin-right: 4px;"></i> +18 İçerik
-                                            </span>
-                                        </div>
+                            <div id="episodeSingleEditFields" class="full-width" style="display: none;">
+                                <div class="form-group">
+                                    <label for="seasonNum">Sezon No</label>
+                                    <input type="number" id="seasonNum" value="1" min="1">
+                                </div>
+                                <div class="form-group">
+                                    <label for="episodeNum">Bölüm No</label>
+                                    <input type="number" id="episodeNum" value="1" min="1">
+                                </div>
+                                <div class="form-group">
+                                    <label for="episodeSeriesStatus">Dizi Durumu</label>
+                                    <select id="episodeSeriesStatus">
+                                        <option value="0">Devam Ediyor</option>
+                                        <option value="1">Final</option>
+                                        <option value="2">Sezon Finali</option>
+                                    </select>
+                                </div>
+                                <div class="form-group"
+                                    style="display: flex; align-items: flex-end; justify-content: flex-start; margin-bottom: 15px;">
+                                    <div class="toggle-switch-wrapper" style="margin-top: 25px;">
+                                        <label class="switch">
+                                            <input type="checkbox" id="episodeIsAdult" name="isAdult">
+                                            <span class="slider round"></span>
+                                        </label>
+                                        <span
+                                            style="margin-left: 10px; font-weight: 500; color: #eee; cursor: pointer; user-select: none;"
+                                            onclick="document.getElementById('episodeIsAdult').click()"><i
+                                                class="fas fa-exclamation-triangle"
+                                                style="color: #f44336; margin-right: 5px;"></i> +18 İçerik</span>
                                     </div>
+                                </div>
 
-                                    <div class="form-group full-width" id="episodeVideoGroup" style="margin-bottom: 20px;">
-                                        <label for="seriesFile"><i class="fas fa-film"></i> Bölüm Videosu (Opsiyonel)</label>
-                                        <div class="premium-file-input" id="seriesFileContainer">
-                                            <input type="file" id="seriesFile" accept="video/*"
-                                                onchange="handleFileSelect(this)">
-                                            <label for="seriesFile" class="file-label">
-                                                <i class="fas fa-cloud-upload-alt"></i>
-                                                <span class="file-text">Yeni Bölüm Dosyası Seç veya Sürükle</span>
-                                                <span class="file-name">Dosya seçilmedi (Mevcut video korunur)</span>
-                                            </label>
-                                            <div class="file-info" style="color: rgba(255,255,255,0.5); font-size: 0.8rem; margin-top: 6px;">
-                                                <i class="fas fa-info-circle"></i> Bölüm videosunu değiştirmek istemiyorsanız boş bırakabilirsiniz.
-                                            </div>
-                                            <button type="button" id="btnDeleteEpisodeSource" class="btn btn-sm btn-danger"
-                                                style="display:none; margin-top: 10px; width: 100%; border-radius: 8px; padding: 9px;">
-                                                <i class="fas fa-trash"></i> Ana Kaynağı Sil (Sadece Video Dosyası)
-                                            </button>
-                                        </div>
+                                <div class="form-group full-width" id="episodeVideoGroup">
+                                    <label for="seriesFile">Bölüm Videosu</label>
+                                    <div class="premium-file-input" id="seriesFileContainer">
+                                        <input type="file" id="seriesFile" accept="video/*"
+                                            onchange="handleFileSelect(this)">
+                                        <label for="seriesFile" class="file-label">
+                                            <i class="fas fa-cloud-upload-alt"></i>
+                                            <span class="file-text">Bölüm Dosyasını Seç veya Sürükle</span>
+                                            <span class="file-name">Dosya seçilmedi</span>
+                                        </label>
+                                        <div class="file-info">* Düzenleme modunda boş bırakılabilir.</div>
+                                        <button type="button" id="btnDeleteEpisodeSource" class="btn btn-sm btn-danger"
+                                            style="display:none; margin-top: 10px; width: 100%;">
+                                            <i class="fas fa-trash"></i> Ana Kaynağı Sil (Sadece Video)
+                                        </button>
                                     </div>
-                                    <div class="form-group full-width" id="episodeSourcesGroup">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                            <label style="margin-bottom: 0;"><i class="fas fa-external-link-alt"></i> Dış Kaynaklar (Iframe / Embed Linkleri)</label>
-                                            <button type="button" class="btn btn-sm btn-secondary btn-add-source"
-                                                onclick="addSourceField('series')" style="border-radius: 8px;">
-                                                <i class="fas fa-plus"></i> Kaynak Ekle
-                                            </button>
-                                        </div>
-                                        <div id="seriesSourcesList" class="external-sources-container">
-                                            <!-- Dinamik olarak eklenecek -->
-                                        </div>
+                                </div>
+                                <div class="form-group full-width" id="episodeSourcesGroup">
+                                    <label><i class="fas fa-external-link-alt"></i> Dış Kaynaklar (Iframe Linkleri)</label>
+                                    <div id="seriesSourcesList" class="external-sources-container">
+                                        <!-- Dinamik olarak eklenecek -->
                                     </div>
+                                    <button type="button" class="btn btn-sm btn-secondary btn-add-source"
+                                        onclick="addSourceField('series')">
+                                        <i class="fas fa-plus"></i> Kaynak Ekle
+                                    </button>
                                 </div>
                             </div>
                         </div>
