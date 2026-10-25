@@ -458,8 +458,10 @@ async function initWebPushSettings() {
         }
 
         let isUpdating = false;
+        let currentPushStatus = 'unsubscribed';
 
         function renderStatus(info) {
+            currentPushStatus = info ? info.status : 'unsubscribed';
             statusBadge.className = 'push-status-badge';
 
             if (!info || info.status === 'unsupported') {
@@ -522,11 +524,7 @@ async function initWebPushSettings() {
             }
 
             try {
-                const statusPromise = window.WebPushManager.checkSubscriptionStatus();
-                const timeoutPromise = new Promise(resolve => setTimeout(() => {
-                    resolve({ status: (window.Notification && Notification.permission === 'granted') ? 'subscribed' : 'unsubscribed' });
-                }, 1500));
-                const info = await Promise.race([statusPromise, timeoutPromise]);
+                const info = await window.WebPushManager.checkSubscriptionStatus();
                 renderStatus(info);
             } catch (e) {
                 console.warn('refreshStatus error:', e);
@@ -537,17 +535,21 @@ async function initWebPushSettings() {
         async function loadAndRenderPreferences() {
             try {
                 const prefs = await window.WebPushManager.getPreferences();
+                const dmVal = (prefs.allowMessagePush !== undefined) ? prefs.allowMessagePush : prefs.allowDirectMessagePush;
+                const commentVal = (prefs.allowCommentPush !== undefined) ? prefs.allowCommentPush : prefs.allowCommentReplyPush;
+                const previewVal = (prefs.allowMessagePreview !== undefined) ? prefs.allowMessagePreview : prefs.showContentPreview;
+
                 if (dmOnBtn && dmOffBtn) {
-                    dmOnBtn.classList.toggle('active', !!prefs.allowDirectMessagePush);
-                    dmOffBtn.classList.toggle('active', !prefs.allowDirectMessagePush);
+                    dmOnBtn.classList.toggle('active', !!dmVal);
+                    dmOffBtn.classList.toggle('active', !dmVal);
                 }
                 if (commentOnBtn && commentOffBtn) {
-                    commentOnBtn.classList.toggle('active', !!prefs.allowCommentReplyPush);
-                    commentOffBtn.classList.toggle('active', !prefs.allowCommentReplyPush);
+                    commentOnBtn.classList.toggle('active', !!commentVal);
+                    commentOffBtn.classList.toggle('active', !commentVal);
                 }
                 if (previewOnBtn && previewOffBtn) {
-                    previewOnBtn.classList.toggle('active', !!prefs.showContentPreview);
-                    previewOffBtn.classList.toggle('active', !prefs.showContentPreview);
+                    previewOnBtn.classList.toggle('active', !!previewVal);
+                    previewOffBtn.classList.toggle('active', !previewVal);
                 }
             } catch (e) {
                 console.warn('Error loading preferences:', e);
@@ -557,41 +559,51 @@ async function initWebPushSettings() {
         actionBtn.addEventListener('click', async () => {
             if (isUpdating || !window.WebPushManager) return;
             isUpdating = true;
-            const currentInfo = await window.WebPushManager.checkSubscriptionStatus();
 
-            if (currentInfo.status === 'subscribed') {
+            if (currentPushStatus === 'subscribed') {
                 actionBtn.disabled = true;
                 actionBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kapatılıyor...';
-                const res = await window.WebPushManager.unsubscribe();
-                isUpdating = false;
-                if (!res.success) {
-                    alert(res.message || 'Bildirim aboneliği kapatılırken bir hata oluştu.');
+                try {
+                    const res = await window.WebPushManager.unsubscribe();
+                    if (!res.success) {
+                        alert(res.message || 'Bildirim aboneliği kapatılırken bir hata oluştu.');
+                    }
+                } finally {
+                    isUpdating = false;
+                    await refreshStatus();
                 }
-                await refreshStatus();
-            } else if (currentInfo.status === 'unsubscribed') {
+            } else {
                 actionBtn.disabled = true;
                 actionBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Açılıyor...';
-                const res = await window.WebPushManager.subscribe();
-                isUpdating = false;
-                if (!res.success) {
-                    alert(res.message || 'Bildirim izni alınamadı veya abonelik oluşturulamadı.');
+                try {
+                    // Direct call to preserve user gesture activation
+                    const res = await window.WebPushManager.subscribe();
+                    if (!res.success) {
+                        alert(res.message || 'Bildirim izni alınamadı veya abonelik oluşturulamadı.');
+                    }
+                } finally {
+                    isUpdating = false;
+                    await refreshStatus();
                 }
-                await refreshStatus();
-            } else {
-                isUpdating = false;
             }
         });
 
         if (dmOnBtn && dmOffBtn) {
             dmOnBtn.addEventListener('click', async () => {
-                const res = await window.WebPushManager.updatePreferences({ allowDirectMessagePush: true });
+                const res = await window.WebPushManager.updatePreferences({
+                    allowMessagePush: true,
+                    allowDirectMessagePush: true
+                });
                 if (res && res.success) {
                     dmOnBtn.classList.add('active');
                     dmOffBtn.classList.remove('active');
                 }
             });
             dmOffBtn.addEventListener('click', async () => {
-                const res = await window.WebPushManager.updatePreferences({ allowDirectMessagePush: false });
+                const res = await window.WebPushManager.updatePreferences({
+                    allowMessagePush: false,
+                    allowDirectMessagePush: false
+                });
                 if (res && res.success) {
                     dmOffBtn.classList.add('active');
                     dmOnBtn.classList.remove('active');
@@ -601,14 +613,20 @@ async function initWebPushSettings() {
 
         if (commentOnBtn && commentOffBtn) {
             commentOnBtn.addEventListener('click', async () => {
-                const res = await window.WebPushManager.updatePreferences({ allowCommentReplyPush: true });
+                const res = await window.WebPushManager.updatePreferences({
+                    allowCommentPush: true,
+                    allowCommentReplyPush: true
+                });
                 if (res && res.success) {
                     commentOnBtn.classList.add('active');
                     commentOffBtn.classList.remove('active');
                 }
             });
             commentOffBtn.addEventListener('click', async () => {
-                const res = await window.WebPushManager.updatePreferences({ allowCommentReplyPush: false });
+                const res = await window.WebPushManager.updatePreferences({
+                    allowCommentPush: false,
+                    allowCommentReplyPush: false
+                });
                 if (res && res.success) {
                     commentOffBtn.classList.add('active');
                     commentOnBtn.classList.remove('active');
@@ -618,14 +636,20 @@ async function initWebPushSettings() {
 
         if (previewOnBtn && previewOffBtn) {
             previewOnBtn.addEventListener('click', async () => {
-                const res = await window.WebPushManager.updatePreferences({ showContentPreview: true });
+                const res = await window.WebPushManager.updatePreferences({
+                    allowMessagePreview: true,
+                    showContentPreview: true
+                });
                 if (res && res.success) {
                     previewOnBtn.classList.add('active');
                     previewOffBtn.classList.remove('active');
                 }
             });
             previewOffBtn.addEventListener('click', async () => {
-                const res = await window.WebPushManager.updatePreferences({ showContentPreview: false });
+                const res = await window.WebPushManager.updatePreferences({
+                    allowMessagePreview: false,
+                    showContentPreview: false
+                });
                 if (res && res.success) {
                     previewOffBtn.classList.add('active');
                     previewOnBtn.classList.remove('active');
@@ -639,9 +663,6 @@ async function initWebPushSettings() {
     }
 }
 
-/**
- * Initializes direct message toggle buttons.
- */
 function initMessageToggles(initialState) {
     const onBtn = document.getElementById('messages-on');
     const offBtn = document.getElementById('messages-off');

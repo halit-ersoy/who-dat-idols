@@ -54,7 +54,16 @@ window.WebPushManager = (function () {
             return null;
         }
         try {
-            let reg = await navigator.serviceWorker.getRegistration('/');
+            let reg = await navigator.serviceWorker.getRegistration();
+            if (!reg) {
+                reg = await navigator.serviceWorker.getRegistration('/');
+            }
+            if (!reg) {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                if (regs && regs.length > 0) {
+                    reg = regs[0];
+                }
+            }
             if (!reg && autoCreate) {
                 reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
             }
@@ -128,14 +137,22 @@ window.WebPushManager = (function () {
         }
 
         if (Notification.permission === 'denied') {
-            return { success: false, message: 'Bildirim izni engellenmiş. Lütfen adres çubuğundaki kilit simgesinden izin verin.' };
+            return { success: false, message: 'Bildirim izni tarayıcı ayarlarından engellenmiş. Lütfen adres çubuğundaki kilit simgesinden izin verin.' };
         }
 
         try {
-            // Explicitly request permission upon user click
-            const permission = await Notification.requestPermission();
+            // Explicitly request permission directly upon user click (preserves user gesture activation)
+            let permission = Notification.permission;
             if (permission !== 'granted') {
-                return { success: false, message: 'Bildirim izni verilmedi.' };
+                try {
+                    permission = await Notification.requestPermission();
+                } catch (permErr) {
+                    permission = await new Promise(resolve => Notification.requestPermission(resolve));
+                }
+            }
+
+            if (permission !== 'granted') {
+                return { success: false, message: 'Bildirim izni verilmedi veya reddedildi.' };
             }
 
             // Register Service Worker
@@ -151,7 +168,7 @@ window.WebPushManager = (function () {
             }
             swRegistration = reg;
 
-            // Wait with safety race timeout for worker ready
+            // Wait for service worker ready
             const readyPromise = navigator.serviceWorker.ready;
             const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
             await Promise.race([readyPromise, timeoutPromise]);
@@ -250,7 +267,14 @@ window.WebPushManager = (function () {
         } catch (e) {
             console.warn('Failed to fetch push preferences:', e);
         }
-        return { allowMessagePush: true, allowCommentPush: true, allowMessagePreview: false };
+        return {
+            allowMessagePush: true,
+            allowDirectMessagePush: true,
+            allowCommentPush: true,
+            allowCommentReplyPush: true,
+            allowMessagePreview: false,
+            showContentPreview: false
+        };
     }
 
     async function updatePreferences(prefs) {

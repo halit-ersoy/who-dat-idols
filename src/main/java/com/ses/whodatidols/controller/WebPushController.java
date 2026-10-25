@@ -176,14 +176,23 @@ public class WebPushController {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Tercih verisi eksik."));
         }
 
+        PushPreferences existing = pushSubscriptionRepository.getPreferences(userId);
+        boolean allowMessage = dto.resolveAllowMessagePush(existing.isAllowMessagePush());
+        boolean allowComment = dto.resolveAllowCommentPush(existing.isAllowCommentPush());
+        boolean allowPreview = dto.resolveAllowMessagePreview(existing.isAllowMessagePreview());
+
         pushSubscriptionRepository.savePreferences(
                 userId,
-                dto.isAllowMessagePush(),
-                dto.isAllowCommentPush(),
-                dto.isAllowMessagePreview()
+                allowMessage,
+                allowComment,
+                allowPreview
         );
 
-        return ResponseEntity.ok(Map.of("success", true, "message", "Bildirim tercihleri güncellendi."));
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Bildirim tercihleri güncellendi.",
+                "preferences", new PushPreferencesDto(allowMessage, allowComment, allowPreview)
+        ));
     }
 
     @GetMapping(value = "/sw.js")
