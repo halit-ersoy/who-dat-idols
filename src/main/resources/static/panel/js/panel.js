@@ -1648,8 +1648,26 @@ document.addEventListener('DOMContentLoaded', function () {
                     movieSubmitBtn.disabled = false;
                 });
         } else {
+            const name = document.getElementById('movieName').value.trim();
+            if (!name) {
+                alert("Lütfen film adını giriniz!");
+                document.getElementById('movieName').focus();
+                return;
+            }
+
+            const hasMovieFile = movieFileInput.files.length > 0;
+            const movieSources = document.querySelectorAll('#movieSourcesList .source-row');
+            let hasValidSource = false;
+            movieSources.forEach(row => {
+                if (row.querySelector('.source-url')?.value.trim()) hasValidSource = true;
+            });
+            if (!hasMovieFile && !hasValidSource) {
+                alert("Lütfen bir film videosu yükleyin veya en az bir dış kaynak (iframe) linki ekleyin!");
+                return;
+            }
+
             const formData = new FormData();
-            formData.append('name', document.getElementById('movieName').value);
+            formData.append('name', name);
             formData.append('category', document.getElementById('movieCategory').value);
             formData.append('summary', document.getElementById('movieSummary').value);
             formData.append('releaseYear', document.getElementById('movieYear').value);
@@ -1663,11 +1681,14 @@ document.addEventListener('DOMContentLoaded', function () {
             if (document.getElementById('movieCastData') && document.getElementById('movieCastData').value) {
                 formData.append('castData', document.getElementById('movieCastData').value);
             }
+            const movieUpId = document.getElementById('movieUpcomingPublishId') ? document.getElementById('movieUpcomingPublishId').value : '';
+            if (movieUpId) {
+                formData.append('upcomingPublishId', movieUpId);
+            }
 
             movieSubmitBtn.innerText = "KONTROL EDİLİYOR...";
             movieSubmitBtn.disabled = true;
 
-            const name = document.getElementById('movieName').value;
             fetch(`/admin/check-movie-collision?name=${encodeURIComponent(name)}`)
                 .then(r => r.json())
                 .then(async check => {
@@ -2068,6 +2089,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (sInp) sInp.focus();
                 return;
             }
+            const isVideo = card.querySelector('.ep-switch-btn[data-type="video"]')?.classList.contains('active');
+            const fileInput = card.querySelector('.ep-video-file-input');
+            const hasVideo = isVideo && fileInput && fileInput.files.length > 0;
+            const frameUrls = Array.from(card.querySelectorAll('.ep-frame-url')).filter(inp => inp.value.trim() !== '');
+            if (!hasVideo && frameUrls.length === 0) {
+                alert(`Lütfen ${i + 1}. bölüm için bir video dosyası seçin veya en az bir frame (iframe) linki ekleyin.`);
+                return;
+            }
         }
 
         // Start upload process
@@ -2120,12 +2149,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (document.getElementById('seriesCastData') && document.getElementById('seriesCastData').value) {
                         formData.append('castData', document.getElementById('seriesCastData').value);
                     }
+                } else {
+                    formData.append('existingSeriesId', currentSeriesId);
+                }
+
+                if (i === 0) {
                     const seriesUpId = document.getElementById('seriesUpcomingPublishId') ? document.getElementById('seriesUpcomingPublishId').value : '';
                     if (seriesUpId) {
                         formData.append('upcomingPublishId', seriesUpId);
                     }
-                } else {
-                    formData.append('existingSeriesId', currentSeriesId);
                 }
 
                 formData.append('season', season);
@@ -4090,32 +4122,9 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     window.updateVideoRequirement = function (type) {
-        const listDiv = document.getElementById(`${type}SourcesList`);
         const fileInput = type === 'movie' ? document.getElementById('movieFile') : document.getElementById('seriesFile');
-        if (!listDiv || !fileInput) return;
-
-        const isEditMode = type === 'movie'
-            ? document.getElementById('movieId').value !== ""
-            : (document.getElementById('seriesId').value !== "" || document.getElementById('episodeId').value !== "");
-
-        // If in edit mode or bulk mode, it's NOT required
-        const isBulk = type === 'series' && document.querySelector('input[name="episodeMethod"]:checked')?.value === 'bulk';
-        if (isEditMode || isBulk) {
+        if (fileInput) {
             fileInput.removeAttribute('required');
-            return;
-        }
-
-        const sources = listDiv.querySelectorAll('.source-row');
-        let hasValidSource = false;
-        sources.forEach(row => {
-            const url = row.querySelector('.source-url').value.trim();
-            if (url) hasValidSource = true;
-        });
-
-        if (hasValidSource) {
-            fileInput.removeAttribute('required');
-        } else {
-            fileInput.setAttribute('required', 'required');
         }
     }
 
@@ -4179,6 +4188,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const nameEl = document.getElementById('movieName');
             if (nameEl) nameEl.value = item.name || '';
+            const catEl = document.getElementById('movieCategory');
+            if (catEl && (item.category || item.categories)) catEl.value = item.category || item.categories;
             const summaryEl = document.getElementById('movieSummary');
             if (summaryEl && item.summary) summaryEl.value = item.summary;
             const yearEl = document.getElementById('movieYear');
@@ -4224,6 +4235,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const nameEl = document.getElementById('seriesName');
             if (nameEl) nameEl.value = item.name || '';
+            const catEl = document.getElementById('seriesCategory');
+            if (catEl && (item.category || item.categories)) catEl.value = item.category || item.categories;
             const summaryEl = document.getElementById('seriesSummary');
             if (summaryEl && item.summary) summaryEl.value = item.summary;
             const yearEl = document.getElementById('seriesYear');

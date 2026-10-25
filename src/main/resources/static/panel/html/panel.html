@@ -622,7 +622,7 @@
                     <div class="card-header">
                         <h2><i class="fas fa-plus-circle"></i> Film İşlemleri</h2>
                     </div>
-                    <form id="movieForm" class="admin-form">
+                    <form id="movieForm" class="admin-form" novalidate>
                         <input type="hidden" id="movieId">
                         <input type="hidden" id="movieCastData">
                         <input type="hidden" id="movieUpcomingPublishId">
@@ -784,7 +784,7 @@
                             <div class="form-group full-width">
                                 <label for="movieFile">Film Videosu</label>
                                 <div class="premium-file-input" id="movieFileContainer">
-                                    <input type="file" id="movieFile" accept="video/*" required
+                                    <input type="file" id="movieFile" accept="video/*"
                                         onchange="handleFileSelect(this)">
                                     <label for="movieFile" class="file-label">
                                         <i class="fas fa-cloud-upload-alt"></i>
@@ -834,7 +834,7 @@
                     <div class="card-header">
                         <h2><i class="fas fa-tv"></i> Dizi / Bölüm İşlemleri</h2>
                     </div>
-                    <form id="seriesForm" class="admin-form">
+                    <form id="seriesForm" class="admin-form" novalidate>
                         <input type="hidden" id="seriesId">
                         <input type="hidden" id="episodeId">
                         <input type="hidden" id="seriesCastData">
