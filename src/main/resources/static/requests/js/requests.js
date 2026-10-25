@@ -1,4 +1,4 @@
-﻿// requests.js - Who Dat Idols Content Requests Page Logic
+// requests.js - Who Dat Idols Content Requests Page Logic
 
 document.addEventListener('DOMContentLoaded', () => {
     // State Variables
