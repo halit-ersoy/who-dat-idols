@@ -468,29 +468,26 @@ public class AdminController {
 
 
     @GetMapping("/check-episode-collision")
-
     public ResponseEntity<Map<String, Object>> checkEpisodeCollision(
-
-            @RequestParam("seriesId") UUID seriesId,
-
+            @RequestParam(value = "seriesId", required = false) UUID seriesId,
             @RequestParam("season") int season,
-
             @RequestParam("episodeNum") int episodeNum,
-
             @RequestParam(value = "excludeId", required = false) UUID excludeId) {
-
+        if (seriesId == null && excludeId != null) {
+            Series parent = seriesRepository.findSeriesByEpisodeId(excludeId);
+            if (parent != null) {
+                seriesId = parent.getId();
+            }
+        }
+        if (seriesId == null) {
+            return ResponseEntity.ok(Map.of("collision", false, "message", ""));
+        }
         boolean collision = seriesService.hasEpisodeCollision(seriesId, season, episodeNum, excludeId);
-
         String message = collision
-
                 ? "Bu dizi için " + season + ". Sezon " + episodeNum
-
                         + ". Bölüm zaten mevcut. Üzerine yazıp eski videoyu silmek istediğinize emin misiniz?"
-
                 : "";
-
         return ResponseEntity.ok(Map.of("collision", collision, "message", message));
-
     }
 
 
@@ -1057,7 +1054,7 @@ public class AdminController {
 
             @RequestParam("episodeNum") int episodeNum,
 
-            @RequestParam("finalStatus") int finalStatus,
+            @RequestParam(value = "finalStatus", required = false, defaultValue = "0") int finalStatus,
 
             @RequestParam(value = "file", required = false) MultipartFile file,
 
