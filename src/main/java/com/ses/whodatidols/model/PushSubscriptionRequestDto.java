@@ -1,10 +1,10 @@
 package com.ses.whodatidols.model;
 
-import java.util.Map;
-
 public class PushSubscriptionRequestDto {
     private String endpoint;
     private KeysDto keys;
+    private String p256dh;
+    private String auth;
     private String userAgent;
 
     public PushSubscriptionRequestDto() {
@@ -26,12 +26,42 @@ public class PushSubscriptionRequestDto {
         this.keys = keys;
     }
 
+    public String getP256dh() {
+        return p256dh;
+    }
+
+    public void setP256dh(String p256dh) {
+        this.p256dh = p256dh;
+    }
+
+    public String getAuth() {
+        return auth;
+    }
+
+    public void setAuth(String auth) {
+        this.auth = auth;
+    }
+
     public String getUserAgent() {
         return userAgent;
     }
 
     public void setUserAgent(String userAgent) {
         this.userAgent = userAgent;
+    }
+
+    public String resolveP256dh() {
+        if (keys != null && keys.getP256dh() != null && !keys.getP256dh().isBlank()) {
+            return keys.getP256dh().trim();
+        }
+        return p256dh != null ? p256dh.trim() : "";
+    }
+
+    public String resolveAuth() {
+        if (keys != null && keys.getAuth() != null && !keys.getAuth().isBlank()) {
+            return keys.getAuth().trim();
+        }
+        return auth != null ? auth.trim() : "";
     }
 
     public static class KeysDto {

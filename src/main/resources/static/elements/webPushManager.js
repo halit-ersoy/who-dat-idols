@@ -168,10 +168,32 @@ window.WebPushManager = (function () {
             }
 
             const subJson = subscription.toJSON();
+            let p256dh = subJson.keys ? subJson.keys.p256dh : null;
+            let auth = subJson.keys ? subJson.keys.auth : null;
+
+            if (!p256dh && subscription.getKey) {
+                const rawKey = subscription.getKey('p256dh');
+                if (rawKey) {
+                    p256dh = btoa(String.fromCharCode.apply(null, new Uint8Array(rawKey)))
+                        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+                }
+            }
+            if (!auth && subscription.getKey) {
+                const rawAuth = subscription.getKey('auth');
+                if (rawAuth) {
+                    auth = btoa(String.fromCharCode.apply(null, new Uint8Array(rawAuth)))
+                        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+                }
+            }
+
             const payload = {
-                endpoint: subJson.endpoint,
-                p256dh: subJson.keys ? subJson.keys.p256dh : null,
-                auth: subJson.keys ? subJson.keys.auth : null,
+                endpoint: subJson.endpoint || subscription.endpoint,
+                keys: {
+                    p256dh: p256dh,
+                    auth: auth
+                },
+                p256dh: p256dh,
+                auth: auth,
                 userAgent: navigator.userAgent
             };
 
@@ -255,13 +277,35 @@ window.WebPushManager = (function () {
             const sub = await getExistingSubscription();
             if (sub) {
                 const subJson = sub.toJSON();
+                let p256dh = subJson.keys ? subJson.keys.p256dh : null;
+                let auth = subJson.keys ? subJson.keys.auth : null;
+
+                if (!p256dh && sub.getKey) {
+                    const rawKey = sub.getKey('p256dh');
+                    if (rawKey) {
+                        p256dh = btoa(String.fromCharCode.apply(null, new Uint8Array(rawKey)))
+                            .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+                    }
+                }
+                if (!auth && sub.getKey) {
+                    const rawAuth = sub.getKey('auth');
+                    if (rawAuth) {
+                        auth = btoa(String.fromCharCode.apply(null, new Uint8Array(rawAuth)))
+                            .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+                    }
+                }
+
                 await fetch('/api/push/subscribe', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        endpoint: subJson.endpoint,
-                        p256dh: subJson.keys ? subJson.keys.p256dh : null,
-                        auth: subJson.keys ? subJson.keys.auth : null,
+                        endpoint: subJson.endpoint || sub.endpoint,
+                        keys: {
+                            p256dh: p256dh,
+                            auth: auth
+                        },
+                        p256dh: p256dh,
+                        auth: auth,
                         userAgent: navigator.userAgent
                     })
                 });

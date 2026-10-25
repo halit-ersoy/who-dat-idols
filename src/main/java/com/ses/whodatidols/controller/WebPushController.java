@@ -62,10 +62,11 @@ public class WebPushController {
                     .body(Map.of("success", false, "message", "Geçersiz veya süresi dolmuş oturum."));
         }
 
+        String p256dh = request != null ? request.resolveP256dh() : "";
+        String auth = request != null ? request.resolveAuth() : "";
+
         if (request == null || request.getEndpoint() == null || request.getEndpoint().isBlank()
-                || request.getKeys() == null
-                || request.getKeys().getP256dh() == null || request.getKeys().getP256dh().isBlank()
-                || request.getKeys().getAuth() == null || request.getKeys().getAuth().isBlank()) {
+                || p256dh.isBlank() || auth.isBlank()) {
             return ResponseEntity.badRequest()
                     .body(Map.of("success", false, "message", "Eksik abonelik bilgileri (endpoint, p256dh, auth)."));
         }
@@ -82,8 +83,8 @@ public class WebPushController {
             pushSubscriptionRepository.saveOrUpdateSubscription(
                     userId,
                     request.getEndpoint().trim(),
-                    request.getKeys().getP256dh().trim(),
-                    request.getKeys().getAuth().trim(),
+                    p256dh,
+                    auth,
                     userAgent
             );
 
