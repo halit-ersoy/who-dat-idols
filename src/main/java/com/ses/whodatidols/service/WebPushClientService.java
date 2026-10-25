@@ -6,6 +6,7 @@ import com.ses.whodatidols.exception.PushSubscriptionExpiredException;
 import com.ses.whodatidols.exception.PushTemporaryException;
 import nl.martijndwars.webpush.Notification;
 import nl.martijndwars.webpush.PushService;
+import com.ses.whodatidols.model.PushSubscription;
 import org.apache.http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,6 +106,12 @@ public class WebPushClientService {
      * Sends encrypted Web Push message to the given subscription endpoint.
      * Note: Subscription endpoint and auth keys are NEVER logged.
      */
+    
+    public void sendPush(PushSubscription subscription, String payloadJson) {
+        if (subscription == null) return;
+        sendPush(subscription.getEndpoint(), subscription.getP256dh(), subscription.getAuth(), payloadJson, 86400);
+    }
+
     public void sendPush(String endpoint, String p256dh, String auth, String payloadJson, int ttlSeconds) {
         if (!config.isEnabled()) {
             logger.debug("Web Push is currently disabled or VAPID keys are missing. Skipping notification dispatch.");
