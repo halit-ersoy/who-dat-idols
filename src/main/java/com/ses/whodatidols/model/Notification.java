@@ -8,10 +8,11 @@ public class Notification {
     private String title;
     private String message;
     private UUID contentId;
-    private String type; // 'Movie' or 'SoapOpera'
+    private String type; // 'Movie', 'SoapOpera', or 'CommentReply'
     private Instant createdAt;
     private boolean isRead;
     private String slug; // Used for UI routing
+    private UUID userId; // Optional: user specific (e.g. comment reply)
 
     public Notification() {
     }
@@ -22,6 +23,18 @@ public class Notification {
         this.message = message;
         this.contentId = contentId;
         this.type = type;
+        this.createdAt = Instant.now();
+        this.isRead = false;
+    }
+
+    public Notification(String title, String message, UUID contentId, String type, UUID userId, String slug) {
+        this.id = UUID.randomUUID();
+        this.title = title;
+        this.message = message;
+        this.contentId = contentId;
+        this.type = type;
+        this.userId = userId;
+        this.slug = slug;
         this.createdAt = Instant.now();
         this.isRead = false;
     }
@@ -89,5 +102,13 @@ public class Notification {
 
     public void setSlug(String slug) {
         this.slug = slug;
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public void setUserId(UUID userId) {
+        this.userId = userId;
     }
 }
