@@ -1579,9 +1579,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (lastFetchedPosterUrl) {
                 formData.append('imageUrl', lastFetchedPosterUrl);
             }
-            if (document.getElementById('seriesCastData') && document.getElementById('seriesCastData').value) {
-                formData.append('castData', document.getElementById('seriesCastData').value);
-            }
             if (movieFileInput.files.length > 0) {
                 formData.append('file', movieFileInput.files[0]);
             }
@@ -1593,6 +1590,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 formData.append('upcomingPublishId', movieUpId);
             }
 
+            const hasVideoFile = movieFileInput.files.length > 0;
             movieSubmitBtn.innerText = "KONTROL EDİLİYOR...";
             movieSubmitBtn.disabled = true;
 
@@ -1602,7 +1600,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 .then(async check => {
                     if (check.collision) {
                         if (!confirm(check.message)) {
-                            movieSubmitBtn.innerText = "DEĞİŞİKLİKLERİ KAYDET"; // Reset to original text
+                            movieSubmitBtn.innerHTML = '<i class="fas fa-save"></i> FİLMİ GÜNCELLE';
                             movieSubmitBtn.disabled = false;
                             return;
                         }
@@ -1612,6 +1610,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     movieSubmitBtn.innerText = "GÜNCELLENİYOR...";
                     // movieSubmitBtn.disabled = true; // Already disabled
 
+                    if (hasVideoFile) {
+                        uploadDataWithProgress('/admin/update-movie', formData, 'movieForm', 'progressWrapperMovie', 'progressBarMovie', 'percentMovie', async (res) => {
+                            await saveExternalSources(movieId, 'movie');
+                            alert("Film başarıyla güncellendi.");
+                            resetMovieForm();
+                            fetchMovies();
+                        });
+                    } else {
                     fetch('/admin/update-movie', {
                         method: 'POST',
                         body: formData
@@ -1641,10 +1647,14 @@ document.addEventListener('DOMContentLoaded', function () {
                         resetMovieForm(); fetchMovies();
                     }).catch(error => {
                         alert(error.message || error);
-                    }).finally(() => { movieSubmitBtn.disabled = false; });
+                    }).finally(() => {
+                        movieSubmitBtn.disabled = false;
+                        movieSubmitBtn.innerHTML = '<i class="fas fa-save"></i> FİLMİ GÜNCELLE';
+                    });
+                    }
                 }).catch(err => {
                     alert("Hata: " + err.message);
-                    movieSubmitBtn.innerText = "DEĞİŞİKLİKLERİ KAYDET"; // Reset to original text
+                    movieSubmitBtn.innerHTML = '<i class="fas fa-save"></i> FİLMİ GÜNCELLE';
                     movieSubmitBtn.disabled = false;
                 });
         } else {
@@ -1815,16 +1825,26 @@ document.addEventListener('DOMContentLoaded', function () {
             };
         }
 
-        movieSubmitBtn.innerText = "DEĞİŞİKLİKLERİ KAYDET";
+        const movieBanner = document.getElementById('movieFormStatus');
+        if (movieBanner) {
+            movieBanner.style.display = 'flex';
+            const modeText = document.getElementById('movieFormModeText');
+            if (modeText) modeText.innerHTML = `<strong>${escapeHtml(movie.name || "Film")}</strong> (${movie.releaseYear || ''})`;
+        }
+
+        movieSubmitBtn.innerHTML = '<i class="fas fa-save"></i> FİLMİ GÜNCELLE';
         movieSubmitBtn.classList.remove('btn-primary');
-        movieSubmitBtn.style.backgroundColor = "#ffc107";
-        movieSubmitBtn.style.color = "#000";
-        movieCancelBtn.style.display = "block";
+        movieSubmitBtn.classList.add('btn-edit-mode-active');
+        movieSubmitBtn.style.backgroundColor = "";
+        movieSubmitBtn.style.color = "";
+        movieCancelBtn.style.display = "inline-flex";
         movieFileInput.removeAttribute('required');
 
         // Switch to movie section
         const movieLink = document.querySelector('.nav-link[data-section="movie-section"]');
         if (movieLink) movieLink.click();
+        const mSection = document.getElementById('movie-section');
+        if (mSection) mSection.scrollIntoView({ behavior: 'smooth' });
 
         // Load External Sources
         document.getElementById('movieSourcesList').innerHTML = '';
@@ -1845,8 +1865,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (movieUpBanner) movieUpBanner.style.display = 'none';
         const movieUpId = document.getElementById('movieUpcomingPublishId');
         if (movieUpId) movieUpId.value = '';
+        const movieBanner = document.getElementById('movieFormStatus');
+        if (movieBanner) movieBanner.style.display = 'none';
         document.getElementById('movieSourcesList').innerHTML = '';
-        movieSubmitBtn.innerText = "FİLMİ KAYDET";
+        movieSubmitBtn.innerHTML = '<i class="fas fa-save"></i> FİLMİ KAYDET';
+        movieSubmitBtn.classList.remove('btn-edit-mode-active');
         movieSubmitBtn.classList.add('btn-primary');
         movieSubmitBtn.style.backgroundColor = "";
         movieSubmitBtn.style.color = "";
@@ -2003,10 +2026,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (epId !== "") {
             // EPISODE EDIT MODE
+            const targetSeriesId = sId || seriesIdInput.value || "";
+            const season = parseInt(document.getElementById('seasonNum').value, 10) || 1;
+            const episodeNum = parseInt(document.getElementById('episodeNum').value, 10) || 1;
+            const hasVideoFile = seriesFileInput.files.length > 0;
             const formData = new FormData();
             formData.append('episodeId', epId);
-            formData.append('season', document.getElementById('seasonNum').value);
-            formData.append('episodeNum', document.getElementById('episodeNum').value);
+            formData.append('season', season);
+            formData.append('episodeNum', episodeNum);
 
             // Add finalStatus even in episode edit mode
             let finalStatus = 0;
@@ -2020,35 +2047,58 @@ document.addEventListener('DOMContentLoaded', function () {
             formData.append('finalStatus', finalStatus);
             formData.append('isAdult', document.getElementById('episodeIsAdult') && document.getElementById('episodeIsAdult').checked ? 'true' : 'false');
 
-            if (seriesFileInput.files.length > 0) {
+            if (hasVideoFile) {
                 formData.append('file', seriesFileInput.files[0]);
             }
 
             seriesSubmitBtn.innerText = "KONTROL EDİLİYOR...";
             seriesSubmitBtn.disabled = true;
 
-            const season = document.getElementById('seasonNum').value;
-            const episodeNum = document.getElementById('episodeNum').value;
-
-            fetch(`/admin/check-episode-collision?seriesId=${sId}&season=${season}&episodeNum=${episodeNum}&excludeId=${epId}`)
+            const checkUrl = `/admin/check-episode-collision?seriesId=${encodeURIComponent(targetSeriesId)}&season=${season}&episodeNum=${episodeNum}&excludeId=${encodeURIComponent(epId)}`;
+            fetch(checkUrl)
                 .then(r => r.json())
                 .then(check => {
                     if (check.collision) {
                         if (!confirm(check.message)) {
-                            seriesSubmitBtn.innerText = "BÖLÜMÜ GÜNCELLE";
+                            seriesSubmitBtn.innerHTML = '<i class="fas fa-save"></i> BÖLÜMÜ GÜNCELLE';
                             seriesSubmitBtn.disabled = false;
                             return;
                         }
                         formData.append('overwrite', 'true');
                     }
                     seriesSubmitBtn.innerText = "BÖLÜM GÜNCELLENİYOR...";
+                    if (hasVideoFile) {
                     uploadDataWithProgress('/admin/update-episode', formData, 'seriesForm', 'progressWrapperSeries', 'progressBarSeries', 'percentSeries', async (res) => {
                         await saveExternalSources(epId, 'series');
+                        alert("Bölüm başarıyla güncellendi.");
                         resetSeriesForm();
                         fetchSeries();
                     });
+                    } else {
+                        fetch('/admin/update-episode', {
+                            method: 'POST',
+                            body: formData
+                        }).then(async res => {
+                            if (!res.ok) {
+                                const errText = await res.text();
+                                throw new Error(errText);
+                            }
+                            return res.json();
+                        }).then(async data => {
+                            await saveExternalSources(epId, 'series');
+                            alert(data.message || "Bölüm başarıyla güncellendi.");
+                            resetSeriesForm();
+                            fetchSeries();
+                        }).catch(err => {
+                            alert("Bölüm güncelleme hatası: " + err.message);
+                        }).finally(() => {
+                            seriesSubmitBtn.disabled = false;
+                            seriesSubmitBtn.innerHTML = '<i class="fas fa-save"></i> BÖLÜMÜ GÜNCELLE';
+                        });
+                    }
                 }).catch(err => {
-                    alert("Hata: " + err.message);
+                    alert("Çakışma kontrol hatası: " + err.message);
+                    seriesSubmitBtn.innerHTML = '<i class="fas fa-save"></i> BÖLÜMÜ GÜNCELLE';
                     seriesSubmitBtn.disabled = false;
                 });
             return;
@@ -3005,6 +3055,9 @@ document.addEventListener('DOMContentLoaded', function () {
             panel.classList.add('active');
             panel.innerHTML = '<div style="padding:15px; color:#666;"><i class="fas fa-spinner fa-spin"></i> Bölümler yükleniyor...</div>';
             panel.style.maxHeight = "auto";
+            const seriesTitle = element.querySelector('.series-title-wrapper h3')?.innerText?.trim() || '';
+            const seriesObj = (window.currentSeries || []).find(s => s.id === seriesId);
+            const seriesFinalStatus = seriesObj ? (seriesObj.finalStatus || 0) : 0;
 
             fetch(`/admin/episodes-by-series?seriesId=${seriesId}`)
                 .then(r => r.json())
@@ -3021,7 +3074,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                     <button class="btn btn-sm toggle-btn ${ep.hidden ? 'btn-success' : 'btn-secondary'}" onclick='window.toggleEpisodeHidden("${ep.id}", ${ep.hidden}, "${seriesId}", this)'>
                                         <i class="fas ${ep.hidden ? 'fa-eye' : 'fa-eye-slash'}"></i> <span>${ep.hidden ? 'GÖSTER' : 'GİZLE'}</span>
                                     </button>
-                                    <button class="btn btn-sm btn-edit" onclick='editEpisode(${JSON.stringify(ep).replace(/'/g, "&#39;")}, event)'><i class="fas fa-edit"></i> DÜZENLE</button>
+                                    <button class="btn btn-sm btn-edit" onclick='editEpisode(${JSON.stringify(ep).replace(/'/g, "&#39;")}, event, "${seriesId}", "${seriesTitle.replace(/'/g, "\\'")}", ${seriesFinalStatus})'><i class="fas fa-edit"></i> DÜZENLE</button>
                                     <button class="btn btn-sm btn-edit" style="background:#6c757d;" onclick='preloadEpisodeForm(${JSON.stringify(ep).replace(/'/g, "&#39;")})'><i class="fas fa-copy"></i> KOPYALA</button>
                                     <button class="btn btn-sm btn-danger" onclick='deleteEpisode("${ep.id}")'><i class="fas fa-trash"></i> SİL</button>
                                 </div>
@@ -3088,16 +3141,24 @@ document.addEventListener('DOMContentLoaded', function () {
         if (document.getElementById('bulkEpisodeFields')) document.getElementById('bulkEpisodeFields').style.display = 'none';
         document.getElementById('seriesPosterGroup').style.display = 'block';
 
-        document.getElementById('seriesFormStatus').style.display = 'block';
-        document.getElementById('seriesFormModeText').innerText = "Dizi Bilgilerini Düzenle";
+        const statusBanner = document.getElementById('seriesFormStatus');
+        if (statusBanner) {
+            statusBanner.style.display = 'flex';
+            const badgeEl = document.getElementById('seriesFormModeBadge');
+            if (badgeEl) badgeEl.innerText = "DİZİ BİLGİSİ DÜZENLEME";
+            const modeTextEl = document.getElementById('seriesFormModeText');
+            if (modeTextEl) modeTextEl.innerHTML = `<strong>${escapeHtml(series.name || "Dizi")}</strong>`;
+        }
 
         setupSeriesEditMode("DİZİ BİLGİSİNİ GÜNCELLE");
 
         const seriesLink = document.querySelector('.nav-link[data-section="series-section"]');
         if (seriesLink) seriesLink.click();
+        const sSection = document.getElementById('series-section');
+        if (sSection) sSection.scrollIntoView({ behavior: 'smooth' });
     };
 
-    window.editEpisode = function (ep, event) {
+    window.editEpisode = function (ep, event, sId, sName, sFinalStatus) {
         if (event && (event.shiftKey || event.ctrlKey || event.metaKey)) {
             const url = new URL(window.location.href);
             url.searchParams.set('editEpisode', ep.id);
@@ -3106,9 +3167,28 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         resetSeriesForm();
+        
+        const parentId = sId || ep.seriesId || "";
+        let parentName = sName || ep.seriesName || ep.name || "";
+        if (!parentName && parentId && window.currentSeries) {
+            const foundSeries = window.currentSeries.find(s => s.id === parentId);
+            if (foundSeries) parentName = foundSeries.name;
+        }
+        if (!parentName) parentName = "Dizi";
+
+        const seasonVal = (ep.seasonNumber !== undefined && ep.seasonNumber !== null) ? ep.seasonNumber : (ep.season || 1);
+        const episodeVal = (ep.episodeNumber !== undefined && ep.episodeNumber !== null) ? ep.episodeNumber : (ep.episode || 1);
+
+        seriesIdInput.value = parentId;
         episodeIdInput.value = ep.id;
-        document.getElementById('seasonNum').value = ep.season;
-        document.getElementById('episodeNum').value = ep.episode;
+        document.getElementById('seasonNum').value = seasonVal;
+        document.getElementById('episodeNum').value = episodeVal;
+
+        const epStatusSelect = document.getElementById('episodeSeriesStatus');
+        if (epStatusSelect) {
+            const statusVal = (sFinalStatus !== undefined && sFinalStatus !== null) ? sFinalStatus : (ep.finalStatus !== undefined ? ep.finalStatus : 0);
+            epStatusSelect.value = statusVal;
+        }
 
         const epIsAdultCheckbox = document.getElementById('episodeIsAdult');
         if (epIsAdultCheckbox) epIsAdultCheckbox.checked = ep.isAdult || ep.adult || false;
@@ -3118,12 +3198,22 @@ document.addEventListener('DOMContentLoaded', function () {
         if (document.getElementById('episodeMethodGroup')) document.getElementById('episodeMethodGroup').style.display = 'none';
         document.getElementById('newSeriesFields').style.display = 'none';
         if (document.getElementById('episodeBuilderSection')) document.getElementById('episodeBuilderSection').style.display = 'none';
-        if (document.getElementById('episodeSingleEditFields')) document.getElementById('episodeSingleEditFields').style.display = 'grid';
+        if (document.getElementById('episodeSingleEditFields')) document.getElementById('episodeSingleEditFields').style.display = 'block';
         if (document.getElementById('bulkEpisodeFields')) document.getElementById('bulkEpisodeFields').style.display = 'none';
         document.getElementById('seriesPosterGroup').style.display = 'none';
 
-        document.getElementById('seriesFormStatus').style.display = 'block';
-        document.getElementById('seriesFormModeText').innerText = `Bölüm Düzenle (${ep.name})`;
+        if (parentId) {
+            updatePosterPreview('series', `/media/image/${parentId}?t=${Date.now()}`);
+        }
+
+        const statusBanner = document.getElementById('seriesFormStatus');
+        if (statusBanner) {
+            statusBanner.style.display = 'flex';
+            const badgeEl = document.getElementById('seriesFormModeBadge');
+            if (badgeEl) badgeEl.innerText = "BÖLÜM DÜZENLEME MODU";
+            const modeTextEl = document.getElementById('seriesFormModeText');
+            if (modeTextEl) modeTextEl.innerHTML = `<strong>${escapeHtml(parentName)}</strong> &mdash; ${seasonVal}. Sezon, ${episodeVal}. Bölüm`;
+        }
 
         setupSeriesEditMode("BÖLÜMÜ GÜNCELLE");
 
@@ -3132,7 +3222,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (btnDeleteEpisodeSource) {
             btnDeleteEpisodeSource.style.display = 'block';
             btnDeleteEpisodeSource.onclick = () => {
-                if (confirm(`'${ep.name}' dizisinin ${ep.season}. Sezon ${ep.episode}. Bölüm ana video kaynağını silmek istediğinize emin misiniz? (Bölüm bilgileri ve dış kaynaklar silinmez)`)) {
+                if (confirm(`'${parentName}' dizisinin ${seasonVal}. Sezon ${episodeVal}. Bölüm ana video kaynağını silmek istediğinize emin misiniz? (Bölüm bilgileri ve dış kaynaklar silinmez)`)) {
                     fetch('/admin/delete-episode-source?id=' + ep.id, { method: 'DELETE' })
                         .then(res => {
                             if (res.ok) {
@@ -3159,6 +3249,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const seriesLink = document.querySelector('.nav-link[data-section="series-section"]');
         if (seriesLink) seriesLink.click();
+        const sSection = document.getElementById('series-section');
+        if (sSection) sSection.scrollIntoView({ behavior: 'smooth' });
     };
 
     window.preloadEpisodeForm = function (ep) {
@@ -3187,11 +3279,12 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     function setupSeriesEditMode(btnText) {
-        seriesSubmitBtn.innerText = btnText;
+        seriesSubmitBtn.innerHTML = '<i class="fas fa-save"></i> ' + btnText;
         seriesSubmitBtn.classList.remove('btn-primary');
-        seriesSubmitBtn.style.backgroundColor = "#ffc107";
-        seriesSubmitBtn.style.color = "#000";
-        seriesCancelBtn.style.display = "block";
+        seriesSubmitBtn.classList.add('btn-edit-mode-active');
+        seriesSubmitBtn.style.backgroundColor = "";
+        seriesSubmitBtn.style.color = "";
+        seriesCancelBtn.style.display = "inline-flex";
         seriesFileInput.removeAttribute('required');
     }
 
@@ -3226,9 +3319,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (seriesUpId) seriesUpId.value = '';
 
         document.getElementById('seriesFormStatus').style.display = 'none';
-        document.getElementById('seriesFormModeText').innerText = "-";
 
-        seriesSubmitBtn.innerText = "BÖLÜMÜ / DİZİYİ KAYDET";
+        seriesSubmitBtn.innerHTML = '<i class="fas fa-save"></i> BÖLÜMÜ / DİZİYİ KAYDET';
+        seriesSubmitBtn.classList.remove('btn-edit-mode-active');
         seriesSubmitBtn.classList.add('btn-primary');
         seriesSubmitBtn.style.backgroundColor = "";
         seriesSubmitBtn.style.color = "";

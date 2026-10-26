@@ -851,10 +851,35 @@
                             <button type="button" class="btn btn-sm btn-secondary" onclick="cancelSeriesUpcomingPublish()" style="white-space: nowrap;"><i class="fas fa-times"></i> Vazgeç</button>
                         </div>
 
-                        <div id="seriesFormStatus" class="form-status-badge" style="display: none;">
-                            <span>İşlem: <strong id="seriesFormModeText">-</strong></span>
+                        <div id="seriesFormStatus" class="admin-edit-status-banner" style="display: none;">
+                            <div class="edit-status-left">
+                                <div class="edit-status-icon">
+                                    <i class="fas fa-edit"></i>
+                                </div>
+                                <div class="edit-status-info">
+                                    <div class="edit-status-badge" id="seriesFormModeBadge">DÜZENLEME MODU</div>
+                                    <div class="edit-status-title" id="seriesFormModeText">-</div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn-cancel-edit-mode" onclick="resetSeriesForm()">
+                                <i class="fas fa-times"></i> Düzenlemeden Vazgeç
+                            </button>
                         </div>
 
+                        <div id="movieFormStatus" class="admin-edit-status-banner" style="display: none;">
+                            <div class="edit-status-left">
+                                <div class="edit-status-icon">
+                                    <i class="fas fa-film"></i>
+                                </div>
+                                <div class="edit-status-info">
+                                    <div class="edit-status-badge">FİLM DÜZENLEME MODU</div>
+                                    <div class="edit-status-title" id="movieFormModeText">-</div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn-cancel-edit-mode" onclick="resetMovieForm()">
+                                <i class="fas fa-times"></i> Düzenlemeden Vazgeç
+                            </button>
+                        </div>
                         <div class="form-grid">
                             <div class="form-group full-width" id="seriesModeGroup">
                                 <label>İşlem Tipi Seçin</label>
@@ -1079,16 +1104,17 @@
 
                             <!-- TEK BÖLÜM DÜZENLEME MODU ALANI (Mevcut Bölüm Düzenlenirken Açılır) -->
                             <div id="episodeSingleEditFields" class="full-width" style="display: none;">
+                                <div class="single-edit-meta-grid">
                                 <div class="form-group">
-                                    <label for="seasonNum">Sezon No</label>
+                                    <label for="seasonNum"><i class="fas fa-layer-group"></i> Sezon No</label>
                                     <input type="number" id="seasonNum" value="1" min="1">
                                 </div>
                                 <div class="form-group">
-                                    <label for="episodeNum">Bölüm No</label>
+                                    <label for="episodeNum"><i class="fas fa-video"></i> Bölüm No</label>
                                     <input type="number" id="episodeNum" value="1" min="1">
                                 </div>
                                 <div class="form-group">
-                                    <label for="episodeSeriesStatus">Dizi Durumu</label>
+                                    <label for="episodeSeriesStatus"><i class="fas fa-flag-checkered"></i> Dizi Durumu</label>
                                     <select id="episodeSeriesStatus">
                                         <option value="0">Devam Ediyor</option>
                                         <option value="1">Final</option>
@@ -1096,7 +1122,7 @@
                                     </select>
                                 </div>
                                 <div class="form-group"
-                                    style="display: flex; align-items: flex-end; justify-content: flex-start; margin-bottom: 15px;">
+                                    style="display: flex; align-items: flex-end; justify-content: flex-start;">
                                     <div class="toggle-switch-wrapper" style="margin-top: 25px;">
                                         <label class="switch">
                                             <input type="checkbox" id="episodeIsAdult" name="isAdult">
@@ -1108,6 +1134,7 @@
                                                 class="fas fa-exclamation-triangle"
                                                 style="color: #f44336; margin-right: 5px;"></i> +18 İçerik</span>
                                     </div>
+                                </div>
                                 </div>
 
                                 <div class="form-group full-width" id="episodeVideoGroup">

@@ -471,14 +471,23 @@ public class AdminController {
 
     public ResponseEntity<Map<String, Object>> checkEpisodeCollision(
 
-            @RequestParam("seriesId") UUID seriesId,
+            @RequestParam(value = "seriesId", required = false) UUID seriesId,
 
-            @RequestParam("season") int season,
+            @RequestParam(value = "season", defaultValue = "1") int season,
 
-            @RequestParam("episodeNum") int episodeNum,
+            @RequestParam(value = "episodeNum", defaultValue = "1") int episodeNum,
 
             @RequestParam(value = "excludeId", required = false) UUID excludeId) {
 
+        if (seriesId == null && excludeId != null) {
+            com.ses.whodatidols.model.Series s = seriesRepository.findSeriesByEpisodeId(excludeId);
+            if (s != null) {
+                seriesId = s.getId();
+            }
+        }
+        if (seriesId == null) {
+            return ResponseEntity.ok(Map.of("collision", false, "message", ""));
+        }
         boolean collision = seriesService.hasEpisodeCollision(seriesId, season, episodeNum, excludeId);
 
         String message = collision
@@ -1057,7 +1066,7 @@ public class AdminController {
 
             @RequestParam("episodeNum") int episodeNum,
 
-            @RequestParam("finalStatus") int finalStatus,
+            @RequestParam(value = "finalStatus", defaultValue = "0") int finalStatus,
 
             @RequestParam(value = "file", required = false) MultipartFile file,
 
