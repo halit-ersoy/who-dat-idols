@@ -116,17 +116,30 @@ public class TmdbService {
                         name = extractLatinNameIfPresent(origName.trim());
                     }
 
+                    Integer actorTmdbId = (Integer) c.get("id");
+                    if (containsNonLatin(name) && actorTmdbId != null && actorTmdbId > 0) {
+                        try {
+                            Map<String, Object> personDetails = getPersonDetails(actorTmdbId);
+                            if (personDetails != null && personDetails.containsKey("name")) {
+                                String fetchedName = (String) personDetails.get("name");
+                                if (fetchedName != null && !fetchedName.isBlank() && !containsNonLatin(fetchedName)) {
+                                    name = fetchedName.trim();
+                                }
+                            }
+                        } catch (Exception ignored) {}
+                    }
+
                     String character = (String) c.get("character");
+                    character = cleanCharacterName(character, name);
                     String profilePath = (String) c.get("profile_path");
                     Integer order = (Integer) c.get("order");
                     int orderIndex = order != null ? order : castList.size();
 
                     String photoUrl = getProfileUrl(profilePath);
-                    Integer actorTmdbId = (Integer) c.get("id");
 
                     CastMemberDto dto = new CastMemberDto();
                     dto.setName(name.trim());
-                    dto.setCharacterName(character != null && !character.trim().isEmpty() ? character.trim() : null);
+                    dto.setCharacterName(character);
                     dto.setPhotoUrl(photoUrl);
                     dto.setTmdbId(actorTmdbId);
                     dto.setOrderIndex(orderIndex);
@@ -297,6 +310,29 @@ public class TmdbService {
             return cleaned;
         }
         return s.trim();
+    }
+
+    public static String cleanCharacterName(String character, String actorName) {
+        if (character == null || character.trim().isEmpty()) return null;
+        String trimmed = character.trim();
+        String lower = trimmed.toLowerCase();
+        if (lower.equals("self") || lower.equals("himself") || lower.equals("herself") ||
+            lower.equals("themself") || lower.equals("themselves") || lower.equals("kendisi") ||
+            lower.equals("unknown") || lower.equals("n/a") || lower.equals("-") ||
+            (actorName != null && lower.equals(actorName.trim().toLowerCase()))) {
+            return null;
+        }
+        if (lower.startsWith("self - ") || lower.startsWith("self-") || lower.startsWith("self / ") || lower.startsWith("self: ")) {
+            int dashIdx = trimmed.indexOf('-');
+            if (dashIdx < 0) dashIdx = trimmed.indexOf('/');
+            if (dashIdx < 0) dashIdx = trimmed.indexOf(':');
+            if (dashIdx >= 0 && dashIdx + 1 < trimmed.length()) {
+                String sub = trimmed.substring(dashIdx + 1).trim();
+                return cleanCharacterName(sub, actorName);
+            }
+            return null;
+        }
+        return trimmed;
     }
 
 }

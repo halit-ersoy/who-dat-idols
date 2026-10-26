@@ -357,11 +357,13 @@ async function loadContentDetails(id) {
                     member.setAttribute('tabindex', '0');
                     member.setAttribute('title', `${actor.name || 'Oyuncu'} detaylarını görüntüle`);
 
+                    const cleanRole = cleanRoleName(actor.characterName, actor.name);
+
                     // Attach click handler to open actor details modal
                     const canOpenModal = actor.actorId || actor.tmdbId || (actor.name && actor.name.trim().length > 0);
                     if (canOpenModal) {
                         const triggerModal = () => {
-                            openActorModal(actor.actorId, actor.name, actor.photoUrl, actor.characterName, actor.tmdbId);
+                            openActorModal(actor.actorId, actor.name, actor.photoUrl, cleanRole, actor.tmdbId);
                         };
                         member.addEventListener('click', triggerModal);
                         member.addEventListener('keydown', (e) => {
@@ -391,14 +393,17 @@ async function loadContentDetails(id) {
 
                     const role = document.createElement('div');
                     role.className = 'cast-role';
-                    role.textContent = actor.characterName || '';
-                    role.title = actor.characterName || '';
+                    if (cleanRole) {
+                        role.textContent = cleanRole;
+                        role.title = cleanRole;
+                    } else {
+                        // Empty role placeholder to preserve uniform card dimensions
+                        role.innerHTML = '&nbsp;';
+                    }
 
                     member.appendChild(avatar);
                     member.appendChild(name);
-                    if (actor.characterName) {
-                        member.appendChild(role);
-                    }
+                    member.appendChild(role);
                     castList.appendChild(member);
                 });
             } else {
@@ -418,6 +423,30 @@ async function loadContentDetails(id) {
         const titleEl = document.getElementById('contentTitle');
         if (titleEl) titleEl.innerText = "Detaylar yüklenemedi";
     }
+}
+
+// ---------------------------------------------------------------------------
+// Helper functions for character roles
+// ---------------------------------------------------------------------------
+function isUnknownOrSelfRole(role, actorName) {
+    if (!role) return true;
+    const r = String(role).trim().toLowerCase();
+    if (!r || r === 'self' || r === 'himself' || r === 'herself' || r === 'themself' || r === 'themselves' || r === 'kendisi' || r === 'unknown' || r === 'n/a' || r === '-' || r === 'none') {
+        return true;
+    }
+    if (actorName && r === String(actorName).trim().toLowerCase()) {
+        return true;
+    }
+    return false;
+}
+
+function cleanRoleName(role, actorName) {
+    if (!role) return '';
+    if (isUnknownOrSelfRole(role, actorName)) return '';
+    let cleaned = String(role).trim();
+    cleaned = cleaned.replace(/^self\s*[-–—/:]\s*/i, '').trim();
+    if (isUnknownOrSelfRole(cleaned, actorName)) return '';
+    return cleaned;
 }
 
 // ---------------------------------------------------------------------------
@@ -469,6 +498,7 @@ async function openActorModal(actorId, fallbackName, fallbackPhoto, contextChara
     const overlay = getOrCreateActorModal();
     const modalBody = overlay.querySelector('#actorModalBody');
     const defaultAvatarSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='70' height='70' viewBox='0 0 24 24' fill='%23666'><path d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/></svg>";
+    const cleanContext = cleanRoleName(contextCharacter, fallbackName);
 
     // Render instant skeleton header while network request completes
     modalBody.innerHTML = `
@@ -481,7 +511,7 @@ async function openActorModal(actorId, fallbackName, fallbackPhoto, contextChara
                 <h2>${escapeHtml(fallbackName || 'Oyuncu')}</h2>
                 <div class="actor-badges">
                     <span class="actor-badge primary"><i class="fas fa-user"></i> Oyuncu</span>
-                    ${contextCharacter ? `<span class="actor-badge"><i class="fas fa-mask"></i> Bu Yapımda: ${escapeHtml(contextCharacter)}</span>` : ''}
+                    ${cleanContext ? `<span class="actor-badge"><i class="fas fa-mask"></i> Bu Yapımda: ${escapeHtml(cleanContext)}</span>` : ''}
                 </div>
             </div>
         </div>
@@ -554,8 +584,9 @@ function renderActorModalContent(modalBody, actor, fallbackName, fallbackPhoto, 
         badgesHtml.push(`<span class="actor-badge"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(placeOfBirth)}</span>`);
     }
 
-    if (contextCharacter) {
-        badgesHtml.push(`<span class="actor-badge"><i class="fas fa-mask"></i> Bu Yapımda: ${escapeHtml(contextCharacter)}</span>`);
+    const cleanContext = cleanRoleName(contextCharacter, name);
+    if (cleanContext) {
+        badgesHtml.push(`<span class="actor-badge"><i class="fas fa-mask"></i> Bu Yapımda: ${escapeHtml(cleanContext)}</span>`);
     }
 
     // Bio - NO nested scrollbar
@@ -576,7 +607,7 @@ function renderActorModalContent(modalBody, actor, fallbackName, fallbackPhoto, 
                     const linkUrl = `/${p.slug || p.id}`;
                     const title = p.name || 'İsimsiz Yapım';
                     const year = p.releaseYear || '';
-                    const role = p.characterName ? `${p.characterName}` : '';
+                    const role = cleanRoleName(p.characterName, title);
                     const category = p.category || '';
                     const poster = p.posterUrl || `/media/image/${p.id}`;
 

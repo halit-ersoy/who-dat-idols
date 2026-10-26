@@ -1,6 +1,7 @@
 package com.ses.whodatidols.repository;
 
 import com.ses.whodatidols.model.ContentRequest;
+import com.ses.whodatidols.service.TmdbService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -57,6 +58,8 @@ public class ContentRequestRepository {
             jdbcTemplate.execute(sqlVotes);
             jdbcTemplate.execute(sqlAddCompletedAt);
             jdbcTemplate.execute(sqlBackfill);
+            jdbcTemplate.execute("UPDATE ContentRequest SET Title = LTRIM(RTRIM(SUBSTRING(Title, CHARINDEX('(', Title) + 1, CHARINDEX(')', Title) - CHARINDEX('(', Title) - 1))) " +
+                    "WHERE Title LIKE '%(%)%' AND UNICODE(SUBSTRING(Title, 1, 1)) > 255 AND CHARINDEX(')', Title) > CHARINDEX('(', Title)");
         } catch (Exception e) {
             System.err.println("Error initializing ContentRequest tables: " + e.getMessage());
         }
@@ -101,11 +104,13 @@ public class ContentRequestRepository {
         Instant now = Instant.now();
         Timestamp nowTs = Timestamp.from(now);
 
+        String cleanTitle = TmdbService.extractLatinNameIfPresent(title);
+
         String insertRequestSql = "INSERT INTO ContentRequest " +
                 "(Id, UserId, UserNickname, Title, ContentType, PosterUrl, ReleaseYear, TmdbId, TvMazeId, Description, Status, VoteCount, CreatedAt) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', 1, ?)";
 
-        jdbcTemplate.update(insertRequestSql, requestId, userId, userNickname, title, contentType,
+        jdbcTemplate.update(insertRequestSql, requestId, userId, userNickname, cleanTitle, contentType,
                 posterUrl, releaseYear, tmdbId, tvmazeId, description, nowTs);
 
         String insertVoteSql = "INSERT INTO ContentRequestVote (RequestId, UserId, CreatedAt) VALUES (?, ?, ?)";
@@ -242,7 +247,7 @@ public class ContentRequestRepository {
             r.setId(UUID.fromString(rs.getString("Id")));
             r.setUserId(UUID.fromString(rs.getString("UserId")));
             r.setUserNickname(rs.getString("UserNickname"));
-            r.setTitle(rs.getString("Title"));
+            r.setTitle(TmdbService.extractLatinNameIfPresent(rs.getString("Title")));
             r.setContentType(rs.getString("ContentType"));
             r.setPosterUrl(rs.getString("PosterUrl"));
 
@@ -325,7 +330,7 @@ public class ContentRequestRepository {
             r.setId(UUID.fromString(rs.getString("Id")));
             r.setUserId(UUID.fromString(rs.getString("UserId")));
             r.setUserNickname(rs.getString("UserNickname"));
-            r.setTitle(rs.getString("Title"));
+            r.setTitle(TmdbService.extractLatinNameIfPresent(rs.getString("Title")));
             r.setContentType(rs.getString("ContentType"));
             r.setPosterUrl(rs.getString("PosterUrl"));
 
@@ -393,7 +398,7 @@ public class ContentRequestRepository {
                 r.setId(UUID.fromString(rs.getString("Id")));
                 r.setUserId(UUID.fromString(rs.getString("UserId")));
                 r.setUserNickname(rs.getString("UserNickname"));
-                r.setTitle(rs.getString("Title"));
+                r.setTitle(TmdbService.extractLatinNameIfPresent(rs.getString("Title")));
                 r.setContentType(rs.getString("ContentType"));
                 r.setPosterUrl(rs.getString("PosterUrl"));
 

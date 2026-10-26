@@ -176,6 +176,16 @@ public class ActorRepository {
                     "    CREATE NONCLUSTERED INDEX idx_seriesactors_actorid ON [dbo].[SeriesActors]([ActorID]); " +
                     "END");
 
+            // Cleanup: remove legacy "Self" / unknown / actor name role placeholders
+            jdbcTemplate.execute(
+                    "UPDATE [dbo].[MovieActors] SET CharacterName = NULL WHERE LOWER(TRIM(CharacterName)) IN ('self', 'himself', 'herself', 'themself', 'themselves', 'kendisi', 'unknown', 'n/a', '-');");
+            jdbcTemplate.execute(
+                    "UPDATE [dbo].[SeriesActors] SET CharacterName = NULL WHERE LOWER(TRIM(CharacterName)) IN ('self', 'himself', 'herself', 'themself', 'themselves', 'kendisi', 'unknown', 'n/a', '-');");
+            jdbcTemplate.execute(
+                    "UPDATE sa SET sa.CharacterName = NULL FROM [dbo].[SeriesActors] sa JOIN [dbo].[Actor] a ON sa.ActorID = a.ID WHERE LOWER(TRIM(sa.CharacterName)) = LOWER(TRIM(a.Name));");
+            jdbcTemplate.execute(
+                    "UPDATE ma SET ma.CharacterName = NULL FROM [dbo].[MovieActors] ma JOIN [dbo].[Actor] a ON ma.ActorID = a.ID WHERE LOWER(TRIM(ma.CharacterName)) = LOWER(TRIM(a.Name));");
+
         } catch (Exception e) {
             System.err.println("ActorRepository schema update failed: " + e.getMessage());
         }
@@ -573,6 +583,67 @@ public class ActorRepository {
         return downloadMissingLocalPhotos(null, null);
     }
 
+    /**
+     * Normalizes non-Latin actor names across the database by resolving them from TMDB.
+     */
+    public int normalizeNonLatinActorNames(PhotoSyncProgressCallback callback, BooleanSupplier shouldStop) {
+        try {
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList(
+                    "SELECT CAST(ID AS NVARCHAR(36)) AS ID, Name, TmdbId FROM [dbo].[Actor] " +
+                    "WHERE (UNICODE(SUBSTRING(Name, 1, 1)) > 255 OR UNICODE(SUBSTRING(Name, 2, 1)) > 255 OR UNICODE(SUBSTRING(Name, 3, 1)) > 255) " +
+                    "  AND TmdbId IS NOT NULL AND TmdbId > 0");
+
+            int total = rows.size();
+            if (total == 0) return 0;
+
+            if (callback != null) {
+                callback.onProgress(0, total, "Oyuncu isimleri kontrol ediliyor...");
+            }
+
+            int count = 0;
+            int processed = 0;
+            for (Map<String, Object> row : rows) {
+                if (shouldStop != null && shouldStop.getAsBoolean()) break;
+                processed++;
+                String currentName = (String) row.get("Name");
+                if (callback != null) {
+                    callback.onProgress(processed, total, currentName);
+                }
+
+                try {
+                    String aid = (String) row.get("ID");
+                    int tmdbId = ((Number) row.get("TmdbId")).intValue();
+
+                    String latin = TmdbService.extractLatinNameIfPresent(currentName);
+                    if (TmdbService.containsNonLatin(latin)) {
+                        Map<String, Object> details = tmdbService.getPersonDetails(tmdbId);
+                        if (details != null && details.containsKey("name")) {
+                            String fetchedName = (String) details.get("name");
+                            if (fetchedName != null && !fetchedName.isBlank() && !TmdbService.containsNonLatin(fetchedName)) {
+                                latin = fetchedName.trim();
+                            }
+                        }
+                    }
+
+                    if (latin != null && !latin.isBlank() && !TmdbService.containsNonLatin(latin) && !latin.equalsIgnoreCase(currentName)) {
+                        jdbcTemplate.update("UPDATE [dbo].[Actor] SET Name = ? WHERE ID = ?", latin, aid);
+                        count++;
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error normalizing actor name: " + e.getMessage());
+                }
+            }
+            return count;
+        } catch (Exception e) {
+            System.err.println("Failed to query non-Latin actors: " + e.getMessage());
+            return 0;
+        }
+    }
+
+    public int normalizeNonLatinActorNames() {
+        return normalizeNonLatinActorNames(null, null);
+    }
+
     @Transactional
     public UUID findOrCreateActor(String name, String photoUrl, Integer tmdbId, Integer tvmazeId) {
         if (name == null || name.trim().isEmpty()) {
@@ -699,9 +770,10 @@ public class ActorRepository {
                 dto.setPhotoUrl("/media/actor/" + actorId);
                 if (addedActorIds.add(actorId)) {
                     int orderIndex = dto.getOrderIndex() > 0 ? dto.getOrderIndex() : order++;
+                    String cleanChar = TmdbService.cleanCharacterName(dto.getCharacterName(), dto.getName());
                     jdbcTemplate.update(
                             "INSERT INTO [dbo].[MovieActors] (MovieID, ActorID, CharacterName, OrderIndex) VALUES (?, ?, ?, ?)",
-                            movieId.toString(), actorId.toString(), dto.getCharacterName(), orderIndex);
+                            movieId.toString(), actorId.toString(), cleanChar, orderIndex);
                 }
             }
         }
@@ -723,9 +795,10 @@ public class ActorRepository {
                 dto.setPhotoUrl("/media/actor/" + actorId);
                 if (addedActorIds.add(actorId)) {
                     int orderIndex = dto.getOrderIndex() > 0 ? dto.getOrderIndex() : order++;
+                    String cleanChar = TmdbService.cleanCharacterName(dto.getCharacterName(), dto.getName());
                     jdbcTemplate.update(
                             "INSERT INTO [dbo].[SeriesActors] (SeriesID, ActorID, CharacterName, OrderIndex) VALUES (?, ?, ?, ?)",
-                            seriesId.toString(), actorId.toString(), dto.getCharacterName(), orderIndex);
+                            seriesId.toString(), actorId.toString(), cleanChar, orderIndex);
                 }
             }
         }

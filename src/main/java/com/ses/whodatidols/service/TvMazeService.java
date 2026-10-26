@@ -82,6 +82,7 @@ public class TvMazeService {
 
                     String name = (String) person.get("name");
                     if (name == null || name.trim().isEmpty()) continue;
+                    name = TmdbService.extractLatinNameIfPresent(name.trim());
 
                     Integer personId = (Integer) person.get("id");
                     String photoUrl = null;
@@ -92,10 +93,11 @@ public class TvMazeService {
                     }
 
                     String characterName = character != null ? (String) character.get("name") : null;
+                    characterName = TmdbService.cleanCharacterName(characterName, name);
 
                     CastMemberDto dto = new CastMemberDto();
                     dto.setName(name.trim());
-                    dto.setCharacterName(characterName != null && !characterName.trim().isEmpty() ? characterName.trim() : null);
+                    dto.setCharacterName(characterName);
                     dto.setPhotoUrl(photoUrl);
                     dto.setTvmazeId(personId);
                     dto.setOrderIndex(order++);

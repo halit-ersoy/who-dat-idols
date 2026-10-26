@@ -266,6 +266,22 @@ public class CastSyncService {
                     return;
                 }
 
+                // Phase 1.5: Normalize any non-Latin actor names from TMDB
+                syncProgress.setPhase("names");
+                syncProgress.setCurrentItem("Oyuncu isimleri kontrol ediliyor...");
+                int namesNormalized = actorRepository.normalizeNonLatinActorNames((curr, total, name) -> {
+                    syncProgress.setCurrent(curr);
+                    syncProgress.setTotal(total);
+                    int pct = total > 0 ? (int) Math.round(((double) curr / total) * 100) : 0;
+                    syncProgress.setPercent(pct);
+                    syncProgress.setCurrentItem("İsim kontrolü: " + (name != null ? name : "Oyuncu") + " (" + curr + " / " + total + ")");
+                }, () -> stopRequested);
+
+                if (stopRequested) {
+                    handleStopped(0, 0, 0, 0);
+                    return;
+                }
+
                 // Phase 2: Production cast scan
                 List<Movie> movies = movieRepository.findAll();
                 List<Series> seriesList = seriesRepository.findAllSeries();
@@ -354,6 +370,9 @@ public class CastSyncService {
                 syncProgress.setPercent(100);
                 syncProgress.setCurrentItem("Tamamlandı");
                 String summaryMsg = "Toplam " + totalItems + " yapım tarandı. " + moviesSynced + " film, " + seriesSynced + " dizi oyuncu kadrosu ve fotoğrafları güncellendi.";
+                if (namesNormalized > 0) {
+                    summaryMsg += " (" + namesNormalized + " oyuncu ismi Latin alfabesine dönüştürüldü)";
+                }
                 if (photosDownloaded > 0) {
                     summaryMsg += " (" + photosDownloaded + " eksik fotoğraf doğrudan indirildi)";
                 }
