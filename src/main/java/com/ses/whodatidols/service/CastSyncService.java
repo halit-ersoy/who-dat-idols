@@ -6,6 +6,8 @@ import com.ses.whodatidols.model.CastMemberDto;
 import com.ses.whodatidols.model.Movie;
 import com.ses.whodatidols.model.Series;
 import com.ses.whodatidols.repository.ActorRepository;
+import com.ses.whodatidols.repository.ContentRequestRepository;
+import org.springframework.context.annotation.Lazy;
 import com.ses.whodatidols.repository.MovieRepository;
 import com.ses.whodatidols.repository.SeriesRepository;
 import org.springframework.stereotype.Service;
@@ -60,6 +62,7 @@ public class CastSyncService {
     private final ObjectMapper objectMapper;
     private final MovieRepository movieRepository;
     private final SeriesRepository seriesRepository;
+    private final ContentRequestRepository contentRequestRepository;
 
     private final SyncProgress syncProgress = new SyncProgress();
     private volatile boolean stopRequested = false;
@@ -67,7 +70,8 @@ public class CastSyncService {
     public CastSyncService(ActorRepository actorRepository, TmdbService tmdbService,
                            TvMazeService tvMazeService, CacheService cacheService,
                            ObjectMapper objectMapper, MovieRepository movieRepository,
-                           SeriesRepository seriesRepository) {
+                           SeriesRepository seriesRepository,
+                           @Lazy ContentRequestRepository contentRequestRepository) {
         this.actorRepository = actorRepository;
         this.tmdbService = tmdbService;
         this.tvMazeService = tvMazeService;
@@ -75,6 +79,7 @@ public class CastSyncService {
         this.objectMapper = objectMapper;
         this.movieRepository = movieRepository;
         this.seriesRepository = seriesRepository;
+        this.contentRequestRepository = contentRequestRepository;
     }
 
     public synchronized SyncProgress getProgress() {
@@ -282,6 +287,13 @@ public class CastSyncService {
                     return;
                 }
 
+                // Phase 1.8: Normalize existing content request titles
+                int requestsNormalized = 0;
+                if (contentRequestRepository != null) {
+                    syncProgress.setCurrentItem("İçerik istekleri taranıyor...");
+                    requestsNormalized = contentRequestRepository.normalizeExistingRequests();
+                }
+
                 // Phase 2: Production cast scan
                 List<Movie> movies = movieRepository.findAll();
                 List<Series> seriesList = seriesRepository.findAllSeries();
@@ -372,6 +384,9 @@ public class CastSyncService {
                 String summaryMsg = "Toplam " + totalItems + " yapım tarandı. " + moviesSynced + " film, " + seriesSynced + " dizi oyuncu kadrosu ve fotoğrafları güncellendi.";
                 if (namesNormalized > 0) {
                     summaryMsg += " (" + namesNormalized + " oyuncu ismi Latin alfabesine dönüştürüldü)";
+                }
+                if (requestsNormalized > 0) {
+                    summaryMsg += " (" + requestsNormalized + " içerik isteği Latin alfabesine dönüştürüldü)";
                 }
                 if (photosDownloaded > 0) {
                     summaryMsg += " (" + photosDownloaded + " eksik fotoğraf doğrudan indirildi)";

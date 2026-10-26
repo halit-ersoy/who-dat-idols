@@ -2,7 +2,10 @@ package com.ses.whodatidols.repository;
 
 import com.ses.whodatidols.model.ContentRequest;
 import com.ses.whodatidols.service.TmdbService;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import com.ses.whodatidols.service.TvMazeService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -15,10 +18,27 @@ import java.util.*;
 public class ContentRequestRepository {
 
     private final JdbcTemplate jdbcTemplate;
+    private final TmdbService tmdbService;
+    private final TvMazeService tvMazeService;
 
     @Autowired
-    public ContentRequestRepository(JdbcTemplate jdbcTemplate) {
+    public ContentRequestRepository(JdbcTemplate jdbcTemplate,
+                                    @Lazy TmdbService tmdbService,
+                                    @Lazy TvMazeService tvMazeService) {
         this.jdbcTemplate = jdbcTemplate;
+        this.tmdbService = tmdbService;
+        this.tvMazeService = tvMazeService;
+    }
+
+    @PostConstruct
+    public void init() {
+        ensureTablesExist();
+        Thread.startVirtualThread(() -> {
+            try {
+                Thread.sleep(3000);
+                normalizeExistingRequests();
+            } catch (Exception ignored) {}
+        });
     }
 
     private void ensureTablesExist() {
@@ -68,6 +88,57 @@ public class ContentRequestRepository {
     /**
      * Purges content requests that were marked as added/completed 24 hours ago.
      */
+    /**
+     * Scans all existing content requests and resolves any non-Latin titles
+     * using TMDB (en-US) or TVMaze.
+     */
+    public int normalizeExistingRequests() {
+        try {
+            ensureTablesExist();
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList(
+                    "SELECT CAST(Id AS NVARCHAR(36)) AS Id, Title, ContentType, TmdbId, TvMazeId FROM ContentRequest");
+
+            int updated = 0;
+            for (Map<String, Object> row : rows) {
+                String idStr = (String) row.get("Id");
+                String currentTitle = (String) row.get("Title");
+                String contentType = (String) row.get("ContentType");
+                if (currentTitle == null || currentTitle.isBlank()) continue;
+
+                String latinTitle = TmdbService.extractLatinNameIfPresent(currentTitle);
+
+                Integer tmdbId = row.get("TmdbId") instanceof Number ? ((Number) row.get("TmdbId")).intValue() : null;
+                Integer tvmazeId = row.get("TvMazeId") instanceof Number ? ((Number) row.get("TvMazeId")).intValue() : null;
+
+                if (TmdbService.containsNonLatin(latinTitle)) {
+                    if (tmdbService != null && tmdbId != null && tmdbId > 0) {
+                        String enTitle = tmdbService.getEnglishTitle(tmdbId, contentType);
+                        if (enTitle != null && !enTitle.isBlank() && !TmdbService.containsNonLatin(enTitle)) {
+                            latinTitle = enTitle;
+                        }
+                    } else if (tvMazeService != null && tvmazeId != null && tvmazeId > 0) {
+                        String mazeTitle = tvMazeService.getShowName(tvmazeId);
+                        if (mazeTitle != null && !mazeTitle.isBlank() && !TmdbService.containsNonLatin(mazeTitle)) {
+                            latinTitle = mazeTitle;
+                        }
+                    }
+                }
+
+                if (latinTitle != null && !latinTitle.isBlank() && !latinTitle.equalsIgnoreCase(currentTitle) && !TmdbService.containsNonLatin(latinTitle)) {
+                    jdbcTemplate.update("UPDATE ContentRequest SET Title = ? WHERE Id = ?", latinTitle, idStr);
+                    updated++;
+                }
+            }
+            if (updated > 0) {
+                System.out.println("Normalized " + updated + " content request titles to Latin alphabet.");
+            }
+            return updated;
+        } catch (Exception e) {
+            System.err.println("Error normalizing content requests: " + e.getMessage());
+            return 0;
+        }
+    }
+
     public int cleanupExpiredCompletedRequests() {
         try {
             ensureTablesExist();

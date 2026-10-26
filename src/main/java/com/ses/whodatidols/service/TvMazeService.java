@@ -64,6 +64,20 @@ public class TvMazeService {
         }
     }
 
+    public String getShowName(Integer showId) {
+        if (showId == null || showId <= 0) return null;
+        try {
+            Map<String, Object> details = getSeriesDetails(showId);
+            if (details != null && details.containsKey("name")) {
+                String name = (String) details.get("name");
+                if (name != null && !name.isBlank()) {
+                    return name.trim();
+                }
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
     @Cacheable(value = "tvmazeCast", key = "#showId", unless = "#result.isEmpty()")
     @SuppressWarnings("unchecked")
     public List<CastMemberDto> getShowCast(int showId) {
