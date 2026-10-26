@@ -113,9 +113,14 @@ public class HomeController {
             }
 
             item.isNew = isRecent(m.getUploadDate());
+            item.isSeriesNew = false;
+            item.uploadDate = m.getUploadDate() != null ? m.getUploadDate().toEpochMilli() : null;
+            item.seriesUploadDate = null;
             item.isFinal = false; // Filmler için genelde false
             item.season = null;
             item.episode = null;
+            item.finalStatus = 0;
+            item.seriesType = "Film";
 
             movieItems.add(item);
         }
@@ -147,6 +152,9 @@ public class HomeController {
             item.season = dto.getSeason();
             item.episode = dto.getEpisode();
             item.isNew = dto.isNew();
+            item.isSeriesNew = dto.isSeriesNew();
+            item.uploadDate = dto.getUploadDate();
+            item.seriesUploadDate = dto.getSeriesUploadDate();
             item.isFinal = dto.isFinal();
             item.image = dto.getImage();
             item.finalStatus = dto.getFinalStatus();
@@ -210,6 +218,9 @@ public class HomeController {
         public Integer season;
         public Integer episode;
         public boolean isNew;
+        public boolean isSeriesNew;
+        public Long uploadDate;
+        public Long seriesUploadDate;
         public boolean isFinal;
         public String image;
         public String country;

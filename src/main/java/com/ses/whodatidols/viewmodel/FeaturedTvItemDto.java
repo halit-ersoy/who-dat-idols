@@ -7,6 +7,9 @@ public class FeaturedTvItemDto {
     private Integer season;
     private Integer episode;
     private boolean isNew;
+    private boolean isSeriesNew;
+    private Long uploadDate;
+    private Long seriesUploadDate;
     private boolean isFinal;
     private String image;
     private String country;
@@ -33,6 +36,18 @@ public class FeaturedTvItemDto {
 
     public boolean isNew() {
         return isNew;
+    }
+
+    public boolean isSeriesNew() {
+        return isSeriesNew;
+    }
+
+    public Long getUploadDate() {
+        return uploadDate;
+    }
+
+    public Long getSeriesUploadDate() {
+        return seriesUploadDate;
     }
 
     public boolean isFinal() {
@@ -78,6 +93,18 @@ public class FeaturedTvItemDto {
 
     public void setNew(boolean isNew) {
         this.isNew = isNew;
+    }
+
+    public void setSeriesNew(boolean isSeriesNew) {
+        this.isSeriesNew = isSeriesNew;
+    }
+
+    public void setUploadDate(Long uploadDate) {
+        this.uploadDate = uploadDate;
+    }
+
+    public void setSeriesUploadDate(Long seriesUploadDate) {
+        this.seriesUploadDate = seriesUploadDate;
     }
 
     public void setFinal(boolean isFinal) {

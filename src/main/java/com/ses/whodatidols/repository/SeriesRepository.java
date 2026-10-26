@@ -854,10 +854,22 @@ public class SeriesRepository {
 
         java.sql.Timestamp uploadDate = rs.getTimestamp("uploadDate");
         if (uploadDate != null) {
-            dto.setNew(uploadDate.toInstant()
-                    .isAfter(java.time.Instant.now().minus(24, java.time.temporal.ChronoUnit.HOURS)));
+            long epTime = uploadDate.getTime();
+            dto.setNew((System.currentTimeMillis() - epTime) < (24L * 60 * 60 * 1000));
+            dto.setUploadDate(epTime);
         } else {
             dto.setNew(false);
+            dto.setUploadDate(null);
+        }
+
+        java.sql.Timestamp seriesUploadDate = rs.getTimestamp("seriesUploadDate");
+        if (seriesUploadDate != null) {
+            long sTime = seriesUploadDate.getTime();
+            dto.setSeriesNew((System.currentTimeMillis() - sTime) < (24L * 60 * 60 * 1000));
+            dto.setSeriesUploadDate(sTime);
+        } else {
+            dto.setSeriesNew(false);
+            dto.setSeriesUploadDate(null);
         }
 
         dto.setImage("/media/image/" + rs.getString("SeriesId"));
@@ -883,7 +895,7 @@ public class SeriesRepository {
         String sql = """
                 WITH OrderedEpisodes AS (
                     SELECT E.ID as EpisodeId, E.SeriesId as SeriesId, E.uploadDate, E.name, E.slug, E.SeasonNumber, E.EpisodeNumber,
-                           S.name AS SeriesName, S.Language, S.Country, S.SeriesType, S.finalStatus,
+                           S.name AS SeriesName, S.Language, S.Country, S.SeriesType, S.finalStatus, S.uploadDate AS seriesUploadDate,
                            ROW_NUMBER() OVER(ORDER BY E.uploadDate DESC, E.name ASC, E.ID ASC) as rn1,
                            ROW_NUMBER() OVER(PARTITION BY E.SeriesId ORDER BY E.uploadDate DESC, E.name ASC, E.ID ASC) as rn2,
                            ROW_NUMBER() OVER(PARTITION BY E.SeriesId ORDER BY E.SeasonNumber DESC, E.EpisodeNumber DESC) as latest_in_series_rn
