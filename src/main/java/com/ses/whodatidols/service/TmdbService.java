@@ -34,7 +34,7 @@ public class TmdbService {
                     .pathSegment(path.split("/"))
                     .queryParam("api_key", apiKey.trim())
                     .queryParam("query", query.trim())
-                    .queryParam("language", "tr-TR")
+                    .queryParam("language", "en-US")
                     .toUriString();
 
             Map<String, Object> response = restTemplate.getForObject(new URI(url), Map.class);
@@ -45,12 +45,12 @@ public class TmdbService {
                 }
             }
 
-            // Fallback to en-US if tr-TR returns empty
+            // Fallback to tr-TR if en-US returns empty
             String fallbackUrl = UriComponentsBuilder.fromHttpUrl(BASE_URL)
                     .pathSegment(path.split("/"))
                     .queryParam("api_key", apiKey.trim())
                     .queryParam("query", query.trim())
-                    .queryParam("language", "en-US")
+                    .queryParam("language", "tr-TR")
                     .toUriString();
 
             Map<String, Object> fallbackResp = restTemplate.getForObject(new URI(fallbackUrl), Map.class);
@@ -97,7 +97,7 @@ public class TmdbService {
             String url = UriComponentsBuilder.fromHttpUrl(BASE_URL)
                     .pathSegment(path.split("/"))
                     .queryParam("api_key", apiKey.trim())
-                    .queryParam("language", "tr-TR")
+                    .queryParam("language", "en-US")
                     .toUriString();
 
             Map<String, Object> response = restTemplate.getForObject(new URI(url), Map.class);
@@ -109,6 +109,12 @@ public class TmdbService {
                 for (Map<String, Object> c : rawCast) {
                     String name = (String) c.get("name");
                     if (name == null || name.trim().isEmpty()) continue;
+                    name = extractLatinNameIfPresent(name.trim());
+
+                    String origName = (String) c.get("original_name");
+                    if (containsNonLatin(name) && origName != null && !origName.trim().isEmpty() && !containsNonLatin(origName)) {
+                        name = extractLatinNameIfPresent(origName.trim());
+                    }
 
                     String character = (String) c.get("character");
                     String profilePath = (String) c.get("profile_path");
@@ -161,32 +167,47 @@ public class TmdbService {
     public Map<String, Object> getPersonDetails(int personId) {
         if (apiKey == null || apiKey.trim().isEmpty() || personId <= 0) return Collections.emptyMap();
         try {
-            String urlTr = UriComponentsBuilder.fromHttpUrl(BASE_URL)
+            String urlEn = UriComponentsBuilder.fromHttpUrl(BASE_URL)
                     .pathSegment("person", String.valueOf(personId))
                     .queryParam("api_key", apiKey.trim())
-                    .queryParam("language", "tr-TR")
+                    .queryParam("language", "en-US")
                     .toUriString();
 
-            Map<String, Object> resp = restTemplate.getForObject(new URI(urlTr), Map.class);
+            Map<String, Object> resp = restTemplate.getForObject(new URI(urlEn), Map.class);
             if (resp != null) {
                 Map<String, Object> copy = new HashMap<>(resp);
-                String bio = (String) copy.get("biography");
-                if (bio == null || bio.trim().isEmpty()) {
-                    try {
-                        String urlEn = UriComponentsBuilder.fromHttpUrl(BASE_URL)
-                                .pathSegment("person", String.valueOf(personId))
-                                .queryParam("api_key", apiKey.trim())
-                                .queryParam("language", "en-US")
-                                .toUriString();
-                        Map<String, Object> respEn = restTemplate.getForObject(new URI(urlEn), Map.class);
-                        if (respEn != null && respEn.get("biography") != null) {
-                            String enBio = (String) respEn.get("biography");
-                            if (enBio != null && !enBio.trim().isEmpty()) {
-                                copy.put("biography", enBio);
+                String name = (String) copy.get("name");
+                if (name != null) {
+                    name = extractLatinNameIfPresent(name);
+                    if (containsNonLatin(name) && copy.containsKey("also_known_as")) {
+                        List<String> aka = (List<String>) copy.get("also_known_as");
+                        if (aka != null) {
+                            for (String alias : aka) {
+                                if (alias != null && !alias.isBlank() && !containsNonLatin(alias)) {
+                                    name = alias.trim();
+                                    break;
+                                }
                             }
                         }
-                    } catch (Exception ignored) {}
+                    }
+                    copy.put("name", name);
                 }
+
+                // Check tr-TR for Turkish biography
+                try {
+                    String urlTr = UriComponentsBuilder.fromHttpUrl(BASE_URL)
+                            .pathSegment("person", String.valueOf(personId))
+                            .queryParam("api_key", apiKey.trim())
+                            .queryParam("language", "tr-TR")
+                            .toUriString();
+                    Map<String, Object> respTr = restTemplate.getForObject(new URI(urlTr), Map.class);
+                    if (respTr != null && respTr.get("biography") != null) {
+                        String trBio = (String) respTr.get("biography");
+                        if (trBio != null && !trBio.trim().isEmpty()) {
+                            copy.put("biography", trBio);
+                        }
+                    }
+                } catch (Exception ignored) {}
                 String profilePath = (String) copy.get("profile_path");
                 if (profilePath != null && !profilePath.isEmpty()) {
                     copy.put("profileUrl", getProfileUrl(profilePath));
@@ -237,4 +258,45 @@ public class TmdbService {
             return null;
         return PROFILE_BASE_URL + profilePath;
     }
+
+    public static boolean containsNonLatin(String s) {
+        if (s == null || s.isEmpty()) return false;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            Character.UnicodeBlock block = Character.UnicodeBlock.of(c);
+            if (block == Character.UnicodeBlock.HANGUL_SYLLABLES ||
+                block == Character.UnicodeBlock.HANGUL_JAMO ||
+                block == Character.UnicodeBlock.HANGUL_COMPATIBILITY_JAMO ||
+                block == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS ||
+                block == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A ||
+                block == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_B ||
+                block == Character.UnicodeBlock.CJK_SYMBOLS_AND_PUNCTUATION ||
+                block == Character.UnicodeBlock.HIRAGANA ||
+                block == Character.UnicodeBlock.KATAKANA ||
+                block == Character.UnicodeBlock.THAI ||
+                block == Character.UnicodeBlock.ARABIC ||
+                block == Character.UnicodeBlock.CYRILLIC) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static String extractLatinNameIfPresent(String s) {
+        if (s == null || s.isBlank()) return s;
+        if (!containsNonLatin(s)) return s.trim();
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\(([A-Za-z0-9\\s.'’\\-]+)\\)").matcher(s);
+        if (m.find()) {
+            String extracted = m.group(1).trim();
+            if (!extracted.isEmpty() && !containsNonLatin(extracted)) {
+                return extracted;
+            }
+        }
+        String cleaned = s.replaceAll("\\([^)]*\\)", "").trim();
+        if (!cleaned.isEmpty() && !containsNonLatin(cleaned)) {
+            return cleaned;
+        }
+        return s.trim();
+    }
+
 }

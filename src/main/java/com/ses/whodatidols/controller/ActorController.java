@@ -67,10 +67,18 @@ public class ActorController {
 
         boolean needsDbUpdate = false;
 
-        if ((biography == null || birthday == null || placeOfBirth == null) && tmdbId != null && tmdbId > 0) {
+        if ((biography == null || birthday == null || placeOfBirth == null || TmdbService.containsNonLatin(actor.getName())) && tmdbId != null && tmdbId > 0) {
             try {
                 Map<String, Object> tmdbDetails = tmdbService.getPersonDetails(tmdbId);
                 if (tmdbDetails != null && !tmdbDetails.isEmpty()) {
+                    String fetchedName = (String) tmdbDetails.get("name");
+                    if (fetchedName != null && !fetchedName.trim().isEmpty()) {
+                        String cleanName = TmdbService.extractLatinNameIfPresent(fetchedName.trim());
+                        if (TmdbService.containsNonLatin(actor.getName()) && !TmdbService.containsNonLatin(cleanName)) {
+                            actor.setName(cleanName);
+                            actorRepository.updateActorName(id, cleanName);
+                        }
+                    }
                     String fetchedBio = (String) tmdbDetails.get("biography");
                     if (fetchedBio != null && !fetchedBio.trim().isEmpty()) {
                         // Translate biography to Turkish before saving

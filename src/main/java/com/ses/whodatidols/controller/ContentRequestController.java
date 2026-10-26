@@ -312,6 +312,13 @@ public class ContentRequestController {
                     String title = (String) item.get("title");
                     if (title == null) continue;
                     String origTitle = (String) item.get("original_title");
+                    title = TmdbService.extractLatinNameIfPresent(title);
+                    if (TmdbService.containsNonLatin(title) && origTitle != null && !origTitle.isBlank() && !TmdbService.containsNonLatin(origTitle)) {
+                        title = TmdbService.extractLatinNameIfPresent(origTitle);
+                    }
+                    if (origTitle != null && TmdbService.containsNonLatin(origTitle)) {
+                        origTitle = title;
+                    }
                     Integer tmdbId = item.get("id") instanceof Number ? ((Number) item.get("id")).intValue() : null;
                     String posterPath = (String) item.get("poster_path");
                     String posterUrl = tmdbService.getPosterUrl(posterPath);
@@ -347,6 +354,13 @@ public class ContentRequestController {
                     String title = (String) item.get("name");
                     if (title == null) continue;
                     String origTitle = (String) item.get("original_name");
+                    title = TmdbService.extractLatinNameIfPresent(title);
+                    if (TmdbService.containsNonLatin(title) && origTitle != null && !origTitle.isBlank() && !TmdbService.containsNonLatin(origTitle)) {
+                        title = TmdbService.extractLatinNameIfPresent(origTitle);
+                    }
+                    if (origTitle != null && TmdbService.containsNonLatin(origTitle)) {
+                        origTitle = title;
+                    }
                     Integer tmdbId = item.get("id") instanceof Number ? ((Number) item.get("id")).intValue() : null;
                     String posterPath = (String) item.get("poster_path");
                     String posterUrl = tmdbService.getPosterUrl(posterPath);
@@ -384,6 +398,7 @@ public class ContentRequestController {
                         Map<String, Object> show = (Map<String, Object>) wrapper.get("show");
                         String title = (String) show.get("name");
                         if (title == null) continue;
+                        title = TmdbService.extractLatinNameIfPresent(title);
 
                         Integer tvmazeId = show.get("id") instanceof Number ? ((Number) show.get("id")).intValue() : null;
                         String posterUrl = null;

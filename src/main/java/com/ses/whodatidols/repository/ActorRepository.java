@@ -254,6 +254,15 @@ public class ActorRepository {
         }
     }
 
+    public void updateActorName(UUID actorId, String name) {
+        if (actorId == null || name == null || name.trim().isEmpty()) return;
+        try {
+            jdbcTemplate.update("UPDATE [dbo].[Actor] SET Name = ? WHERE ID = ?", name.trim(), actorId.toString());
+        } catch (Exception e) {
+            System.err.println("Failed to update actor name in DB: " + e.getMessage());
+        }
+    }
+
     public List<Map<String, Object>> getMoviesForActor(UUID actorId) {
         if (actorId == null) return Collections.emptyList();
         String sql = """
@@ -635,6 +644,14 @@ public class ActorRepository {
                 updated = true;
             }
 
+            if (trimmedName != null && !trimmedName.isEmpty()) {
+                String cleanName = com.ses.whodatidols.service.TmdbService.extractLatinNameIfPresent(trimmedName);
+                if (com.ses.whodatidols.service.TmdbService.containsNonLatin(existing.getName()) && !com.ses.whodatidols.service.TmdbService.containsNonLatin(cleanName)) {
+                    existing.setName(cleanName);
+                    updated = true;
+                }
+            }
+
             if (existing.getTmdbId() == null && tmdbId != null && tmdbId > 0) {
                 existing.setTmdbId(tmdbId);
                 updated = true;
@@ -645,8 +662,8 @@ public class ActorRepository {
             }
             if (updated) {
                 jdbcTemplate.update(
-                        "UPDATE [dbo].[Actor] SET PhotoUrl = ?, RemotePhotoUrl = ?, TmdbId = ?, TvMazeId = ? WHERE ID = ?",
-                        existing.getPhotoUrl(), existing.getRemotePhotoUrl(), existing.getTmdbId(), existing.getTvmazeId(), existing.getId().toString());
+                        "UPDATE [dbo].[Actor] SET Name = ?, PhotoUrl = ?, RemotePhotoUrl = ?, TmdbId = ?, TvMazeId = ? WHERE ID = ?",
+                        existing.getName(), existing.getPhotoUrl(), existing.getRemotePhotoUrl(), existing.getTmdbId(), existing.getTvmazeId(), existing.getId().toString());
             }
             return existing.getId();
         }
@@ -658,6 +675,7 @@ public class ActorRepository {
             saveActorPhotoLocally(actorId, remoteUrl);
             localPhotoUrl = "/media/actor/" + actorId;
         }
+        trimmedName = com.ses.whodatidols.service.TmdbService.extractLatinNameIfPresent(trimmedName);
 
         jdbcTemplate.update(
                 "INSERT INTO [dbo].[Actor] (ID, Name, PhotoUrl, RemotePhotoUrl, TmdbId, TvMazeId, CreatedAt) VALUES (?, ?, ?, ?, ?, ?, GETDATE())",
