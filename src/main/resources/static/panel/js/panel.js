@@ -98,6 +98,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 fetchUsers();
             } else if (targetId === 'update-notes-section') {
                 fetchUpdateNotes();
+            } else if (targetId === 'streamlive-section') {
+                if (typeof window.fetchStreamLiveList === 'function') window.fetchStreamLiveList();
             } else if (targetId === 'system-settings-section') {
                 if (typeof fetchMaintenanceStatus === 'function') {
                     fetchMaintenanceStatus();
@@ -3669,6 +3671,24 @@ document.addEventListener('DOMContentLoaded', function () {
         };
         const mappedLang = langMap[language] || 'Korece';
 
+        if (currentFetchType === 'StreamLive') {
+            const slTitle = document.getElementById('streamLiveTitle');
+            if (slTitle) slTitle.value = name;
+            const slImg = document.getElementById('streamLiveImageUrl');
+            if (slImg) slImg.value = image;
+            lastFetchedPosterUrl = image;
+
+            const slDesc = document.getElementById('streamLiveDescription');
+            if (slDesc) slDesc.value = summary || '';
+
+            const slDur = document.getElementById('streamLiveDuration');
+            const dur = data.runtime || (data.episode_run_time && data.episode_run_time.length ? data.episode_run_time[0] : null) || data.averageRuntime;
+            if (slDur && dur) slDur.value = dur;
+
+            updatePosterPreview('streamLive', image);
+            return;
+        }
+
         if (currentFetchType === 'Upcoming') {
             const upName = document.getElementById('upcomingName');
             if (upName) upName.value = name;
@@ -6274,6 +6294,469 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     };
     fetchCommercialProbability();
+
+    /* ===========================================================
+       STREAMLIVE YÖNETİMİ
+       =========================================================== */
+    const streamLiveForm = document.getElementById('streamLiveForm');
+    const streamLiveSearchInput = document.getElementById('streamLiveSearch');
+    const streamLiveSearchResults = document.getElementById('streamLiveSearchResults');
+    const streamLiveContentId = document.getElementById('streamLiveContentId');
+    const streamLiveContentType = document.getElementById('streamLiveContentType');
+    const streamLiveSelectedBadge = document.getElementById('streamLiveSelectedBadge');
+    const streamLiveSelectedText = document.getElementById('streamLiveSelectedText');
+    const btnClearStreamLiveSelected = document.getElementById('btnClearStreamLiveSelected');
+    const streamLiveTableBody = document.getElementById('streamLiveTableBody');
+    const btnRefreshStreamLiveList = document.getElementById('btnRefreshStreamLiveList');
+
+    let streamLiveSearchTimer = null;
+
+    if (streamLiveSearchInput) {
+        streamLiveSearchInput.addEventListener('input', function () {
+            clearTimeout(streamLiveSearchTimer);
+            const query = this.value.trim();
+            if (query.length < 2) {
+                if (streamLiveSearchResults) streamLiveSearchResults.style.display = 'none';
+                return;
+            }
+            streamLiveSearchTimer = setTimeout(() => {
+                fetch(`/admin/streamlive/search-contents?query=${encodeURIComponent(query)}&q=${encodeURIComponent(query)}`)
+                    .then(r => r.json())
+                    .then(items => {
+                        if (!streamLiveSearchResults) return;
+                        streamLiveSearchResults.innerHTML = '';
+                        if (!items || items.length === 0) {
+                            streamLiveSearchResults.innerHTML = '<div style="padding: 10px; color: #888;">Eşleşen içerik bulunamadı.</div>';
+                            streamLiveSearchResults.style.display = 'block';
+                            return;
+                        }
+                        items.forEach(item => {
+                            const div = document.createElement('div');
+                            div.className = 'search-result-item';
+                            div.style.padding = '8px 12px';
+                            div.style.cursor = 'pointer';
+                            div.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+                            const typeBadge = item.type === 'MOVIE' || item.type === 'Movie' ? 'Film' : 'Dizi Bölümü';
+                            const duration = item.durationMinutes || item.duration || 0;
+                            div.innerHTML = `<strong>${escapeHtml(item.name)}</strong> <span style="color: var(--primary-color, #1ed760); font-size: 11px;">[${typeBadge}]</span> <span style="color: #888; font-size: 11px;">(${duration} dk)</span>`;
+                            div.addEventListener('click', () => {
+                                streamLiveContentId.value = item.id;
+                                streamLiveContentType.value = item.type === 'Episode' ? 'SERIES_EPISODE' : 'MOVIE';
+                                streamLiveSelectedText.textContent = `${item.name} (${typeBadge} - ${duration} dk)`;
+                                streamLiveSelectedBadge.style.display = 'inline-flex';
+                                streamLiveSearchResults.style.display = 'none';
+                                streamLiveSearchInput.value = '';
+
+                                if (document.getElementById('streamLiveTitle') && !document.getElementById('streamLiveTitle').value) {
+                                    document.getElementById('streamLiveTitle').value = item.name;
+                                }
+                                if (document.getElementById('streamLiveDuration') && duration) {
+                                    document.getElementById('streamLiveDuration').value = duration;
+                                }
+                            });
+                            streamLiveSearchResults.appendChild(div);
+                        });
+                        streamLiveSearchResults.style.display = 'block';
+                    })
+                    .catch(err => console.error('StreamLive search error:', err));
+            }, 300);
+        });
+
+        document.addEventListener('click', function (e) {
+            if (streamLiveSearchInput && streamLiveSearchResults && !streamLiveSearchInput.contains(e.target) && !streamLiveSearchResults.contains(e.target)) {
+                streamLiveSearchResults.style.display = 'none';
+            }
+        });
+    }
+
+    if (btnClearStreamLiveSelected) {
+        btnClearStreamLiveSelected.addEventListener('click', function () {
+            streamLiveContentId.value = '';
+            streamLiveContentType.value = '';
+            streamLiveSelectedBadge.style.display = 'none';
+            streamLiveSelectedText.textContent = '-';
+        });
+    }
+
+    if (btnRefreshStreamLiveList) {
+        btnRefreshStreamLiveList.addEventListener('click', () => {
+            if (typeof window.fetchStreamLiveList === 'function') window.fetchStreamLiveList();
+        });
+    }
+
+    const fetchStreamLiveBtn = document.getElementById('fetchStreamLiveBtn');
+    if (fetchStreamLiveBtn) {
+        fetchStreamLiveBtn.addEventListener('click', () => {
+            const query = document.getElementById('streamLiveTitle').value.trim();
+            if (!query) return alert("Lütfen aramak için bir içerik adı girin!");
+            currentFetchType = 'StreamLive';
+            const streamLiveType = document.getElementById('streamLiveContentType').value;
+            const type = (streamLiveType === 'Movie' || streamLiveType === 'MOVIE') ? 'movie' : 'series';
+            const sourceRadio = document.querySelector('input[name="streamLiveSource"]:checked');
+            const source = sourceRadio ? sourceRadio.value : 'tvmaze';
+            searchMetadata(query, type, source);
+        });
+
+        const streamLiveTitleInput = document.getElementById('streamLiveTitle');
+        if (streamLiveTitleInput) {
+            streamLiveTitleInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    fetchStreamLiveBtn.click();
+                }
+            });
+        }
+    }
+
+    const streamLiveImageInput = document.getElementById('streamLiveImage');
+    if (streamLiveImageInput) {
+        streamLiveImageInput.addEventListener('change', function () {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => updatePosterPreview('streamLive', e.target.result);
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+    }
+
+    const streamLiveImageUrlInput = document.getElementById('streamLiveImageUrl');
+    if (streamLiveImageUrlInput) {
+        streamLiveImageUrlInput.addEventListener('input', function () {
+            const url = this.value.trim();
+            if (url) {
+                updatePosterPreview('streamLive', url);
+            } else {
+                updatePosterPreview('streamLive', null);
+            }
+        });
+    }
+
+    const streamLiveFileInput = document.getElementById('streamLiveFile');
+    if (streamLiveFileInput) {
+        streamLiveFileInput.addEventListener('change', function () {
+            if (this.files && this.files[0]) {
+                const file = this.files[0];
+                try {
+                    const tempVideo = document.createElement('video');
+                    tempVideo.preload = 'metadata';
+                    tempVideo.onloadedmetadata = function () {
+                        window.URL.revokeObjectURL(tempVideo.src);
+                        if (tempVideo.duration && !isNaN(tempVideo.duration) && tempVideo.duration > 0) {
+                            const minutes = Math.ceil(tempVideo.duration / 60);
+                            const durationInput = document.getElementById('streamLiveDuration');
+                            if (durationInput) {
+                                durationInput.value = minutes;
+                            }
+                        }
+                    };
+                    tempVideo.onerror = function () {
+                        window.URL.revokeObjectURL(tempVideo.src);
+                    };
+                    tempVideo.src = URL.createObjectURL(file);
+                } catch (err) {
+                    console.warn("Could not calculate video duration client-side:", err);
+                }
+            }
+        });
+    }
+
+    function formatDateTimeLocal(timestamp) {
+        if (!timestamp) return '';
+        const date = new Date(timestamp);
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    function updateStartTimeMinConstraint() {
+        const startInput = document.getElementById('streamLiveStartTime');
+        if (!startInput) return;
+        const now = new Date();
+        const pad = (n) => String(n).padStart(2, '0');
+        const minStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+        startInput.min = minStr;
+    }
+
+    const startInputEl = document.getElementById('streamLiveStartTime');
+    if (startInputEl) {
+        startInputEl.addEventListener('focus', updateStartTimeMinConstraint);
+        startInputEl.addEventListener('click', updateStartTimeMinConstraint);
+        updateStartTimeMinConstraint();
+    }
+
+    function resetStreamLiveForm() {
+        if (streamLiveForm) streamLiveForm.reset();
+        const editIdInput = document.getElementById('streamLiveEditingId');
+        if (editIdInput) editIdInput.value = '';
+        const statusBanner = document.getElementById('streamLiveFormStatus');
+        if (statusBanner) statusBanner.style.display = 'none';
+        const submitBtn = document.getElementById('btnScheduleStreamLive');
+        if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-calendar-plus"></i> YAYINI PLANLA VE YÜKLE';
+        const cancelBtn = document.getElementById('btnCancelStreamLiveEdit');
+        if (cancelBtn) cancelBtn.style.display = 'none';
+        updatePosterPreview('streamLive', null);
+        if (btnClearStreamLiveSelected) btnClearStreamLiveSelected.click();
+        const containers = streamLiveForm ? streamLiveForm.querySelectorAll('.premium-file-input') : [];
+        containers.forEach(c => {
+            c.classList.remove('has-file');
+            const span = c.querySelector('.file-name');
+            if (span) span.innerText = 'Dosya seçilmedi';
+        });
+        updateStartTimeMinConstraint();
+    }
+    window.resetStreamLiveForm = resetStreamLiveForm;
+
+    const cancelEditBtn = document.getElementById('btnCancelStreamLiveEdit');
+    if (cancelEditBtn) {
+        cancelEditBtn.addEventListener('click', function () {
+            resetStreamLiveForm();
+        });
+    }
+
+    if (streamLiveForm) {
+        streamLiveForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const editingId = document.getElementById('streamLiveEditingId') ? document.getElementById('streamLiveEditingId').value : '';
+            const isEditMode = !!editingId;
+
+            const file = streamLiveFileInput && streamLiveFileInput.files ? streamLiveFileInput.files[0] : null;
+            const contentId = streamLiveContentId.value;
+
+            if (!isEditMode && !file && !contentId) {
+                alert('Lütfen sunucuya yüklenecek bir video dosyası seçiniz VEYA arama kutusundan sunucudaki bir içeriği seçiniz.');
+                return;
+            }
+
+            const startTimeVal = document.getElementById('streamLiveStartTime').value;
+            if (!startTimeVal) {
+                alert('Lütfen başlangıç tarihi ve saati seçiniz.');
+                return;
+            }
+
+            const selectedTime = new Date(startTimeVal).getTime();
+            if (selectedTime < Date.now() - 60000) {
+                let isSameTime = false;
+                if (isEditMode && window.currentStreamLiveList) {
+                    const orig = window.currentStreamLiveList.find(x => x.id === editingId);
+                    if (orig && orig.scheduledStartTime) {
+                        isSameTime = Math.abs(orig.scheduledStartTime - selectedTime) < 60000;
+                    }
+                }
+                if (!isSameTime) {
+                    alert('Yayın Başlangıç Tarihi & Saati şu anki tarih ve saatten önce olamaz! Lütfen ileri bir tarih seçiniz.');
+                    document.getElementById('streamLiveStartTime').focus();
+                    return;
+                }
+            }
+
+            const title = document.getElementById('streamLiveTitle').value.trim();
+            if (!title) {
+                alert('Lütfen yayın başlığı giriniz.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('description', document.getElementById('streamLiveDescription').value.trim());
+            formData.append('contentType', streamLiveContentType.value);
+            formData.append('scheduledStartTime', startTimeVal);
+            formData.append('durationMinutes', parseInt(document.getElementById('streamLiveDuration').value) || 120);
+
+            if (contentId) {
+                formData.append('contentId', contentId);
+            }
+
+            if (file) {
+                formData.append('file', file);
+            }
+
+            const imgFile = streamLiveImageInput && streamLiveImageInput.files ? streamLiveImageInput.files[0] : null;
+            if (imgFile) {
+                formData.append('image', imgFile);
+            }
+
+            const imgUrl = streamLiveImageUrlInput ? streamLiveImageUrlInput.value.trim() : '';
+            if (imgUrl) {
+                formData.append('imageUrl', imgUrl);
+            }
+
+            const submitBtn = document.getElementById('btnScheduleStreamLive');
+            const targetUrl = isEditMode ? `/admin/streamlive/update/${editingId}` : '/admin/streamlive/schedule';
+            const actionText = isEditMode ? 'güncellendi' : 'planlandı';
+
+            if (file) {
+                uploadDataWithProgress(targetUrl, formData, 'streamLiveForm', 'progressWrapperStreamLive', 'progressBarStreamLive', 'percentStreamLive', async () => {
+                    alert(`StreamLive yayını başarıyla ${actionText}!`);
+                    resetStreamLiveForm();
+                    if (typeof window.fetchStreamLiveList === 'function') window.fetchStreamLiveList();
+                });
+            } else {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kaydediliyor...';
+
+                fetch(targetUrl, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(r => r.json())
+                .then(data => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = isEditMode ? '<i class="fas fa-save"></i> YAYINI GÜNCELLE' : '<i class="fas fa-calendar-plus"></i> YAYINI PLANLA VE YÜKLE';
+                    if (data.success) {
+                        alert(`StreamLive yayını başarıyla ${actionText}!`);
+                        resetStreamLiveForm();
+                        if (typeof window.fetchStreamLiveList === 'function') window.fetchStreamLiveList();
+                    } else {
+                        alert('Hata: ' + (data.message || 'İşlem gerçekleştirilemedi.'));
+                    }
+                })
+                .catch(err => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = isEditMode ? '<i class="fas fa-save"></i> YAYINI GÜNCELLE' : '<i class="fas fa-calendar-plus"></i> YAYINI PLANLA VE YÜKLE';
+                    alert('İstek gönderilirken hata oluştu: ' + err);
+                });
+            }
+        });
+    }
+
+    window.fetchStreamLiveList = function () {
+        const tbody = document.getElementById('streamLiveTableBody');
+        if (!tbody) return;
+        fetch('/admin/streamlive/list')
+            .then(r => r.json())
+            .then(list => {
+                window.currentStreamLiveList = list || [];
+                tbody.innerHTML = '';
+                if (!list || list.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #888;">Henüz planlanmış bir StreamLive yayını yok.</td></tr>';
+                    return;
+                }
+
+                list.forEach(item => {
+                    const tr = document.createElement('tr');
+                    const startTimeStr = item.scheduledStartTime ? new Date(item.scheduledStartTime).toLocaleString('tr-TR') : '-';
+                    const typeLabel = item.contentType === 'MOVIE' ? 'Film' : 'Dizi Bölümü';
+
+                    let statusBadge = '<span class="status-badge" style="background: rgba(255,255,255,0.1); color: #ccc;">Planlandı</span>';
+                    if (item.status === 'LIVE') {
+                        statusBadge = '<span class="status-badge" style="background: rgba(255,45,85,0.2); color: #ff2d55; border: 1px solid rgba(255,45,85,0.4);"><i class="fas fa-broadcast-tower"></i> Canlı</span>';
+                    } else if (item.status === 'ENDED') {
+                        statusBadge = '<span class="status-badge" style="background: rgba(0,230,118,0.15); color: #00e676;">Sona Erdi</span>';
+                    }
+
+                    tr.innerHTML = `
+                        <td><strong>${escapeHtml(item.title || '')}</strong><br><small style="color: #888;">${item.contentName ? escapeHtml(item.contentName) : ''}</small></td>
+                        <td><span style="font-size: 11px; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px;">${typeLabel}</span></td>
+                        <td>${startTimeStr}</td>
+                        <td>${item.durationMinutes || 0} dk</td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            <a href="/streamlive" target="_blank" class="btn btn-sm" style="background: rgba(30,215,96,0.15); color: #1ed760; border: 1px solid rgba(30,215,96,0.3); text-decoration: none;">
+                                <i class="fas fa-external-link-alt"></i> İzle
+                            </a>
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 6px; align-items: center;">
+                                <button class="btn btn-sm" style="background: rgba(33,150,243,0.15); color: #2196f3; border: 1px solid rgba(33,150,243,0.3);" onclick="editStreamLiveItem('${item.id}')">
+                                    <i class="fas fa-edit"></i> Düzenle
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteStreamLiveItem('${item.id}')">
+                                    <i class="fas fa-trash"></i> Sil
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(err => console.error('Fetch stream live list error:', err));
+    };
+
+    window.editStreamLiveItem = function (id) {
+        const list = window.currentStreamLiveList || [];
+        const item = list.find(x => x.id === id);
+        if (item) {
+            populateStreamLiveEdit(item);
+        } else {
+            fetch(`/admin/streamlive/${id}`)
+                .then(r => r.json())
+                .then(data => populateStreamLiveEdit(data))
+                .catch(err => alert('Yayın bilgisi yüklenemedi: ' + err));
+        }
+    };
+
+    function populateStreamLiveEdit(item) {
+        if (!item) return;
+
+        const editIdInput = document.getElementById('streamLiveEditingId');
+        if (editIdInput) editIdInput.value = item.id;
+
+        const titleInput = document.getElementById('streamLiveTitle');
+        if (titleInput) titleInput.value = item.title || '';
+
+        const typeSelect = document.getElementById('streamLiveContentType');
+        if (typeSelect) typeSelect.value = item.contentType || 'Movie';
+
+        const durationInput = document.getElementById('streamLiveDuration');
+        if (durationInput) durationInput.value = item.durationMinutes || 120;
+
+        const startInput = document.getElementById('streamLiveStartTime');
+        if (startInput && item.scheduledStartTime) {
+            startInput.value = formatDateTimeLocal(item.scheduledStartTime);
+        }
+
+        const descInput = document.getElementById('streamLiveDescription');
+        if (descInput) descInput.value = item.description || '';
+
+        const imageUrlInput = document.getElementById('streamLiveImageUrl');
+        if (imageUrlInput) imageUrlInput.value = item.posterUrl || '';
+
+        if (item.posterUrl) {
+            updatePosterPreview('streamLive', item.posterUrl);
+        }
+
+        if (item.contentId) {
+            const contentIdInput = document.getElementById('streamLiveContentId');
+            if (contentIdInput) contentIdInput.value = item.contentId;
+            const badge = document.getElementById('streamLiveSelectedBadge');
+            const text = document.getElementById('streamLiveSelectedText');
+            if (badge && text) {
+                text.textContent = item.contentName || item.title || 'Mevcut İçerik';
+                badge.style.display = 'flex';
+            }
+        }
+
+        const statusBanner = document.getElementById('streamLiveFormStatus');
+        const modeText = document.getElementById('streamLiveFormModeText');
+        if (statusBanner) statusBanner.style.display = 'flex';
+        if (modeText) modeText.textContent = item.title || 'Yayın Düzenleme';
+
+        const submitBtn = document.getElementById('btnScheduleStreamLive');
+        if (submitBtn) {
+            submitBtn.innerHTML = '<i class="fas fa-save"></i> YAYINI GÜNCELLE';
+        }
+        const cancelBtn = document.getElementById('btnCancelStreamLiveEdit');
+        if (cancelBtn) cancelBtn.style.display = 'inline-block';
+
+        const formCard = document.getElementById('streamLiveForm');
+        if (formCard) formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    window.deleteStreamLiveItem = function (id) {
+        if (!confirm('Bu yayını silmek istediğinize emin misiniz? Varsa canlı sohbet mesajları da silinecektir.')) {
+            return;
+        }
+        fetch(`/admin/streamlive/${id}`, { method: 'DELETE' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    if (typeof window.fetchStreamLiveList === 'function') window.fetchStreamLiveList();
+                } else {
+                    alert('Hata: ' + (data.message || 'Silinemedi.'));
+                }
+            })
+            .catch(err => alert('Silme işleminde hata oluştu: ' + err));
+    };
 });
 
     // Cast Sync Handler with Real-time Progress, Percentage & Stop Control

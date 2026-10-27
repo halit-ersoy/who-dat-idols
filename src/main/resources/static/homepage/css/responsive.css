@@ -1,4 +1,4 @@
-/* ------------------------- *
+﻿/* ------------------------- *
  *   RESPONSIVE  CSS (Media Queries)
  * ------------------------- */
 
@@ -101,6 +101,7 @@
     }
 
     .search-button,
+    .streamlive-header-btn,
     .ai-vibe-btn,
     .update-notes-btn,
     .messages-btn,
@@ -120,7 +121,19 @@
         transition: all 0.2s ease !important;
     }
 
-    .ai-btn-text {
+    .streamlive-header-btn {
+        background: rgba(255, 45, 85, 0.12) !important;
+        border: 1px solid rgba(255, 45, 85, 0.35) !important;
+    }
+
+    .streamlive-header-btn .streamlive-icon {
+        color: #ff2d55 !important;
+        font-size: 13px !important;
+    }
+
+    .ai-btn-text,
+    .streamlive-btn-text,
+    .streamlive-pulse-dot {
         display: none !important;
     }
 

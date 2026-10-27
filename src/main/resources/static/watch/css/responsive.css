@@ -124,3 +124,16 @@
         font-size: 12px !important;
     }
 }
+
+/* Ensure Header Elements Order: WDI Left, Support Right */
+header .logo-link {
+    order: 1 !important;
+    margin-right: auto !important;
+    margin-left: 0 !important;
+}
+
+header .btn-support-header {
+    order: 2 !important;
+    margin-left: auto !important;
+    margin-right: 0 !important;
+}

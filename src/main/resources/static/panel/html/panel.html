@@ -108,6 +108,9 @@
                 <a href="#upcoming-section" class="nav-link" data-section="upcoming-section">
                     <i class="fas fa-clock"></i> <span>Upcoming Yönetimi</span>
                 </a>
+                <a href="#streamlive-section" class="nav-link" data-section="streamlive-section">
+                    <i class="fas fa-broadcast-tower"></i> <span>StreamLive</span>
+                </a>
                 <a href="#archive-section" class="nav-link" data-section="archive-section">
                     <i class="fas fa-layer-group"></i> <span>Arşiv &amp; Liste</span>
                 </a>
@@ -267,6 +270,168 @@
                 </div>
 
                 <!-- Quick Actions or Recent Activity could go here -->
+            </section>
+
+            <!-- STREAMLIVE SECTION -->
+            <section id="streamlive-section" class="admin-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-broadcast-tower"></i> StreamLive - Canlı Sinema &amp; Dizi Planla</h2>
+                    </div>
+
+                    <div id="streamLiveFormStatus" class="admin-edit-status-banner" style="display: none; margin-bottom: 20px;">
+                        <div class="edit-status-left">
+                            <div class="edit-status-icon">
+                                <i class="fas fa-edit"></i>
+                            </div>
+                            <div class="edit-status-info">
+                                <div class="edit-status-badge">STREAMLIVE DÜZENLEME MODU</div>
+                                <div class="edit-status-title" id="streamLiveFormModeText">-</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-cancel-edit-mode" onclick="resetStreamLiveForm()">
+                            <i class="fas fa-times"></i> Düzenlemeden Vazgeç
+                        </button>
+                    </div>
+
+                    <form id="streamLiveForm" class="admin-form">
+                        <input type="hidden" id="streamLiveEditingId">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="streamLiveTitle">İçerik / Yayın Başlığı</label>
+                                <div class="input-with-action">
+                                    <input type="text" id="streamLiveTitle" required placeholder="Film veya dizi ismini giriniz">
+                                    <button type="button" class="btn-fetch" id="fetchStreamLiveBtn" title="Getir">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                    <div class="meta-source-selector">
+                                        <input type="radio" name="streamLiveSource" id="streamLiveTvMaze" value="tvmaze" checked>
+                                        <label for="streamLiveTvMaze" title="TVMaze">TV</label>
+                                        <input type="radio" name="streamLiveSource" id="streamLiveTmdb" value="tmdb">
+                                        <label for="streamLiveTmdb" title="TMDB">TM</label>
+                                        <div class="source-slider"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="streamLiveContentType">İçerik Türü</label>
+                                <select id="streamLiveContentType">
+                                    <option value="Movie">Film</option>
+                                    <option value="Episode">Dizi Bölümü</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="streamLiveDuration">Yayın Süresi (Dakika)</label>
+                                <input type="number" id="streamLiveDuration" min="1" max="600" value="120" required>
+                                <small style="display: block; margin-top: 5px; color: rgba(255,255,255,0.45); font-size: 11px;">Video yüklendiğinde süresi otomatik girilir.</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="streamLiveStartTime">Yayın Başlangıç Tarihi &amp; Saati</label>
+                                <input type="datetime-local" id="streamLiveStartTime" required>
+                                <small style="display: block; margin-top: 5px; color: rgba(255,255,255,0.45); font-size: 11px;">Belirlenen saatte yayın canlı olarak otomatik başlar.</small>
+                            </div>
+                            <div class="form-group full-width">
+                                <div class="label-with-action">
+                                    <label for="streamLiveDescription">Yayın Açıklaması / İçerik Özeti</label>
+                                    <button type="button" class="btn-translate" onclick="translateText('streamLiveDescription')">
+                                        <i class="fas fa-language"></i> Türkçe'ye Çevir
+                                    </button>
+                                </div>
+                                <textarea id="streamLiveDescription" rows="3" placeholder="İçerik konusu veya izleyicilere gösterilecek açıklama..."></textarea>
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="streamLiveImage">Kapak Resmi</label>
+                                <div class="poster-control-container">
+                                    <div class="poster-preview" id="streamLivePosterPreview">
+                                        <i class="fas fa-image"></i>
+                                    </div>
+                                    <div class="poster-inputs">
+                                        <div class="premium-file-input compact" id="streamLiveImageContainer">
+                                            <input type="file" id="streamLiveImage" accept="image/*" onchange="handleFileSelect(this)">
+                                            <label for="streamLiveImage" class="file-label">
+                                                <i class="fas fa-image"></i>
+                                                <span class="file-text">Görsel Seç</span>
+                                                <span class="file-name">Dosya seçilmedi</span>
+                                            </label>
+                                            <div class="file-info">* Cihazdan dosya seçin veya TMDB/TVMaze URL kullanın</div>
+                                        </div>
+                                        <div class="url-input-wrapper">
+                                            <div class="input-with-icon">
+                                                <i class="fas fa-link"></i>
+                                                <input type="text" id="streamLiveImageUrl" placeholder="Resim URL'si yapıştırın...">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="streamLiveFile">Yayın Videosu (Sunucuya Yükle)</label>
+                                <div class="premium-file-input" id="streamLiveFileContainer">
+                                    <input type="file" id="streamLiveFile" accept="video/*" onchange="handleFileSelect(this)">
+                                    <label for="streamLiveFile" class="file-label">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <span class="file-text">Video Dosyasını Seç veya Sürükle</span>
+                                        <span class="file-name">Dosya seçilmedi</span>
+                                    </label>
+                                    <div class="file-info">* Video seçildiğinde süresi otomatik tespit edilir ve sunucuya yüklenince HLS formatına dönüştürülür.</div>
+                                </div>
+                            </div>
+                            <div class="form-group full-width" style="margin-top: 10px; padding-top: 15px; border-top: 1px dashed rgba(255,255,255,0.1);">
+                                <label for="streamLiveSearch"><i class="fas fa-database"></i> VEYA Sunucudaki Mevcut İçeriklerden Seç (Opsiyonel)</label>
+                                <div class="search-select-wrapper">
+                                    <input type="text" id="streamLiveSearch" placeholder="Sunucudaki film veya dizi bölümlerini ara..." autocomplete="off">
+                                    <div id="streamLiveSearchResults" class="search-results-dropdown" style="display: none;"></div>
+                                </div>
+                                <input type="hidden" id="streamLiveContentId">
+                                <div id="streamLiveSelectedBadge" class="selected-item-badge" style="display: none; margin-top: 10px;">
+                                    <span class="text">Seçilen Sunucu İçeriği: <strong id="streamLiveSelectedText">-</strong></span>
+                                    <button type="button" class="btn-clear-upcoming" id="btnClearStreamLiveSelected"><i class="fas fa-times"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="progress-wrapper" id="progressWrapperStreamLive" style="display: none;">
+                            <div class="progress-status">Yükleniyor... <span id="percentStreamLive">0%</span></div>
+                            <div class="progress-container">
+                                <div class="progress-bar" id="progressBarStreamLive"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions" style="display: flex; gap: 12px; align-items: center;">
+                            <button type="submit" class="btn btn-primary" id="btnScheduleStreamLive">
+                                <i class="fas fa-calendar-plus"></i> YAYINI PLANLA VE YÜKLE
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="btnCancelStreamLiveEdit" style="display: none;" onclick="resetStreamLiveForm()">
+                                <i class="fas fa-times"></i> VAZGEÇ
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="table-container" style="margin-top: 30px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                            <h3 style="margin: 0;">Planlanmış &amp; Aktif StreamLive Yayınları</h3>
+                            <button type="button" class="btn btn-sm btn-secondary" id="btnRefreshStreamLiveList">
+                                <i class="fas fa-sync-alt"></i> Yenile
+                            </button>
+                        </div>
+                        <table class="admin-table" id="streamLiveTable">
+                            <thead>
+                                <tr>
+                                    <th>Başlık</th>
+                                    <th>İçerik Türü</th>
+                                    <th>Başlangıç Tarihi</th>
+                                    <th>Süre</th>
+                                    <th>Durum</th>
+                                    <th>Yayın Linki</th>
+                                    <th>İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody id="streamLiveTableBody">
+                                <!-- StreamLive rows will be rendered here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
 
             <!-- HERO SECTION -->

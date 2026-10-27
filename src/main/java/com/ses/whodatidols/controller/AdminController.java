@@ -42,6 +42,9 @@ import com.ses.whodatidols.service.MovieService;
 import com.ses.whodatidols.service.SeriesService;
 
 import com.ses.whodatidols.service.TvMazeService;
+import com.ses.whodatidols.model.StreamLive;
+import com.ses.whodatidols.service.StreamLiveService;
+import com.ses.whodatidols.viewmodel.CreateStreamLiveRequest;
 
 import com.ses.whodatidols.service.TranslationService;
 
@@ -152,6 +155,7 @@ public class AdminController {
     private final AdService adService;
     private final CastSyncService castSyncService;
     private final ContentRequestRepository contentRequestRepository;
+    private final StreamLiveService streamLiveService;
     @Autowired(required = false)
     private com.ses.whodatidols.service.WebPushOutboxService webPushOutboxService;
 
@@ -208,7 +212,7 @@ public class AdminController {
 
             CacheManager cacheManager, SeriesRepository seriesRepository, TrafficStatsService trafficStatsService,
 
-            com.ses.whodatidols.util.FFmpegUtils ffmpegUtils, AdService adService, CastSyncService castSyncService, ContentRequestRepository contentRequestRepository) {
+            com.ses.whodatidols.util.FFmpegUtils ffmpegUtils, AdService adService, CastSyncService castSyncService, ContentRequestRepository contentRequestRepository, StreamLiveService streamLiveService) {
 
         this.movieService = movieService;
 
@@ -249,6 +253,7 @@ public class AdminController {
         this.adService = adService;
         this.castSyncService = castSyncService;
         this.contentRequestRepository = contentRequestRepository;
+        this.streamLiveService = streamLiveService;
     }
 
 
@@ -2928,5 +2933,197 @@ public class AdminController {
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
         }
+    }
+
+    // STREAM LIVE MANAGEMENT
+    @GetMapping("/streamlive/list")
+    public ResponseEntity<List<StreamLive>> getAdminStreamLiveList() {
+        return ResponseEntity.ok(streamLiveService.getAllStreamsForAdmin());
+    }
+
+    @PostMapping(value = "/streamlive/schedule", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, Object>> scheduleStreamLive(
+            @RequestParam("title") String title,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "contentType", required = false, defaultValue = "Movie") String contentType,
+            @RequestParam(value = "contentId", required = false) UUID contentId,
+            @RequestParam("scheduledStartTime") String scheduledStartTime,
+            @RequestParam(value = "durationMinutes", required = false, defaultValue = "0") int durationMinutes,
+            @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestParam(value = "image", required = false) MultipartFile image,
+            @RequestParam(value = "imageUrl", required = false) String imageUrl) {
+        try {
+            long startTimeMillis;
+            if (scheduledStartTime.contains("T")) {
+                startTimeMillis = java.time.LocalDateTime.parse(scheduledStartTime)
+                        .atZone(java.time.ZoneId.of("Europe/Istanbul"))
+                        .toInstant()
+                        .toEpochMilli();
+            } else {
+                startTimeMillis = Long.parseLong(scheduledStartTime);
+            }
+
+            if (startTimeMillis < System.currentTimeMillis() - (2 * 60 * 1000L)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "message", "Yayın başlangıç tarihi ve saati geçmiş bir zaman olamaz. Lütfen ileri bir tarih seçiniz."
+                ));
+            }
+
+            CreateStreamLiveRequest request = new CreateStreamLiveRequest();
+            request.setTitle(title);
+            request.setDescription(description);
+            request.setContentType(contentType);
+            request.setContentId(contentId);
+            request.setScheduledStartTime(startTimeMillis);
+            request.setDurationMinutes(durationMinutes);
+
+            StreamLive stream = streamLiveService.scheduleStream(request, file, image, imageUrl);
+            return ResponseEntity.ok(Map.of("success", true, "streamId", stream.getId()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    @PostMapping(value = "/streamlive/schedule", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, Object>> scheduleStreamLiveJson(@RequestBody CreateStreamLiveRequest request) {
+        try {
+            StreamLive stream = streamLiveService.scheduleStream(request);
+            return ResponseEntity.ok(Map.of("success", true, "streamId", stream.getId()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/streamlive/{id}")
+    public ResponseEntity<StreamLive> getStreamLiveDetails(@PathVariable("id") UUID id) {
+        StreamLive stream = streamLiveService.getStreamById(id);
+        if (stream == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(stream);
+    }
+
+    @PostMapping(value = "/streamlive/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, Object>> updateStreamLive(
+            @PathVariable("id") UUID id,
+            @RequestParam("title") String title,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "contentType", required = false, defaultValue = "Movie") String contentType,
+            @RequestParam(value = "contentId", required = false) UUID contentId,
+            @RequestParam("scheduledStartTime") String scheduledStartTime,
+            @RequestParam(value = "durationMinutes", required = false, defaultValue = "0") int durationMinutes,
+            @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestParam(value = "image", required = false) MultipartFile image,
+            @RequestParam(value = "imageUrl", required = false) String imageUrl) {
+        try {
+            long startTimeMillis;
+            if (scheduledStartTime.contains("T")) {
+                startTimeMillis = java.time.LocalDateTime.parse(scheduledStartTime)
+                        .atZone(java.time.ZoneId.of("Europe/Istanbul"))
+                        .toInstant()
+                        .toEpochMilli();
+            } else {
+                startTimeMillis = Long.parseLong(scheduledStartTime);
+            }
+
+            StreamLive existing = streamLiveService.getStreamById(id);
+            if (existing == null) {
+                return ResponseEntity.status(404).body(Map.of("success", false, "message", "Güncellenecek yayın bulunamadı."));
+            }
+
+            boolean isTimeChanged = Math.abs(existing.getScheduledStartTime().getTime() - startTimeMillis) > 60000;
+            if (isTimeChanged && startTimeMillis < System.currentTimeMillis() - (2 * 60 * 1000L)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "message", "Yayın başlangıç tarihi ve saati geçmiş bir zaman olamaz. Lütfen ileri bir tarih seçiniz."
+                ));
+            }
+
+            CreateStreamLiveRequest request = new CreateStreamLiveRequest();
+            request.setTitle(title);
+            request.setDescription(description);
+            request.setContentType(contentType);
+            request.setContentId(contentId);
+            request.setScheduledStartTime(startTimeMillis);
+            request.setDurationMinutes(durationMinutes);
+
+            StreamLive updated = streamLiveService.updateStream(id, request, file, image, imageUrl);
+            return ResponseEntity.ok(Map.of("success", true, "streamId", updated.getId()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/streamlive/{id}")
+    public ResponseEntity<Map<String, Object>> deleteStreamLive(@PathVariable("id") UUID id) {
+        try {
+            streamLiveService.deleteStream(id);
+            return ResponseEntity.ok(Map.of("success", true));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/streamlive/search-contents")
+    public ResponseEntity<List<Map<String, Object>>> searchStreamLiveContents(
+            @RequestParam(value = "q", required = false) String q,
+            @RequestParam(value = "query", required = false) String query) {
+        String searchTerm = (query != null && !query.isBlank()) ? query : (q != null ? q : "");
+        List<Map<String, Object>> results = new java.util.ArrayList<>();
+        String wild = "%" + searchTerm.trim().toLowerCase() + "%";
+
+        // Movies
+        try {
+            String movieSql = """
+                SELECT TOP 20 ID, name, DurationMinutes, slug, 'Movie' as type
+                FROM Movie
+                WHERE LOWER(name) LIKE ? AND IsHidden = 0
+                ORDER BY uploadDate DESC
+            """;
+            List<Map<String, Object>> movies = jdbcTemplate.query(movieSql, (rs, rowNum) -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", rs.getString("ID"));
+                map.put("name", rs.getString("name"));
+                map.put("duration", rs.getInt("DurationMinutes"));
+                map.put("durationMinutes", rs.getInt("DurationMinutes"));
+                map.put("slug", rs.getString("slug"));
+                map.put("type", "Movie");
+                map.put("posterUrl", "/media/image/" + rs.getString("ID"));
+                return map;
+            }, wild);
+            results.addAll(movies);
+        } catch (Exception ignored) {}
+
+        // Series Episodes
+        try {
+            String epSql = """
+                SELECT TOP 30 E.ID, E.name as epName, E.SeasonNumber, E.EpisodeNumber, E.DurationMinutes, E.slug,
+                              S.ID as seriesId, S.name as seriesName, 'Episode' as type
+                FROM Episode E
+                JOIN Series S ON E.SeriesId = S.ID
+                WHERE (LOWER(S.name) LIKE ? OR LOWER(E.name) LIKE ?) AND E.IsHidden = 0 AND S.IsHidden = 0
+                ORDER BY E.uploadDate DESC
+            """;
+            List<Map<String, Object>> eps = jdbcTemplate.query(epSql, (rs, rowNum) -> {
+                Map<String, Object> map = new HashMap<>();
+                String sName = rs.getString("seriesName");
+                int sNum = rs.getInt("SeasonNumber");
+                int eNum = rs.getInt("EpisodeNumber");
+                String epName = rs.getString("epName");
+                String displayName = sName + " - S" + sNum + "E" + eNum + (epName != null && !epName.isBlank() ? " (" + epName + ")" : "");
+                map.put("id", rs.getString("ID"));
+                map.put("name", displayName);
+                map.put("duration", rs.getInt("DurationMinutes"));
+                map.put("durationMinutes", rs.getInt("DurationMinutes"));
+                map.put("slug", rs.getString("slug"));
+                map.put("type", "Episode");
+                map.put("posterUrl", "/media/image/" + rs.getString("seriesId"));
+                return map;
+            }, wild, wild);
+            results.addAll(eps);
+        } catch (Exception ignored) {}
+
+        return ResponseEntity.ok(results);
     }
 }

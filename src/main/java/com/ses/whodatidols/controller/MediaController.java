@@ -459,6 +459,13 @@ public class MediaController {
             case "trailer" -> Paths.get(trailersPath).toAbsolutePath().normalize();
             case "upcoming" -> Paths.get(upcomingPath).toAbsolutePath().normalize();
             case "ad" -> Paths.get(adsPath).toAbsolutePath().normalize();
+            case "streamlive" -> {
+                Path p = Paths.get(moviesPath).resolve("streamlive").toAbsolutePath().normalize();
+                if (!Files.exists(p)) {
+                    try { Files.createDirectories(p); } catch (Exception ignored) {}
+                }
+                yield p;
+            }
             default -> null;
         };
     }
@@ -529,6 +536,16 @@ public class MediaController {
                                             id.toString());
                                     if (isAd != null && isAd > 0) {
                                         type = "ad";
+                                    }
+                                    else {
+                                        try {
+                                            Integer isStreamLive = jdbcTemplate.queryForObject(
+                                                    "SELECT COUNT(*) FROM StreamLive WHERE ID = ? OR ContentId = ?", Integer.class,
+                                                    id.toString(), id.toString());
+                                            if (isStreamLive != null && isStreamLive > 0) {
+                                                type = "streamlive";
+                                            }
+                                        } catch (Exception ignored) {}
                                     }
                                 }
                             }

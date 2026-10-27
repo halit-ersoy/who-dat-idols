@@ -162,9 +162,22 @@
             }
         }
 
-        /* Header Priority */
+        /* Header Priority & Alignment: Logo ALWAYS Left, Support Button ALWAYS Right */
         header {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
             z-index: 2147483640 !important;
+        }
+        header .logo-link {
+            order: 1 !important;
+            margin-right: auto !important;
+            margin-left: 0 !important;
+        }
+        header .btn-support-header {
+            order: 2 !important;
+            margin-left: auto !important;
+            margin-right: 0 !important;
         }
         /* Header Support Button */
         .btn-support-header {
