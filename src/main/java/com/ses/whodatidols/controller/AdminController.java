@@ -2949,6 +2949,7 @@ public class AdminController {
             @RequestParam(value = "contentId", required = false) UUID contentId,
             @RequestParam("scheduledStartTime") String scheduledStartTime,
             @RequestParam(value = "durationMinutes", required = false, defaultValue = "0") int durationMinutes,
+            @RequestParam(value = "platform", required = false, defaultValue = "WDI") String platform,
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam(value = "image", required = false) MultipartFile image,
             @RequestParam(value = "imageUrl", required = false) String imageUrl) {
@@ -2977,6 +2978,7 @@ public class AdminController {
             request.setContentId(contentId);
             request.setScheduledStartTime(startTimeMillis);
             request.setDurationMinutes(durationMinutes);
+            request.setPlatform(platform);
 
             StreamLive stream = streamLiveService.scheduleStream(request, file, image, imageUrl);
             return ResponseEntity.ok(Map.of("success", true, "streamId", stream.getId()));
@@ -3013,6 +3015,7 @@ public class AdminController {
             @RequestParam(value = "contentId", required = false) UUID contentId,
             @RequestParam("scheduledStartTime") String scheduledStartTime,
             @RequestParam(value = "durationMinutes", required = false, defaultValue = "0") int durationMinutes,
+            @RequestParam(value = "platform", required = false, defaultValue = "WDI") String platform,
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam(value = "image", required = false) MultipartFile image,
             @RequestParam(value = "imageUrl", required = false) String imageUrl) {
@@ -3047,6 +3050,7 @@ public class AdminController {
             request.setContentId(contentId);
             request.setScheduledStartTime(startTimeMillis);
             request.setDurationMinutes(durationMinutes);
+            request.setPlatform(platform);
 
             StreamLive updated = streamLiveService.updateStream(id, request, file, image, imageUrl);
             return ResponseEntity.ok(Map.of("success", true, "streamId", updated.getId()));

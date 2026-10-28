@@ -6485,6 +6485,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function resetStreamLiveForm() {
         if (streamLiveForm) streamLiveForm.reset();
+        if (document.getElementById('streamLivePlatform')) document.getElementById('streamLivePlatform').value = 'WDI';
         const editIdInput = document.getElementById('streamLiveEditingId');
         if (editIdInput) editIdInput.value = '';
         const statusBanner = document.getElementById('streamLiveFormStatus');
@@ -6559,6 +6560,7 @@ document.addEventListener('DOMContentLoaded', function () {
             formData.append('title', title);
             formData.append('description', document.getElementById('streamLiveDescription').value.trim());
             formData.append('contentType', streamLiveContentType.value);
+            formData.append('platform', document.getElementById('streamLivePlatform') ? document.getElementById('streamLivePlatform').value : 'WDI');
             formData.append('scheduledStartTime', startTimeVal);
             formData.append('durationMinutes', parseInt(document.getElementById('streamLiveDuration').value) || 120);
 
@@ -6619,58 +6621,87 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    window.fetchStreamLiveList = function () {
+    window.renderStreamLiveList = function () {
         const tbody = document.getElementById('streamLiveTableBody');
         if (!tbody) return;
+        const list = window.currentStreamLiveList || [];
+        const filterEl = document.getElementById('streamLivePlatformFilter');
+        const filterVal = filterEl ? filterEl.value : 'ALL';
+
+        const filtered = (filterVal === 'ALL')
+            ? list
+            : list.filter(x => (x.platform || 'WDI') === filterVal || x.platform === 'ALL');
+
+        tbody.innerHTML = '';
+        if (!filtered || filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #888;">Henüz planlanmış bir StreamLive yayını yok.</td></tr>';
+            return;
+        }
+
+        filtered.forEach(item => {
+            const tr = document.createElement('tr');
+            const startTimeStr = item.scheduledStartTime ? new Date(item.scheduledStartTime).toLocaleString('tr-TR') : '-';
+            const typeLabel = item.contentType === 'MOVIE' ? 'Film' : 'Dizi Bölümü';
+
+            let platBadge = '<span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 600; background: rgba(30,215,96,0.18); color: #1ed760; border: 1px solid rgba(30,215,96,0.35);">WDI</span>';
+            if (item.platform === 'BLDIZI') {
+                platBadge = '<span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 600; background: rgba(255,64,129,0.18); color: #ff4081; border: 1px solid rgba(255,64,129,0.35);">BLDizi</span>';
+            } else if (item.platform === 'ALL') {
+                platBadge = '<span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 600; background: rgba(41,121,255,0.18); color: #2979ff; border: 1px solid rgba(41,121,255,0.35);">Ortak</span>';
+            }
+
+            let statusBadge = '<span class="status-badge" style="background: rgba(255,255,255,0.1); color: #ccc;">Planlandı</span>';
+            if (item.status === 'LIVE') {
+                statusBadge = '<span class="status-badge" style="background: rgba(255,45,85,0.2); color: #ff2d55; border: 1px solid rgba(255,45,85,0.4);"><i class="fas fa-broadcast-tower"></i> Canlı</span>';
+            } else if (item.status === 'ENDED') {
+                statusBadge = '<span class="status-badge" style="background: rgba(0,230,118,0.15); color: #00e676;">Sona Erdi</span>';
+            }
+
+            const watchUrl = item.platform === 'BLDIZI' ? 'http://localhost:8082/streamlive' : '/streamlive';
+
+            tr.innerHTML = `
+                <td><strong>${escapeHtml(item.title || '')}</strong><br><small style="color: #888;">${item.contentName ? escapeHtml(item.contentName) : ''}</small></td>
+                <td>${platBadge}</td>
+                <td><span style="font-size: 11px; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px;">${typeLabel}</span></td>
+                <td>${startTimeStr}</td>
+                <td>${item.durationMinutes || 0} dk</td>
+                <td>${statusBadge}</td>
+                <td>
+                    <a href="${watchUrl}" target="_blank" class="btn btn-sm" style="background: rgba(30,215,96,0.15); color: #1ed760; border: 1px solid rgba(30,215,96,0.3); text-decoration: none;">
+                        <i class="fas fa-external-link-alt"></i> İzle
+                    </a>
+                </td>
+                <td>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <button class="btn btn-sm" style="background: rgba(33,150,243,0.15); color: #2196f3; border: 1px solid rgba(33,150,243,0.3);" onclick="editStreamLiveItem('${item.id}')">
+                            <i class="fas fa-edit"></i> Düzenle
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteStreamLiveItem('${item.id}')">
+                            <i class="fas fa-trash"></i> Sil
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    };
+
+    window.fetchStreamLiveList = function () {
         fetch('/admin/streamlive/list')
             .then(r => r.json())
             .then(list => {
                 window.currentStreamLiveList = list || [];
-                tbody.innerHTML = '';
-                if (!list || list.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #888;">Henüz planlanmış bir StreamLive yayını yok.</td></tr>';
-                    return;
-                }
-
-                list.forEach(item => {
-                    const tr = document.createElement('tr');
-                    const startTimeStr = item.scheduledStartTime ? new Date(item.scheduledStartTime).toLocaleString('tr-TR') : '-';
-                    const typeLabel = item.contentType === 'MOVIE' ? 'Film' : 'Dizi Bölümü';
-
-                    let statusBadge = '<span class="status-badge" style="background: rgba(255,255,255,0.1); color: #ccc;">Planlandı</span>';
-                    if (item.status === 'LIVE') {
-                        statusBadge = '<span class="status-badge" style="background: rgba(255,45,85,0.2); color: #ff2d55; border: 1px solid rgba(255,45,85,0.4);"><i class="fas fa-broadcast-tower"></i> Canlı</span>';
-                    } else if (item.status === 'ENDED') {
-                        statusBadge = '<span class="status-badge" style="background: rgba(0,230,118,0.15); color: #00e676;">Sona Erdi</span>';
-                    }
-
-                    tr.innerHTML = `
-                        <td><strong>${escapeHtml(item.title || '')}</strong><br><small style="color: #888;">${item.contentName ? escapeHtml(item.contentName) : ''}</small></td>
-                        <td><span style="font-size: 11px; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px;">${typeLabel}</span></td>
-                        <td>${startTimeStr}</td>
-                        <td>${item.durationMinutes || 0} dk</td>
-                        <td>${statusBadge}</td>
-                        <td>
-                            <a href="/streamlive" target="_blank" class="btn btn-sm" style="background: rgba(30,215,96,0.15); color: #1ed760; border: 1px solid rgba(30,215,96,0.3); text-decoration: none;">
-                                <i class="fas fa-external-link-alt"></i> İzle
-                            </a>
-                        </td>
-                        <td>
-                            <div style="display: flex; gap: 6px; align-items: center;">
-                                <button class="btn btn-sm" style="background: rgba(33,150,243,0.15); color: #2196f3; border: 1px solid rgba(33,150,243,0.3);" onclick="editStreamLiveItem('${item.id}')">
-                                    <i class="fas fa-edit"></i> Düzenle
-                                </button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteStreamLiveItem('${item.id}')">
-                                    <i class="fas fa-trash"></i> Sil
-                                </button>
-                            </div>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                window.renderStreamLiveList();
             })
             .catch(err => console.error('Fetch stream live list error:', err));
     };
+
+    const platFilterEl = document.getElementById('streamLivePlatformFilter');
+    if (platFilterEl) {
+        platFilterEl.addEventListener('change', () => {
+            if (typeof window.renderStreamLiveList === 'function') window.renderStreamLiveList();
+        });
+    }
 
     window.editStreamLiveItem = function (id) {
         const list = window.currentStreamLiveList || [];
@@ -6696,6 +6727,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const typeSelect = document.getElementById('streamLiveContentType');
         if (typeSelect) typeSelect.value = item.contentType || 'Movie';
+
+        const platformSelect = document.getElementById('streamLivePlatform');
+        if (platformSelect && item.platform) platformSelect.value = item.platform;
 
         const durationInput = document.getElementById('streamLiveDuration');
         if (durationInput) durationInput.value = item.durationMinutes || 120;

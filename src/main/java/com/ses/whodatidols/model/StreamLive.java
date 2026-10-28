@@ -19,6 +19,7 @@ public class StreamLive {
     private Timestamp endTime;
     private boolean active;
     private Timestamp createdAt;
+    private String platform = "WDI";
 
     public StreamLive() {
     }
@@ -141,5 +142,13 @@ public class StreamLive {
 
     public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getPlatform() {
+        return platform != null && !platform.isBlank() ? platform : "WDI";
+    }
+
+    public void setPlatform(String platform) {
+        this.platform = platform;
     }
 }

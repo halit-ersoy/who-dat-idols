@@ -1,5 +1,6 @@
 package com.ses.whodatidols.controller;
 
+import com.ses.whodatidols.service.StreamLiveChatSyncService;
 import com.ses.whodatidols.service.StreamLiveService;
 import com.ses.whodatidols.viewmodel.StreamLiveChatMessageDto;
 import org.slf4j.Logger;
@@ -19,11 +20,14 @@ public class StreamLiveWebSocketController {
     private static final Logger logger = LoggerFactory.getLogger(StreamLiveWebSocketController.class);
 
     private final StreamLiveService streamLiveService;
+    private final StreamLiveChatSyncService streamLiveChatSyncService;
     private final SimpMessagingTemplate messagingTemplate;
 
     public StreamLiveWebSocketController(StreamLiveService streamLiveService,
+                                         StreamLiveChatSyncService streamLiveChatSyncService,
                                          SimpMessagingTemplate messagingTemplate) {
         this.streamLiveService = streamLiveService;
+        this.streamLiveChatSyncService = streamLiveChatSyncService;
         this.messagingTemplate = messagingTemplate;
     }
 
@@ -44,8 +48,9 @@ public class StreamLiveWebSocketController {
 
             StreamLiveChatMessageDto dto = streamLiveService.processChatMessage(streamLiveId, userId, nickname, message);
 
-            // Tüm odaya canlı olarak yayınla
-            messagingTemplate.convertAndSend("/topic/streamlive/" + streamLiveId + "/chat", dto);
+            // Tüm odaya canlı olarak yayınla ve eş sunuculara senkronize et
+            streamLiveChatSyncService.broadcastLocally(streamLiveId, dto);
+            streamLiveChatSyncService.relayToPeersAsync(streamLiveId, dto);
 
         } catch (IllegalArgumentException | IllegalStateException e) {
             logger.info("StreamLive chat kısıtlaması: {}", e.getMessage());

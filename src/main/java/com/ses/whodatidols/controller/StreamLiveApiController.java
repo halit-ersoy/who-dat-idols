@@ -1,6 +1,7 @@
 package com.ses.whodatidols.controller;
 
 import com.ses.whodatidols.repository.PersonRepository;
+import com.ses.whodatidols.service.StreamLiveChatSyncService;
 import com.ses.whodatidols.service.StreamLiveService;
 import com.ses.whodatidols.viewmodel.StreamLiveChatMessageDto;
 import com.ses.whodatidols.viewmodel.StreamLiveStatusDto;
@@ -17,10 +18,14 @@ import java.util.UUID;
 public class StreamLiveApiController {
 
     private final StreamLiveService streamLiveService;
+    private final StreamLiveChatSyncService streamLiveChatSyncService;
     private final PersonRepository personRepository;
 
-    public StreamLiveApiController(StreamLiveService streamLiveService, PersonRepository personRepository) {
+    public StreamLiveApiController(StreamLiveService streamLiveService,
+                                   StreamLiveChatSyncService streamLiveChatSyncService,
+                                   PersonRepository personRepository) {
         this.streamLiveService = streamLiveService;
+        this.streamLiveChatSyncService = streamLiveChatSyncService;
         this.personRepository = personRepository;
     }
 
@@ -63,6 +68,14 @@ public class StreamLiveApiController {
             @RequestParam(value = "limit", defaultValue = "50") int limit) {
         List<StreamLiveChatMessageDto> history = streamLiveService.getRecentChatHistory(id, limit);
         return ResponseEntity.ok(history);
+    }
+
+    @PostMapping("/internal/{id}/relay-chat")
+    public ResponseEntity<Void> receiveRelayedChat(
+            @PathVariable("id") UUID streamLiveId,
+            @RequestBody StreamLiveChatMessageDto dto) {
+        streamLiveChatSyncService.broadcastLocally(streamLiveId, dto);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/auth-status")

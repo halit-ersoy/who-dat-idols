@@ -81,11 +81,27 @@ public class StreamLiveChatMessageDto {
         this.sentAt = sentAt;
     }
 
+    public long getSentAtMillis() {
+        return sentAt;
+    }
+
+    public void setSentAtMillis(long sentAtMillis) {
+        this.sentAt = sentAtMillis;
+    }
+
     public boolean isVerified() {
         return verified;
     }
 
     public void setVerified(boolean verified) {
         this.verified = verified;
+    }
+
+    public boolean getIsVerified() {
+        return verified;
+    }
+
+    public void setIsVerified(boolean isVerified) {
+        this.verified = isVerified;
     }
 }

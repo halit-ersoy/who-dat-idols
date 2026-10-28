@@ -1,4 +1,4 @@
-﻿/**
+/**
  * StreamLive - Real-time Synchronized Cinema & Live Chat
  * Who Dat Idols
  */
@@ -19,6 +19,7 @@
     let countdownInterval = null;
     let timeSyncInterval = null;
     let chatCheckInterval = null;
+    let chatSyncInterval = null;
     let slowModeCooldownTimer = null;
     let serverTimeOffset = 0; // serverTime - Date.now()
     let isUserScrubbing = false;
@@ -838,6 +839,10 @@
             clearTimeout(reconnectTimeout);
             reconnectTimeout = null;
         }
+        if (chatSyncInterval) {
+            clearInterval(chatSyncInterval);
+            chatSyncInterval = null;
+        }
         if (stompClient) {
             try {
                 if (stompClient.connected) {
@@ -883,6 +888,23 @@
 
         // Load chat history once for this stream
         loadChatHistory(streamId);
+
+        // Continuous sync fallback: Every 3s, sync latest messages (deduplicated by message ID)
+        if (chatSyncInterval) clearInterval(chatSyncInterval);
+        chatSyncInterval = setInterval(async function () {
+            if (!currentStream || !connectedStreamId) return;
+            try {
+                const res = await fetch('/api/streamlive/' + connectedStreamId + '/chat/history?limit=25');
+                if (res.ok) {
+                    const list = await res.json();
+                    if (Array.isArray(list) && list.length > 0) {
+                        list.forEach(msg => appendChatMessage(msg, true));
+                    }
+                }
+            } catch (e) {
+                // Ignore transient network errors
+            }
+        }, 3000);
 
         try {
             rawSocket = new SockJS('/ws');
@@ -980,7 +1002,8 @@
         const isMe = currentUser && currentUser.userId === msg.userId;
         item.className = 'chat-msg-item' + (isMe ? ' my-message' : '');
 
-        const timeStr = msg.sentAt ? new Date(msg.sentAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '';
+        const sentTime = msg.sentAt || msg.sentAtMillis;
+        const timeStr = sentTime ? new Date(sentTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '';
 
         const userDiv = document.createElement('span');
         userDiv.className = 'chat-msg-user';

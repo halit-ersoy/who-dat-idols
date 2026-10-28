@@ -43,6 +43,16 @@ public class StreamLiveRepository {
             """);
 
             jdbcTemplate.execute("""
+                IF NOT EXISTS (
+                    SELECT * FROM sys.columns 
+                    WHERE object_id = OBJECT_ID('StreamLive') AND name = 'Platform'
+                )
+                BEGIN
+                    ALTER TABLE StreamLive ADD Platform NVARCHAR(20) NOT NULL DEFAULT 'WDI';
+                END
+            """);
+
+            jdbcTemplate.execute("""
                 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'StreamLiveChat')
                 BEGIN
                     CREATE TABLE StreamLiveChat (
@@ -83,6 +93,12 @@ public class StreamLiveRepository {
         s.setEndTime(rs.getTimestamp("EndTime"));
         s.setActive(rs.getBoolean("IsActive"));
         s.setCreatedAt(rs.getTimestamp("CreatedAt"));
+        try {
+            String plat = rs.getString("Platform");
+            s.setPlatform(plat != null && !plat.isBlank() ? plat : "WDI");
+        } catch (Exception ignored) {
+            s.setPlatform("WDI");
+        }
         return s;
     };
 
@@ -103,8 +119,8 @@ public class StreamLiveRepository {
 
     public void createStreamLive(StreamLive s) {
         String sql = """
-            INSERT INTO StreamLive (ID, Title, Description, ContentType, ContentId, ContentName, Slug, PosterUrl, VideoUrl, ScheduledStartTime, DurationMinutes, DurationSeconds, EndTime, IsActive, CreatedAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO StreamLive (ID, Title, Description, ContentType, ContentId, ContentName, Slug, PosterUrl, VideoUrl, ScheduledStartTime, DurationMinutes, DurationSeconds, EndTime, IsActive, CreatedAt, Platform)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
         jdbcTemplate.update(sql,
                 s.getId().toString(),
@@ -121,13 +137,14 @@ public class StreamLiveRepository {
                 s.getDurationSeconds(),
                 s.getEndTime(),
                 s.isActive() ? 1 : 0,
-                s.getCreatedAt());
+                s.getCreatedAt(),
+                s.getPlatform());
     }
 
     public void updateStreamLive(StreamLive s) {
         String sql = """
             UPDATE StreamLive
-            SET Title = ?, Description = ?, ContentType = ?, ContentId = ?, ContentName = ?, Slug = ?, PosterUrl = ?, VideoUrl = ?, ScheduledStartTime = ?, DurationMinutes = ?, DurationSeconds = ?, EndTime = ?, IsActive = ?
+            SET Title = ?, Description = ?, ContentType = ?, ContentId = ?, ContentName = ?, Slug = ?, PosterUrl = ?, VideoUrl = ?, ScheduledStartTime = ?, DurationMinutes = ?, DurationSeconds = ?, EndTime = ?, IsActive = ?, Platform = ?
             WHERE ID = ?
         """;
         jdbcTemplate.update(sql,
@@ -144,6 +161,7 @@ public class StreamLiveRepository {
                 s.getDurationSeconds(),
                 s.getEndTime(),
                 s.isActive() ? 1 : 0,
+                s.getPlatform(),
                 s.getId().toString());
     }
 
@@ -167,27 +185,39 @@ public class StreamLiveRepository {
      * 3. If none upcoming, recently ended stream within 1 hour (EndTime <= NOW <= EndTime + 1 hour)
      */
     public StreamLive findActiveOrUpcomingStream() {
+        return findActiveOrUpcomingStream("WDI");
+    }
+
+    public StreamLive findActiveOrUpcomingStream(String platform) {
         Timestamp now = new Timestamp(System.currentTimeMillis());
+        boolean isAll = "ALL".equalsIgnoreCase(platform);
+        String platFilter = isAll ? "" : " AND (Platform = ? OR Platform = 'ALL' OR Platform IS NULL)";
 
         // 1. Check if there's an ongoing live stream
         try {
-            String sqlLive = "SELECT TOP 1 * FROM StreamLive WHERE IsActive = 1 AND ScheduledStartTime <= ? AND EndTime >= ? ORDER BY ScheduledStartTime ASC";
-            List<StreamLive> live = jdbcTemplate.query(sqlLive, streamLiveRowMapper, now, now);
+            String sqlLive = "SELECT TOP 1 * FROM StreamLive WHERE IsActive = 1 AND ScheduledStartTime <= ? AND EndTime >= ?" + platFilter + " ORDER BY ScheduledStartTime ASC";
+            List<StreamLive> live = isAll
+                    ? jdbcTemplate.query(sqlLive, streamLiveRowMapper, now, now)
+                    : jdbcTemplate.query(sqlLive, streamLiveRowMapper, now, now, platform);
             if (!live.isEmpty()) return live.get(0);
         } catch (Exception ignored) {}
 
         // 2. Check for next upcoming stream
         try {
-            String sqlUpcoming = "SELECT TOP 1 * FROM StreamLive WHERE IsActive = 1 AND ScheduledStartTime > ? ORDER BY ScheduledStartTime ASC";
-            List<StreamLive> upcoming = jdbcTemplate.query(sqlUpcoming, streamLiveRowMapper, now);
+            String sqlUpcoming = "SELECT TOP 1 * FROM StreamLive WHERE IsActive = 1 AND ScheduledStartTime > ?" + platFilter + " ORDER BY ScheduledStartTime ASC";
+            List<StreamLive> upcoming = isAll
+                    ? jdbcTemplate.query(sqlUpcoming, streamLiveRowMapper, now)
+                    : jdbcTemplate.query(sqlUpcoming, streamLiveRowMapper, now, platform);
             if (!upcoming.isEmpty()) return upcoming.get(0);
         } catch (Exception ignored) {}
 
         // 3. Check for recently ended stream (within last 60 minutes)
         try {
             Timestamp sixtyMinutesAgo = new Timestamp(System.currentTimeMillis() - 60L * 60L * 1000L);
-            String sqlRecentEnded = "SELECT TOP 1 * FROM StreamLive WHERE IsActive = 1 AND EndTime < ? AND EndTime >= ? ORDER BY EndTime DESC";
-            List<StreamLive> ended = jdbcTemplate.query(sqlRecentEnded, streamLiveRowMapper, now, sixtyMinutesAgo);
+            String sqlRecentEnded = "SELECT TOP 1 * FROM StreamLive WHERE IsActive = 1 AND EndTime < ? AND EndTime >= ?" + platFilter + " ORDER BY EndTime DESC";
+            List<StreamLive> ended = isAll
+                    ? jdbcTemplate.query(sqlRecentEnded, streamLiveRowMapper, now, sixtyMinutesAgo)
+                    : jdbcTemplate.query(sqlRecentEnded, streamLiveRowMapper, now, sixtyMinutesAgo, platform);
             if (!ended.isEmpty()) return ended.get(0);
         } catch (Exception ignored) {}
 
@@ -201,19 +231,29 @@ public class StreamLiveRepository {
      * If neither exists, returns null (so nothing is displayed on the homepage).
      */
     public StreamLive findScheduleOrLatestStream() {
+        return findScheduleOrLatestStream("WDI");
+    }
+
+    public StreamLive findScheduleOrLatestStream(String platform) {
         Timestamp now = new Timestamp(System.currentTimeMillis());
+        boolean isAll = "ALL".equalsIgnoreCase(platform);
+        String platFilter = isAll ? "" : " AND (Platform = ? OR Platform = 'ALL' OR Platform IS NULL)";
 
         // 1. Ongoing live stream
         try {
-            String sqlLive = "SELECT TOP 1 * FROM StreamLive WHERE IsActive = 1 AND ScheduledStartTime <= ? AND EndTime >= ? ORDER BY ScheduledStartTime ASC";
-            List<StreamLive> live = jdbcTemplate.query(sqlLive, streamLiveRowMapper, now, now);
+            String sqlLive = "SELECT TOP 1 * FROM StreamLive WHERE IsActive = 1 AND ScheduledStartTime <= ? AND EndTime >= ?" + platFilter + " ORDER BY ScheduledStartTime ASC";
+            List<StreamLive> live = isAll
+                    ? jdbcTemplate.query(sqlLive, streamLiveRowMapper, now, now)
+                    : jdbcTemplate.query(sqlLive, streamLiveRowMapper, now, now, platform);
             if (!live.isEmpty()) return live.get(0);
         } catch (Exception ignored) {}
 
         // 2. Next upcoming stream
         try {
-            String sqlUpcoming = "SELECT TOP 1 * FROM StreamLive WHERE IsActive = 1 AND ScheduledStartTime > ? ORDER BY ScheduledStartTime ASC";
-            List<StreamLive> upcoming = jdbcTemplate.query(sqlUpcoming, streamLiveRowMapper, now);
+            String sqlUpcoming = "SELECT TOP 1 * FROM StreamLive WHERE IsActive = 1 AND ScheduledStartTime > ?" + platFilter + " ORDER BY ScheduledStartTime ASC";
+            List<StreamLive> upcoming = isAll
+                    ? jdbcTemplate.query(sqlUpcoming, streamLiveRowMapper, now)
+                    : jdbcTemplate.query(sqlUpcoming, streamLiveRowMapper, now, platform);
             if (!upcoming.isEmpty()) return upcoming.get(0);
         } catch (Exception ignored) {}
 

@@ -177,6 +177,7 @@ public class StreamLiveService {
         if (streamLiveViewerTracker != null) {
             dto.setViewerCount(streamLiveViewerTracker.getViewerCount(stream.getId()));
         }
+        dto.setPlatform(stream.getPlatform());
 
         return dto;
     }
@@ -444,6 +445,7 @@ public class StreamLiveService {
         stream.setEndTime(new Timestamp(endMillis));
         stream.setActive(true);
         stream.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+        stream.setPlatform(request.getPlatform() != null && !request.getPlatform().isBlank() ? request.getPlatform() : "WDI");
 
         streamLiveRepository.createStreamLive(stream);
         return stream;

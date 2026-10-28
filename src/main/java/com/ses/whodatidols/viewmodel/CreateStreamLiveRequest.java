@@ -10,6 +10,7 @@ public class CreateStreamLiveRequest {
     private long scheduledStartTime; // Epoch millis
     private int durationMinutes;
     private int durationSeconds;
+    private String platform = "WDI";
 
     public CreateStreamLiveRequest() {
     }
@@ -82,5 +83,13 @@ public class CreateStreamLiveRequest {
 
     public void setDurationSeconds(int durationSeconds) {
         this.durationSeconds = durationSeconds;
+    }
+
+    public String getPlatform() {
+        return platform != null && !platform.isBlank() ? platform : "WDI";
+    }
+
+    public void setPlatform(String platform) {
+        this.platform = platform;
     }
 }

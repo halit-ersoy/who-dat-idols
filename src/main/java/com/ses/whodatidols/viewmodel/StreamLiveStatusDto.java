@@ -24,6 +24,7 @@ public class StreamLiveStatusDto {
     private boolean chatOpen;           // Chat only open 10 mins before start until 1 hr after end
     private long chatOpenInSeconds;    // Seconds remaining until chat opens (0 if already open)
     private int viewerCount;           // Real-time viewer count
+    private String platform = "WDI";
 
     public StreamLiveStatusDto() {
     }
@@ -232,5 +233,13 @@ public class StreamLiveStatusDto {
 
     public void setViewerCount(int viewerCount) {
         this.viewerCount = viewerCount;
+    }
+
+    public String getPlatform() {
+        return platform != null && !platform.isBlank() ? platform : "WDI";
+    }
+
+    public void setPlatform(String platform) {
+        this.platform = platform;
     }
 }
