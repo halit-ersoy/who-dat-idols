@@ -20,6 +20,8 @@ import java.util.regex.Pattern;
 
 /**
  * Tracks real-time viewers for StreamLive broadcasts via WebSocket STOMP subscriptions.
+ * Prevents double-counting by tracking unique viewers by userId when authenticated,
+ * or by sessionId when anonymous.
  */
 @Component
 public class StreamLiveViewerTracker {
@@ -29,8 +31,11 @@ public class StreamLiveViewerTracker {
 
     private final SimpMessagingTemplate messagingTemplate;
 
-    // streamId -> Set of sessionIds
-    private final Map<UUID, Set<String>> streamViewers = new ConcurrentHashMap<>();
+    // streamId -> (viewerKey -> Set of sessionIds)
+    private final Map<UUID, Map<String, Set<String>>> streamViewers = new ConcurrentHashMap<>();
+
+    // sessionId -> viewerKey
+    private final Map<String, String> sessionViewerKeys = new ConcurrentHashMap<>();
 
     // sessionId -> (subscriptionId -> streamId)
     private final Map<String, Map<String, UUID>> sessionSubscriptions = new ConcurrentHashMap<>();
@@ -40,12 +45,26 @@ public class StreamLiveViewerTracker {
     }
 
     /**
-     * Returns the active viewer count for a given streamId.
+     * Resolves unique viewer key: authenticated user's ID or anonymous sessionId.
+     */
+    private String resolveViewerKey(StompHeaderAccessor headerAccessor, String sessionId) {
+        Map<String, Object> sessionAttributes = headerAccessor.getSessionAttributes();
+        if (sessionAttributes != null && sessionAttributes.containsKey("userId")) {
+            Object userId = sessionAttributes.get("userId");
+            if (userId != null && !userId.toString().isBlank()) {
+                return "user:" + userId.toString();
+            }
+        }
+        return "session:" + sessionId;
+    }
+
+    /**
+     * Returns the active unique viewer count for a given streamId.
      */
     public int getViewerCount(UUID streamId) {
         if (streamId == null) return 0;
-        Set<String> sessions = streamViewers.get(streamId);
-        return sessions != null ? sessions.size() : 0;
+        Map<String, Set<String>> viewers = streamViewers.get(streamId);
+        return viewers != null ? viewers.size() : 0;
     }
 
     @EventListener
@@ -62,7 +81,12 @@ public class StreamLiveViewerTracker {
                 String subscriptionId = headerAccessor.getSubscriptionId();
 
                 if (sessionId != null) {
-                    streamViewers.computeIfAbsent(streamId, k -> ConcurrentHashMap.newKeySet()).add(sessionId);
+                    String viewerKey = resolveViewerKey(headerAccessor, sessionId);
+                    sessionViewerKeys.put(sessionId, viewerKey);
+
+                    streamViewers.computeIfAbsent(streamId, k -> new ConcurrentHashMap<>())
+                            .computeIfAbsent(viewerKey, k -> ConcurrentHashMap.newKeySet())
+                            .add(sessionId);
 
                     if (subscriptionId != null) {
                         sessionSubscriptions.computeIfAbsent(sessionId, k -> new ConcurrentHashMap<>())
@@ -90,15 +114,23 @@ public class StreamLiveViewerTracker {
                 if (streamId != null) {
                     boolean hasOtherSubs = subs.values().contains(streamId);
                     if (!hasOtherSubs) {
-                        Set<String> viewers = streamViewers.get(streamId);
-                        if (viewers != null) {
-                            viewers.remove(sessionId);
-                            broadcastViewerCount(streamId);
+                        String viewerKey = sessionViewerKeys.getOrDefault(sessionId, "session:" + sessionId);
+                        Map<String, Set<String>> streamMap = streamViewers.get(streamId);
+                        if (streamMap != null) {
+                            Set<String> sessions = streamMap.get(viewerKey);
+                            if (sessions != null) {
+                                sessions.remove(sessionId);
+                                if (sessions.isEmpty()) {
+                                    streamMap.remove(viewerKey);
+                                }
+                                broadcastViewerCount(streamId);
+                            }
                         }
                     }
                 }
                 if (subs.isEmpty()) {
                     sessionSubscriptions.remove(sessionId);
+                    sessionViewerKeys.remove(sessionId);
                 }
             }
         }
@@ -111,14 +143,24 @@ public class StreamLiveViewerTracker {
 
         if (sessionId != null) {
             Map<String, UUID> subs = sessionSubscriptions.remove(sessionId);
+            String viewerKey = sessionViewerKeys.remove(sessionId);
+            if (viewerKey == null) {
+                viewerKey = resolveViewerKey(headerAccessor, sessionId);
+            }
+
             Set<UUID> affectedStreams = new HashSet<>();
 
             if (subs != null) {
                 affectedStreams.addAll(subs.values());
             }
 
-            for (Map.Entry<UUID, Set<String>> entry : streamViewers.entrySet()) {
-                if (entry.getValue().remove(sessionId)) {
+            for (Map.Entry<UUID, Map<String, Set<String>>> entry : streamViewers.entrySet()) {
+                Map<String, Set<String>> streamMap = entry.getValue();
+                Set<String> sessions = streamMap.get(viewerKey);
+                if (sessions != null && sessions.remove(sessionId)) {
+                    if (sessions.isEmpty()) {
+                        streamMap.remove(viewerKey);
+                    }
                     affectedStreams.add(entry.getKey());
                 }
             }

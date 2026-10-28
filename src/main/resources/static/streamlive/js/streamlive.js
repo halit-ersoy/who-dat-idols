@@ -10,6 +10,11 @@
     let currentStream = null;
     let currentUser = null;
     let stompClient = null;
+    let rawSocket = null;
+    let connectedStreamId = null;
+    let isConnecting = false;
+    let reconnectTimeout = null;
+    let renderedMessageIds = new Set();
     let hlsPlayer = null;
     let countdownInterval = null;
     let timeSyncInterval = null;
@@ -826,19 +831,67 @@
     }
 
     /**
+     * Disconnect WebSocket safely and clean up state
+     */
+    function disconnectWebSocket() {
+        if (reconnectTimeout) {
+            clearTimeout(reconnectTimeout);
+            reconnectTimeout = null;
+        }
+        if (stompClient) {
+            try {
+                if (stompClient.connected) {
+                    stompClient.disconnect();
+                }
+            } catch (e) {
+                console.warn('Error disconnecting STOMP:', e);
+            }
+            stompClient = null;
+        }
+        if (rawSocket) {
+            try {
+                rawSocket.close();
+            } catch (e) {
+                console.warn('Error closing raw socket:', e);
+            }
+            rawSocket = null;
+        }
+        connectedStreamId = null;
+        isConnecting = false;
+    }
+
+    /**
      * Live Chat WebSocket (SockJS + STOMP)
      */
     function connectWebSocket(streamId) {
         if (!streamId) return;
 
+        // If already connected to this stream, DO NOT create another connection!
+        if (stompClient && stompClient.connected && connectedStreamId === streamId) {
+            return;
+        }
+
+        // If connection in progress for this stream, avoid duplicate simultaneous attempt
+        if (isConnecting && connectedStreamId === streamId) {
+            return;
+        }
+
+        disconnectWebSocket();
+
+        isConnecting = true;
+        connectedStreamId = streamId;
+
+        // Load chat history once for this stream
         loadChatHistory(streamId);
 
         try {
-            const socket = new SockJS('/ws');
-            stompClient = Stomp.over(socket);
+            rawSocket = new SockJS('/ws');
+            stompClient = Stomp.over(rawSocket);
             stompClient.debug = null;
 
             stompClient.connect({}, function () {
+                isConnecting = false;
+
                 // Real-time viewer count subscription
                 stompClient.subscribe('/topic/streamlive/' + streamId + '/viewers', function (response) {
                     try {
@@ -868,11 +921,18 @@
                 });
 
             }, function (error) {
-                console.warn('STOMP connection failed, reconnecting in 5s...', error);
-                setTimeout(() => connectWebSocket(streamId), 5000);
+                isConnecting = false;
+                console.warn('STOMP connection failed or closed, reconnecting in 5s...', error);
+                if (reconnectTimeout) clearTimeout(reconnectTimeout);
+                reconnectTimeout = setTimeout(() => {
+                    if (currentStream && currentStream.id === streamId) {
+                        connectWebSocket(streamId);
+                    }
+                }, 5000);
             });
 
         } catch (e) {
+            isConnecting = false;
             console.error('WebSocket init error:', e);
         }
     }
@@ -886,8 +946,12 @@
             if (res.ok) {
                 const list = await res.json();
                 if (Array.isArray(list)) {
+                    if (elements.chatMessages) {
+                        elements.chatMessages.innerHTML = '';
+                    }
+                    renderedMessageIds.clear();
                     list.forEach(msg => appendChatMessage(msg, false));
-                    scrollChatToBottom();
+                    scrollChatToBottom(true);
                 }
             }
         } catch (e) {
@@ -901,7 +965,18 @@
     function appendChatMessage(msg, shouldScroll = true) {
         if (!elements.chatMessages) return;
 
+        // Deduplication: prevent duplicate messages from ever being rendered twice
+        if (msg.id) {
+            if (renderedMessageIds.has(msg.id)) {
+                return;
+            }
+            renderedMessageIds.add(msg.id);
+        }
+
         const item = document.createElement('div');
+        if (msg.id) {
+            item.setAttribute('data-msg-id', msg.id);
+        }
         const isMe = currentUser && currentUser.userId === msg.userId;
         item.className = 'chat-msg-item' + (isMe ? ' my-message' : '');
 
@@ -1014,6 +1089,9 @@
                 return;
             }
 
+            // Temporarily disable button to prevent double-click submissions
+            if (elements.btnSendChat) elements.btnSendChat.disabled = true;
+
             stompClient.send(
                 '/app/streamlive/' + currentStream.id + '/chat.send',
                 {},
@@ -1051,6 +1129,10 @@
             }
         }, 1000);
     }
+
+    window.addEventListener('beforeunload', function () {
+        disconnectWebSocket();
+    });
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
