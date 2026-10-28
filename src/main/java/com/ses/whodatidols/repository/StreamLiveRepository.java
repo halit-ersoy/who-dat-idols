@@ -194,6 +194,32 @@ public class StreamLiveRepository {
         return null;
     }
 
+    /**
+     * Finds the most relevant stream for the schedule balloon on the homepage:
+     * 1. Ongoing live stream (ScheduledStartTime <= NOW <= EndTime)
+     * 2. Next upcoming scheduled stream (ScheduledStartTime > NOW, ordered by ScheduledStartTime ASC)
+     * If neither exists, returns null (so nothing is displayed on the homepage).
+     */
+    public StreamLive findScheduleOrLatestStream() {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+
+        // 1. Ongoing live stream
+        try {
+            String sqlLive = "SELECT TOP 1 * FROM StreamLive WHERE IsActive = 1 AND ScheduledStartTime <= ? AND EndTime >= ? ORDER BY ScheduledStartTime ASC";
+            List<StreamLive> live = jdbcTemplate.query(sqlLive, streamLiveRowMapper, now, now);
+            if (!live.isEmpty()) return live.get(0);
+        } catch (Exception ignored) {}
+
+        // 2. Next upcoming stream
+        try {
+            String sqlUpcoming = "SELECT TOP 1 * FROM StreamLive WHERE IsActive = 1 AND ScheduledStartTime > ? ORDER BY ScheduledStartTime ASC";
+            List<StreamLive> upcoming = jdbcTemplate.query(sqlUpcoming, streamLiveRowMapper, now);
+            if (!upcoming.isEmpty()) return upcoming.get(0);
+        } catch (Exception ignored) {}
+
+        return null;
+    }
+
     public List<StreamLive> findAllStreamsForAdmin() {
         return jdbcTemplate.query("SELECT * FROM StreamLive ORDER BY ScheduledStartTime DESC", streamLiveRowMapper);
     }

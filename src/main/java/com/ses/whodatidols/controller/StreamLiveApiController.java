@@ -33,6 +33,15 @@ public class StreamLiveApiController {
         return ResponseEntity.ok(dto);
     }
 
+    @GetMapping("/schedule")
+    public ResponseEntity<StreamLiveStatusDto> getSchedule() {
+        StreamLiveStatusDto dto = streamLiveService.getScheduleOrLatestStreamStatus();
+        if (dto == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(dto);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<StreamLiveStatusDto> getStreamById(@PathVariable("id") UUID id) {
         StreamLiveStatusDto dto = streamLiveService.getStreamStatusById(id);

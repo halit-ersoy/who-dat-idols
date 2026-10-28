@@ -16,6 +16,7 @@ import { initNotifications } from "./notifications.js?v=2";
 import { initFeedback } from "./feedback.js?v=2";
 import { initMessagingManager } from "./messagingManager.js?v=2";
 import { initAiSearch } from "./aiSearch.js?v=1";
+import { initStreamLiveScheduleBadge } from "./streamLiveScheduleBadge.js?v=1";
 
 window.addEventListener('load', () => {
     const loadingScreen = document.getElementById('loading-screen');
@@ -50,6 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initMessagingManager();
     initAnnouncement();
     initAiSearch();
+    initStreamLiveScheduleBadge();
 });
 
 function initAnnouncement() {

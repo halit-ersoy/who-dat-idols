@@ -87,6 +87,18 @@ public class StreamLiveService {
         return toStatusDto(stream);
     }
 
+    public StreamLiveStatusDto getScheduleOrLatestStreamStatus() {
+        StreamLive stream = streamLiveRepository.findScheduleOrLatestStream();
+        if (stream == null) {
+            return null;
+        }
+        StreamLiveStatusDto dto = toStatusDto(stream);
+        if (dto == null || (!"LIVE".equals(dto.getStatus()) && !"UPCOMING".equals(dto.getStatus()))) {
+            return null;
+        }
+        return dto;
+    }
+
     public StreamLiveStatusDto getStreamStatusById(UUID id) {
         StreamLive stream = streamLiveRepository.findStreamById(id);
         if (stream == null) {
