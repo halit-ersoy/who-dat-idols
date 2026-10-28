@@ -17,10 +17,14 @@
     let slowModeCooldownTimer = null;
     let serverTimeOffset = 0; // serverTime - Date.now()
     let isUserScrubbing = false;
+    let currentViewerCount = 0;
+    let isChatOpen = false;
 
     // DOM Elements
     const elements = {
         headerTitle: document.getElementById('headerStreamTitle'),
+        headerBrandBadge: document.getElementById('headerBrandBadge'),
+        headerLiveDot: document.getElementById('headerLiveDot'),
         headerViewerCount: document.getElementById('headerViewerCount'),
         playerWrapper: document.getElementById('playerWrapper'),
         playerAmbientGlow: document.getElementById('playerAmbientGlow'),
@@ -71,6 +75,26 @@
         chatLockedText: document.getElementById('chatLockedText'),
         chatGuestNotice: document.getElementById('chatGuestNotice')
     };
+
+    /**
+     * Update the top-left brand badge & viewer counter state
+     * Kisi sayaci sadece sohbet acikken gorunur; sohbet kapaliyken veya aktif yayin yokken 'StreamLive' yazar.
+     */
+    function updateViewerCountDisplay() {
+        if (!elements.headerViewerCount) return;
+
+        if (isChatOpen) {
+            elements.headerViewerCount.textContent = `${currentViewerCount} Kişi`;
+            if (elements.headerLiveDot) {
+                elements.headerLiveDot.style.display = 'inline-block';
+            }
+        } else {
+            elements.headerViewerCount.textContent = 'StreamLive';
+            if (elements.headerLiveDot) {
+                elements.headerLiveDot.style.display = 'none';
+            }
+        }
+    }
 
     /**
      * Helper to get synchronized server timestamp in milliseconds
@@ -196,9 +220,10 @@
             if (elements.headerTitle) {
                 elements.headerTitle.textContent = data.title || 'StreamLive Canlı Sinema';
             }
-            if (elements.headerViewerCount && data.viewerCount !== undefined) {
-                elements.headerViewerCount.textContent = `${data.viewerCount} Kişi`;
+            if (data.viewerCount !== undefined) {
+                currentViewerCount = data.viewerCount;
             }
+            updateViewerCountDisplay();
             document.title = `${data.title || 'Canlı Sinema'} - StreamLive | Who Dat Idols`;
 
             updateStreamUI();
@@ -256,6 +281,9 @@
     }
 
     function showNoStream() {
+        isChatOpen = false;
+        currentViewerCount = 0;
+        updateViewerCountDisplay();
         hideAllScreens();
         if (elements.noStreamScreen) elements.noStreamScreen.style.display = 'flex';
         if (elements.streamInfoCard) elements.streamInfoCard.style.display = 'none';
@@ -269,6 +297,8 @@
      */
     function updateChatAccessUI() {
         if (!currentStream) {
+            isChatOpen = false;
+            updateViewerCountDisplay();
             showChatLocked('Şu anda aktif bir yayın bulunmadığı için canlı sohbet kapalıdır.');
             return;
         }
@@ -281,6 +311,8 @@
 
         if (now < tenMinutesBeforeStart) {
             // Chat is locked until 10 mins before start
+            isChatOpen = false;
+            updateViewerCountDisplay();
             const diffMs = tenMinutesBeforeStart - now;
             const diffMin = Math.ceil(diffMs / 60000);
             if (elements.chatLiveDot) elements.chatLiveDot.className = 'live-dot dot-waiting';
@@ -288,6 +320,8 @@
             showChatLocked(`Canlı sohbet yayının başlamasına 10 dakika kala açılacaktır (${diffMin} dakika kaldı).`);
         } else if (now <= oneHourAfterEnd) {
             // Chat is OPEN!
+            isChatOpen = true;
+            updateViewerCountDisplay();
             if (elements.chatLiveDot) elements.chatLiveDot.className = 'live-dot';
             if (elements.chatStatusText) {
                 if (now > end) {
@@ -299,6 +333,8 @@
             showChatUnlocked();
         } else {
             // Chat is CLOSED permanently after 1 hr post-stream
+            isChatOpen = false;
+            updateViewerCountDisplay();
             if (elements.chatLiveDot) elements.chatLiveDot.className = 'live-dot dot-waiting';
             if (elements.chatStatusText) elements.chatStatusText.textContent = 'Kapatıldı';
             showChatLocked('Yayın ve sohbet süresi sona ermiştir.');
@@ -808,9 +844,8 @@
                     try {
                         const data = JSON.parse(response.body);
                         const count = (data && data.viewerCount !== undefined) ? data.viewerCount : Number(response.body);
-                        if (elements.headerViewerCount) {
-                            elements.headerViewerCount.textContent = `${count} Kişi`;
-                        }
+                        currentViewerCount = count;
+                        updateViewerCountDisplay();
                     } catch (e) {
                         console.error('Viewer count parse error:', e);
                     }
