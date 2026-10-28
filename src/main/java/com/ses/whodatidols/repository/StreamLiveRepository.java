@@ -29,23 +29,16 @@ public class StreamLiveRepository {
             jdbcTemplate.execute("""
                 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'StreamLive')
                 BEGIN
-                    CREATE TABLE StreamLive (
-                        ID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
-                        Title NVARCHAR(255) NOT NULL,
-                        Description NVARCHAR(MAX) NULL,
-                        ContentType NVARCHAR(50) NOT NULL,
-                        ContentId UNIQUEIDENTIFIER NOT NULL,
-                        ContentName NVARCHAR(255) NULL,
-                        Slug NVARCHAR(255) NULL,
-                        PosterUrl NVARCHAR(500) NULL,
-                        VideoUrl NVARCHAR(500) NOT NULL,
-                        ScheduledStartTime DATETIME NOT NULL,
-                        DurationMinutes INT NOT NULL DEFAULT 0,
-                        EndTime DATETIME NOT NULL,
-                        IsActive BIT NOT NULL DEFAULT 1,
-                        CreatedAt DATETIME NOT NULL DEFAULT GETDATE()
-                    );
-                    CREATE NONCLUSTERED INDEX idx_streamlive_schedule ON StreamLive(ScheduledStartTime, EndTime, IsActive);
+                    CREATE TABLE StreamLive (\n                        ID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),\n                        Title NVARCHAR(255) NOT NULL,\n                        Description NVARCHAR(MAX) NULL,\n                        ContentType NVARCHAR(50) NOT NULL,\n                        ContentId UNIQUEIDENTIFIER NOT NULL,\n                        ContentName NVARCHAR(255) NULL,\n                        Slug NVARCHAR(255) NULL,\n                        PosterUrl NVARCHAR(500) NULL,\n                        VideoUrl NVARCHAR(500) NOT NULL,\n                        ScheduledStartTime DATETIME NOT NULL,\n                        DurationMinutes INT NOT NULL DEFAULT 0,\n                        DurationSeconds INT NOT NULL DEFAULT 0,\n                        EndTime DATETIME NOT NULL,\n                        IsActive BIT NOT NULL DEFAULT 1,\n                        CreatedAt DATETIME NOT NULL DEFAULT GETDATE()\n                    );\n                    CREATE NONCLUSTERED INDEX idx_streamlive_schedule ON StreamLive(ScheduledStartTime, EndTime, IsActive);\n                END
+            """);
+
+            jdbcTemplate.execute("""
+                IF NOT EXISTS (
+                    SELECT * FROM sys.columns 
+                    WHERE object_id = OBJECT_ID('StreamLive') AND name = 'DurationSeconds'
+                )
+                BEGIN
+                    ALTER TABLE StreamLive ADD DurationSeconds INT NOT NULL DEFAULT 0;
                 END
             """);
 
@@ -81,6 +74,12 @@ public class StreamLiveRepository {
         s.setVideoUrl(rs.getString("VideoUrl"));
         s.setScheduledStartTime(rs.getTimestamp("ScheduledStartTime"));
         s.setDurationMinutes(rs.getInt("DurationMinutes"));
+        try {
+            int durSec = rs.getInt("DurationSeconds");
+            s.setDurationSeconds(durSec > 0 ? durSec : s.getDurationMinutes() * 60);
+        } catch (Exception ignored) {
+            s.setDurationSeconds(s.getDurationMinutes() * 60);
+        }
         s.setEndTime(rs.getTimestamp("EndTime"));
         s.setActive(rs.getBoolean("IsActive"));
         s.setCreatedAt(rs.getTimestamp("CreatedAt"));
@@ -104,8 +103,8 @@ public class StreamLiveRepository {
 
     public void createStreamLive(StreamLive s) {
         String sql = """
-            INSERT INTO StreamLive (ID, Title, Description, ContentType, ContentId, ContentName, Slug, PosterUrl, VideoUrl, ScheduledStartTime, DurationMinutes, EndTime, IsActive, CreatedAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO StreamLive (ID, Title, Description, ContentType, ContentId, ContentName, Slug, PosterUrl, VideoUrl, ScheduledStartTime, DurationMinutes, DurationSeconds, EndTime, IsActive, CreatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
         jdbcTemplate.update(sql,
                 s.getId().toString(),
@@ -119,6 +118,7 @@ public class StreamLiveRepository {
                 s.getVideoUrl(),
                 s.getScheduledStartTime(),
                 s.getDurationMinutes(),
+                s.getDurationSeconds(),
                 s.getEndTime(),
                 s.isActive() ? 1 : 0,
                 s.getCreatedAt());
@@ -127,7 +127,7 @@ public class StreamLiveRepository {
     public void updateStreamLive(StreamLive s) {
         String sql = """
             UPDATE StreamLive
-            SET Title = ?, Description = ?, ContentType = ?, ContentId = ?, ContentName = ?, Slug = ?, PosterUrl = ?, VideoUrl = ?, ScheduledStartTime = ?, DurationMinutes = ?, EndTime = ?, IsActive = ?
+            SET Title = ?, Description = ?, ContentType = ?, ContentId = ?, ContentName = ?, Slug = ?, PosterUrl = ?, VideoUrl = ?, ScheduledStartTime = ?, DurationMinutes = ?, DurationSeconds = ?, EndTime = ?, IsActive = ?
             WHERE ID = ?
         """;
         jdbcTemplate.update(sql,
@@ -141,6 +141,7 @@ public class StreamLiveRepository {
                 s.getVideoUrl(),
                 s.getScheduledStartTime(),
                 s.getDurationMinutes(),
+                s.getDurationSeconds(),
                 s.getEndTime(),
                 s.isActive() ? 1 : 0,
                 s.getId().toString());

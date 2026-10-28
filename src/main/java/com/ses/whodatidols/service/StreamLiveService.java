@@ -45,12 +45,16 @@ public class StreamLiveService {
     @Value("${media.source.movies.path}")
     private String moviesPath;
 
+    @Value("${media.source.soap_operas.path:}")
+    private String soapOperasPath;
+
     private final StreamLiveRepository streamLiveRepository;
     private final MovieRepository movieRepository;
     private final SeriesRepository seriesRepository;
     private final FFmpegUtils ffmpegUtils;
     private final TvMazeService tvMazeService;
     private final PersonRepository personRepository;
+    private final StreamLiveViewerTracker streamLiveViewerTracker;
 
     // Rate-limiting: User ID -> Last sent message timestamp
     private final Map<UUID, Long> userLastMessageTimes = new ConcurrentHashMap<>();
@@ -60,13 +64,19 @@ public class StreamLiveService {
                              SeriesRepository seriesRepository,
                              FFmpegUtils ffmpegUtils,
                              TvMazeService tvMazeService,
-                             PersonRepository personRepository) {
+                             PersonRepository personRepository,
+                             StreamLiveViewerTracker streamLiveViewerTracker) {
         this.streamLiveRepository = streamLiveRepository;
         this.movieRepository = movieRepository;
         this.seriesRepository = seriesRepository;
         this.ffmpegUtils = ffmpegUtils;
         this.tvMazeService = tvMazeService;
         this.personRepository = personRepository;
+        this.streamLiveViewerTracker = streamLiveViewerTracker;
+    }
+
+    public int getViewerCount(UUID streamId) {
+        return streamLiveViewerTracker != null ? streamLiveViewerTracker.getViewerCount(streamId) : 0;
     }
 
     public StreamLiveStatusDto getCurrentOrUpcomingStreamStatus() {
@@ -93,7 +103,9 @@ public class StreamLiveService {
         long now = System.currentTimeMillis();
         long start = stream.getScheduledStartTime().getTime();
         long end = stream.getEndTime().getTime();
-        long totalSeconds = Math.max(0, (long) stream.getDurationMinutes() * 60L);
+        long totalSeconds = stream.getDurationSeconds() > 0
+                ? stream.getDurationSeconds()
+                : Math.max(0, (long) stream.getDurationMinutes() * 60L);
 
         String status;
         long liveEdgeSeconds;
@@ -127,7 +139,7 @@ public class StreamLiveService {
             chatOpen = false;
         }
 
-        return new StreamLiveStatusDto(
+        StreamLiveStatusDto dto = new StreamLiveStatusDto(
                 stream.getId(),
                 stream.getTitle(),
                 stream.getDescription(),
@@ -139,6 +151,7 @@ public class StreamLiveService {
                 stream.getVideoUrl(),
                 start,
                 stream.getDurationMinutes(),
+                (int) totalSeconds,
                 end,
                 now,
                 liveEdgeSeconds,
@@ -148,6 +161,44 @@ public class StreamLiveService {
                 chatOpen,
                 chatOpenInSeconds
         );
+
+        if (streamLiveViewerTracker != null) {
+            dto.setViewerCount(streamLiveViewerTracker.getViewerCount(stream.getId()));
+        }
+
+        return dto;
+    }
+
+    /**
+     * Resolves the video file path for any contentId (.mp4 or playlist.m3u8).
+     */
+    public String resolveContentVideoPath(UUID contentId, String contentType) {
+        if (contentId == null) return null;
+
+        // 1. Check streamlive folder
+        Path streamLiveDir = Paths.get(moviesPath).resolve("streamlive");
+        Path streamLiveMp4 = streamLiveDir.resolve(contentId + ".mp4");
+        if (Files.exists(streamLiveMp4)) return streamLiveMp4.toString();
+        Path streamLiveHls = streamLiveDir.resolve("hls").resolve(contentId.toString()).resolve("playlist.m3u8");
+        if (Files.exists(streamLiveHls)) return streamLiveHls.toString();
+
+        // 2. Check movie folder
+        if (moviesPath != null && !moviesPath.isBlank()) {
+            Path movieMp4 = Paths.get(moviesPath).resolve(contentId + ".mp4");
+            if (Files.exists(movieMp4)) return movieMp4.toString();
+            Path movieHls = Paths.get(moviesPath).resolve("hls").resolve(contentId.toString()).resolve("playlist.m3u8");
+            if (Files.exists(movieHls)) return movieHls.toString();
+        }
+
+        // 3. Check soap_operas folder
+        if (soapOperasPath != null && !soapOperasPath.isBlank()) {
+            Path soapMp4 = Paths.get(soapOperasPath).resolve(contentId + ".mp4");
+            if (Files.exists(soapMp4)) return soapMp4.toString();
+            Path soapHls = Paths.get(soapOperasPath).resolve("hls").resolve(contentId.toString()).resolve("playlist.m3u8");
+            if (Files.exists(soapHls)) return soapHls.toString();
+        }
+
+        return null;
     }
 
     /**
@@ -255,6 +306,7 @@ public class StreamLiveService {
 
         UUID contentId = request.getContentId();
         int duration = request.getDurationMinutes();
+        int durationSeconds = request.getDurationSeconds();
         String contentName = stream.getTitle();
         String slug = com.ses.whodatidols.util.SlugUtil.toSlug(stream.getTitle());
         String posterUrl = "";
@@ -276,12 +328,11 @@ public class StreamLiveService {
             Path filePath = streamLiveBasePath.resolve(fileName);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            // FFprobe ile süreyi otomatik hesapla
-            int probedDuration = ffmpegUtils.getVideoDurationInMinutes(filePath.toString());
-            if (probedDuration > 0) {
-                duration = probedDuration;
-            } else if (duration <= 0) {
-                duration = 90;
+            // FFprobe ile hassas süreyi otomatik hesapla
+            double probedSec = ffmpegUtils.getVideoDurationInSeconds(filePath.toString());
+            if (probedSec > 0) {
+                durationSeconds = (int) Math.round(probedSec);
+                duration = (int) Math.ceil(probedSec / 60.0);
             }
 
             // Otomatik HLS Dönüştürme (Arka planda)
@@ -299,7 +350,7 @@ public class StreamLiveService {
             if (image != null && !image.isEmpty()) {
                 Path imagePath = streamLiveBasePath.resolve(contentId + ".jpg");
                 Files.copy(image.getInputStream(), imagePath, StandardCopyOption.REPLACE_EXISTING);
-                posterUrl = "/media/image/" + contentId;
+                posterUrl = "/media/image//" + contentId;
             } else if (imageUrl != null && !imageUrl.isBlank()) {
                 byte[] imgBytes = tvMazeService.downloadImage(imageUrl.trim());
                 if (imgBytes != null && imgBytes.length > 0) {
@@ -343,16 +394,33 @@ public class StreamLiveService {
                     }
                 }
             }
+
+            // Mevcut video dosyasını çözümle ve kesin süreyi ffprobe ile al
+            String contentVideoPath = resolveContentVideoPath(contentId, request.getContentType());
+            if (contentVideoPath != null) {
+                double probedSec = ffmpegUtils.getVideoDurationInSeconds(contentVideoPath);
+                if (probedSec > 0) {
+                    durationSeconds = (int) Math.round(probedSec);
+                    duration = (int) Math.ceil(probedSec / 60.0);
+                }
+            }
         } else {
             throw new IllegalArgumentException("Lütfen bir video dosyası yükleyin veya sunucudaki mevcut bir içeriği seçin.");
         }
 
-        if (duration <= 0) {
-            duration = 90;
+        if (durationSeconds <= 0) {
+            if (duration > 0) {
+                durationSeconds = duration * 60;
+            } else {
+                duration = 90;
+                durationSeconds = 90 * 60;
+            }
+        } else if (duration <= 0) {
+            duration = (int) Math.ceil(durationSeconds / 60.0);
         }
 
         long startMillis = request.getScheduledStartTime();
-        long endMillis = startMillis + ((long) duration * 60L * 1000L);
+        long endMillis = startMillis + ((long) durationSeconds * 1000L);
 
         stream.setContentName(contentName);
         stream.setSlug(slug);
@@ -360,6 +428,7 @@ public class StreamLiveService {
         stream.setVideoUrl(videoUrl);
         stream.setScheduledStartTime(new Timestamp(startMillis));
         stream.setDurationMinutes(duration);
+        stream.setDurationSeconds(durationSeconds);
         stream.setEndTime(new Timestamp(endMillis));
         stream.setActive(true);
         stream.setCreatedAt(new Timestamp(System.currentTimeMillis()));
@@ -390,9 +459,7 @@ public class StreamLiveService {
         }
 
         int duration = request.getDurationMinutes();
-        if (duration <= 0) {
-            duration = existing.getDurationMinutes() > 0 ? existing.getDurationMinutes() : 90;
-        }
+        int durationSeconds = request.getDurationSeconds();
 
         Path streamLiveBasePath = Paths.get(moviesPath).resolve("streamlive").toAbsolutePath().normalize();
         if (!Files.exists(streamLiveBasePath)) {
@@ -408,9 +475,10 @@ public class StreamLiveService {
             Path filePath = streamLiveBasePath.resolve(fileName);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            int probedDuration = ffmpegUtils.getVideoDurationInMinutes(filePath.toString());
-            if (probedDuration > 0) {
-                duration = probedDuration;
+            double probedSec = ffmpegUtils.getVideoDurationInSeconds(filePath.toString());
+            if (probedSec > 0) {
+                durationSeconds = (int) Math.round(probedSec);
+                duration = (int) Math.ceil(probedSec / 60.0);
             }
 
             final String input = filePath.toString();
@@ -460,6 +528,25 @@ public class StreamLiveService {
                     }
                 }
             }
+
+            String contentVideoPath = resolveContentVideoPath(contentId, request.getContentType());
+            if (contentVideoPath != null) {
+                double probedSec = ffmpegUtils.getVideoDurationInSeconds(contentVideoPath);
+                if (probedSec > 0) {
+                    durationSeconds = (int) Math.round(probedSec);
+                    duration = (int) Math.ceil(probedSec / 60.0);
+                }
+            }
+        } else {
+            // İçerik ID değişmediğinde ama mevcut videodan kesin saniye kontrolü gerekiyorsa
+            String contentVideoPath = resolveContentVideoPath(existing.getContentId(), existing.getContentType());
+            if (contentVideoPath != null) {
+                double probedSec = ffmpegUtils.getVideoDurationInSeconds(contentVideoPath);
+                if (probedSec > 0) {
+                    durationSeconds = (int) Math.round(probedSec);
+                    duration = (int) Math.ceil(probedSec / 60.0);
+                }
+            }
         }
 
         // 3. Kapak resmi güncellendiyse
@@ -478,15 +565,31 @@ public class StreamLiveService {
             }
         }
 
-        // 4. Başlangıç ve bitiş zamanı
+        // 4. Süre ve bitiş zamanı belirleme
+        if (durationSeconds <= 0) {
+            if (duration > 0) {
+                durationSeconds = duration * 60;
+            } else if (existing.getDurationSeconds() > 0) {
+                durationSeconds = existing.getDurationSeconds();
+                duration = existing.getDurationMinutes();
+            } else {
+                duration = existing.getDurationMinutes() > 0 ? existing.getDurationMinutes() : 90;
+                durationSeconds = duration * 60;
+            }
+        } else if (duration <= 0) {
+            duration = (int) Math.ceil(durationSeconds / 60.0);
+        }
+
+        // 5. Başlangıç ve bitiş zamanı
         long startMillis = request.getScheduledStartTime();
         if (startMillis <= 0) {
             startMillis = existing.getScheduledStartTime().getTime();
         }
-        long endMillis = startMillis + ((long) duration * 60L * 1000L);
+        long endMillis = startMillis + ((long) durationSeconds * 1000L);
 
         existing.setScheduledStartTime(new Timestamp(startMillis));
         existing.setDurationMinutes(duration);
+        existing.setDurationSeconds(durationSeconds);
         existing.setEndTime(new Timestamp(endMillis));
 
         streamLiveRepository.updateStreamLive(existing);

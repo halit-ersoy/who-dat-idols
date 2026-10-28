@@ -15,6 +15,7 @@ public class StreamLive {
     private String videoUrl;        // /media/video/{contentId}/playlist.m3u8
     private Timestamp scheduledStartTime;
     private int durationMinutes;
+    private int durationSeconds;
     private Timestamp endTime;
     private boolean active;
     private Timestamp createdAt;
@@ -108,6 +109,14 @@ public class StreamLive {
 
     public void setDurationMinutes(int durationMinutes) {
         this.durationMinutes = durationMinutes;
+    }
+
+    public int getDurationSeconds() {
+        return durationSeconds;
+    }
+
+    public void setDurationSeconds(int durationSeconds) {
+        this.durationSeconds = durationSeconds;
     }
 
     public Timestamp getEndTime() {

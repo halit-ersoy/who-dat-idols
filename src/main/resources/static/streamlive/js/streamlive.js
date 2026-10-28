@@ -21,6 +21,7 @@
     // DOM Elements
     const elements = {
         headerTitle: document.getElementById('headerStreamTitle'),
+        headerViewerCount: document.getElementById('headerViewerCount'),
         playerWrapper: document.getElementById('playerWrapper'),
         playerAmbientGlow: document.getElementById('playerAmbientGlow'),
         loadingScreen: document.getElementById('loadingScreen'),
@@ -194,6 +195,9 @@
             // Update Header and Info
             if (elements.headerTitle) {
                 elements.headerTitle.textContent = data.title || 'StreamLive Canlı Sinema';
+            }
+            if (elements.headerViewerCount && data.viewerCount !== undefined) {
+                elements.headerViewerCount.textContent = `${data.viewerCount} Kişi`;
             }
             document.title = `${data.title || 'Canlı Sinema'} - StreamLive | Who Dat Idols`;
 
@@ -422,7 +426,12 @@
         if (!currentStream) return 0;
         const now = getServerNow();
         const start = currentStream.scheduledStartTime;
-        const totalDuration = (currentStream.durationMinutes || 0) * 60;
+        let totalDuration = 0;
+        if (currentStream.durationSeconds && currentStream.durationSeconds > 0) {
+            totalDuration = currentStream.durationSeconds;
+        } else if (currentStream.durationMinutes && currentStream.durationMinutes > 0) {
+            totalDuration = currentStream.durationMinutes * 60;
+        }
         const elapsed = Math.floor((now - start) / 1000);
         if (totalDuration > 0) {
             return Math.min(Math.max(0, elapsed), totalDuration);
@@ -462,6 +471,14 @@
                     video.muted = true;
                     video.play().catch(err => console.log('Autoplay prevented:', err));
                 });
+            });
+
+            hlsPlayer.on(Hls.Events.LEVEL_LOADED, function (event, data) {
+                if (data && data.details && data.details.totalduration) {
+                    if (!currentStream.durationSeconds || currentStream.durationSeconds === 0) {
+                        currentStream.durationSeconds = Math.round(data.details.totalduration);
+                    }
+                }
             });
 
             hlsPlayer.on(Hls.Events.ERROR, function (event, data) {
@@ -512,12 +529,20 @@
 
             // Determine Total Duration
             let totalDurationSec = 0;
-            if (currentStream && currentStream.durationMinutes && currentStream.durationMinutes > 0) {
-                totalDurationSec = currentStream.durationMinutes * 60;
-            } else if (elements.video && elements.video.duration && !isNaN(elements.video.duration) && isFinite(elements.video.duration) && elements.video.duration > 0) {
+            if (elements.video && elements.video.duration && !isNaN(elements.video.duration) && isFinite(elements.video.duration) && elements.video.duration > 0) {
                 totalDurationSec = elements.video.duration;
+            } else if (currentStream && currentStream.durationSeconds && currentStream.durationSeconds > 0) {
+                totalDurationSec = currentStream.durationSeconds;
+            } else if (currentStream && currentStream.durationMinutes && currentStream.durationMinutes > 0) {
+                totalDurationSec = currentStream.durationMinutes * 60;
             } else {
                 totalDurationSec = liveEdge;
+            }
+
+            // End Check: trigger immediately if video has finished or reached end of duration
+            if (elements.video.ended || (totalDurationSec > 0 && curTime >= totalDurationSec - 0.5 && liveEdge >= totalDurationSec)) {
+                showEndedScreen();
+                return;
             }
 
             // DVR ENFORCEMENT: If user currentTime > liveEdge, clamp it
@@ -546,10 +571,10 @@
                 const lag = liveEdge - curTime;
                 const liveTextEl = elements.btnGoLive.querySelector('.live-text');
                 if (lag <= 6) {
-                    elements.btnGoLive.className = 'ctrl-btn btn-go-live is-live';
+                    elements.btnGoLive.className = 'btn-go-live is-live';
                     if (liveTextEl) liveTextEl.textContent = 'CANLI';
                 } else {
-                    elements.btnGoLive.className = 'ctrl-btn btn-go-live needs-sync';
+                    elements.btnGoLive.className = 'btn-go-live needs-sync';
                     if (liveTextEl) liveTextEl.textContent = 'CANLIYA GEÇ';
                 }
             }
@@ -733,6 +758,13 @@
             });
         }
 
+        video.addEventListener('volumechange', function () {
+            if (elements.volumeSlider) {
+                elements.volumeSlider.value = video.muted ? 0 : video.volume;
+            }
+            updateVolumeIcon();
+        });
+
         function updateVolumeIcon() {
             if (!elements.btnVolume) return;
             if (video.muted || video.volume === 0) {
@@ -771,6 +803,19 @@
             stompClient.debug = null;
 
             stompClient.connect({}, function () {
+                // Real-time viewer count subscription
+                stompClient.subscribe('/topic/streamlive/' + streamId + '/viewers', function (response) {
+                    try {
+                        const data = JSON.parse(response.body);
+                        const count = (data && data.viewerCount !== undefined) ? data.viewerCount : Number(response.body);
+                        if (elements.headerViewerCount) {
+                            elements.headerViewerCount.textContent = `${count} Kişi`;
+                        }
+                    } catch (e) {
+                        console.error('Viewer count parse error:', e);
+                    }
+                });
+
                 stompClient.subscribe('/topic/streamlive/' + streamId + '/chat', function (response) {
                     try {
                         const msg = JSON.parse(response.body);

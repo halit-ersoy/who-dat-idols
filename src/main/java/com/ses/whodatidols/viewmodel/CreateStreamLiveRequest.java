@@ -9,17 +9,23 @@ public class CreateStreamLiveRequest {
     private UUID contentId;
     private long scheduledStartTime; // Epoch millis
     private int durationMinutes;
+    private int durationSeconds;
 
     public CreateStreamLiveRequest() {
     }
 
     public CreateStreamLiveRequest(String title, String description, String contentType, UUID contentId, long scheduledStartTime, int durationMinutes) {
+        this(title, description, contentType, contentId, scheduledStartTime, durationMinutes, 0);
+    }
+
+    public CreateStreamLiveRequest(String title, String description, String contentType, UUID contentId, long scheduledStartTime, int durationMinutes, int durationSeconds) {
         this.title = title;
         this.description = description;
         this.contentType = contentType;
         this.contentId = contentId;
         this.scheduledStartTime = scheduledStartTime;
         this.durationMinutes = durationMinutes;
+        this.durationSeconds = durationSeconds;
     }
 
     public String getTitle() {
@@ -68,5 +74,13 @@ public class CreateStreamLiveRequest {
 
     public void setDurationMinutes(int durationMinutes) {
         this.durationMinutes = durationMinutes;
+    }
+
+    public int getDurationSeconds() {
+        return durationSeconds;
+    }
+
+    public void setDurationSeconds(int durationSeconds) {
+        this.durationSeconds = durationSeconds;
     }
 }

@@ -42,6 +42,12 @@ public class StreamLiveApiController {
         return ResponseEntity.ok(dto);
     }
 
+    @GetMapping("/{id}/viewers")
+    public ResponseEntity<Map<String, Object>> getViewerCount(@PathVariable("id") UUID id) {
+        int count = streamLiveService.getViewerCount(id);
+        return ResponseEntity.ok(Map.of("viewerCount", count));
+    }
+
     @GetMapping("/{id}/chat/history")
     public ResponseEntity<List<StreamLiveChatMessageDto>> getChatHistory(
             @PathVariable("id") UUID id,

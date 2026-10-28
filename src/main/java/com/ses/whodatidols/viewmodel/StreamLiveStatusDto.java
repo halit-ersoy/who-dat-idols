@@ -14,6 +14,7 @@ public class StreamLiveStatusDto {
     private String videoUrl;
     private long scheduledStartTime;   // Epoch millis
     private int durationMinutes;
+    private int durationSeconds;
     private long endTime;              // Epoch millis
     private long serverTime;            // Current server epoch millis
     private long liveEdgeSeconds;       // Current live broadcast position in seconds
@@ -22,14 +23,16 @@ public class StreamLiveStatusDto {
     private boolean active;
     private boolean chatOpen;           // Chat only open 10 mins before start until 1 hr after end
     private long chatOpenInSeconds;    // Seconds remaining until chat opens (0 if already open)
+    private int viewerCount;           // Real-time viewer count
 
     public StreamLiveStatusDto() {
     }
 
     public StreamLiveStatusDto(UUID id, String title, String description, String contentType, UUID contentId,
                                String contentName, String slug, String posterUrl, String videoUrl,
-                               long scheduledStartTime, int durationMinutes, long endTime, long serverTime,
-                               long liveEdgeSeconds, long remainingStartSeconds, String status, boolean active,
+                               long scheduledStartTime, int durationMinutes, int durationSeconds,
+                               long endTime, long serverTime, long liveEdgeSeconds,
+                               long remainingStartSeconds, String status, boolean active,
                                boolean chatOpen, long chatOpenInSeconds) {
         this.id = id;
         this.title = title;
@@ -42,6 +45,7 @@ public class StreamLiveStatusDto {
         this.videoUrl = videoUrl;
         this.scheduledStartTime = scheduledStartTime;
         this.durationMinutes = durationMinutes;
+        this.durationSeconds = durationSeconds;
         this.endTime = endTime;
         this.serverTime = serverTime;
         this.liveEdgeSeconds = liveEdgeSeconds;
@@ -50,6 +54,16 @@ public class StreamLiveStatusDto {
         this.active = active;
         this.chatOpen = chatOpen;
         this.chatOpenInSeconds = chatOpenInSeconds;
+    }
+
+    public StreamLiveStatusDto(UUID id, String title, String description, String contentType, UUID contentId,
+                               String contentName, String slug, String posterUrl, String videoUrl,
+                               long scheduledStartTime, int durationMinutes, long endTime, long serverTime,
+                               long liveEdgeSeconds, long remainingStartSeconds, String status, boolean active,
+                               boolean chatOpen, long chatOpenInSeconds) {
+        this(id, title, description, contentType, contentId, contentName, slug, posterUrl, videoUrl,
+             scheduledStartTime, durationMinutes, durationMinutes * 60, endTime, serverTime,
+             liveEdgeSeconds, remainingStartSeconds, status, active, chatOpen, chatOpenInSeconds);
     }
 
     public UUID getId() {
@@ -140,6 +154,14 @@ public class StreamLiveStatusDto {
         this.durationMinutes = durationMinutes;
     }
 
+    public int getDurationSeconds() {
+        return durationSeconds;
+    }
+
+    public void setDurationSeconds(int durationSeconds) {
+        this.durationSeconds = durationSeconds;
+    }
+
     public long getEndTime() {
         return endTime;
     }
@@ -202,5 +224,13 @@ public class StreamLiveStatusDto {
 
     public void setChatOpenInSeconds(long chatOpenInSeconds) {
         this.chatOpenInSeconds = chatOpenInSeconds;
+    }
+
+    public int getViewerCount() {
+        return viewerCount;
+    }
+
+    public void setViewerCount(int viewerCount) {
+        this.viewerCount = viewerCount;
     }
 }

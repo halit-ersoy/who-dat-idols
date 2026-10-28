@@ -42,7 +42,7 @@
             </a>
             <div class="streamlive-brand-badge">
                 <span class="live-pulse-dot"></span>
-                <span class="brand-text">StreamLive</span>
+                <span class="brand-text" id="headerViewerCount">0 Kişi</span>
             </div>
         </div>
 
@@ -127,9 +127,7 @@
                             </div>
                             <h2>Yayın Sona Erdi</h2>
                             <p id="endedDesc">Bugünkü canlı sinema yayınımız sona ermiştir. Katılan tüm izleyicilerimize teşekkür ederiz!</p>
-                            <div class="ended-chat-notice">
-                                <i class="fas fa-info-circle"></i> Canlı sohbet odası yayın bitiminden sonra 1 saat boyunca açık kalacaktır.
-                            </div>
+                            
                             <div class="ended-actions">
                                 <a href="/" class="btn-primary"><i class="fas fa-home"></i> Ana Sayfaya Dön</a>
                             </div>
@@ -179,23 +177,23 @@
                                     </button>
 
                                     <!-- Go To Live Button (Timeshift Jump) -->
-                                    <button class="ctrl-btn btn-go-live" id="btnGoLive" title="Canlı Yayına Geç">
+                                    <button class="btn-go-live is-live" id="btnGoLive" title="Canlı Yayına Geç" aria-label="Canlı yayına geç">
                                         <span class="live-dot"></span>
                                         <span class="live-text">CANLI</span>
                                     </button>
                                 </div>
 
                                 <div class="controls-right">
-                                    <!-- Volume -->
+                                    <!-- Volume Control (Mute/Unmute & Slider) -->
                                     <div class="volume-control">
-                                        <button class="ctrl-btn" id="btnVolume" title="Ses">
+                                        <button class="ctrl-btn" id="btnVolume" title="Ses" aria-label="Ses">
                                             <i class="fas fa-volume-up"></i>
                                         </button>
-                                        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.05" value="1">
+                                        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.05" value="1" aria-label="Ses seviyesi">
                                     </div>
 
                                     <!-- Fullscreen -->
-                                    <button class="ctrl-btn" id="btnFullscreen" title="Tam Ekran">
+                                    <button class="ctrl-btn" id="btnFullscreen" title="Tam Ekran" aria-label="Tam ekran">
                                         <i class="fas fa-expand"></i>
                                     </button>
                                 </div>

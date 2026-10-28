@@ -126,7 +126,7 @@ public class FFmpegUtils {
         return null;
     }
 
-    public int getVideoDurationInMinutes(String videoPath) {
+    public double getVideoDurationInSeconds(String videoPath) {
         try {
             ProcessBuilder pb = new ProcessBuilder(
                     getFfprobePath(),
@@ -139,15 +139,22 @@ public class FFmpegUtils {
 
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 String line = reader.readLine();
-                if (line != null) {
-                    double seconds = Double.parseDouble(line);
-                    return (int) Math.ceil(seconds / 60.0);
+                if (line != null && !line.isBlank()) {
+                    return Double.parseDouble(line.trim());
                 }
             }
             process.waitFor();
 
         } catch (Exception e) {
-            System.err.println("Süre hesaplanamadı: " + e.getMessage());
+            System.err.println("Süre hesaplanamadı (saniye): " + e.getMessage());
+        }
+        return 0.0;
+    }
+
+    public int getVideoDurationInMinutes(String videoPath) {
+        double seconds = getVideoDurationInSeconds(videoPath);
+        if (seconds > 0) {
+            return (int) Math.ceil(seconds / 60.0);
         }
         return 0;
     }
