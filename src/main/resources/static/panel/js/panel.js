@@ -2448,37 +2448,125 @@ document.addEventListener('DOMContentLoaded', function () {
     // -------------------------------------------------------------
     // EPISODE BUILDER & DYNAMIC ROWS
     // -------------------------------------------------------------
-    window.uploadEpisodeSinglePromise = function (url, formData, bar, percentText) {
+    // -------------------------------------------------------------
+    // CHUNKED UPLOAD HELPER (Cloudflare 100MB Bypass)
+    // -------------------------------------------------------------
+    window.uploadFileInChunks = function (file, progressCallback) {
         return new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            xhr.upload.addEventListener("progress", function (e) {
-                if (e.lengthComputable && bar && percentText) {
-                    const percent = Math.round((e.loaded / e.total) * 100);
-                    bar.style.width = percent + "%";
-                    percentText.innerText = percent + "%";
-                    if (percent > 99) {
-                        percentText.innerText = "İşleniyor...";
+            const CHUNK_SIZE = 15 * 1024 * 1024;
+            const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+            const uploadId = 'up_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+            let currentChunk = 0;
+
+            function uploadNext() {
+                if (currentChunk >= totalChunks) return;
+
+                const start = currentChunk * CHUNK_SIZE;
+                const end = Math.min(file.size, start + CHUNK_SIZE);
+                const chunkBlob = file.slice(start, end);
+
+                const cData = new FormData();
+                cData.append('uploadId', uploadId);
+                cData.append('chunkIndex', currentChunk);
+                cData.append('totalChunks', totalChunks);
+                cData.append('fileName', file.name);
+                cData.append('chunk', chunkBlob, file.name);
+
+                const cXhr = new XMLHttpRequest();
+                cXhr.upload.addEventListener('progress', function (e) {
+                    if (e.lengthComputable && progressCallback) {
+                        const loaded = start + e.loaded;
+                        const pct = Math.min(99, Math.round((loaded / file.size) * 100));
+                        progressCallback(pct, pct + '% (' + (currentChunk + 1) + '/' + totalChunks + ' Parça)');
                     }
-                }
-            });
-            xhr.addEventListener("load", function () {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    resolve(xhr.responseText);
-                } else {
-                    let errMsg = `Sunucu Hatası (${xhr.status}): ` + xhr.responseText;
-                    try {
-                        const parsed = JSON.parse(xhr.responseText);
-                        if (parsed.error) errMsg = parsed.error;
-                    } catch (e) { }
-                    reject(new Error(errMsg));
-                }
-            });
-            xhr.addEventListener("error", function () {
-                reject(new Error("Ağ bağlantısı hatası oluştu."));
-            });
-            xhr.open("POST", url);
-            xhr.send(formData);
+                });
+
+                cXhr.addEventListener('load', function () {
+                    if (cXhr.status >= 200 && cXhr.status < 300) {
+                        try {
+                            const res = JSON.parse(cXhr.responseText);
+                            if (!res.success) {
+                                reject(new Error(res.error || 'Parça yüklenirken hata oluştu.'));
+                                return;
+                            }
+                            if (res.completed) {
+                                if (progressCallback) progressCallback(100, 'Parçalar birleştiriliyor...');
+                                resolve(res.fileKey);
+                                return;
+                            }
+                            currentChunk++;
+                            uploadNext();
+                        } catch (err) {
+                            reject(new Error('Sunucu yanıtı okunamadı: ' + cXhr.responseText));
+                        }
+                    } else {
+                        reject(new Error('Parça yükleme başarısız (' + cXhr.status + '): ' + cXhr.responseText));
+                    }
+                });
+
+                cXhr.addEventListener('error', function () {
+                    reject(new Error('Ağ bağlantısı hatası oluştu.'));
+                });
+
+                cXhr.open('POST', '/admin/upload/chunk');
+                cXhr.send(cData);
+            }
+
+            uploadNext();
         });
+    };
+
+    window.uploadEpisodeSinglePromise = function (url, formData, bar, percentText) {
+        const fileObj = formData.get('file');
+        const needsChunking = fileObj && (fileObj instanceof File) && fileObj.size > 15 * 1024 * 1024;
+
+        const sendEpisodeData = () => {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.upload.addEventListener("progress", function (e) {
+                    if (e.lengthComputable && bar && percentText) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        bar.style.width = percent + "%";
+                        percentText.innerText = percent + "%";
+                        if (percent > 99) {
+                            percentText.innerText = "İşleniyor...";
+                        }
+                    }
+                });
+                xhr.addEventListener("load", function () {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        resolve(xhr.responseText);
+                    } else {
+                        let errMsg = `Sunucu Hatası (${xhr.status}): ` + xhr.responseText;
+                        try {
+                            const parsed = JSON.parse(xhr.responseText);
+                            if (parsed.error) errMsg = parsed.error;
+                        } catch (e) { }
+                        reject(new Error(errMsg));
+                    }
+                });
+                xhr.addEventListener("error", function () {
+                    reject(new Error("Ağ bağlantısı hatası oluştu."));
+                });
+                xhr.open("POST", url);
+                xhr.send(formData);
+            });
+        };
+
+        if (needsChunking) {
+            if (percentText) percentText.innerText = "Parçalı yükleme başlatılıyor...";
+            return window.uploadFileInChunks(fileObj, (pct, status) => {
+                if (bar) bar.style.width = pct + "%";
+                if (percentText) percentText.innerText = status;
+            }).then(fileKey => {
+                formData.delete('file');
+                formData.append('fileKey', fileKey);
+                if (percentText) percentText.innerText = "Kaydediliyor...";
+                return sendEpisodeData();
+            });
+        } else {
+            return sendEpisodeData();
+        }
     };
 
     // -------------------------------------------------------------
@@ -3373,91 +3461,102 @@ document.addEventListener('DOMContentLoaded', function () {
        ORTAK FONKSİYONLAR
        =========================================================== */
     function uploadDataWithProgress(url, formData, formId, wrapperId, barId, percentId, successCallback) {
-        const xhr = new XMLHttpRequest();
         const wrapper = document.getElementById(wrapperId);
         const bar = document.getElementById(barId);
         const percentText = document.getElementById(percentId);
-        const btn = document.querySelector(`#${formId} button[type="submit"]`);
-        const originalBtnText = btn.innerText;
+        const btn = document.querySelector('#' + formId + ' button[type="submit"]');
+        const originalBtnText = btn ? btn.innerText : '';
 
-        const formElement = document.getElementById(formId);
-        const fileInput = formElement.querySelector('input[type="file"]');
-
-        if (fileInput && fileInput.files.length > 0) {
-            const fileSizeMB = fileInput.files[0].size / (1024 * 1024);
-            const currentHost = window.location.hostname;
-            const currentPort = window.location.port;
-            const isBackdoor = currentHost.includes('uploadozr9x0q3glr158beem49') || currentPort === '8443';
-
-            if (fileSizeMB > 95 && !isBackdoor) {
-                alert(
-                    "âš ï¸ Cloudflare kalkanları 100MB üzerini engelliyor.\n" +
-                    "Lütfen 'GİZLİ ARKA KAPI' adresine geçiş yapın:\n" +
-                    "âž¡ï¸ https://uploadozr9x0q3glr158beem49.whodatidols.com:8443/admin/panel"
-                );
-                return;
-            }
+        if (btn) {
+            btn.disabled = true;
+            btn.innerText = "YÜKLENİYOR...";
         }
+        if (wrapper) wrapper.style.display = "block";
+        if (bar) bar.style.width = "0%";
+        if (percentText) percentText.innerText = "0%";
 
-        btn.disabled = true;
-        btn.innerText = "YÜKLENİYOR...";
-        wrapper.style.display = "block";
-        bar.style.width = "0%";
-        percentText.innerText = "0%";
+        const fileObj = formData.get('file');
+        const needsChunking = fileObj && (fileObj instanceof File) && fileObj.size > 15 * 1024 * 1024;
 
-        xhr.upload.addEventListener("progress", function (e) {
-            if (e.lengthComputable) {
-                const percentComplete = Math.round((e.loaded / e.total) * 100);
-                bar.style.width = percentComplete + "%";
-                percentText.innerText = percentComplete + "%";
-                if (percentComplete > 99) {
-                    percentText.innerText = "İşleniyor...";
+        const performFinalUpload = () => {
+            const xhr = new XMLHttpRequest();
+            xhr.upload.addEventListener("progress", function (e) {
+                if (e.lengthComputable && bar && percentText) {
+                    const percentComplete = Math.round((e.loaded / e.total) * 100);
+                    bar.style.width = percentComplete + "%";
+                    percentText.innerText = percentComplete + "%";
+                    if (percentComplete > 99) {
+                        percentText.innerText = "İşleniyor...";
+                    }
                 }
-            }
-        });
+            });
 
-        xhr.addEventListener("load", async function () {
-            if (xhr.status === 200) {
-                alert("İşlem Başarılı!\n" + xhr.responseText);
+            xhr.addEventListener("load", async function () {
+                if (xhr.status === 200) {
+                    alert("İşlem Başarılı!\n" + xhr.responseText);
+                    if (successCallback) {
+                        await successCallback(xhr.responseText);
+                    }
+                    const formElement = document.getElementById(formId);
+                    if (formElement) formElement.reset();
+                    if (wrapper) wrapper.style.display = "none";
+                } else if (xhr.status === 409) {
+                    let msg = "Çakışma Mümkün!";
+                    try {
+                        const parsed = JSON.parse(xhr.responseText);
+                        msg = parsed.error || xhr.responseText;
+                    } catch (e) { msg = xhr.responseText; }
 
-                // CRITICAL FIX: Run callback (save sources) BEFORE resetting the form!
-                if (successCallback) {
-                    await successCallback(xhr.responseText);
-                }
-
-                document.getElementById(formId).reset();
-                wrapper.style.display = "none";
-            } else if (xhr.status === 409) {
-                let msg = "Çakışma Mümkün!";
-                try {
-                    const parsed = JSON.parse(xhr.responseText);
-                    msg = parsed.error || xhr.responseText;
-                } catch (e) { msg = xhr.responseText; }
-
-                if (confirm(msg)) {
-                    // Resubmit with overwrite tag
-                    formData.delete('overwrite');
-                    formData.append('overwrite', 'true');
-                    uploadDataWithProgress(url, formData, formId, wrapperId, barId, percentId, successCallback);
-                    return; // exit current completion cycle
+                    if (confirm(msg)) {
+                        formData.delete('overwrite');
+                        formData.append('overwrite', 'true');
+                        uploadDataWithProgress(url, formData, formId, wrapperId, barId, percentId, successCallback);
+                        return;
+                    } else {
+                        if (wrapper) wrapper.style.display = "none";
+                    }
                 } else {
-                    wrapper.style.display = "none";
+                    alert("Hata Oluştu: " + xhr.statusText + "\n" + xhr.responseText);
                 }
-            } else {
-                alert("Hata Oluştu: " + xhr.statusText + "\n" + xhr.responseText);
-            }
-            btn.disabled = false;
-            btn.innerText = originalBtnText;
-        });
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = originalBtnText;
+                }
+            });
 
-        xhr.addEventListener("error", function () {
-            alert("Ağ Hatası!");
-            btn.disabled = false;
-            btn.innerText = originalBtnText;
-        });
+            xhr.addEventListener("error", function () {
+                alert("Ağ Hatası!");
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = originalBtnText;
+                }
+            });
 
-        xhr.open("POST", url);
-        xhr.send(formData);
+            xhr.open("POST", url);
+            xhr.send(formData);
+        };
+
+        if (needsChunking) {
+            if (percentText) percentText.innerText = "Parçalı yükleme başlatılıyor...";
+            window.uploadFileInChunks(fileObj, (pct, status) => {
+                if (bar) bar.style.width = pct + "%";
+                if (percentText) percentText.innerText = status;
+            }).then(fileKey => {
+                formData.delete('file');
+                formData.append('fileKey', fileKey);
+                if (percentText) percentText.innerText = "Kaydediliyor...";
+                performFinalUpload();
+            }).catch(err => {
+                alert("Yükleme Hatası: " + err.message);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = originalBtnText;
+                }
+                if (wrapper) wrapper.style.display = "none";
+            });
+        } else {
+            performFinalUpload();
+        }
     }
 
     /* ===========================================================
