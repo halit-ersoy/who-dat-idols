@@ -145,6 +145,9 @@
                 <a href="#update-notes-section" class="nav-link" data-section="update-notes-section">
                     <i class="fas fa-clipboard-list"></i> <span>Güncelleme Notları</span>
                 </a>
+                                <a href="#performance-section" class="nav-link" data-section="performance-section">
+                    <i class="fas fa-gauge-high"></i> <span>Performans &amp; Metrikler</span>
+                </a>
                 <a href="#system-settings-section" class="nav-link" data-section="system-settings-section">
                     <i class="fas fa-sliders-h"></i> <span>Sistem Ayarları</span>
                 </a>
@@ -2391,6 +2394,317 @@
 
                 </div>
             </section>
+        
+            <!-- PERFORMANCE & METRICS SECTION -->
+            <section id="performance-section" class="admin-section" style="display: none;">
+﻿                <div class="perf-dashboard">
+                    <!-- HUD Header Bar -->
+                    <div class="perf-panel perf-header">
+                        <div class="perf-header-brand">
+                            <div class="perf-radar-icon">
+                                <i class="fas fa-satellite-dish"></i>
+                            </div>
+                            <div>
+                                <h2 class="perf-header-title">
+                                    Sistem Performans &amp; Telemetri Merkezi
+                                </h2>
+                                <p class="perf-header-desc">
+                                    JVM Heap, CPU, HikariCP Veritabanı Havuzu ve Dağıtık Servis Sağlığı
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Controls & Status Badge -->
+                        <div class="perf-toolbar">
+                            <div id="perfOverallBadge" class="perf-status-badge healthy">
+                                <span class="perf-status-dot"></span>
+                                <span id="perfOverallText">SİSTEMLER OPTİMUM</span>
+                            </div>
+
+                            <!-- Interval Pills -->
+                            <div class="perf-interval-pills" id="perfIntervalPills">
+                                <button type="button" class="perf-pill-btn" onclick="setPerfInterval(1000, this)">1s</button>
+                                <button type="button" class="perf-pill-btn active" onclick="setPerfInterval(2000, this)">2s</button>
+                                <button type="button" class="perf-pill-btn" onclick="setPerfInterval(5000, this)">5s</button>
+                                <button type="button" class="perf-pill-btn" id="perfPauseBtn" onclick="togglePerfPause(this)">
+                                    <i class="fas fa-pause"></i>
+                                </button>
+                            </div>
+
+                            <button type="button" class="perf-btn-action" onclick="fetchPerformanceMetrics(true)">
+                                <i class="fas fa-rotate" id="perfRefreshSpinner"></i> Yenile
+                            </button>
+
+                            <button type="button" class="perf-btn-action perf-btn-purge" onclick="clearCacheFromPerf()">
+                                <i class="fas fa-broom"></i> Önbelleği Boşalt
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Alerts Banner -->
+                    <div id="perfAlertsContainer" style="display: none;"></div>
+
+                    <!-- 4 Cyber HUD KPI Cards -->
+                    <div class="perf-cards-grid">
+                        <!-- 1. CPU Card -->
+                        <div class="perf-hud-card perf-card-cyan">
+                            <div>
+                                <div class="perf-card-header">
+                                    <span class="perf-card-label">İşlemci (CPU) Yükü</span>
+                                    <div class="perf-card-icon">
+                                        <i class="fas fa-microchip"></i>
+                                    </div>
+                                </div>
+                                <div class="perf-big-metric">
+                                    <span id="perfCpuVal">0</span><span class="perf-metric-unit">%</span>
+                                </div>
+                                <div class="perf-track-bar">
+                                    <div id="perfCpuBar" class="perf-fill-bar"></div>
+                                </div>
+                            </div>
+                            <div class="perf-card-footer">
+                                <span>JVM Süreci: <strong id="perfCpuProcessVal" style="color: #fff;">0%</strong></span>
+                                <span class="perf-chip"><i class="fas fa-server"></i> <span id="perfCpuCoresVal">-- Çekirdek</span></span>
+                            </div>
+                        </div>
+
+                        <!-- 2. JVM Heap Card -->
+                        <div class="perf-hud-card perf-card-purple">
+                            <div>
+                                <div class="perf-card-header">
+                                    <span class="perf-card-label">JVM Heap Bellek</span>
+                                    <div class="perf-card-icon">
+                                        <i class="fas fa-memory"></i>
+                                    </div>
+                                </div>
+                                <div class="perf-big-metric">
+                                    <span id="perfJvmPercentVal">0</span><span class="perf-metric-unit">%</span>
+                                </div>
+                                <div class="perf-track-bar">
+                                    <div id="perfJvmBar" class="perf-fill-bar"></div>
+                                </div>
+                            </div>
+                            <div class="perf-card-footer">
+                                <span>Kullanılan: <strong id="perfJvmUsedVal" style="color: #fff;">-- MB</strong></span>
+                                <span class="perf-chip"><i class="fas fa-database"></i> Tavan: <span id="perfJvmMaxVal">-- MB</span></span>
+                            </div>
+                        </div>
+
+                        <!-- 3. HikariCP Pool Card -->
+                        <div class="perf-hud-card perf-card-emerald">
+                            <div>
+                                <div class="perf-card-header">
+                                    <span class="perf-card-label">HikariCP DB Havuzu</span>
+                                    <div class="perf-card-icon">
+                                        <i class="fas fa-database"></i>
+                                    </div>
+                                </div>
+                                <div class="perf-big-metric">
+                                    <span id="perfDbActiveVal">0</span><span class="perf-metric-unit" style="font-size: 1.1rem;"> / <span id="perfDbMaxVal">30</span></span>
+                                </div>
+                                <div class="perf-track-bar">
+                                    <div id="perfDbBar" class="perf-fill-bar"></div>
+                                </div>
+                            </div>
+                            <div class="perf-card-footer">
+                                <span>Boşta (Idle): <strong id="perfDbIdleVal" style="color: #fff;">--</strong></span>
+                                <span id="perfAwaitingBadge" class="perf-chip" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">
+                                    <i class="fas fa-check-circle"></i> Kuyruk: <span id="perfDbAwaitingVal">0</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- 4. Bandwidth & Threads Card -->
+                        <div class="perf-hud-card perf-card-amber">
+                            <div>
+                                <div class="perf-card-header">
+                                    <span class="perf-card-label">Ağ Trafiği &amp; Threads</span>
+                                    <div class="perf-card-icon">
+                                        <i class="fas fa-network-wired"></i>
+                                    </div>
+                                </div>
+                                <div class="perf-big-metric">
+                                    <span id="perfBwVal">0.00</span><span class="perf-metric-unit">Mbps</span>
+                                </div>
+                                <div class="perf-track-bar">
+                                    <div id="perfBwBar" class="perf-fill-bar" style="width: 15%;"></div>
+                                </div>
+                            </div>
+                            <div class="perf-card-footer">
+                                <span>İş Parçacığı: <strong id="perfLiveThreadsVal" style="color: #fff;">--</strong> (Zirve: <span id="perfPeakThreadsVal">--</span>)</span>
+                                <span class="perf-chip" style="background: rgba(30, 215, 96, 0.15); color: #1ed760;">
+                                    <i class="fas fa-bolt"></i> Loom Aktif
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Platform Nodes Topology Row -->
+                    <div class="perf-panel" style="padding: 24px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <h4 style="margin: 0; font-size: 1rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-diagram-project" style="color: var(--primary);"></i> Dağıtık Servis &amp; Düğüm Durumu
+                            </h4>
+                            <span style="font-size: 0.78rem; color: var(--text-dim);">Anlık Ping &amp; Sağlık Kontrolleri</span>
+                        </div>
+                        <div class="perf-nodes-grid">
+                            <!-- Node 1: Who Dat Idols -->
+                            <div class="perf-node-card">
+                                <div class="perf-node-left">
+                                    <div class="perf-node-icon" style="color: #00f0ff; background: rgba(0, 240, 255, 0.1);">
+                                        <i class="fas fa-server"></i>
+                                    </div>
+                                    <div>
+                                        <div class="perf-node-name">Who Dat Idols (Ana Servis)</div>
+                                        <div class="perf-node-meta">Port 443 / 8443 (HTTPS)</div>
+                                    </div>
+                                </div>
+                                <span class="perf-status-badge healthy" style="padding: 5px 12px; font-size: 0.72rem;">
+                                    <span class="perf-status-dot"></span> ÇEVRİMİÇİ
+                                </span>
+                            </div>
+
+                            <!-- Node 2: BL Dizi Peer -->
+                            <div class="perf-node-card">
+                                <div class="perf-node-left">
+                                    <div class="perf-node-icon" style="color: #a855f7; background: rgba(168, 85, 247, 0.1);">
+                                        <i class="fas fa-cloud"></i>
+                                    </div>
+                                    <div>
+                                        <div class="perf-node-name">BL Dizi (Eş Servis)</div>
+                                        <div class="perf-node-meta" id="perfPeerUrl">http://localhost:8082</div>
+                                    </div>
+                                </div>
+                                <span id="perfPeerBadge" class="perf-status-badge" style="padding: 5px 12px; font-size: 0.72rem; background: rgba(255,255,255,0.06); color: #aaa;">
+                                    <span class="perf-status-dot"></span> PINGLENİYOR...
+                                </span>
+                            </div>
+
+                            <!-- Node 3: MSSQL Database -->
+                            <div class="perf-node-card">
+                                <div class="perf-node-left">
+                                    <div class="perf-node-icon" style="color: #10b981; background: rgba(16, 185, 129, 0.1);">
+                                        <i class="fas fa-database"></i>
+                                    </div>
+                                    <div>
+                                        <div class="perf-node-name">MSSQL Veritabanı</div>
+                                        <div class="perf-node-meta">WhoDatIdols (Ortak DB)</div>
+                                    </div>
+                                </div>
+                                <span id="perfDbHealthBadge" class="perf-status-badge healthy" style="padding: 5px 12px; font-size: 0.72rem;">
+                                    <span class="perf-status-dot"></span> HAVUZ STABİL
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4 Live Telemetry Charts Grid -->
+                    <div class="perf-charts-grid">
+                        <div class="perf-chart-box">
+                            <div class="perf-chart-top">
+                                <h4 class="perf-chart-heading">
+                                    <i class="fas fa-microchip" style="color: #00f0ff;"></i> CPU Yük Eğrisi (%)
+                                </h4>
+                                <span class="perf-chart-tag" id="perfChartCpuInfo">Sistem vs JVM</span>
+                            </div>
+                            <div class="perf-canvas-wrap">
+                                <canvas id="perfCpuChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="perf-chart-box">
+                            <div class="perf-chart-top">
+                                <h4 class="perf-chart-heading">
+                                    <i class="fas fa-memory" style="color: #a855f7;"></i> JVM Heap Bellek Eğrisi (MB)
+                                </h4>
+                                <span class="perf-chart-tag" id="perfChartJvmInfo">Kullanılan vs Toplam</span>
+                            </div>
+                            <div class="perf-canvas-wrap">
+                                <canvas id="perfJvmChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="perf-chart-box">
+                            <div class="perf-chart-top">
+                                <h4 class="perf-chart-heading">
+                                    <i class="fas fa-database" style="color: #10b981;"></i> HikariCP DB Havuz Kullanımı
+                                </h4>
+                                <span class="perf-chart-tag" id="perfChartDbInfo">Aktif vs Boşta</span>
+                            </div>
+                            <div class="perf-canvas-wrap">
+                                <canvas id="perfDbChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="perf-chart-box">
+                            <div class="perf-chart-top">
+                                <h4 class="perf-chart-heading">
+                                    <i class="fas fa-network-wired" style="color: #f59e0b;"></i> Ağ Bant Genişliği (Mbps)
+                                </h4>
+                                <span class="perf-chart-tag" id="perfChartBwInfo">Canlı Trafik</span>
+                            </div>
+                            <div class="perf-canvas-wrap">
+                                <canvas id="perfBwChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Deep Diagnostics & Caching Row -->
+                    <div class="perf-deep-grid">
+                        <!-- Left: Deep System Telemetry -->
+                        <div class="perf-panel" style="padding: 24px;">
+                            <h4 style="margin: 0 0 16px 0; font-size: 1rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-circle-info" style="color: #38bdf8;"></i> Çalışma Zamanı &amp; Donanım Telemetrisi
+                            </h4>
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                <div class="perf-detail-item">
+                                    <span style="color: var(--text-dim);">Kesintisiz Çalışma Süresi (Uptime)</span>
+                                    <strong id="perfUptimeVal" style="color: #fff;">--</strong>
+                                </div>
+                                <div class="perf-detail-item">
+                                    <span style="color: var(--text-dim);">Fiziksel Sunucu Belleği (RAM)</span>
+                                    <strong id="perfPhysicalRamVal" style="color: #fff;">--</strong>
+                                </div>
+                                <div class="perf-detail-item">
+                                    <span style="color: var(--text-dim);">Garbage Collection (GC) Döngüsü</span>
+                                    <strong id="perfGcCountVal" style="color: #fff;">--</strong>
+                                </div>
+                                <div class="perf-detail-item">
+                                    <span style="color: var(--text-dim);">Toplam GC Duraklama Süresi</span>
+                                    <strong id="perfGcTimeVal" style="color: #38bdf8;">-- ms</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Caffeine Cache Management -->
+                        <div class="perf-panel" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                                    <h4 style="margin: 0; font-size: 1rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+                                        <i class="fas fa-layer-group" style="color: #fbbf24;"></i> Aktif Bellek Önbellekleri (Caffeine)
+                                    </h4>
+                                    <button type="button" class="perf-btn-action perf-btn-purge" style="padding: 6px 12px; font-size: 0.76rem;" onclick="clearCacheFromPerf()">
+                                        <i class="fas fa-broom"></i> Tümünü Sıfırla
+                                    </button>
+                                </div>
+                                <p style="color: var(--text-dim); font-size: 0.82rem; margin: 0 0 14px 0; line-height: 1.5;">
+                                    Veritabanı yükünü düşürmek için önbellekte tutulan anahtar veri havuzları:
+                                </p>
+                                <div id="perfCachesList" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                    <span style="font-size: 0.8rem; color: #777;">Önbellek listesi alınıyor...</span>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 16px; padding: 12px 16px; border-radius: 12px; background: rgba(30, 215, 96, 0.05); border: 1px solid rgba(30, 215, 96, 0.15); display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-circle-check" style="color: #1ed760; font-size: 1rem;"></i>
+                                <span style="font-size: 0.78rem; color: #cbd5e1;">Dinamik önbellekler her 15 dakikada bir otomatik tazelenir.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
         </main>
     </div>
 

@@ -58,6 +58,16 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             // Section-specific on-show hooks
+            if (targetId === 'performance-section') {
+                if (typeof window.startPerformanceMonitoring === 'function') {
+                    window.startPerformanceMonitoring();
+                }
+            } else {
+                if (typeof window.stopPerformanceMonitoring === 'function') {
+                    window.stopPerformanceMonitoring();
+                }
+            }
+
             if (targetId === 'dashboard-section') {
                 fetchLiveActiveUsers();
                 fetchStorageStats();
@@ -401,7 +411,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     'hero-section', 'ad-section', 'commercial-section', 'calendar-section', 'upcoming-section',
                     'view-management-section', 'comments-section', 'user-section',
                     'announcement-section', 'update-notes-section', 'feedback-section', 'content-requests-section',
-                    'security-violations-section', 'banned-ips-section', 'system-settings-section'
+                    'security-violations-section', 'banned-ips-section', 'system-settings-section', 'performance-section'
                 ];
                 translatorHiddenSections.forEach(section => {
                     const navLink = document.querySelector(`.nav-link[data-section="${section}"]`);
@@ -7075,3 +7085,472 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+
+
+
+// ==========================================
+// CANLI PERFORMANS & METRIKLER (MONITORING)
+// ==========================================
+(function() {
+    let perfInterval = null;
+    let perfIntervalMs = 2000;
+    let isPaused = false;
+    let perfCpuChart = null;
+    let perfJvmChart = null;
+    let perfDbChart = null;
+    let perfBwChart = null;
+    const perfDataPoints = 60;
+
+    function createGradient(ctx, topRgba, bottomRgba) {
+        try {
+            const gradient = ctx.createLinearGradient(0, 0, 0, 220);
+            gradient.addColorStop(0, topRgba);
+            gradient.addColorStop(1, bottomRgba || 'rgba(0,0,0,0)');
+            return gradient;
+        } catch (e) {
+            return topRgba;
+        }
+    }
+
+    function initPerfCharts() {
+        if (perfCpuChart) return;
+        const cpuEl = document.getElementById('perfCpuChart');
+        const jvmEl = document.getElementById('perfJvmChart');
+        const dbEl = document.getElementById('perfDbChart');
+        const bwEl = document.getElementById('perfBwChart');
+        if (!cpuEl || !jvmEl || !dbEl || !bwEl || typeof Chart === 'undefined') return;
+
+        const cpuCtx = cpuEl.getContext('2d');
+        const jvmCtx = jvmEl.getContext('2d');
+        const dbCtx = dbEl.getContext('2d');
+        const bwCtx = bwEl.getContext('2d');
+
+        const baseOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 0 },
+            interaction: { mode: 'index', intersect: false },
+            elements: { point: { radius: 0, hoverRadius: 4 } },
+            scales: {
+                x: { display: false },
+                y: {
+                    border: { dash: [4, 4], color: 'rgba(255,255,255,0.06)' },
+                    grid: { color: 'rgba(255,255,255,0.04)' },
+                    ticks: { color: '#888', font: { family: "'Montserrat', sans-serif", size: 10 } }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    align: 'end',
+                    labels: { color: '#aaa', boxWidth: 10, font: { family: "'Montserrat', sans-serif", size: 11 } }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 17, 24, 0.92)',
+                    titleColor: '#fff',
+                    bodyColor: '#cbd5e1',
+                    borderColor: 'rgba(255,255,255,0.12)',
+                    borderWidth: 1,
+                    padding: 10,
+                    cornerRadius: 8
+                }
+            }
+        };
+
+        // 1. CPU Chart
+        const cpuGrad = createGradient(cpuCtx, 'rgba(0, 240, 255, 0.25)', 'rgba(0, 240, 255, 0.0)');
+        perfCpuChart = new Chart(cpuCtx, {
+            type: 'line',
+            data: {
+                labels: Array(perfDataPoints).fill(''),
+                datasets: [
+                    {
+                        label: 'Sistem CPU (%)',
+                        data: Array(perfDataPoints).fill(0),
+                        borderColor: '#00f0ff',
+                        backgroundColor: cpuGrad,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.38
+                    },
+                    {
+                        label: 'JVM Islem (%)',
+                        data: Array(perfDataPoints).fill(0),
+                        borderColor: '#38bdf8',
+                        backgroundColor: 'transparent',
+                        borderDash: [4, 4],
+                        borderWidth: 1.5,
+                        fill: false,
+                        tension: 0.38
+                    }
+                ]
+            },
+            options: {
+                ...baseOptions,
+                scales: {
+                    ...baseOptions.scales,
+                    y: { ...baseOptions.scales.y, min: 0, max: 100 }
+                }
+            }
+        });
+
+        // 2. JVM Heap Chart
+        const jvmGrad = createGradient(jvmCtx, 'rgba(168, 85, 247, 0.25)', 'rgba(168, 85, 247, 0.0)');
+        perfJvmChart = new Chart(jvmCtx, {
+            type: 'line',
+            data: {
+                labels: Array(perfDataPoints).fill(''),
+                datasets: [
+                    {
+                        label: 'Kullanilan Heap (MB)',
+                        data: Array(perfDataPoints).fill(0),
+                        borderColor: '#a855f7',
+                        backgroundColor: jvmGrad,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.38
+                    },
+                    {
+                        label: 'Toplam Ayrilan (MB)',
+                        data: Array(perfDataPoints).fill(0),
+                        borderColor: '#c084fc',
+                        backgroundColor: 'transparent',
+                        borderDash: [3, 3],
+                        borderWidth: 1.5,
+                        fill: false,
+                        tension: 0.38
+                    }
+                ]
+            },
+            options: baseOptions
+        });
+
+        // 3. HikariCP DB Pool Chart
+        const dbGrad = createGradient(dbCtx, 'rgba(16, 185, 129, 0.25)', 'rgba(16, 185, 129, 0.0)');
+        perfDbChart = new Chart(dbCtx, {
+            type: 'line',
+            data: {
+                labels: Array(perfDataPoints).fill(''),
+                datasets: [
+                    {
+                        label: 'Aktif Baglanti',
+                        data: Array(perfDataPoints).fill(0),
+                        borderColor: '#10b981',
+                        backgroundColor: dbGrad,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.2
+                    },
+                    {
+                        label: 'Bosta (Idle)',
+                        data: Array(perfDataPoints).fill(0),
+                        borderColor: '#64748b',
+                        backgroundColor: 'transparent',
+                        borderDash: [3, 3],
+                        borderWidth: 1.5,
+                        fill: false,
+                        tension: 0.2
+                    }
+                ]
+            },
+            options: {
+                ...baseOptions,
+                scales: {
+                    ...baseOptions.scales,
+                    y: { ...baseOptions.scales.y, min: 0, ticks: { stepSize: 5, color: '#888' } }
+                }
+            }
+        });
+
+        // 4. Bandwidth Chart
+        const bwGrad = createGradient(bwCtx, 'rgba(245, 158, 11, 0.25)', 'rgba(245, 158, 11, 0.0)');
+        perfBwChart = new Chart(bwCtx, {
+            type: 'line',
+            data: {
+                labels: Array(perfDataPoints).fill(''),
+                datasets: [
+                    {
+                        label: 'Trafik (Mbps)',
+                        data: Array(perfDataPoints).fill(0),
+                        borderColor: '#f59e0b',
+                        backgroundColor: bwGrad,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.38
+                    }
+                ]
+            },
+            options: {
+                ...baseOptions,
+                scales: {
+                    ...baseOptions.scales,
+                    y: { ...baseOptions.scales.y, min: 0 }
+                }
+            }
+        });
+    }
+
+    const escapeHtml = (unsafe) => {
+        if (!unsafe) return '';
+        return String(unsafe).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    };
+
+    window.fetchPerformanceMetrics = function (force) {
+        const spinner = document.getElementById('perfRefreshSpinner');
+        if (spinner && force) spinner.classList.add('fa-spin');
+
+        fetch('/admin/performance-metrics')
+            .then(res => res.json())
+            .then(data => {
+                if (spinner) spinner.classList.remove('fa-spin');
+                if (data.error) {
+                    console.error("Perf metrics error:", data.error);
+                    return;
+                }
+
+                // 1. CPU
+                const cpu = data.cpu || {};
+                const cpuVal = (cpu.systemPercent !== undefined) ? cpu.systemPercent : 0;
+                const cpuProcVal = (cpu.processPercent !== undefined) ? cpu.processPercent : 0;
+                const cpuEl = document.getElementById('perfCpuVal');
+                const cpuBar = document.getElementById('perfCpuBar');
+                const cpuProcEl = document.getElementById('perfCpuProcessVal');
+                const cpuCoresEl = document.getElementById('perfCpuCoresVal');
+                if (cpuEl) cpuEl.textContent = cpuVal.toFixed(1);
+                if (cpuBar) cpuBar.style.width = Math.min(100, cpuVal) + '%';
+                if (cpuProcEl) cpuProcEl.textContent = cpuProcVal.toFixed(1) + '%';
+                if (cpuCoresEl) cpuCoresEl.textContent = (cpu.cores || '--') + ' Cekirdek';
+
+                // 2. JVM Heap
+                const jvm = data.jvm || {};
+                const jvmPercent = (jvm.heapPercent !== undefined) ? jvm.heapPercent : 0;
+                const jvmPercentEl = document.getElementById('perfJvmPercentVal');
+                const jvmBar = document.getElementById('perfJvmBar');
+                const jvmUsedEl = document.getElementById('perfJvmUsedVal');
+                const jvmMaxEl = document.getElementById('perfJvmMaxVal');
+                if (jvmPercentEl) jvmPercentEl.textContent = jvmPercent.toFixed(1);
+                if (jvmBar) {
+                    jvmBar.style.width = Math.min(100, jvmPercent) + '%';
+                    jvmBar.style.background = (jvmPercent > 85) ? '#ef4444' : (jvmPercent > 70 ? '#f59e0b' : '#a855f7');
+                    jvmBar.style.boxShadow = '0 0 10px ' + jvmBar.style.background;
+                }
+                if (jvmUsedEl) jvmUsedEl.textContent = (jvm.heapUsedMb || '--') + ' MB';
+                if (jvmMaxEl) jvmMaxEl.textContent = (jvm.heapMaxMb || '--') + ' MB';
+
+                // 3. HikariCP DB Pool
+                const dbPool = data.dbPool || {};
+                const dbActive = dbPool.active || 0;
+                const dbMax = dbPool.maxPoolSize || 30;
+                const dbActiveEl = document.getElementById('perfDbActiveVal');
+                const dbMaxEl = document.getElementById('perfDbMaxVal');
+                const dbBar = document.getElementById('perfDbBar');
+                const dbIdleEl = document.getElementById('perfDbIdleVal');
+                const dbAwaitingEl = document.getElementById('perfDbAwaitingVal');
+                const awaitingBadge = document.getElementById('perfAwaitingBadge');
+                const dbHealthBadge = document.getElementById('perfDbHealthBadge');
+
+                if (dbActiveEl) dbActiveEl.textContent = dbActive;
+                if (dbMaxEl) dbMaxEl.textContent = dbMax;
+                if (dbBar) {
+                    const usage = dbPool.usagePercent || 0;
+                    dbBar.style.width = Math.min(100, usage) + '%';
+                    dbBar.style.background = (dbPool.awaiting > 0 || usage > 85) ? '#ef4444' : (usage > 65 ? '#f59e0b' : '#10b981');
+                    dbBar.style.boxShadow = '0 0 10px ' + dbBar.style.background;
+                }
+                if (dbIdleEl) dbIdleEl.textContent = dbPool.idle || 0;
+                if (dbAwaitingEl) dbAwaitingEl.textContent = dbPool.awaiting || 0;
+                if (awaitingBadge) {
+                    if (dbPool.awaiting > 0) {
+                        awaitingBadge.style.background = 'rgba(239, 68, 68, 0.2)';
+                        awaitingBadge.style.color = '#ef4444';
+                        awaitingBadge.innerHTML = '<i class="fas fa-triangle-exclamation"></i> KUYRUK: ' + dbPool.awaiting;
+                    } else {
+                        awaitingBadge.style.background = 'rgba(16, 185, 129, 0.15)';
+                        awaitingBadge.style.color = '#34d399';
+                        awaitingBadge.innerHTML = '<i class="fas fa-check-circle"></i> Kuyruk Yok (0)';
+                    }
+                }
+                if (dbHealthBadge) {
+                    if (dbPool.awaiting > 0) {
+                        dbHealthBadge.className = 'perf-status-badge critical';
+                        dbHealthBadge.innerHTML = '<span class="perf-status-dot"></span> DARBOGAZ ALARMI';
+                    } else {
+                        dbHealthBadge.className = 'perf-status-badge healthy';
+                        dbHealthBadge.innerHTML = '<span class="perf-status-dot"></span> HAVUZ STABIL';
+                    }
+                }
+
+                // 4. Threads & Bandwidth
+                const bw = (data.bandwidthMbps !== undefined) ? data.bandwidthMbps : 0;
+                const bwEl = document.getElementById('perfBwVal');
+                const bwBar = document.getElementById('perfBwBar');
+                const liveThEl = document.getElementById('perfLiveThreadsVal');
+                const peakThEl = document.getElementById('perfPeakThreadsVal');
+                if (bwEl) bwEl.textContent = bw.toFixed(2);
+                if (bwBar) bwBar.style.width = Math.min(100, Math.max(10, bw * 10)) + '%';
+                const threads = data.threads || {};
+                if (liveThEl) liveThEl.textContent = threads.liveCount || '--';
+                if (peakThEl) peakThEl.textContent = threads.peakCount || '--';
+
+                // 5. Peer BL Dizi status
+                const peer = data.peerBlDizi || {};
+                const peerBadge = document.getElementById('perfPeerBadge');
+                if (peerBadge) {
+                    if (peer.online) {
+                        peerBadge.className = 'perf-status-badge healthy';
+                        peerBadge.innerHTML = '<span class="perf-status-dot"></span> CEVRIMICI (' + peer.latencyMs + ' ms)';
+                    } else {
+                        peerBadge.className = 'perf-status-badge critical';
+                        peerBadge.innerHTML = '<span class="perf-status-dot"></span> CEVRIMDISI';
+                    }
+                }
+
+                // 6. Uptime, RAM, GC
+                const uptimeEl = document.getElementById('perfUptimeVal');
+                const physRamEl = document.getElementById('perfPhysicalRamVal');
+                const gcCountEl = document.getElementById('perfGcCountVal');
+                const gcTimeEl = document.getElementById('perfGcTimeVal');
+                if (uptimeEl) uptimeEl.textContent = data.uptimeFormatted || '--';
+                const ram = data.ram || {};
+                if (physRamEl) physRamEl.textContent = (ram.usedMb || '--') + ' MB / ' + (ram.totalMb || '--') + ' MB (%' + (ram.percent || 0) + ')';
+                const gc = data.gc || {};
+                if (gcCountEl) gcCountEl.textContent = (gc.count || 0) + ' Kez';
+                if (gcTimeEl) gcTimeEl.textContent = (gc.timeMs || 0) + ' ms';
+
+                // 7. Overall Diagnostic Badge & Alerts
+                const overallBadge = document.getElementById('perfOverallBadge');
+                const overallText = document.getElementById('perfOverallText');
+                const alertsContainer = document.getElementById('perfAlertsContainer');
+                const alerts = data.alerts || [];
+
+                if (alerts.length > 0) {
+                    if (overallBadge) {
+                        const isCritical = alerts.some(a => a.level === 'danger');
+                        overallBadge.className = 'perf-status-badge ' + (isCritical ? 'critical' : 'warning');
+                    }
+                    if (overallText) overallText.textContent = alerts.length + ' UYARI TESPIT EDILDI';
+
+                    if (alertsContainer) {
+                        alertsContainer.style.display = 'block';
+                        alertsContainer.innerHTML = alerts.map(a => `
+                            <div class="perf-panel" style="padding: 14px 20px; margin-bottom: 12px; display: flex; align-items: center; gap: 14px; background: ${a.level === 'danger' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(245, 158, 11, 0.12)'}; border-color: ${a.level === 'danger' ? 'rgba(239, 68, 68, 0.35)' : 'rgba(245, 158, 11, 0.35)'}; color: ${a.level === 'danger' ? '#f87171' : '#fbbf24'};">
+                                <i class="fas fa-triangle-exclamation" style="font-size: 1.25rem;"></i>
+                                <div style="font-size: 0.88rem;"><strong>${escapeHtml(a.title || 'Uyari')}:</strong> ${escapeHtml(a.message || '')}</div>
+                            </div>
+                        `).join('');
+                    }
+                } else {
+                    if (!isPaused) {
+                        if (overallBadge) {
+                            overallBadge.className = 'perf-status-badge healthy';
+                        }
+                        if (overallText) overallText.textContent = 'SISTEMLER OPTIMUM';
+                    }
+                    if (alertsContainer) {
+                        alertsContainer.style.display = 'none';
+                        alertsContainer.innerHTML = '';
+                    }
+                }
+
+                // 8. Caches List
+                const cachesList = document.getElementById('perfCachesList');
+                if (cachesList && data.caches) {
+                    cachesList.innerHTML = data.caches.map(c => `
+                        <div class="perf-cache-pill">
+                            <i class="fas fa-microchip" style="color: #fbbf24; font-size: 0.75rem;"></i>
+                            <span>${escapeHtml(c)}</span>
+                        </div>
+                    `).join('');
+                }
+
+                // 9. Update Charts
+                if (perfCpuChart) {
+                    perfCpuChart.data.datasets[0].data.shift();
+                    perfCpuChart.data.datasets[0].data.push(cpuVal);
+                    perfCpuChart.data.datasets[1].data.shift();
+                    perfCpuChart.data.datasets[1].data.push(cpuProcVal);
+                    perfCpuChart.update();
+                }
+                if (perfJvmChart) {
+                    perfJvmChart.data.datasets[0].data.shift();
+                    perfJvmChart.data.datasets[0].data.push(jvm.heapUsedMb || 0);
+                    perfJvmChart.data.datasets[1].data.shift();
+                    perfJvmChart.data.datasets[1].data.push(jvm.heapTotalMb || 0);
+                    perfJvmChart.update();
+                }
+                if (perfDbChart) {
+                    perfDbChart.data.datasets[0].data.shift();
+                    perfDbChart.data.datasets[0].data.push(dbActive);
+                    perfDbChart.data.datasets[1].data.shift();
+                    perfDbChart.data.datasets[1].data.push(dbPool.idle || 0);
+                    perfDbChart.update();
+                }
+                if (perfBwChart) {
+                    perfBwChart.data.datasets[0].data.shift();
+                    perfBwChart.data.datasets[0].data.push(bw);
+                    perfBwChart.update();
+                }
+            })
+            .catch(err => {
+                if (spinner) spinner.classList.remove('fa-spin');
+                console.error("Perf fetch error:", err);
+            });
+    };
+
+    window.startPerformanceMonitoring = function () {
+        initPerfCharts();
+        window.fetchPerformanceMetrics(true);
+        if (perfInterval) clearInterval(perfInterval);
+        if (!isPaused) {
+            perfInterval = setInterval(() => window.fetchPerformanceMetrics(false), perfIntervalMs);
+        }
+    };
+
+    window.stopPerformanceMonitoring = function () {
+        if (perfInterval) {
+            clearInterval(perfInterval);
+            perfInterval = null;
+        }
+    };
+
+    window.setPerfInterval = function(ms, btn) {
+        perfIntervalMs = ms;
+        const container = document.getElementById('perfIntervalPills');
+        if (container) {
+            container.querySelectorAll('.perf-pill-btn').forEach(b => {
+                if (b.id !== 'perfPauseBtn') b.classList.remove('active');
+            });
+        }
+        if (btn) btn.classList.add('active');
+        if (!isPaused) {
+            window.startPerformanceMonitoring();
+        }
+    };
+
+    window.togglePerfPause = function(btn) {
+        isPaused = !isPaused;
+        const overallBadge = document.getElementById('perfOverallBadge');
+        const overallText = document.getElementById('perfOverallText');
+
+        if (isPaused) {
+            window.stopPerformanceMonitoring();
+            if (btn) btn.innerHTML = '<i class="fas fa-play"></i>';
+            if (overallBadge) overallBadge.className = 'perf-status-badge warning';
+            if (overallText) overallText.textContent = 'DURAKLATILDI';
+        } else {
+            if (btn) btn.innerHTML = '<i class="fas fa-pause"></i>';
+            window.startPerformanceMonitoring();
+        }
+    };
+
+    window.clearCacheFromPerf = function () {
+        if (!confirm("Tum sistem onbellegini sifirlamak istediginize emin misiniz?")) return;
+        fetch('/admin/clear-cache', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message || "Onbellek basariyla temizlendi.");
+                window.fetchPerformanceMetrics(true);
+            })
+            .catch(err => alert("Onbellek temizlenirken hata olustu: " + err));
+    };
+})();
