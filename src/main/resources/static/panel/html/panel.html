@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="tr">
 
 <head>
@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="stylesheet" href="/elements/variables.css">
-    <link rel="stylesheet" href="/panel/css/panel.css?v=3">
+    <link rel="stylesheet" href="/panel/css/panel.css?v=7">
     <script src="/homepage/js/devtools-protection.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -136,6 +136,10 @@
                 </a>
                 <a href="#feedback-section" class="nav-link" data-section="feedback-section">
                     <i class="fas fa-envelope-open-text"></i> <span>Geri Bildirimler</span>
+                </a>
+                <a href="#mail-section" class="nav-link" data-section="mail-section" id="nav-mail-section">
+                    <i class="fas fa-inbox"></i> <span>E-Posta Yönetimi</span>
+                    <span class="nav-badge" id="sidebar-mail-unread-badge" style="display:none; background: #00f0ff; color: #000; font-weight: 700; border-radius: 20px; padding: 2px 7px; font-size: 0.7rem; margin-left: auto;">0</span>
                 </a>
 
                 <div class="nav-group-title">SİSTEM &amp; GÜVENLİK</div>
@@ -2705,6 +2709,121 @@
 
             </section>
 
+            <!-- E-POSTA YÖNETİM MERKEZİ (MAILBOX) SECTION -->
+            <section id="mail-section" class="admin-section" style="display: none;">
+                <div class="mail-container">
+                    <!-- 1. SOL KLASÖR PANELİ -->
+                    <div class="mail-sidebar">
+                        <button type="button" class="mail-compose-btn" id="openComposeMailModalBtn">
+                            <i class="fas fa-feather-pointed"></i> Yeni E-Posta
+                        </button>
+                        
+                        <div class="mail-folder-list" id="mailFolderList">
+                            <!-- JS ile dinamik yüklenecek -->
+                        </div>
+
+                        <div class="mail-sidebar-footer">
+                            <div class="mail-account-card" id="mailAccountCard" onclick="window.toggleMailAccount()" title="Hesap değiştirmek için tıklayın">
+                                <div class="mail-account-avatar" id="mailAccountAvatar">
+                                    <i class="fas fa-shield-halved"></i>
+                                </div>
+                                <div class="mail-account-info">
+                                    <span class="mail-account-title" id="mailAccountTitle">Who Dat Idols</span>
+                                    <span class="mail-account-email" id="mailAccountDisplay">info@whodatidols.com</span>
+                                </div>
+                                <button type="button" class="mail-switch-account-btn" id="mailSwitchAccountBtn" title="Hesap Değiştir" onclick="event.stopPropagation(); window.toggleMailAccount();">
+                                    <i class="fas fa-repeat"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. ORTA MESAJ LİSTESİ PANELİ -->
+                    <div class="mail-list-panel">
+                        <div class="mail-list-header">
+                            <div class="mail-list-title-wrap">
+                                <h3 id="currentFolderName" class="mail-folder-title">
+                                    <i class="fas fa-inbox"></i> Gelen Kutusu
+                                </h3>
+                                <span class="mail-count-badge" id="folderTotalCount">0 mesaj</span>
+                            </div>
+                            <div class="mail-list-actions">
+                                <button type="button" class="mail-action-btn" id="refreshMailListBtn" title="Yenile">
+                                    <i class="fas fa-rotate"></i>
+                                </button>
+                                <div class="mail-search-box">
+                                    <i class="fas fa-magnifying-glass"></i>
+                                    <input type="text" id="mailSearchInput" placeholder="Konu veya gönderici ara...">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mail-list-content" id="mailListContainer">
+                            <!-- Mesaj satırları burada listelenecek -->
+                        </div>
+
+                        <div class="mail-pagination" id="mailPagination">
+                            <button type="button" class="mail-page-btn" id="mailPrevPageBtn" disabled>
+                                <i class="fas fa-chevron-left"></i> Önceki
+                            </button>
+                            <span class="mail-page-info" id="mailPageInfo">Sayfa 1 / 1</span>
+                            <button type="button" class="mail-page-btn" id="mailNextPageBtn" disabled>
+                                Sonraki <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3. SAĞ MESAJ OKUMA / DETAY PANELİ -->
+                    <div class="mail-detail-panel" id="mailDetailPanel">
+                        <div class="mail-empty-state" id="mailEmptyState">
+                            <div class="mail-empty-icon">
+                                <i class="fas fa-envelope-open-text"></i>
+                            </div>
+                            <h4>Okumak istediğiniz e-postayı seçin</h4>
+                            <p>Gelen kutusundaki e-postaları güvenli şekilde görüntüleyebilir, yanıtlayabilir veya silebilirsiniz.</p>
+                        </div>
+
+                        <div class="mail-detail-content" id="mailDetailContent" style="display: none;">
+                            <div class="mail-detail-header">
+                                <div class="mail-detail-actions">
+                                    <button type="button" class="mail-btn mail-btn-reply" id="mailReplyBtn">
+                                        <i class="fas fa-reply"></i> Yanıtla
+                                    </button>
+                                    <button type="button" class="mail-btn mail-btn-forward" id="mailForwardBtn">
+                                        <i class="fas fa-share"></i> İlet
+                                    </button>
+                                    <button type="button" class="mail-btn mail-btn-spam" id="mailMarkSpamBtn" title="Spam Olarak İşaretle">
+                                        <i class="fas fa-shield-virus"></i> Spam
+                                    </button>
+                                    <button type="button" class="mail-btn mail-btn-delete" id="mailDeleteBtn" title="Sil / Çöpe Taşı">
+                                        <i class="fas fa-trash-can"></i> Sil
+                                    </button>
+                                    <button type="button" class="mail-btn mail-btn-theme" id="mailToggleLightModeBtn" onclick="window.toggleMailLightMode()" title="Işık Modu (Outlook Tarzı Beyaz Kart / Koyu Mod)" style="margin-left: auto;">
+                                        <i class="fas fa-sun"></i> <span>Açık Görünüm</span>
+                                    </button>
+                                </div>
+                                <h2 class="mail-detail-subject" id="mailDetailSubject">E-posta Konusu</h2>
+                                
+                                <div class="mail-meta-grid">
+                                    <div class="mail-meta-avatar" id="mailSenderAvatar">W</div>
+                                    <div class="mail-meta-info">
+                                        <div class="mail-meta-sender" id="mailDetailSender">Gönderici Adı &lt;mail@example.com&gt;</div>
+                                        <div class="mail-meta-recipient">Kime: <span id="mailDetailRecipient">info@whodatidols.com</span></div>
+                                    </div>
+                                    <div class="mail-meta-date" id="mailDetailDate">01.11.2026 12:00</div>
+                                </div>
+                            </div>
+
+                            <div class="mail-body-wrapper">
+                                <div class="mail-body-html" id="mailDetailHtmlBody">
+                                    <!-- Güvenli Sanitize edilmiş HTML -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
         </main>
     </div>
 
@@ -2811,7 +2930,64 @@
 
     
 
-    <script src="/panel/js/panel.js?v=2"></script>
+    <!-- Yeni E-posta Gönderme Modalı -->
+    <div id="composeMailModal" class="modal">
+        <div class="modal-content mail-compose-modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-feather-pointed" style="color: #00f0ff;"></i> Yeni E-Posta Gönder</h2>
+                <button type="button" class="close-compose-modal" id="closeComposeMailModalBtn">&times;</button>
+            </div>
+            <form id="composeMailForm" onsubmit="handleSendMail(event)">
+                <div class="compose-fields">
+                    <div class="compose-field-row">
+                        <label for="composeFromAccount">Kimden:</label>
+                        <select id="composeFromAccount" class="compose-account-select" style="background: none; border: none; color: #00f0ff; font-size: 0.88rem; outline: none; width: 100%;">
+                            <option value="whodatidols">Who Dat Idols &lt;info@whodatidols.com&gt;</option>
+                            <option value="bldizi">BL Dizi &lt;info@bldizi.com&gt;</option>
+                        </select>
+                    </div>
+                    <div class="compose-field-row">
+                        <label for="composeTo">Kime:</label>
+                        <input type="email" id="composeTo" required placeholder="ornek@alanadi.com">
+                        <button type="button" class="compose-toggle-cc" id="toggleCcBccBtn">+ CC / BCC</button>
+                    </div>
+                    
+                    <div class="compose-field-row cc-bcc-row" id="composeCcRow" style="display: none;">
+                        <label for="composeCc">CC:</label>
+                        <input type="text" id="composeCc" placeholder="Bilgi (virgülle ayırın)">
+                    </div>
+
+                    <div class="compose-field-row cc-bcc-row" id="composeBccRow" style="display: none;">
+                        <label for="composeBcc">BCC:</label>
+                        <input type="text" id="composeBcc" placeholder="Gizli (virgülle ayırın)">
+                    </div>
+
+                    <div class="compose-field-row">
+                        <label for="composeSubject">Konu:</label>
+                        <input type="text" id="composeSubject" required placeholder="E-posta konusu...">
+                    </div>
+
+                    <div class="compose-body-wrap">
+                        <textarea id="composeBody" rows="12" placeholder="Mesajınızı buraya yazınız... (HTML veya düz metin desteklenir)" required></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                    <div class="compose-format-hint">
+                        <span style="font-size: 0.8rem; color: rgba(255,255,255,0.5);"><i class="fas fa-lock" style="color: #10b981;"></i> SSL Şifreli SMTP ile iletilir</span>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" class="btn btn-secondary" id="cancelComposeMailBtn">Vazgeç</button>
+                        <button type="submit" class="btn btn-primary" id="sendMailSubmitBtn">
+                            <i class="fas fa-paper-plane"></i> Gönder
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/panel/js/panel.js?v=7"></script>
 </body>
 
 </html>

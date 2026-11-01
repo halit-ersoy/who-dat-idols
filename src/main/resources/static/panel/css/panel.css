@@ -4835,3 +4835,808 @@ input[type='checkbox']:hover {
     background: rgba(var(--primary-rgb), 0.08);
     color: #fff;
 }
+
+
+/* ==========================================================================
+   E-POSTA YÖNETİM MERKEZİ (WEBMAIL / MAILBOX) STİLLERİ
+   ========================================================================== */
+
+.mail-container {
+    display: grid;
+    grid-template-columns: 240px 380px 1fr;
+    gap: 16px;
+    height: calc(100vh - 120px);
+    min-height: 650px;
+    background: rgba(12, 14, 20, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 16px;
+    overflow: hidden;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+
+/* 1. SOL PANEL: KLASÖRLER */
+.mail-sidebar {
+    background: rgba(18, 20, 29, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    padding: 18px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.mail-compose-btn {
+    width: 100%;
+    padding: 12px 18px;
+    background: linear-gradient(135deg, #00f0ff, #0088ff);
+    color: #000;
+    font-weight: 700;
+    font-size: 0.92rem;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 240, 255, 0.25);
+    margin-bottom: 20px;
+}
+
+.mail-compose-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 240, 255, 0.4);
+}
+
+.mail-folder-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+.mail-folder-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    font-size: 0.88rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.mail-folder-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+.mail-folder-item.active {
+    background: rgba(0, 240, 255, 0.1);
+    color: #00f0ff;
+    border-color: rgba(0, 240, 255, 0.25);
+    font-weight: 700;
+}
+
+.mail-folder-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.mail-folder-left i {
+    width: 18px;
+    text-align: center;
+    font-size: 0.95rem;
+}
+
+.mail-folder-badge {
+    background: rgba(0, 240, 255, 0.2);
+    color: #00f0ff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+}
+
+.mail-sidebar-footer {
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* --- MAIL ACCOUNT CARD & SWITCHER --- */
+.mail-account-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    position: relative;
+}
+
+.mail-account-card:hover {
+    background: rgba(0, 240, 255, 0.07);
+    border-color: rgba(0, 240, 255, 0.35);
+    box-shadow: 0 4px 16px rgba(0, 240, 255, 0.12);
+}
+
+.mail-account-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+    transition: all 0.25s ease;
+}
+
+.mail-account-card.bldizi-active .mail-account-avatar {
+    background: rgba(0, 240, 255, 0.15);
+    color: #00f0ff;
+}
+
+.mail-account-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex: 1;
+    min-width: 0;
+}
+
+.mail-account-title {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.mail-account-email {
+    font-size: 0.78rem;
+    color: #fff;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mail-switch-account-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.25s ease;
+    padding: 0;
+}
+
+.mail-account-card:hover .mail-switch-account-btn,
+.mail-switch-account-btn:hover {
+    background: #00f0ff;
+    color: #0b0f19;
+    border-color: #00f0ff;
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.45);
+    transform: rotate(180deg);
+}
+
+.mail-switch-account-btn:active {
+    transform: scale(0.92) rotate(180deg);
+}
+/* 2. ORTA PANEL: MESAJ LİSTESİ */
+.mail-list-panel {
+    background: rgba(18, 20, 29, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.mail-list-header {
+    padding: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.mail-list-title-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.mail-folder-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mail-folder-title i {
+    color: #00f0ff;
+}
+
+.mail-count-badge {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 3px 8px;
+    border-radius: 8px;
+}
+
+.mail-list-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mail-action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mail-action-btn:hover {
+    background: rgba(0, 240, 255, 0.15);
+    color: #00f0ff;
+    border-color: rgba(0, 240, 255, 0.3);
+}
+
+.mail-search-box {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 0 12px;
+    height: 36px;
+}
+
+.mail-search-box i {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.85rem;
+}
+
+.mail-search-box input {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 0.82rem;
+    width: 100%;
+    outline: none;
+}
+
+.mail-list-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* Mail Satırları */
+.mail-item {
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.mail-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.mail-item.selected {
+    background: rgba(0, 240, 255, 0.08);
+    border-color: rgba(0, 240, 255, 0.3);
+}
+
+.mail-item.unread {
+    background: rgba(255, 255, 255, 0.04);
+    border-left: 3px solid #00f0ff;
+}
+
+.mail-item.unread .mail-item-sender,
+.mail-item.unread .mail-item-subject {
+    font-weight: 700;
+    color: #fff;
+}
+
+.mail-item-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.mail-item-sender {
+    font-size: 0.86rem;
+    color: rgba(255, 255, 255, 0.85);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+}
+
+.mail-item-date {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.mail-item-subject {
+    font-size: 0.84rem;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mail-item-snippet {
+    font-size: 0.76rem;
+    color: rgba(255, 255, 255, 0.45);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+}
+
+.mail-pagination {
+    padding: 10px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.mail-page-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.76rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.mail-page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.mail-page-btn:not(:disabled):hover {
+    background: rgba(0, 240, 255, 0.15);
+    color: #00f0ff;
+    border-color: rgba(0, 240, 255, 0.3);
+}
+
+.mail-page-info {
+    font-size: 0.76rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* 3. SAĞ PANEL: MESAJ OKUMA / DETAY */
+.mail-detail-panel {
+    background: rgba(18, 20, 29, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+.mail-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    padding: 30px;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.mail-empty-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    color: rgba(255, 255, 255, 0.3);
+    margin-bottom: 16px;
+}
+
+.mail-empty-state h4 {
+    color: #fff;
+    font-size: 1.1rem;
+    margin: 0 0 8px 0;
+}
+
+.mail-empty-state p {
+    font-size: 0.84rem;
+    max-width: 360px;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.mail-detail-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.mail-detail-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.01);
+}
+
+.mail-detail-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.mail-btn {
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.mail-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.mail-btn-reply:hover {
+    background: rgba(0, 240, 255, 0.15);
+    color: #00f0ff;
+    border-color: rgba(0, 240, 255, 0.3);
+}
+
+.mail-btn-spam:hover {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.mail-btn-delete:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.mail-detail-subject {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 16px 0;
+    line-height: 1.4;
+}
+
+.mail-meta-grid {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.mail-meta-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00f0ff, #3b82f6);
+    color: #000;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.mail-meta-info {
+    flex: 1;
+    overflow: hidden;
+}
+
+.mail-meta-sender {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mail-meta-recipient {
+    font-size: 0.76rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 2px;
+}
+
+.mail-meta-date {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.mail-body-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.15);
+}
+
+.mail-body-html {
+    color: #e2e8f0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    word-break: break-word;
+}
+
+.mail-body-html a {
+    color: #00f0ff;
+    text-decoration: underline;
+}
+
+.mail-body-html table {
+    border-collapse: collapse;
+    max-width: 100%;
+}
+
+/* 4. MODAL: YENİ E-POSTA YAZ (COMPOSE) */
+.mail-compose-modal-content {
+    max-width: 680px;
+    width: 90%;
+    background: #0f111a;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+    padding: 24px;
+}
+
+.compose-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.compose-field-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 8px 14px;
+}
+
+.compose-field-row label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    min-width: 48px;
+}
+
+.compose-field-row input {
+    flex: 1;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 0.88rem;
+    outline: none;
+}
+
+.compose-toggle-cc {
+    background: none;
+    border: none;
+    color: #00f0ff;
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.compose-toggle-cc:hover {
+    background: rgba(0, 240, 255, 0.1);
+}
+
+.compose-body-wrap textarea {
+    width: 100%;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #fff;
+    padding: 14px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    line-height: 1.5;
+    outline: none;
+    resize: vertical;
+    transition: all 0.2s ease;
+}
+
+.compose-body-wrap textarea:focus {
+    border-color: rgba(0, 240, 255, 0.4);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
+}
+
+/* RESPONSIVE */
+@media (max-width: 1100px) {
+    .mail-container {
+        grid-template-columns: 200px 300px 1fr;
+    }
+}
+
+@media (max-width: 900px) {
+    .mail-container {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+    .mail-sidebar, .mail-list-panel, .mail-detail-panel {
+        min-height: 400px;
+    }
+}
+
+
+/* --- E-POSTA AKILLI KONTRAST & OUTLOOK IŞIK/BEYAZ KART MODU --- */
+
+/* Karanlık modda varsayılan veya inline siyah yazıları açık renge zorla */
+.mail-body-html {
+    color: #e2e8f0 !important;
+}
+
+.mail-body-html b,
+.mail-body-html strong {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+/* Koyu renkli inline elementler için kontrast garantisi */
+.mail-body-html p,
+.mail-body-html span,
+.mail-body-html div,
+.mail-body-html li,
+.mail-body-html td,
+.mail-body-html font {
+    color: inherit;
+}
+
+.mail-btn-theme {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #fbbf24;
+}
+
+.mail-btn-theme:hover {
+    background: rgba(251, 191, 36, 0.15);
+    color: #f59e0b;
+    border-color: rgba(251, 191, 36, 0.35);
+}
+
+/* OUTLOOK TARZI IŞIK / BEYAZ KAĞIT MODU */
+.mail-body-wrapper.light-mode {
+    background: #e2e8f0 !important;
+}
+
+.mail-body-wrapper.light-mode .mail-body-html {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    padding: 28px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+.mail-body-wrapper.light-mode .mail-body-html b,
+.mail-body-wrapper.light-mode .mail-body-html strong {
+    color: #000000 !important;
+}
+
+.mail-body-wrapper.light-mode .mail-body-html a {
+    color: #0284c7 !important;
+}
+
+.mail-body-wrapper.light-mode .mail-body-html p,
+.mail-body-wrapper.light-mode .mail-body-html span,
+.mail-body-wrapper.light-mode .mail-body-html div,
+.mail-body-wrapper.light-mode .mail-body-html li,
+.mail-body-wrapper.light-mode .mail-body-html td,
+.mail-body-wrapper.light-mode .mail-body-html font {
+    color: #0f172a;
+}
+
+
+/* --- MULTI-ACCOUNT MAIL DROPDOWN --- */
+.mail-account-dropdown {
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    border-radius: 10px;
+    color: #00f0ff;
+    font-size: 0.8rem;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mail-account-dropdown:hover, .mail-account-dropdown:focus {
+    border-color: #00f0ff;
+    background: rgba(0, 240, 255, 0.08);
+}
+
+.mail-account-dropdown option {
+    background: #0f111a;
+    color: #fff;
+    padding: 8px;
+}
+
+.compose-account-select option {
+    background: #0f111a;
+    color: #fff;
+    padding: 8px;
+}

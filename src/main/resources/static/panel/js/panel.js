@@ -89,6 +89,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 fetchSeries();
             } else if (targetId === 'view-management-section') {
                 fetchViewStats();
+            } else if (targetId === 'mail-section') {
+                if (typeof window.initMailbox === 'function') window.initMailbox();
             } else if (targetId === 'feedback-section') {
                 fetchFeedbacks();
             } else if (targetId === 'content-requests-section') {
@@ -7553,4 +7555,606 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch(err => alert("Onbellek temizlenirken hata olustu: " + err));
     };
+
+    /* ===========================================================
+       E-POSTA YÖNETİM MERKEZİ (ADMIN MAILBOX / WEBMAIL)
+       =========================================================== */
+    let currentMailAccount = (window.location.hostname && window.location.hostname.toLowerCase().includes('bldizi')) ? 'bldizi' : 'whodatidols';
+    let currentMailFolder = 'INBOX';
+    let currentMailPage = 0;
+    let currentMailTotalPages = 1;
+    let currentActiveMail = null;
+    let allCurrentMessages = [];
+    let mailIsLightMode = false;
+    let availableMailAccounts = [];
+
+    window.initMailbox = function () {
+        window.loadMailAccounts();
+        window.loadMailFolders();
+        window.loadMailMessages(currentMailFolder, 0);
+        bindMailboxEvents();
+    };
+
+    window.loadMailAccounts = function () {
+        fetch('/admin/mail/accounts?account=' + encodeURIComponent(currentMailAccount))
+            .then(res => res.json())
+            .then(accounts => {
+                if (!accounts || !Array.isArray(accounts)) return;
+                availableMailAccounts = accounts;
+                const composeSelectEl = document.getElementById('composeFromAccount');
+                if (composeSelectEl) {
+                    composeSelectEl.innerHTML = '';
+                    accounts.forEach(acc => {
+                        const opt = document.createElement('option');
+                        opt.value = acc.id;
+                        opt.textContent = `${acc.displayName} <${acc.email}>`;
+                        if (acc.id === currentMailAccount) opt.selected = true;
+                        composeSelectEl.appendChild(opt);
+                    });
+                }
+                const active = accounts.find(a => a.id === currentMailAccount) || accounts[0];
+                if (active) {
+                    const titleEl = document.getElementById('mailAccountTitle');
+                    const displayEl = document.getElementById('mailAccountDisplay');
+                    const cardEl = document.getElementById('mailAccountCard');
+                    const avatarEl = document.getElementById('mailAccountAvatar');
+                    if (titleEl) titleEl.textContent = active.displayName;
+                    if (displayEl) displayEl.textContent = active.email;
+                    if (cardEl) {
+                        cardEl.classList.toggle('bldizi-active', active.id === 'bldizi');
+                    }
+                    if (avatarEl) {
+                        avatarEl.innerHTML = (active.id === 'bldizi')
+                            ? '<i class="fas fa-play"></i>'
+                            : '<i class="fas fa-shield-halved"></i>';
+                    }
+                }
+            })
+            .catch(err => console.error("Mail hesapları yüklenemedi:", err));
+    };
+
+    window.toggleMailAccount = function () {
+        const btn = document.getElementById('mailSwitchAccountBtn');
+        if (btn) {
+            const icon = btn.querySelector('i');
+            if (icon) {
+                icon.classList.add('fa-spin');
+                setTimeout(() => icon.classList.remove('fa-spin'), 650);
+            }
+        }
+
+        let nextAccount = 'whodatidols';
+        if (currentMailAccount === 'whodatidols') {
+            nextAccount = 'bldizi';
+        } else if (availableMailAccounts && availableMailAccounts.length > 1) {
+            const currentIndex = availableMailAccounts.findIndex(a => a.id === currentMailAccount);
+            const nextIndex = (currentIndex + 1) % availableMailAccounts.length;
+            nextAccount = availableMailAccounts[nextIndex].id;
+        }
+        window.switchMailAccount(nextAccount);
+    };
+
+    window.switchMailAccount = function (accId) {
+        currentMailAccount = accId;
+        currentMailPage = 0;
+        currentMailFolder = 'INBOX';
+
+        const titleEl = document.getElementById('mailAccountTitle');
+        const displayEl = document.getElementById('mailAccountDisplay');
+        const cardEl = document.getElementById('mailAccountCard');
+        const avatarEl = document.getElementById('mailAccountAvatar');
+        if (accId === 'bldizi') {
+            if (titleEl) titleEl.textContent = 'BL Dizi';
+            if (displayEl) displayEl.textContent = 'info@bldizi.com';
+            if (cardEl) cardEl.classList.add('bldizi-active');
+            if (avatarEl) avatarEl.innerHTML = '<i class="fas fa-play"></i>';
+        } else {
+            if (titleEl) titleEl.textContent = 'Who Dat Idols';
+            if (displayEl) displayEl.textContent = 'info@whodatidols.com';
+            if (cardEl) cardEl.classList.remove('bldizi-active');
+            if (avatarEl) avatarEl.innerHTML = '<i class="fas fa-shield-halved"></i>';
+        }
+
+        const composeSelectEl = document.getElementById('composeFromAccount');
+        if (composeSelectEl) composeSelectEl.value = accId;
+
+        const heading = document.getElementById('currentFolderName');
+        if (heading) heading.innerHTML = '<i class="fas fa-inbox"></i> Gelen Kutusu';
+        window.loadMailAccounts();
+        window.loadMailFolders();
+        window.loadMailMessages('INBOX', 0);
+    };
+
+    window.loadMailFolders = function () {
+        const folderListEl = document.getElementById('mailFolderList');
+        if (!folderListEl) return;
+
+        fetch('/admin/mail/folders?account=' + encodeURIComponent(currentMailAccount))
+            .then(res => res.json())
+            .then(folders => {
+                if (!folders || !Array.isArray(folders)) return;
+                folderListEl.innerHTML = '';
+                let totalUnread = 0;
+
+                folders.forEach(f => {
+                    if (f.name.toLowerCase() === 'inbox') {
+                        totalUnread = f.unreadCount;
+                    }
+
+                    const item = document.createElement('div');
+                    item.className = `mail-folder-item ${f.name === currentMailFolder ? 'active' : ''}`;
+                    item.onclick = () => {
+                        document.querySelectorAll('.mail-folder-item').forEach(el => el.classList.remove('active'));
+                        item.classList.add('active');
+                        currentMailFolder = f.name;
+                        currentMailPage = 0;
+                        const heading = document.getElementById('currentFolderName');
+                        if (heading) heading.innerHTML = `<i class="fas ${f.icon}"></i> ${f.displayName}`;
+                        window.loadMailMessages(f.name, 0);
+                    };
+
+                    item.innerHTML = `
+                        <div class="mail-folder-left">
+                            <i class="fas ${f.icon}"></i>
+                            <span>${f.displayName}</span>
+                        </div>
+                        ${f.unreadCount > 0 ? `<span class="mail-folder-badge">${f.unreadCount}</span>` : ''}
+                    `;
+                    folderListEl.appendChild(item);
+                });
+
+                // Sidebar rozetini güncelle
+                const badge = document.getElementById('sidebar-mail-unread-badge');
+                if (badge) {
+                    if (totalUnread > 0) {
+                        badge.textContent = totalUnread;
+                        badge.style.display = 'inline-block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            })
+            .catch(err => {
+                console.error("Mail klasörleri alınamadı:", err);
+            });
+    };
+
+    window.loadMailMessages = function (folder, page) {
+        const container = document.getElementById('mailListContainer');
+        const emptyState = document.getElementById('mailEmptyState');
+        const detailContent = document.getElementById('mailDetailContent');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div style="padding: 40px; text-align: center; color: rgba(255,255,255,0.4);">
+                <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 10px; color: #00f0ff;"></i>
+                <div>E-postalar alınıyor...</div>
+            </div>
+        `;
+
+        if (emptyState) emptyState.style.display = 'flex';
+        if (detailContent) detailContent.style.display = 'none';
+        currentActiveMail = null;
+
+        fetch(`/admin/mail/messages?account=${encodeURIComponent(currentMailAccount)}&folder=${encodeURIComponent(folder)}&page=${page}&size=20`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data || !data.success) {
+                    container.innerHTML = `
+                        <div style="padding: 30px; text-align: center; color: #ef4444;">
+                            <i class="fas fa-triangle-exclamation" style="font-size: 1.4rem; margin-bottom: 8px;"></i>
+                            <div>${data.message || 'E-postalar yüklenemedi'}</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                currentMailPage = data.page;
+                currentMailTotalPages = Math.max(1, data.totalPages);
+                allCurrentMessages = data.messages || [];
+
+                // Toplam sayaç ve sayfalama
+                const totalCountEl = document.getElementById('folderTotalCount');
+                if (totalCountEl) totalCountEl.textContent = `${data.total || 0} mesaj`;
+
+                updateMailPaginationUI();
+                window.renderMailMessages(allCurrentMessages);
+            })
+            .catch(err => {
+                console.error("Mesajlar yüklenemedi:", err);
+                container.innerHTML = `
+                    <div style="padding: 30px; text-align: center; color: #ef4444;">
+                        <i class="fas fa-circle-xmark" style="font-size: 1.4rem; margin-bottom: 8px;"></i>
+                        <div>Sunucu bağlantı hatası</div>
+                    </div>
+                `;
+            });
+    };
+
+    window.renderMailMessages = function (messages) {
+        const container = document.getElementById('mailListContainer');
+        if (!container) return;
+
+        if (!messages || messages.length === 0) {
+            container.innerHTML = `
+                <div style="padding: 40px; text-align: center; color: rgba(255,255,255,0.4);">
+                    <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.3;"></i>
+                    <div>Bu klasörde e-posta bulunmuyor</div>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = '';
+        messages.forEach(msg => {
+            const item = document.createElement('div');
+            item.className = `mail-item ${!msg.read ? 'unread' : ''}`;
+            item.setAttribute('data-uid', msg.uid);
+
+            item.onclick = () => {
+                document.querySelectorAll('.mail-item').forEach(el => el.classList.remove('selected'));
+                item.classList.add('selected');
+                item.classList.remove('unread');
+                window.openMailDetail(msg.uid, currentMailFolder, item);
+            };
+
+            item.innerHTML = `
+                <div class="mail-item-top">
+                    <span class="mail-item-sender" title="${escapeHtml(msg.from)}">${escapeHtml(msg.from)}</span>
+                    <span class="mail-item-date">${msg.formattedDate}</span>
+                </div>
+                <div class="mail-item-subject">${escapeHtml(msg.subject)}</div>
+                <div class="mail-item-snippet">${escapeHtml(msg.snippet || '')}</div>
+            `;
+            container.appendChild(item);
+        });
+    };
+
+    window.openMailDetail = function (uid, folder, itemElement) {
+        const emptyState = document.getElementById('mailEmptyState');
+        const detailContent = document.getElementById('mailDetailContent');
+        const bodyEl = document.getElementById('mailDetailHtmlBody');
+        const subjectEl = document.getElementById('mailDetailSubject');
+        const senderEl = document.getElementById('mailDetailSender');
+        const recipientEl = document.getElementById('mailDetailRecipient');
+        const dateEl = document.getElementById('mailDetailDate');
+        const avatarEl = document.getElementById('mailSenderAvatar');
+
+        if (!detailContent) return;
+
+        if (emptyState) emptyState.style.display = 'none';
+        detailContent.style.display = 'flex';
+        bodyEl.innerHTML = '<div style="padding: 30px; text-align: center; color: rgba(255,255,255,0.4);"><i class="fas fa-spinner fa-spin"></i> Yükleniyor...</div>';
+
+        fetch(`/admin/mail/messages/${uid}?account=${encodeURIComponent(currentMailAccount)}&folder=${encodeURIComponent(folder)}`)
+            .then(res => res.json())
+            .then(mail => {
+                currentActiveMail = mail;
+                subjectEl.textContent = mail.subject || '(Konusuz)';
+                senderEl.textContent = mail.from || '-';
+                recipientEl.textContent = mail.to || '-';
+                dateEl.textContent = mail.formattedDate || '-';
+
+                // Avatar ilk harf
+                let firstChar = 'W';
+                if (mail.from) {
+                    const cleanFrom = mail.from.replace(/<.*?>/, '').trim();
+                    if (cleanFrom.length > 0) firstChar = cleanFrom.charAt(0).toUpperCase();
+                }
+                if (avatarEl) avatarEl.textContent = firstChar;
+
+                // Sanitize edilmiş HTML gövde
+                bodyEl.innerHTML = mail.htmlContent || '<em>(İçerik yok)</em>';
+                if (!mailIsLightMode) {
+                    applySmartDarkModeContrast(bodyEl);
+                }
+            })
+            .catch(err => {
+                console.error("Mail detay hatası:", err);
+                bodyEl.innerHTML = '<div style="color: #ef4444; padding: 20px;">E-posta detayı yüklenirken hata oluştu.</div>';
+            });
+    };
+
+    function applySmartDarkModeContrast(container) {
+        if (!container) return;
+        const allElements = container.querySelectorAll('*');
+        allElements.forEach(el => {
+            // Kalın (bold) metinleri karanlık temada bembeyaz yap
+            if (el.tagName === 'B' || el.tagName === 'STRONG') {
+                el.style.setProperty('color', '#ffffff', 'important');
+            }
+
+            // Koyu inline renkleri açık renge dönüştür
+            const inlineColor = el.style.color;
+            if (inlineColor) {
+                const lower = inlineColor.toLowerCase().trim();
+                if (lower === 'black' || lower === '#000' || lower === '#000000' || 
+                    lower === 'rgb(0, 0, 0)' || lower === 'rgba(0, 0, 0, 1)' ||
+                    lower.startsWith('#1') || lower.startsWith('#2') || lower.startsWith('#3')) {
+                    el.style.setProperty('color', '#e2e8f0', 'important');
+                }
+            }
+
+            // Beyaz veya çok açık inline arka planları saydam yap
+            const inlineBg = el.style.backgroundColor;
+            if (inlineBg) {
+                const lowerBg = inlineBg.toLowerCase().trim();
+                if (lowerBg === 'white' || lowerBg === '#fff' || lowerBg === '#ffffff' || 
+                    lowerBg === 'rgb(255, 255, 255)' || lowerBg.startsWith('#f')) {
+                    el.style.backgroundColor = 'transparent';
+                }
+            }
+        });
+    }
+
+    function updateMailPaginationUI() {
+        const prevBtn = document.getElementById('mailPrevPageBtn');
+        const nextBtn = document.getElementById('mailNextPageBtn');
+        const infoEl = document.getElementById('mailPageInfo');
+
+        if (prevBtn) prevBtn.disabled = (currentMailPage <= 0);
+        if (nextBtn) nextBtn.disabled = (currentMailPage >= currentMailTotalPages - 1);
+        if (infoEl) infoEl.textContent = `Sayfa ${currentMailPage + 1} / ${currentMailTotalPages}`;
+    }
+
+    window.toggleMailLightMode = function() {
+        mailIsLightMode = !mailIsLightMode;
+        const wrapper = document.querySelector('.mail-body-wrapper');
+        const lightModeBtn = document.getElementById('mailToggleLightModeBtn');
+        if (wrapper) {
+            if (mailIsLightMode) {
+                wrapper.classList.add('light-mode');
+                if (lightModeBtn) lightModeBtn.innerHTML = '<i class="fas fa-moon"></i> <span>Karanlık Görünüm</span>';
+            } else {
+                wrapper.classList.remove('light-mode');
+                if (lightModeBtn) lightModeBtn.innerHTML = '<i class="fas fa-sun"></i> <span>Açık Görünüm</span>';
+            }
+        }
+        if (currentActiveMail) {
+            const bodyEl = document.getElementById('mailDetailHtmlBody');
+            if (bodyEl) {
+                bodyEl.innerHTML = currentActiveMail.htmlContent || '<em>(İçerik yok)</em>';
+                if (!mailIsLightMode) {
+                    applySmartDarkModeContrast(bodyEl);
+                }
+            }
+        }
+    };
+
+    function bindMailboxEvents() {
+        // Outlook Tarzı Işık / Koyu Mod Butonu
+        const lightModeBtn = document.getElementById('mailToggleLightModeBtn');
+        if (lightModeBtn && !lightModeBtn.dataset.bound) {
+            lightModeBtn.dataset.bound = 'true';
+            lightModeBtn.onclick = window.toggleMailLightMode;
+        }
+
+        // Yenile Butonu
+        const refreshBtn = document.getElementById('refreshMailListBtn');
+        if (refreshBtn && !refreshBtn.dataset.bound) {
+            refreshBtn.dataset.bound = 'true';
+            refreshBtn.onclick = () => {
+                window.loadMailFolders();
+                window.loadMailMessages(currentMailFolder, currentMailPage);
+            };
+        }
+
+        // Önceki / Sonraki Sayfa
+        const prevBtn = document.getElementById('mailPrevPageBtn');
+        if (prevBtn && !prevBtn.dataset.bound) {
+            prevBtn.dataset.bound = 'true';
+            prevBtn.onclick = () => {
+                if (currentMailPage > 0) {
+                    window.loadMailMessages(currentMailFolder, currentMailPage - 1);
+                }
+            };
+        }
+
+        const nextBtn = document.getElementById('mailNextPageBtn');
+        if (nextBtn && !nextBtn.dataset.bound) {
+            nextBtn.dataset.bound = 'true';
+            nextBtn.onclick = () => {
+                if (currentMailPage < currentMailTotalPages - 1) {
+                    window.loadMailMessages(currentMailFolder, currentMailPage + 1);
+                }
+            };
+        }
+
+        // Arama Filtresi
+        const searchInput = document.getElementById('mailSearchInput');
+        if (searchInput && !searchInput.dataset.bound) {
+            searchInput.dataset.bound = 'true';
+            searchInput.addEventListener('input', function () {
+                const q = this.value.toLowerCase().trim();
+                if (!q) {
+                    window.renderMailMessages(allCurrentMessages);
+                    return;
+                }
+                const filtered = allCurrentMessages.filter(m =>
+                    (m.subject && m.subject.toLowerCase().includes(q)) ||
+                    (m.from && m.from.toLowerCase().includes(q)) ||
+                    (m.snippet && m.snippet.toLowerCase().includes(q))
+                );
+                window.renderMailMessages(filtered);
+            });
+        }
+
+        // Aksiyon Butonları: Yanıtla, İlet, Sil, Spam
+        const replyBtn = document.getElementById('mailReplyBtn');
+        if (replyBtn && !replyBtn.dataset.bound) {
+            replyBtn.dataset.bound = 'true';
+            replyBtn.onclick = window.mailReplyCurrent;
+        }
+
+        const forwardBtn = document.getElementById('mailForwardBtn');
+        if (forwardBtn && !forwardBtn.dataset.bound) {
+            forwardBtn.dataset.bound = 'true';
+            forwardBtn.onclick = window.mailForwardCurrent;
+        }
+
+        const deleteBtn = document.getElementById('mailDeleteBtn');
+        if (deleteBtn && !deleteBtn.dataset.bound) {
+            deleteBtn.dataset.bound = 'true';
+            deleteBtn.onclick = window.mailDeleteCurrent;
+        }
+
+        const spamBtn = document.getElementById('mailMarkSpamBtn');
+        if (spamBtn && !spamBtn.dataset.bound) {
+            spamBtn.dataset.bound = 'true';
+            spamBtn.onclick = window.mailSpamCurrent;
+        }
+
+        // Compose Modal Açma & Kapatma
+        const openComposeBtn = document.getElementById('openComposeMailModalBtn');
+        if (openComposeBtn && !openComposeBtn.dataset.bound) {
+            openComposeBtn.dataset.bound = 'true';
+            openComposeBtn.onclick = () => window.openComposeMailModal();
+        }
+
+        const closeComposeBtn = document.getElementById('closeComposeMailModalBtn');
+        if (closeComposeBtn && !closeComposeBtn.dataset.bound) {
+            closeComposeBtn.dataset.bound = 'true';
+            closeComposeBtn.onclick = window.closeComposeMailModal;
+        }
+
+        const cancelComposeBtn = document.getElementById('cancelComposeMailBtn');
+        if (cancelComposeBtn && !cancelComposeBtn.dataset.bound) {
+            cancelComposeBtn.dataset.bound = 'true';
+            cancelComposeBtn.onclick = window.closeComposeMailModal;
+        }
+
+        const toggleCcBtn = document.getElementById('toggleCcBccBtn');
+        if (toggleCcBtn && !toggleCcBtn.dataset.bound) {
+            toggleCcBtn.dataset.bound = 'true';
+            toggleCcBtn.onclick = () => {
+                const ccRow = document.getElementById('composeCcRow');
+                const bccRow = document.getElementById('composeBccRow');
+                const isHidden = ccRow.style.display === 'none';
+                ccRow.style.display = isHidden ? 'flex' : 'none';
+                bccRow.style.display = isHidden ? 'flex' : 'none';
+            };
+        }
+    }
+
+    window.mailReplyCurrent = function () {
+        if (!currentActiveMail) return;
+        let to = currentActiveMail.from || '';
+        const match = to.match(/<([^>]+)>/);
+        if (match) to = match[1];
+
+        const subject = currentActiveMail.subject.startsWith('Re:') ? currentActiveMail.subject : `Re: ${currentActiveMail.subject}`;
+        const quote = `\n\n--- ${currentActiveMail.from} (${currentActiveMail.formattedDate}) yazdı ---\n${currentActiveMail.plainTextContent || ''}`;
+
+        window.openComposeMailModal(to, subject, quote);
+    };
+
+    window.mailForwardCurrent = function () {
+        if (!currentActiveMail) return;
+        const subject = currentActiveMail.subject.startsWith('Fwd:') ? currentActiveMail.subject : `Fwd: ${currentActiveMail.subject}`;
+        const quote = `\n\n--- İletilen Mesaj ---\nGönderici: ${currentActiveMail.from}\nTarih: ${currentActiveMail.formattedDate}\nKonu: ${currentActiveMail.subject}\n\n${currentActiveMail.plainTextContent || ''}`;
+
+        window.openComposeMailModal('', subject, quote);
+    };
+
+    window.mailDeleteCurrent = function () {
+        if (!currentActiveMail) return;
+        if (!confirm("Bu e-postayı silmek istediğinize emin misiniz?")) return;
+
+        fetch(`/admin/mail/messages/${currentActiveMail.uid}?account=${encodeURIComponent(currentMailAccount)}&folder=${encodeURIComponent(currentMailFolder)}`, {
+            method: 'DELETE'
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.loadMailMessages(currentMailFolder, currentMailPage);
+                    window.loadMailFolders();
+                } else {
+                    alert("Silme başarısız: " + (data.message || ''));
+                }
+            })
+            .catch(err => alert("Silme hatası: " + err));
+    };
+
+    window.mailSpamCurrent = function () {
+        if (!currentActiveMail) return;
+        if (!confirm("Bu e-postayı spam olarak işaretlemek istiyor musunuz?")) return;
+
+        fetch(`/admin/mail/messages/${currentActiveMail.uid}/spam?account=${encodeURIComponent(currentMailAccount)}&folder=${encodeURIComponent(currentMailFolder)}`, {
+            method: 'POST'
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert("E-posta spam klasörüne taşındı.");
+                    window.loadMailMessages(currentMailFolder, currentMailPage);
+                    window.loadMailFolders();
+                } else {
+                    alert("İşlem başarısız: " + (data.message || ''));
+                }
+            })
+            .catch(err => alert("Spam taşıma hatası: " + err));
+    };
+
+    window.openComposeMailModal = function (to = '', subject = '', body = '') {
+        const modal = document.getElementById('composeMailModal');
+        if (!modal) return;
+
+        document.getElementById('composeTo').value = to;
+        document.getElementById('composeSubject').value = subject;
+        document.getElementById('composeBody').value = body;
+        document.getElementById('composeCc').value = '';
+        document.getElementById('composeBcc').value = '';
+
+        modal.style.display = 'flex';
+    };
+
+    window.closeComposeMailModal = function () {
+        const modal = document.getElementById('composeMailModal');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window.handleSendMail = function (e) {
+        e.preventDefault();
+        const submitBtn = document.getElementById('sendMailSubmitBtn');
+        const to = document.getElementById('composeTo').value.trim();
+        const cc = document.getElementById('composeCc').value.trim();
+        const bcc = document.getElementById('composeBcc').value.trim();
+        const subject = document.getElementById('composeSubject').value.trim();
+        const body = document.getElementById('composeBody').value.trim();
+
+        if (!to || !subject || !body) {
+            alert("Lütfen kime, konu ve mesaj alanlarını doldurunuz.");
+            return;
+        }
+
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gönderiliyor...';
+
+        fetch('/admin/mail/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ to, cc, bcc, subject, body, isHtml: true, account: (document.getElementById('composeFromAccount') ? document.getElementById('composeFromAccount').value : currentMailAccount) })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert("E-posta başarıyla gönderildi!");
+                    window.closeComposeMailModal();
+                    if (currentMailFolder.toLowerCase().includes('sent')) {
+                        window.loadMailMessages(currentMailFolder, 0);
+                    }
+                } else {
+                    alert("E-posta gönderilemedi: " + (data.message || ''));
+                }
+            })
+            .catch(err => {
+                alert("Gönderim sırasında hata oluştu: " + err);
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+    };
+
 })();

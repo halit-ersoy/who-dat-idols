@@ -35,8 +35,8 @@ public class SecurityConfig {
                                                 .requestMatchers("/sitemap.xml", "/sitemap-*.xml", "/robots.txt").permitAll()
                                                 .requestMatchers("/admin/users", "/admin/ban-user",
                                                                 "/admin/update-role", "/admin/delete-user",
-                                                                "/admin/messages/**")
-                                                .hasAnyRole("SUPER_ADMIN", "KURUCU", "GELISTIRICI")
+                                                                "/admin/messages/**", "/admin/mail/**")
+                                                .hasAnyRole("SUPER_ADMIN", "KURUCU", "GELISTIRICI", "ADMIN")
                                                 .requestMatchers(
                                                                 "/admin/panel", "/admin/me", "/admin/translate",
                                                                 "/admin/movies", "/admin/series", "/admin/series/check",
@@ -103,7 +103,7 @@ public class SecurityConfig {
                                 }
                         }
 
-                        throw new UsernameNotFoundException("User not found or not authorized for admin panel");
+                        throw new UsernameNotFoundException("Kullanıcı bulunamadı veya yetkisi yok: " + username);
                 };
         }
 }
