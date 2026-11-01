@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="stylesheet" href="/elements/variables.css">
-    <link rel="stylesheet" href="/panel/css/panel.css?v=7">
+    <link rel="stylesheet" href="/panel/css/panel.css?v=12">
     <script src="/homepage/js/devtools-protection.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -113,6 +113,9 @@
                 </a>
                 <a href="#archive-section" class="nav-link" data-section="archive-section">
                     <i class="fas fa-layer-group"></i> <span>Arşiv &amp; Liste</span>
+                </a>
+                <a href="#custom-pages-section" class="nav-link" data-section="custom-pages-section" id="nav-custom-pages-section">
+                    <i class="fas fa-globe"></i> <span>Özel Sayfalar &amp; Landing</span>
                 </a>
 
                 <div class="nav-group-title">TOPLULUK &amp; İSTATİSTİK</div>
@@ -457,6 +460,114 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </section>
+
+            <!-- ÖZEL SAYFALAR & LANDING SECTION -->
+            <section id="custom-pages-section" class="admin-section" style="display: none;">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+                    <div>
+                        <h2 style="display: flex; align-items: center; gap: 12px; margin: 0; font-size: 1.6rem; color: #fff;">
+                            <span style="width: 42px; height: 42px; border-radius: 12px; background: rgba(0, 240, 255, 0.12); border: 1px solid rgba(0, 240, 255, 0.25); display: inline-flex; align-items: center; justify-content: center; color: #00f0ff; font-size: 1.25rem; box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);">
+                                <i class="fas fa-globe"></i>
+                            </span>
+                            Özel Sayfalar &amp; Landing Yönetimi
+                        </h2>
+                        <p class="section-desc" style="margin: 6px 0 0 0; color: rgba(255, 255, 255, 0.55); font-size: 0.88rem;">
+                            ZIP veya HTML yükleyerek belirlediğiniz uzantıda anında web sayfası yayınlayın, kodlarını düzenleyin veya tamamen kaldırın.
+                        </p>
+                    </div>
+                    <div class="section-header-actions" style="display: flex; gap: 10px; align-items: center;">
+                        <button type="button" class="btn btn-secondary" onclick="window.loadCustomPages()" title="Listeyi Yenile" style="border-radius: 10px; padding: 10px 18px; font-weight: 600;">
+                            <i class="fas fa-arrows-rotate" id="cpRefreshIcon"></i> Yenile
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="window.openCustomPageUploadModal()" style="border-radius: 10px; padding: 10px 22px; font-weight: 700; background: linear-gradient(135deg, #00f0ff 0%, #00a8e8 100%); color: #000; border: none; box-shadow: 0 4px 20px rgba(0, 240, 255, 0.35);">
+                            <i class="fas fa-cloud-arrow-up"></i> Yeni Site / ZIP Yükle
+                        </button>
+                    </div>
+                </div>
+
+                <!-- İstatistik Kartları -->
+                <div class="custom-pages-stats-grid">
+                    <div class="custom-stat-card">
+                        <div class="stat-icon" style="background: rgba(0, 240, 255, 0.12); border: 1px solid rgba(0, 240, 255, 0.25); color: #00f0ff; box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);">
+                            <i class="fas fa-globe"></i>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-label">Toplam Sayfa</span>
+                            <span class="stat-value" id="cpStatTotal">0</span>
+                        </div>
+                    </div>
+                    <div class="custom-stat-card">
+                        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.25); color: #10b981; box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);">
+                            <i class="fas fa-circle-check"></i>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-label">Yayında (Aktif)</span>
+                            <span class="stat-value" id="cpStatActive">0</span>
+                        </div>
+                    </div>
+                    <div class="custom-stat-card">
+                        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.25); color: #f59e0b; box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);">
+                            <i class="fas fa-hard-drive"></i>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-label">Toplam Disk Alanı</span>
+                            <span class="stat-value" id="cpStatSize">0 B</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Arama, Filtre ve Bilgi Çubuğu -->
+                <div class="table-container" style="margin-top: 24px;">
+                    <div class="cp-table-toolbar">
+                        <div class="cp-toolbar-left">
+                            <div class="input-with-icon cp-search-box">
+                                <i class="fas fa-search" style="color: rgba(255,255,255,0.4);"></i>
+                                <input type="text" id="cpSearchFilter" placeholder="Sayfa başlığı veya /uzantı ara..." oninput="window.filterCustomPagesTable()">
+                            </div>
+
+                            <div class="cp-platform-filter-tabs">
+                                <button type="button" class="cp-filter-tab active" data-filter="all" onclick="window.setCpPlatformFilter('all', this)">
+                                    <i class="fas fa-layer-group"></i> Tümü
+                                </button>
+                                <button type="button" class="cp-filter-tab" data-filter="whodatidols" onclick="window.setCpPlatformFilter('whodatidols', this)">
+                                    <i class="fas fa-shield-halved" style="color: #00f0ff;"></i> Who Dat Idols
+                                </button>
+                                <button type="button" class="cp-filter-tab" data-filter="bldizi" onclick="window.setCpPlatformFilter('bldizi', this)">
+                                    <i class="fas fa-heart" style="color: #ff4081;"></i> BL Dizi
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="cp-toolbar-right">
+                            <span class="cp-info-badge">
+                                <i class="fas fa-circle-info" style="color: #00f0ff;"></i> Silinen sayfaların sunucudaki tüm dosyaları anında temizlenir.
+                            </span>
+                        </div>
+                    </div>
+
+                    <table class="admin-table cp-table">
+                        <thead>
+                            <tr>
+                                <th>Sayfa Başlığı</th>
+                                <th>Yayın URL'si (Uzantı)</th>
+                                <th>Platform</th>
+                                <th>Giriş Dosyası</th>
+                                <th>Dosya &amp; Boyut</th>
+                                <th>Durum</th>
+                                <th>Yüklenme Tarihi</th>
+                                <th style="text-align: right;">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customPagesTableBody">
+                            <tr>
+                                <td colspan="8" style="text-align: center; padding: 40px; color: rgba(255,255,255,0.4);">
+                                    <i class="fas fa-spinner fa-spin"></i> Sayfalar yükleniyor...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </section>
 
@@ -2987,7 +3098,188 @@
         </div>
     </div>
 
-    <script src="/panel/js/panel.js?v=7"></script>
+    <!-- YENİ STATİK SİTE / ZIP YÜKLEME MODALI -->
+    <div id="customPageUploadModal" class="modal">
+        <div class="modal-content cp-upload-modal-content">
+            <div class="cp-upload-modal-header">
+                <div class="cp-modal-title-box">
+                    <div class="cp-modal-title-icon"><i class="fas fa-cloud-arrow-up"></i></div>
+                    <div>
+                        <h3 class="cp-modal-title">Yeni Site / Sayfa Yayınla</h3>
+                        <p class="cp-modal-subtitle">ZIP veya HTML yükleyerek özel uzantıda anında web sayfası yayınlayın</p>
+                    </div>
+                </div>
+                <button type="button" class="close-modal" onclick="window.closeCustomPageUploadModal()">&times;</button>
+            </div>
+
+            <form id="customPageUploadForm" onsubmit="window.handleCustomPageUpload(event)">
+                <div class="cp-form-body">
+                    <!-- Dosya Yükleme Alanı -->
+                    <div class="form-group" style="margin: 0;">
+                        <label class="cp-form-label">
+                            <span><i class="fas fa-file-zipper" style="color: #f59e0b; margin-right: 6px;"></i> Dosya Seçin (.ZIP veya .HTML)</span>
+                            <span class="cp-label-tip">Otomatik açılır &amp; yayınlanır</span>
+                        </label>
+                        <div class="cp-drop-zone" id="cpDropZone" onclick="document.getElementById('cpFileInput').click()">
+                            <input type="file" id="cpFileInput" accept=".zip,.html,.htm" style="display: none;" onchange="window.handleCpFileSelected(this)">
+                            <div class="cp-drop-content" id="cpDropContent">
+                                <div class="cp-drop-icon-wrap">
+                                    <i class="fas fa-file-arrow-up"></i>
+                                </div>
+                                <div class="cp-drop-title">ZIP veya HTML dosyasını buraya sürükleyin</div>
+                                <div class="cp-drop-sub">veya bilgisayarınızdan seçmek için tıklayın</div>
+                                <div class="cp-drop-tags">
+                                    <span class="cp-tag-pill">.ZIP</span>
+                                    <span class="cp-tag-pill">.HTML</span>
+                                    <span class="cp-tag-pill">.HTM</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hedef Platform / Site Seçimi -->
+                    <div class="form-group" style="margin: 0;">
+                        <label class="cp-form-label">
+                            <span><i class="fas fa-globe" style="color: #00f0ff; margin-right: 6px;"></i> Yayınlanacak Platform / Site</span>
+                            <span class="cp-label-tip">Sayfanın açılacağı alan adı</span>
+                        </label>
+                        <div class="cp-site-cards-grid">
+                            <div class="cp-site-card active" id="cpCardWdi" onclick="window.handleCpTargetSiteChange('whodatidols')">
+                                <input type="radio" name="cpTargetSite" value="whodatidols" checked style="display: none !important; opacity: 0; position: absolute; pointer-events: none;">
+                                <div class="cp-card-check"><i class="fas fa-check"></i></div>
+                                <div class="cp-card-icon-wrap wdi-icon">
+                                    <i class="fas fa-shield-halved"></i>
+                                </div>
+                                <div class="cp-card-content">
+                                    <div class="cp-card-title">Who Dat Idols</div>
+                                    <div class="cp-card-domain">whodatidols.com</div>
+                                </div>
+                            </div>
+
+                            <div class="cp-site-card" id="cpCardBldizi" onclick="window.handleCpTargetSiteChange('bldizi')">
+                                <input type="radio" name="cpTargetSite" value="bldizi" style="display: none !important; opacity: 0; position: absolute; pointer-events: none;">
+                                <div class="cp-card-check"><i class="fas fa-check"></i></div>
+                                <div class="cp-card-icon-wrap bldizi-icon">
+                                    <i class="fas fa-heart"></i>
+                                </div>
+                                <div class="cp-card-content">
+                                    <div class="cp-card-title">BL Dizi</div>
+                                    <div class="cp-card-domain">bldizi.com</div>
+                                </div>
+                            </div>
+
+                            <div class="cp-site-card" id="cpCardAll" onclick="window.handleCpTargetSiteChange('all')">
+                                <input type="radio" name="cpTargetSite" value="all" style="display: none !important; opacity: 0; position: absolute; pointer-events: none;">
+                                <div class="cp-card-check"><i class="fas fa-check"></i></div>
+                                <div class="cp-card-icon-wrap all-icon">
+                                    <i class="fas fa-layer-group"></i>
+                                </div>
+                                <div class="cp-card-content">
+                                    <div class="cp-card-title">Her İkisi</div>
+                                    <div class="cp-card-domain">Tüm Siteler</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- URL Uzantısı (Slug) -->
+                    <div class="form-group" style="margin: 0;">
+                        <label for="cpSlugInput" class="cp-form-label">
+                            <span><i class="fas fa-link" style="color: #00f0ff; margin-right: 6px;"></i> Yayınlanacak URL Uzantısı (Slug)</span>
+                            <span class="cp-label-tip">Ziyaretçilerin gireceği adres</span>
+                        </label>
+                        <div class="cp-slug-input-wrapper">
+                            <div class="cp-slug-prefix-badge" id="cpSlugDomainPrefix">
+                                <i class="fas fa-shield-halved" id="cpSlugPrefixIcon" style="color: #00f0ff;"></i>
+                                <span id="cpSlugPrefixText">whodatidols.com/</span>
+                            </div>
+                            <input type="text" id="cpSlugInput" required placeholder="kampanya" oninput="window.sanitizeCpSlugInput(this); window.updateCpLivePreview();" class="cp-slug-native-input">
+                        </div>
+                        <div class="cp-slug-preview-row">
+                            <span class="cp-preview-label"><i class="fas fa-eye"></i> Canlı Adres Önizleme:</span>
+                            <span class="cp-preview-url" id="cpLiveUrlPreview">https://whodatidols.com/kampanya</span>
+                        </div>
+                    </div>
+
+                    <!-- Başlık (Opsiyonel) -->
+                    <div class="form-group" style="margin: 0;">
+                        <label for="cpTitleInput" class="cp-form-label">
+                            <span><i class="fas fa-heading" style="color: #10b981; margin-right: 6px;"></i> Sayfa Başlığı / Not <span style="font-size: 0.75rem; color: rgba(255,255,255,0.4); font-weight: 400;">(İsteğe bağlı)</span></span>
+                        </label>
+                        <input type="text" id="cpTitleInput" placeholder="Örn: Özel Tanıtım Lansmanı" class="cp-modern-text-input">
+                    </div>
+
+                    <!-- İlerleme Çubuğu -->
+                    <div id="cpUploadProgressWrap" style="display: none;" class="cp-progress-box">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 6px; color: #00f0ff;">
+                            <span id="cpUploadProgressStatus"><i class="fas fa-spinner fa-spin"></i> Yükleniyor ve ZIP açılıyor...</span>
+                            <span id="cpUploadPercent" style="font-weight: 700;">0%</span>
+                        </div>
+                        <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
+                            <div id="cpUploadProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #00f0ff, #10b981); transition: width 0.3s ease;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cp-modal-footer">
+                    <button type="button" class="btn btn-secondary cp-modal-cancel-btn" onclick="window.closeCustomPageUploadModal()">
+                        <i class="fas fa-xmark"></i> Vazgeç
+                    </button>
+                    <button type="submit" class="btn btn-primary cp-modal-submit-btn" id="cpUploadSubmitBtn">
+                        <i class="fas fa-cloud-arrow-up"></i> Yükle ve Yayına Al
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- KOD EDİTÖRÜ MODALI -->
+    <div id="customPageEditorModal" class="modal">
+        <div class="modal-content cp-editor-modal-content">
+            <div class="cp-editor-header">
+                <div style="display: flex; align-items: center; gap: 12px; overflow: hidden;">
+                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(0,240,255,0.15); color: #00f0ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 700; color: #fff; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                            <span id="cpEditorPageTitle">Sayfa Adı</span>
+                            <span class="cp-editor-slug-tag" id="cpEditorSlugTag">/xyz</span>
+                        </div>
+                        <div style="font-size: 0.78rem; color: rgba(255,255,255,0.45);" id="cpEditorActiveFilePath">index.html</div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <a href="#" target="_blank" class="btn btn-secondary btn-sm" id="cpEditorViewLiveBtn" title="Yeni Sekmede Aç">
+                        <i class="fas fa-arrow-up-right-from-square"></i> Yayını Gör
+                    </a>
+                    <button type="button" class="btn btn-primary btn-sm" id="cpEditorSaveBtn" onclick="window.saveCustomPageFile()">
+                        <i class="fas fa-floppy-disk"></i> Değişiklikleri Kaydet
+                    </button>
+                    <button type="button" class="close-modal" onclick="window.closeCustomPageEditorModal()">&times;</button>
+                </div>
+            </div>
+
+            <div class="cp-editor-body">
+                <!-- Sol Dosya Listesi -->
+                <div class="cp-editor-sidebar">
+                    <div class="cp-editor-sidebar-title">
+                        <i class="fas fa-folder-tree"></i> DOSYALAR
+                    </div>
+                    <div class="cp-editor-file-list" id="cpEditorFileList">
+                        <!-- JS ile dolar -->
+                    </div>
+                </div>
+
+                <!-- Sağ Kod Editörü -->
+                <div class="cp-editor-main">
+                    <textarea id="cpEditorTextarea" class="cp-code-textarea" spellcheck="false" placeholder="Dosya içeriği yükleniyor..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/panel/js/panel.js?v=12"></script>
 </body>
 
 </html>

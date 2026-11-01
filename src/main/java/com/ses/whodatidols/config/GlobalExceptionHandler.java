@@ -72,8 +72,8 @@ public class GlobalExceptionHandler {
         }
 
         String accept = request != null ? request.getHeader(HttpHeaders.ACCEPT) : null;
-        boolean isHtmlRequest = (accept != null && accept.contains(MediaType.TEXT_HTML_VALUE))
-                || (!uri.startsWith("/api/"));
+        boolean isHtmlRequest = (accept != null && accept.contains(MediaType.TEXT_HTML_VALUE) && !accept.contains(MediaType.APPLICATION_JSON_VALUE))
+                && (!uri.contains("/api/"));
 
         // For browser/crawler requests, return the branded error HTML page with proper status code
         if (isHtmlRequest) {

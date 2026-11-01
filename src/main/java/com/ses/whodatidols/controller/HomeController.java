@@ -50,6 +50,7 @@ public class HomeController {
     private final jakarta.servlet.http.HttpServletRequest request;
     private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
     private final SeoService seoService;
+    private final com.ses.whodatidols.service.CustomPageService customPageService;
 
     @org.springframework.beans.factory.annotation.Value("${media.profile.images.path}")
     private String profileImagesPath;
@@ -60,7 +61,8 @@ public class HomeController {
             com.ses.whodatidols.service.LoginAttemptService loginAttemptService,
             jakarta.servlet.http.HttpServletRequest request,
             org.springframework.jdbc.core.JdbcTemplate jdbcTemplate,
-            SeoService seoService) {
+            SeoService seoService,
+            com.ses.whodatidols.service.CustomPageService customPageService) {
         this.personRepository = personRepository;
         this.movieService = movieService;
         this.seriesService = seriesService;
@@ -70,6 +72,7 @@ public class HomeController {
         this.request = request;
         this.jdbcTemplate = jdbcTemplate;
         this.seoService = seoService;
+        this.customPageService = customPageService;
     }
 
     @GetMapping("/")
@@ -317,6 +320,11 @@ public class HomeController {
     public ResponseEntity<?> watchPageBySlug(
             @PathVariable("slug") String slug,
             @CookieValue(name = "wdiAuth", required = false) String cookie) {
+
+        // 0. Check Custom Landing / Static Pages
+        if (customPageService.findActiveBySlug(slug).isPresent()) {
+            return customPageService.servePageFile(slug, null, request);
+        }
 
         // If requested slug is actually a UUID, redirect 301 to its clean slug
         UUID uid = null;

@@ -91,6 +91,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 fetchViewStats();
             } else if (targetId === 'mail-section') {
                 if (typeof window.initMailbox === 'function') window.initMailbox();
+            } else if (targetId === 'custom-pages-section') {
+                if (typeof window.loadCustomPages === 'function') window.loadCustomPages();
             } else if (targetId === 'feedback-section') {
                 fetchFeedbacks();
             } else if (targetId === 'content-requests-section') {
@@ -8155,6 +8157,749 @@ document.addEventListener('DOMContentLoaded', function () {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
             });
+    };
+
+    /* ===========================================================
+       ÖZEL SAYFALAR & LANDING PAGES YÖNETİMİ
+       =========================================================== */
+    let allCustomPages = [];
+    let currentCpPlatformFilter = 'all';
+    let currentCpEditorPageId = null;
+    let currentCpEditorActivePath = null;
+    let currentCpEditorFiles = [];
+
+    window.loadCustomPages = function () {
+        const tbody = document.getElementById('customPagesTableBody');
+        const refreshIcon = document.getElementById('cpRefreshIcon');
+        if (refreshIcon) refreshIcon.classList.add('fa-spin');
+
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 50px; color: rgba(255,255,255,0.4);">
+                        <i class="fas fa-circle-notch fa-spin" style="font-size: 1.8rem; color: #00f0ff; margin-bottom: 12px; display: block;"></i>
+                        Sayfalar taranıyor ve yükleniyor...
+                    </td>
+                </tr>
+            `;
+        }
+
+        fetch('/admin/api/custom-pages', {
+            headers: { 'Accept': 'application/json' }
+        })
+            .then(async res => {
+                if (!res.ok) {
+                    const data = await res.json().catch(() => null);
+                    throw new Error((data && data.message) ? data.message : `Sunucu hatası (${res.status})`);
+                }
+                return res.json();
+            })
+            .then(pages => {
+                if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+                if (!Array.isArray(pages)) pages = [];
+                allCustomPages = pages || [];
+                updateCustomPagesStats(allCustomPages);
+                window.filterCustomPagesTable();
+            })
+            .catch(err => {
+                if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+                console.error("Özel sayfalar alınamadı:", err);
+                if (tbody) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 45px; color: #ef4444;">
+                                <i class="fas fa-triangle-exclamation" style="font-size: 1.8rem; margin-bottom: 10px; display: block;"></i>
+                                Sayfalar yüklenemedi: ${escapeHtml(err.message || err)}
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+    };
+
+    function updateCustomPagesStats(pages) {
+        const totalEl = document.getElementById('cpStatTotal');
+        const activeEl = document.getElementById('cpStatActive');
+        const sizeEl = document.getElementById('cpStatSize');
+
+        const total = pages.length;
+        const active = pages.filter(p => p.active).length;
+        const totalBytes = pages.reduce((acc, p) => acc + (p.totalSize || 0), 0);
+
+        if (totalEl) totalEl.textContent = total;
+        if (activeEl) activeEl.textContent = active;
+        if (sizeEl) sizeEl.textContent = formatBytes(totalBytes);
+    }
+
+    function formatBytes(bytes) {
+        if (bytes <= 0) return '0 B';
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+    }
+
+    window.setCpPlatformFilter = function (filter, btn) {
+        currentCpPlatformFilter = filter || 'all';
+        document.querySelectorAll('.cp-filter-tab').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        window.filterCustomPagesTable();
+    };
+
+    window.filterCustomPagesTable = function () {
+        const query = (document.getElementById('cpSearchFilter')?.value || '').toLowerCase().trim();
+        let filtered = allCustomPages;
+
+        if (currentCpPlatformFilter && currentCpPlatformFilter !== 'all') {
+            filtered = filtered.filter(p => (p.targetSite || 'whodatidols').toLowerCase() === currentCpPlatformFilter.toLowerCase());
+        }
+
+        if (query) {
+            filtered = filtered.filter(p =>
+                (p.slug && p.slug.toLowerCase().includes(query)) ||
+                (p.title && p.title.toLowerCase().includes(query))
+            );
+        }
+        window.renderCustomPagesTable(filtered);
+    };
+
+    window.renderCustomPagesTable = function (pages) {
+        const tbody = document.getElementById('customPagesTableBody');
+        if (!tbody) return;
+
+        if (!pages || pages.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" style="padding: 0;">
+                        <div class="cp-empty-state">
+                            <div class="cp-empty-icon-wrap">
+                                <i class="fas fa-file-zipper"></i>
+                            </div>
+                            <h3 class="cp-empty-title">Henüz Yayınlanmış Özel Sayfa Yok</h3>
+                            <p class="cp-empty-desc">Tek bir ZIP veya HTML dosyası yükleyerek istediğiniz web sitesini anında <strong>whodatidols.com/uzanti</strong> veya <strong>bldizi.com/uzanti</strong> altında yayına alabilirsiniz.</p>
+                            <button type="button" class="btn btn-primary cp-empty-cta-btn" onclick="window.openCustomPageUploadModal()" style="background: linear-gradient(135deg, #00f0ff 0%, #00a8e8 100%); color: #000; border: none; box-shadow: 0 4px 18px rgba(0, 240, 255, 0.35);">
+                                <i class="fas fa-cloud-arrow-up"></i> İlk Sayfayı / ZIP'i Yayınla
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = pages.map(page => {
+            const targetSite = page.targetSite || 'whodatidols';
+            const isLocal = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+            let siteBadgeHtml = '';
+            let liveUrl = `/${escapeHtml(page.slug)}`;
+
+            if (targetSite === 'bldizi') {
+                siteBadgeHtml = `<span class="cp-plat-badge plat-bldizi"><i class="fas fa-heart"></i> BL Dizi</span>`;
+                liveUrl = isLocal ? `http://localhost:8082/${page.slug}` : `https://bldizi.com/${page.slug}`;
+            } else if (targetSite === 'all') {
+                siteBadgeHtml = `<span class="cp-plat-badge plat-all"><i class="fas fa-layer-group"></i> Her İkisi</span>`;
+                liveUrl = `/${escapeHtml(page.slug)}`;
+            } else {
+                siteBadgeHtml = `<span class="cp-plat-badge plat-wdi"><i class="fas fa-shield-halved"></i> Who Dat Idols</span>`;
+                liveUrl = isLocal ? `http://localhost:8080/${page.slug}` : `https://whodatidols.com/${page.slug}`;
+            }
+
+            return `
+                <tr>
+                    <td>
+                        <div style="font-weight: 700; color: #fff; font-size: 0.95rem;">${escapeHtml(page.title || page.slug)}</div>
+                        <div style="font-size: 0.72rem; color: rgba(255,255,255,0.4); font-family: monospace; margin-top: 2px;">ID: ${page.id}</div>
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <a href="${liveUrl}" target="_blank" class="cp-table-url-link" title="Yeni sekmede aç: ${escapeHtml(liveUrl)}">
+                                <i class="fas fa-arrow-up-right-from-square"></i> /${escapeHtml(page.slug)}
+                            </a>
+                            <button type="button" class="btn btn-sm" style="padding: 3px 8px; font-size: 0.72rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); border-radius: 6px;" onclick="window.copyCustomPageUrl('${escapeHtml(page.slug)}', '${targetSite}', this)" title="Adresi Kopyala">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </td>
+                    <td>
+                        ${(() => {
+                            let badgeClass = 'cp-badge-wdi';
+                            let iconClass = 'fa-shield-halved';
+                            let displayName = 'Who Dat Idols';
+
+                            if (targetSite === 'bldizi') {
+                                badgeClass = 'cp-badge-bldizi';
+                                iconClass = 'fa-heart';
+                                displayName = 'BL Dizi';
+                            } else if (targetSite === 'all') {
+                                badgeClass = 'cp-badge-all';
+                                iconClass = 'fa-layer-group';
+                                displayName = 'Her İkisi (Tümü)';
+                            }
+
+                            return `
+                                <button type="button" class="cp-platform-badge-btn ${badgeClass}" onclick="window.openPlatformMenu('${page.id}', '${targetSite}', this, event)" title="Platformu değiştirmek için tıklayın">
+                                    <i class="fas ${iconClass}"></i>
+                                    <span>${displayName}</span>
+                                    <i class="fas fa-chevron-down cp-badge-arrow"></i>
+                                </button>
+                            `;
+                        })()}
+                    </td>
+                    <td>
+                        <span style="font-size: 0.82rem; color: #94a3b8; font-family: monospace; background: rgba(255,255,255,0.04); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">${escapeHtml(page.entryFile || 'index.html')}</span>
+                    </td>
+                    <td>
+                        <div style="font-size: 0.88rem; color: #fff; font-weight: 600;">${page.fileCount} dosya</div>
+                        <div style="font-size: 0.74rem; color: rgba(255,255,255,0.45); font-family: monospace;">${page.formattedSize || '-'}</div>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm ${page.active ? 'btn-success' : 'btn-secondary'}" style="padding: 4px 12px; font-size: 0.75rem; border-radius: 20px; font-weight: 600;" onclick="window.toggleCustomPageStatus('${page.id}')" title="Durumu Değiştir">
+                            <i class="fas ${page.active ? 'fa-check' : 'fa-pause'}"></i> ${page.active ? 'Yayında' : 'Pasif'}
+                        </button>
+                    </td>
+                    <td>
+                        <span style="font-size: 0.82rem; color: rgba(255,255,255,0.6);">${page.formattedCreatedAt || '-'}</span>
+                    </td>
+                    <td>
+                        <div class="cp-action-btn-group" style="display: flex; gap: 6px; justify-content: flex-end;">
+                            <button type="button" class="btn btn-sm btn-primary" style="padding: 5px 10px; font-size: 0.78rem; border-radius: 8px;" onclick="window.openCustomPageEditor('${page.id}', '${escapeHtml(page.title || page.slug)}', '${escapeHtml(page.slug)}')" title="Kodu Düzenle">
+                                <i class="fas fa-code"></i> Kod Düzenle
+                            </button>
+                            <button type="button" class="btn btn-sm btn-danger" style="padding: 5px 10px; font-size: 0.78rem; border-radius: 8px;" onclick="window.deleteCustomPage('${page.id}', '${escapeHtml(page.slug)}')" title="Tamamen Sil">
+                                <i class="fas fa-trash-can"></i> Sil
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    };
+
+    window.copyCustomPageUrl = function (slug, targetSite, btn) {
+        const isLocal = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+        let fullUrl;
+        if (targetSite === 'bldizi') {
+            fullUrl = isLocal ? `http://localhost:8082/${slug}` : `https://bldizi.com/${slug}`;
+        } else if (targetSite === 'all') {
+            fullUrl = `${window.location.origin}/${slug}`;
+        } else {
+            fullUrl = isLocal ? `http://localhost:8080/${slug}` : `https://whodatidols.com/${slug}`;
+        }
+        navigator.clipboard.writeText(fullUrl).then(() => {
+            if (btn) {
+                const origHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i>';
+                setTimeout(() => { btn.innerHTML = origHtml; }, 1500);
+            }
+        });
+    };
+
+    window.handleCpTargetSiteChange = function (site) {
+        document.querySelectorAll('.cp-site-card').forEach(el => el.classList.remove('active'));
+        const prefixTextEl = document.getElementById('cpSlugPrefixText');
+        const prefixIconEl = document.getElementById('cpSlugPrefixIcon');
+
+        if (site === 'bldizi') {
+            document.getElementById('cpCardBldizi')?.classList.add('active');
+            const radio = document.querySelector('input[name="cpTargetSite"][value="bldizi"]');
+            if (radio) radio.checked = true;
+            if (prefixTextEl) prefixTextEl.textContent = 'bldizi.com/';
+            if (prefixIconEl) {
+                prefixIconEl.className = 'fas fa-heart';
+                prefixIconEl.style.color = '#ff4081';
+            }
+        } else if (site === 'all') {
+            document.getElementById('cpCardAll')?.classList.add('active');
+            const radio = document.querySelector('input[name="cpTargetSite"][value="all"]');
+            if (radio) radio.checked = true;
+            if (prefixTextEl) prefixTextEl.textContent = 'Ortak /';
+            if (prefixIconEl) {
+                prefixIconEl.className = 'fas fa-layer-group';
+                prefixIconEl.style.color = '#c084fc';
+            }
+        } else {
+            document.getElementById('cpCardWdi')?.classList.add('active');
+            const radio = document.querySelector('input[name="cpTargetSite"][value="whodatidols"]');
+            if (radio) radio.checked = true;
+            if (prefixTextEl) prefixTextEl.textContent = 'whodatidols.com/';
+            if (prefixIconEl) {
+                prefixIconEl.className = 'fas fa-shield-halved';
+                prefixIconEl.style.color = '#00f0ff';
+            }
+        }
+        window.updateCpLivePreview();
+    };
+
+    window.updateCpLivePreview = function () {
+        const slugInput = document.getElementById('cpSlugInput');
+        const previewEl = document.getElementById('cpLiveUrlPreview');
+        if (!previewEl) return;
+        const slug = (slugInput && slugInput.value.trim()) ? slugInput.value.trim() : 'kampanya';
+        const radio = document.querySelector('input[name="cpTargetSite"]:checked');
+        const site = radio ? radio.value : 'whodatidols';
+
+        if (site === 'bldizi') {
+            previewEl.textContent = `https://bldizi.com/${slug}`;
+        } else if (site === 'all') {
+            previewEl.textContent = `https://whodatidols.com/${slug} ve https://bldizi.com/${slug}`;
+        } else {
+            previewEl.textContent = `https://whodatidols.com/${slug}`;
+        }
+    };
+
+
+    let currentOpenPlatformMenuId = null;
+
+    window.openPlatformMenu = function (pageId, currentSite, btn, event) {
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+
+        let menu = document.getElementById('cpFloatingPlatformMenu');
+        if (!menu) {
+            menu = document.createElement('div');
+            menu.id = 'cpFloatingPlatformMenu';
+            menu.className = 'cp-floating-menu';
+            document.body.appendChild(menu);
+
+            // Document click to close menu
+            document.addEventListener('click', function (e) {
+                if (menu && menu.classList.contains('show')) {
+                    if (!menu.contains(e.target) && !e.target.closest('.cp-platform-badge-btn')) {
+                        menu.classList.remove('show');
+                        document.querySelectorAll('.cp-platform-badge-btn').forEach(b => b.classList.remove('active'));
+                        currentOpenPlatformMenuId = null;
+                    }
+                }
+            });
+
+            // Escape key to close
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && menu && menu.classList.contains('show')) {
+                    menu.classList.remove('show');
+                    document.querySelectorAll('.cp-platform-badge-btn').forEach(b => b.classList.remove('active'));
+                    currentOpenPlatformMenuId = null;
+                }
+            });
+        }
+
+        // If clicking the same open button, toggle it off
+        if (currentOpenPlatformMenuId === pageId && menu.classList.contains('show')) {
+            menu.classList.remove('show');
+            btn.classList.remove('active');
+            currentOpenPlatformMenuId = null;
+            return;
+        }
+
+        currentOpenPlatformMenuId = pageId;
+        document.querySelectorAll('.cp-platform-badge-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        menu.innerHTML = `
+            <div class="cp-menu-header">
+                <i class="fas fa-arrow-right-arrow-left"></i> Yayın Platformunu Değiştir
+            </div>
+            <div class="cp-menu-item ${currentSite === 'whodatidols' ? 'active' : ''}" onclick="window.selectCustomPagePlatform('${pageId}', 'whodatidols')">
+                <div class="cp-menu-item-icon wdi">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="cp-menu-item-content">
+                    <div class="cp-menu-item-title">Who Dat Idols</div>
+                    <div class="cp-menu-item-sub">whodatidols.com</div>
+                </div>
+                ${currentSite === 'whodatidols' ? '<i class="fas fa-check cp-menu-item-check" style="color: #00f0ff;"></i>' : ''}
+            </div>
+
+            <div class="cp-menu-item ${currentSite === 'bldizi' ? 'active' : ''}" onclick="window.selectCustomPagePlatform('${pageId}', 'bldizi')">
+                <div class="cp-menu-item-icon bldizi">
+                    <i class="fas fa-heart"></i>
+                </div>
+                <div class="cp-menu-item-content">
+                    <div class="cp-menu-item-title">BL Dizi</div>
+                    <div class="cp-menu-item-sub">bldizi.com</div>
+                </div>
+                ${currentSite === 'bldizi' ? '<i class="fas fa-check cp-menu-item-check" style="color: #ff4081;"></i>' : ''}
+            </div>
+
+            <div class="cp-menu-item ${currentSite === 'all' ? 'active' : ''}" onclick="window.selectCustomPagePlatform('${pageId}', 'all')">
+                <div class="cp-menu-item-icon all">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <div class="cp-menu-item-content">
+                    <div class="cp-menu-item-title">Her İkisi (Tümü)</div>
+                    <div class="cp-menu-item-sub">Ortak Yayın (Tüm Siteler)</div>
+                </div>
+                ${currentSite === 'all' ? '<i class="fas fa-check cp-menu-item-check" style="color: #c084fc;"></i>' : ''}
+            </div>
+        `;
+
+        menu.classList.add('show');
+
+        // Position the menu right below the button
+        const rect = btn.getBoundingClientRect();
+        const scrollY = window.scrollY || window.pageYOffset;
+        const scrollX = window.scrollX || window.pageXOffset;
+
+        menu.style.top = (rect.bottom + scrollY + 8) + 'px';
+        menu.style.left = (rect.left + scrollX) + 'px';
+    };
+
+    window.selectCustomPagePlatform = function (id, newSite) {
+        const menu = document.getElementById('cpFloatingPlatformMenu');
+        if (menu) menu.classList.remove('show');
+        document.querySelectorAll('.cp-platform-badge-btn').forEach(b => b.classList.remove('active'));
+        currentOpenPlatformMenuId = null;
+
+        window.changeCustomPageSite(id, newSite);
+    };
+
+    window.changeCustomPageSite = function (id, newSite, btn) {
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
+        const formData = new FormData();
+        formData.append('targetSite', newSite);
+        fetch(`/admin/api/custom-pages/${id}/site`, {
+            method: 'POST',
+            body: formData
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.loadCustomPages();
+                } else {
+                    alert("Platform güncellenemedi: " + (data.message || ''));
+                    window.loadCustomPages();
+                }
+            })
+            .catch(err => {
+                alert("Platform güncelleme hatası: " + err);
+                window.loadCustomPages();
+            });
+    };
+
+    window.openCustomPageUploadModal = function () {
+        const modal = document.getElementById('customPageUploadModal');
+        const form = document.getElementById('customPageUploadForm');
+        if (form) form.reset();
+        if (typeof window.handleCpTargetSiteChange === 'function') {
+            window.handleCpTargetSiteChange('whodatidols');
+        }
+        const progressWrap = document.getElementById('cpUploadProgressWrap');
+        if (progressWrap) progressWrap.style.display = 'none';
+        const dropContent = document.getElementById('cpDropContent');
+        if (dropContent) {
+            dropContent.innerHTML = `
+                <div class="cp-drop-icon-wrap">
+                    <i class="fas fa-file-arrow-up"></i>
+                </div>
+                <div class="cp-drop-title">ZIP veya HTML dosyasını buraya sürükleyin</div>
+                <div class="cp-drop-sub">veya bilgisayarınızdan seçmek için tıklayın</div>
+                <div class="cp-drop-tags">
+                    <span class="cp-tag-pill">.ZIP</span>
+                    <span class="cp-tag-pill">.HTML</span>
+                    <span class="cp-tag-pill">.HTM</span>
+                </div>
+            `;
+        }
+        window.updateCpLivePreview();
+        if (modal) modal.style.display = 'flex';
+    };
+
+    window.closeCustomPageUploadModal = function () {
+        const modal = document.getElementById('customPageUploadModal');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window.handleCpFileSelected = function (input) {
+        if (!input.files || input.files.length === 0) return;
+        const file = input.files[0];
+        const dropContent = document.getElementById('cpDropContent');
+        if (dropContent) {
+            dropContent.innerHTML = `
+                <div class="cp-drop-icon-wrap" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">
+                    <i class="fas fa-file-zipper"></i>
+                </div>
+                <div class="cp-drop-title" style="color: #fff; font-size: 1.05rem;">${escapeHtml(file.name)}</div>
+                <div class="cp-drop-sub" style="color: #00f0ff; font-weight: 600; font-family: monospace; margin-top: 4px;">${formatBytes(file.size)}</div>
+            `;
+        }
+
+        // Slug boşsa dosya adından otomatik öner
+        const slugInput = document.getElementById('cpSlugInput');
+        if (slugInput && !slugInput.value) {
+            let suggested = file.name.replace(/\.[^/.]+$/, "")
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+            slugInput.value = suggested;
+        }
+        window.updateCpLivePreview();
+    };
+
+    window.sanitizeCpSlugInput = function (input) {
+        if (!input) return;
+        input.value = input.value.toLowerCase().replace(/[^a-z0-9-_]/g, '');
+    };
+
+    window.handleCustomPageUpload = function (e) {
+        e.preventDefault();
+        const fileInput = document.getElementById('cpFileInput');
+        const slugInput = document.getElementById('cpSlugInput');
+        const titleInput = document.getElementById('cpTitleInput');
+        const submitBtn = document.getElementById('cpUploadSubmitBtn');
+        const progressWrap = document.getElementById('cpUploadProgressWrap');
+        const progressBar = document.getElementById('cpUploadProgressBar');
+        const percentEl = document.getElementById('cpUploadPercent');
+        const statusEl = document.getElementById('cpUploadProgressStatus');
+
+        if (!fileInput.files || fileInput.files.length === 0) {
+            alert("Lütfen yüklenecek bir ZIP veya HTML dosyası seçin.");
+            return;
+        }
+        const slug = slugInput.value.trim();
+        if (!slug) {
+            alert("Lütfen bir URL uzantısı (slug) belirleyin.");
+            return;
+        }
+
+        const targetSiteInput = document.querySelector('input[name="cpTargetSite"]:checked');
+        const targetSite = targetSiteInput ? targetSiteInput.value : 'whodatidols';
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('slug', slug);
+        formData.append('title', titleInput.value.trim() || slug);
+        formData.append('targetSite', targetSite);
+
+        if (progressWrap) progressWrap.style.display = 'block';
+        if (progressBar) progressBar.style.width = '0%';
+        if (percentEl) percentEl.textContent = '0%';
+        if (statusEl) statusEl.textContent = 'Yükleniyor...';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> İşleniyor...';
+        }
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/admin/api/custom-pages/upload', true);
+
+        xhr.upload.onprogress = function (e) {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                if (progressBar) progressBar.style.width = percent + '%';
+                if (percentEl) percentEl.textContent = percent + '%';
+                if (percent === 100 && statusEl) {
+                    statusEl.textContent = 'ZIP açılıyor ve dosyalar yerleştiriliyor...';
+                }
+            }
+        };
+
+        xhr.onload = function () {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle ve Yayına Al';
+            }
+            try {
+                const data = JSON.parse(xhr.responseText);
+                if (xhr.status >= 200 && xhr.status < 300 && data.success) {
+                    const displayDomain = targetSite === 'bldizi' ? 'bldizi.com' : (targetSite === 'all' ? 'Tüm Siteler' : 'whodatidols.com');
+                    alert(`Sayfa başarıyla yüklendi ve [${displayDomain}] üzerinde yayına alındı!\nURL: /${slug}`);
+                    window.closeCustomPageUploadModal();
+                    window.loadCustomPages();
+                } else {
+                    alert("Yükleme başarısız: " + (data.message || xhr.statusText));
+                }
+            } catch (err) {
+                alert("Sunucu yanıtı işlenemedi: " + xhr.responseText);
+            }
+        };
+
+        xhr.onerror = function () {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle ve Yayına Al';
+            }
+            alert("Ağ hatası veya bağlantı kesildi.");
+        };
+
+        xhr.send(formData);
+    };
+
+    window.toggleCustomPageStatus = function (id) {
+        fetch(`/admin/api/custom-pages/${id}/toggle`, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.loadCustomPages();
+                } else {
+                    alert("Durum güncellenemedi: " + (data.message || ''));
+                }
+            })
+            .catch(err => alert("İşlem hatası: " + err));
+    };
+
+    window.deleteCustomPage = function (id, slug) {
+        if (!confirm(`'/${slug}' sayfasını ve sunucudaki tüm dosyalarını (resimler, HTML, CSS, JS vb.) tamamen silmek istediğinize emin misiniz?\n\nBu işlem geri alınamaz!`)) {
+            return;
+        }
+
+        fetch(`/admin/api/custom-pages/${id}`, { method: 'DELETE' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`'/${slug}' sayfası ve tüm dosyaları sistemden tamamen temizlendi.`);
+                    window.loadCustomPages();
+                } else {
+                    alert("Silme başarısız: " + (data.message || ''));
+                }
+            })
+            .catch(err => alert("Silme hatası: " + err));
+    };
+
+    /* --- KOD EDİTÖRÜ --- */
+    window.openCustomPageEditor = function (id, title, slug) {
+        currentCpEditorPageId = id;
+        currentCpEditorActivePath = null;
+        currentCpEditorFiles = [];
+
+        const modal = document.getElementById('customPageEditorModal');
+        const titleEl = document.getElementById('cpEditorPageTitle');
+        const slugTag = document.getElementById('cpEditorSlugTag');
+        const liveBtn = document.getElementById('cpEditorViewLiveBtn');
+        const fileListEl = document.getElementById('cpEditorFileList');
+        const textarea = document.getElementById('cpEditorTextarea');
+
+        if (titleEl) titleEl.textContent = title || slug;
+        if (slugTag) slugTag.textContent = '/' + slug;
+        if (liveBtn) {
+            const page = allCustomPages.find(p => p.id === id);
+            const isLocal = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+            if (page && page.targetSite === 'bldizi') {
+                liveBtn.href = isLocal ? `http://localhost:8082/${slug}` : `https://bldizi.com/${slug}`;
+            } else if (page && page.targetSite === 'whodatidols') {
+                liveBtn.href = isLocal ? `http://localhost:8080/${slug}` : `https://whodatidols.com/${slug}`;
+            } else {
+                liveBtn.href = `/${slug}`;
+            }
+        }
+        if (textarea) textarea.value = 'Dosyalar taranıyor...';
+        if (fileListEl) fileListEl.innerHTML = '<div style="padding: 15px; color: rgba(255,255,255,0.4); text-align: center;"><i class="fas fa-spinner fa-spin"></i> Yükleniyor...</div>';
+
+        if (modal) modal.style.display = 'flex';
+
+        fetch(`/admin/api/custom-pages/${id}/files`)
+            .then(res => res.json())
+            .then(files => {
+                currentCpEditorFiles = files || [];
+                renderCpEditorFileList(currentCpEditorFiles);
+                if (currentCpEditorFiles.length > 0) {
+                    window.loadCustomPageFile(currentCpEditorFiles[0]);
+                } else {
+                    if (textarea) textarea.value = '// Bu sayfada düzenlenebilir metin dosyası bulunamadı.';
+                }
+            })
+            .catch(err => {
+                if (fileListEl) fileListEl.innerHTML = `<div style="padding: 15px; color: #ef4444;">Dosyalar listelenemedi: ${escapeHtml(err.message || err)}</div>`;
+            });
+    };
+
+    function renderCpEditorFileList(files) {
+        const container = document.getElementById('cpEditorFileList');
+        if (!container) return;
+
+        if (files.length === 0) {
+            container.innerHTML = '<div style="padding: 10px; color: rgba(255,255,255,0.4); font-size: 0.8rem;">Dosya yok</div>';
+            return;
+        }
+
+        container.innerHTML = files.map(path => {
+            let icon = 'fa-file-code';
+            if (path.endsWith('.html') || path.endsWith('.htm')) icon = 'fa-file-lines';
+            else if (path.endsWith('.css')) icon = 'fa-css3-alt';
+            else if (path.endsWith('.js')) icon = 'fa-square-js';
+            else if (path.endsWith('.json')) icon = 'fa-brackets-curly';
+
+            const isActive = (path === currentCpEditorActivePath);
+            return `
+                <div class="cp-editor-file-item ${isActive ? 'active' : ''}" onclick="window.loadCustomPageFile('${escapeHtml(path)}')">
+                    <i class="fas ${icon}" style="color: ${path.endsWith('.html') ? '#00f0ff' : path.endsWith('.css') ? '#38bdf8' : '#f59e0b'};"></i>
+                    <span>${escapeHtml(path)}</span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    window.loadCustomPageFile = function (path) {
+        if (!currentCpEditorPageId) return;
+        currentCpEditorActivePath = path;
+        renderCpEditorFileList(currentCpEditorFiles);
+
+        const activePathEl = document.getElementById('cpEditorActiveFilePath');
+        const textarea = document.getElementById('cpEditorTextarea');
+        if (activePathEl) activePathEl.textContent = path;
+        if (textarea) textarea.value = 'Dosya içeriği yükleniyor...';
+
+        fetch(`/admin/api/custom-pages/${currentCpEditorPageId}/file?path=${encodeURIComponent(path)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    if (textarea) textarea.value = data.content;
+                } else {
+                    if (textarea) textarea.value = `// Hata: ${data.message || 'Dosya okunamadı'}`;
+                }
+            })
+            .catch(err => {
+                if (textarea) textarea.value = `// Ağ hatası: ${err}`;
+            });
+    };
+
+    window.saveCustomPageFile = function () {
+        if (!currentCpEditorPageId || !currentCpEditorActivePath) return;
+
+        const textarea = document.getElementById('cpEditorTextarea');
+        const saveBtn = document.getElementById('cpEditorSaveBtn');
+        const content = textarea ? textarea.value : '';
+
+        const origHtml = saveBtn.innerHTML;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kaydediliyor...';
+
+        fetch(`/admin/api/custom-pages/${currentCpEditorPageId}/file`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                path: currentCpEditorActivePath,
+                content: content
+            })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    saveBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Kaydedildi!';
+                    setTimeout(() => {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = origHtml;
+                    }, 1200);
+                    window.loadCustomPages();
+                } else {
+                    alert("Kaydedilemedi: " + (data.message || ''));
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = origHtml;
+                }
+            })
+            .catch(err => {
+                alert("Kayıt hatası: " + err);
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = origHtml;
+            });
+    };
+
+    window.closeCustomPageEditorModal = function () {
+        const modal = document.getElementById('customPageEditorModal');
+        if (modal) modal.style.display = 'none';
     };
 
 })();
