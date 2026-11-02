@@ -139,6 +139,7 @@ public class VideoController {
                         }
                         response.put("seriesSlug", series.getSlug());
                         response.put("seriesName", series.getName());
+                        response.put("seriesType", series.getSeriesType() != null ? series.getSeriesType() : "Dizi");
                     } else {
                         response.put("title", episode.getName());
                         response.put("adult", episode.isAdult());
@@ -199,6 +200,7 @@ public class VideoController {
                 response.put("seriesId", series.getId().toString());
                 response.put("seriesSlug", series.getSlug());
                 response.put("seriesName", series.getName());
+                        response.put("seriesType", series.getSeriesType() != null ? series.getSeriesType() : "Dizi");
                 response.put("slug", series.getSlug());
                 List<CastMemberDto> seriesCast = actorRepository.getCastForSeries(series.getId());
                 if (seriesCast.isEmpty()) {
