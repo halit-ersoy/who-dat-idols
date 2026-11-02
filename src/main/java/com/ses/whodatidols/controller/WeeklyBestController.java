@@ -61,9 +61,6 @@ public class WeeklyBestController {
     public ResponseEntity<List<VideoViewModel>> getTopSoapOperas() {
         List<Series> topSeries = seriesService.getTop6SeriesByCount();
 
-        List<java.util.UUID> seriesIds = topSeries.stream().map(Series::getId).collect(Collectors.toList());
-        java.util.Map<java.util.UUID, com.ses.whodatidols.viewmodel.EpisodeViewModel> latestEpisodes = seriesService.getLatestEpisodesForSeriesList(seriesIds);
-
         List<VideoViewModel> viewModels = topSeries.stream()
                 .map(series -> {
                     VideoViewModel vm = new VideoViewModel();
@@ -75,17 +72,9 @@ public class WeeklyBestController {
                     vm.setInfo(mainCategory);
                     vm.setThumbnailUrl("/media/image/" + series.getId());
 
-                    // For series, we need a way to watch it. Usually, we go to the watch page
-                    // with the series ID, and it auto-opens the last episode.
-                    com.ses.whodatidols.viewmodel.EpisodeViewModel lastEp = latestEpisodes.get(series.getId());
-                    if (lastEp != null) {
-                        if (lastEp.getSlug() != null && !lastEp.getSlug().isEmpty()) {
-                            vm.setVideoUrl("/" + lastEp.getSlug());
-                        } else {
-                            vm.setVideoUrl("/" + lastEp.getId());
-                        }
+                    if (series.getSlug() != null && !series.getSlug().isBlank()) {
+                        vm.setVideoUrl("/" + series.getSlug());
                     } else {
-                        // If no episodes, point to the ID
                         vm.setVideoUrl("/" + series.getId());
                     }
 

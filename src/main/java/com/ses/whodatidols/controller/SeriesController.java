@@ -1,29 +1,35 @@
 package com.ses.whodatidols.controller;
 
+import com.ses.whodatidols.model.CastMemberDto;
 import com.ses.whodatidols.model.Series;
+import com.ses.whodatidols.repository.ActorRepository;
 import com.ses.whodatidols.repository.SeriesRepository;
+import com.ses.whodatidols.service.CastSyncService;
 import com.ses.whodatidols.service.SeriesService;
 import com.ses.whodatidols.viewmodel.EpisodeViewModel;
+import com.ses.whodatidols.viewmodel.PageResponse;
 import com.ses.whodatidols.viewmodel.VideoViewModel;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
-
-import com.ses.whodatidols.viewmodel.PageResponse;
 
 @RestController
 @RequestMapping({ "/api/series", "/api/soapoperas" }) // Added alias for compatibility
 public class SeriesController {
     private final SeriesRepository seriesRepository;
     private final SeriesService seriesService;
+    private final ActorRepository actorRepository;
+    private final CastSyncService castSyncService;
 
-    public SeriesController(SeriesRepository seriesRepository, SeriesService seriesService) {
+    public SeriesController(SeriesRepository seriesRepository, SeriesService seriesService,
+                            ActorRepository actorRepository, CastSyncService castSyncService) {
         this.seriesRepository = seriesRepository;
         this.seriesService = seriesService;
+        this.actorRepository = actorRepository;
+        this.castSyncService = castSyncService;
     }
 
     @Cacheable(value = "recentSeries", key = "#type + '-' + #page + '-' + #size")
@@ -49,14 +55,8 @@ public class SeriesController {
                     vm.setInfo(mainCategory);
 
                     vm.setThumbnailUrl("/media/image/" + series.getId());
-                    List<EpisodeViewModel> episodes = seriesService.getEpisodesForSeries(series.getId());
-                    if (!episodes.isEmpty()) {
-                        EpisodeViewModel lastEp = episodes.get(episodes.size() - 1);
-                        if (lastEp.getSlug() != null && !lastEp.getSlug().isEmpty()) {
-                            vm.setVideoUrl("/" + lastEp.getSlug());
-                        } else {
-                            vm.setVideoUrl("/" + lastEp.getId());
-                        }
+                    if (series.getSlug() != null && !series.getSlug().isBlank()) {
+                        vm.setVideoUrl("/" + series.getSlug());
                     } else {
                         vm.setVideoUrl("/" + series.getId());
                     }
@@ -96,14 +96,8 @@ public class SeriesController {
                     vm.setInfo(mainCategory);
 
                     vm.setThumbnailUrl("/media/image/" + series.getId());
-                    List<EpisodeViewModel> episodes = seriesService.getEpisodesForSeries(series.getId());
-                    if (!episodes.isEmpty()) {
-                        EpisodeViewModel lastEp = episodes.get(episodes.size() - 1);
-                        if (lastEp.getSlug() != null && !lastEp.getSlug().isEmpty()) {
-                            vm.setVideoUrl("/" + lastEp.getSlug());
-                        } else {
-                            vm.setVideoUrl("/" + lastEp.getId());
-                        }
+                    if (series.getSlug() != null && !series.getSlug().isBlank()) {
+                        vm.setVideoUrl("/" + series.getSlug());
                     } else {
                         vm.setVideoUrl("/" + series.getId());
                     }
@@ -145,14 +139,8 @@ public class SeriesController {
                     vm.setInfo(mainCategory);
 
                     vm.setThumbnailUrl("/media/image/" + series.getId());
-                    List<EpisodeViewModel> episodes = seriesService.getEpisodesForSeries(series.getId());
-                    if (!episodes.isEmpty()) {
-                        EpisodeViewModel lastEp = episodes.get(episodes.size() - 1);
-                        if (lastEp.getSlug() != null && !lastEp.getSlug().isEmpty()) {
-                            vm.setVideoUrl("/" + lastEp.getSlug());
-                        } else {
-                            vm.setVideoUrl("/" + lastEp.getId());
-                        }
+                    if (series.getSlug() != null && !series.getSlug().isBlank()) {
+                        vm.setVideoUrl("/" + series.getSlug());
                     } else {
                         vm.setVideoUrl("/" + series.getId());
                     }
@@ -177,5 +165,72 @@ public class SeriesController {
         if (series == null)
             return ResponseEntity.notFound().build();
         return ResponseEntity.ok(series);
+    }
+
+    @GetMapping({ "/{idOrSlug}/details", "/details" })
+    public ResponseEntity<Map<String, Object>> getSeriesDetails(
+            @PathVariable(value = "idOrSlug", required = false) String idOrSlugPath,
+            @RequestParam(value = "id", required = false) String idParam,
+            @RequestParam(value = "slug", required = false) String slugParam) {
+
+        String identifier = (idOrSlugPath != null && !idOrSlugPath.isBlank()) ? idOrSlugPath.trim() : null;
+        if (identifier == null) {
+            identifier = (slugParam != null && !slugParam.isBlank()) ? slugParam.trim() : (idParam != null ? idParam.trim() : null);
+        }
+        if (identifier == null || identifier.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Series series = null;
+        try {
+            UUID uid = UUID.fromString(identifier);
+            series = seriesRepository.findSeriesById(uid);
+        } catch (IllegalArgumentException ignored) {
+        }
+
+        if (series == null) {
+            series = seriesRepository.findSeriesBySlug(identifier);
+        }
+
+        if (series == null || series.isHidden()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        List<EpisodeViewModel> episodes = seriesService.getEpisodesForSeries(series.getId());
+        List<CastMemberDto> cast = actorRepository.getCastForSeries(series.getId());
+        if (cast == null || cast.isEmpty()) {
+            try {
+                cast = castSyncService.syncCastForSeries(series);
+            } catch (Exception ignored) {
+                cast = Collections.emptyList();
+            }
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", series.getId().toString());
+        response.put("name", series.getName());
+        response.put("title", series.getName());
+        response.put("summary", series.getSummary());
+        response.put("category", series.getCategory());
+        response.put("language", series.getLanguage());
+        response.put("country", series.getCountry());
+        response.put("seriesType", series.getSeriesType() != null ? series.getSeriesType() : "Dizi");
+        response.put("finalStatus", series.getFinalStatus());
+        response.put("slug", series.getSlug());
+        response.put("uploadDate", series.getUploadDate());
+        response.put("totalEpisodes", episodes != null ? episodes.size() : 0);
+        response.put("posterUrl", "/media/image/" + series.getId());
+        response.put("backdropUrl", "/media/image/" + series.getId());
+        response.put("episodes", episodes != null ? episodes : Collections.emptyList());
+        response.put("cast", cast != null ? cast : Collections.emptyList());
+
+        if (episodes != null && !episodes.isEmpty()) {
+            EpisodeViewModel firstEp = episodes.get(0);
+            response.put("firstEpisodeUrl", (firstEp.getSlug() != null && !firstEp.getSlug().isBlank()) ? "/" + firstEp.getSlug() : "/" + firstEp.getId());
+            EpisodeViewModel lastEp = episodes.get(episodes.size() - 1);
+            response.put("lastEpisodeUrl", (lastEp.getSlug() != null && !lastEp.getSlug().isBlank()) ? "/" + lastEp.getSlug() : "/" + lastEp.getId());
+        }
+
+        return ResponseEntity.ok(response);
     }
 }

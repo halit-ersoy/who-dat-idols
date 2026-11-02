@@ -1,6 +1,8 @@
 package com.ses.whodatidols.controller;
 
 import com.ses.whodatidols.model.Movie;
+import com.ses.whodatidols.model.Series;
+import com.ses.whodatidols.repository.SeriesRepository;
 import com.ses.whodatidols.model.Person;
 import com.ses.whodatidols.repository.MovieRepository;
 import com.ses.whodatidols.repository.PersonRepository;
@@ -45,6 +47,7 @@ public class HomeController {
     private final MovieService movieService;
     private final SeriesService seriesService;
     private final MovieRepository movieRepository;
+    private final SeriesRepository seriesRepository;
     private final com.ses.whodatidols.repository.SystemSettingRepository systemSettingRepository;
     private final com.ses.whodatidols.service.LoginAttemptService loginAttemptService;
     private final jakarta.servlet.http.HttpServletRequest request;
@@ -57,6 +60,7 @@ public class HomeController {
 
     public HomeController(PersonRepository personRepository, MovieService movieService,
             SeriesService seriesService, MovieRepository movieRepository,
+            SeriesRepository seriesRepository,
             com.ses.whodatidols.repository.SystemSettingRepository systemSettingRepository,
             com.ses.whodatidols.service.LoginAttemptService loginAttemptService,
             jakarta.servlet.http.HttpServletRequest request,
@@ -67,6 +71,7 @@ public class HomeController {
         this.movieService = movieService;
         this.seriesService = seriesService;
         this.movieRepository = movieRepository;
+        this.seriesRepository = seriesRepository;
         this.systemSettingRepository = systemSettingRepository;
         this.loginAttemptService = loginAttemptService;
         this.request = request;
@@ -88,6 +93,13 @@ public class HomeController {
         } catch (Exception e) {
             return ResponseEntity.status(500).build();
         }
+    }
+
+    @GetMapping({"/series/{slug:[a-zA-Z0-9-'’→]+}", "/dizi/{slug:[a-zA-Z0-9-'’→]+}", "/program/{slug:[a-zA-Z0-9-'’→]+}"})
+    public ResponseEntity<?> seriesPageByExplicitRoute(
+            @PathVariable("slug") String slug,
+            @CookieValue(name = "wdiAuth", required = false) String cookie) {
+        return watchPageBySlug(slug, cookie);
     }
 
     @Cacheable(value = "featuredMovies", key = "#page + '-' + #size")
@@ -389,6 +401,16 @@ public class HomeController {
                             .build();
                 }
             } catch (Exception ignored) {}
+
+            // 4. Check Series by UUID
+            try {
+                String sSlug = jdbcTemplate.queryForObject("SELECT TOP 1 slug FROM Series WHERE ID = ?", String.class, uid);
+                if (sSlug != null && !sSlug.isBlank()) {
+                    return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+                            .header(HttpHeaders.LOCATION, "/" + sSlug)
+                            .build();
+                }
+            } catch (Exception ignored) {}
         }
 
         // If content is BL/GL, redirect to bldizi.com with SSO ticket
@@ -468,6 +490,26 @@ public class HomeController {
         }
 
         try {
+            // Check if this slug belongs to a Series (and not an Episode or Movie)
+            Series seriesMatch = seriesRepository.findSeriesBySlug(slug);
+            boolean isEpisode = seriesRepository.findEpisodeBySlug(slug) != null;
+            boolean isMovie = movieRepository.findMovieBySlug(slug) != null;
+
+            if (seriesMatch != null && !isEpisode && !isMovie) {
+                String renderedSeriesHtml = seoService.buildSeriesPageHtml(slug);
+                if (renderedSeriesHtml != null) {
+                    return ResponseEntity.ok()
+                            .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
+                            .body(renderedSeriesHtml);
+                }
+                ClassPathResource seriesPage = new ClassPathResource("static/series/html/series.html");
+                if (seriesPage.exists()) {
+                    return ResponseEntity.ok()
+                            .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
+                            .body(seriesPage);
+                }
+            }
+
             String renderedHtml = seoService.buildWatchPageHtml(slug);
             if (renderedHtml != null) {
                 return ResponseEntity.ok()

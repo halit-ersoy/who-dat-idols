@@ -33,8 +33,9 @@ public class SeoService {
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    // Cache watch.html template in memory for performance
+    // Cache HTML templates in memory for performance
     private volatile String watchHtmlTemplate = null;
+    private volatile String seriesHtmlTemplate = null;
 
     private static final List<String> COMMON_SUFFIXES = List.of(
             "-turkce-altyazili-izle",
@@ -277,6 +278,69 @@ public class SeoService {
         );
 
         // 4. Build JSON-LD structured data (Type-specific: TVEpisode, Movie, TVSeries, CreativeWork)
+        String jsonLd = buildJsonLd(meta);
+        if (jsonLd != null && !jsonLd.isBlank() && !jsonLd.equals("{}")) {
+            String scriptTag = "\n    <script id=\"structuredData\" type=\"application/ld+json\">" + jsonLd + "</script>";
+            if (updated.contains("<script id=\"structuredData\"")) {
+                updated = updated.replaceAll(
+                        "<script id=\"structuredData\" type=\"application/ld\\+json\">.*?</script>",
+                        Matcher.quoteReplacement(scriptTag)
+                );
+            } else {
+                updated = updated.replace("</head>", scriptTag + "\n</head>");
+            }
+        } else {
+            updated = updated.replaceAll("<script id=\"structuredData\"[^\"]*?>.*?</script>", "");
+        }
+
+        // 5. Inject OpenGraph tags if not already present
+        String ogTags = "\n    <meta property=\"og:title\" content=\"" + title + "\">" +
+                "\n    <meta property=\"og:description\" content=\"" + description + "\">" +
+                "\n    <meta property=\"og:url\" content=\"" + canonicalUrl + "\">" +
+                (meta.imageUrl != null ? "\n    <meta property=\"og:image\" content=\"" + escapeHtml(meta.imageUrl) + "\">" : "") +
+                "\n    <meta property=\"og:type\" content=\"" + meta.ogType + "\">";
+
+        updated = updated.replace("</head>", ogTags + "\n</head>");
+
+        return updated;
+    }
+
+    /**
+     * Builds series.html with SSR title, description, canonical link, OpenGraph tags,
+     * and TVSeries JSON-LD schema.
+     */
+    public String buildSeriesPageHtml(String slug) {
+        String template = getSeriesHtmlTemplate();
+        if (template == null) return null;
+
+        ContentMeta meta = resolveContentMeta(slug);
+        if (meta == null) {
+            return template.replaceAll("<script id=\"structuredData\"[^\"]*?>.*?</script>", "");
+        }
+
+        String canonicalUrl = BASE_URL + "/" + escapeHtml(meta.slug);
+        String title = escapeHtml(meta.title);
+        String description = escapeHtml(meta.description);
+
+        // 1. Replace Canonical Link
+        String updated = template.replaceAll(
+                "<link rel=\"canonical\" id=\"canonicalLink\" href=\"[^\"]*\">",
+                "<link rel=\"canonical\" id=\"canonicalLink\" href=\"" + canonicalUrl + "\">"
+        );
+
+        // 2. Replace Title
+        updated = updated.replaceAll(
+                "<title>[^<]*</title>",
+                "<title>" + title + "</title>"
+        );
+
+        // 3. Replace Meta Description
+        updated = updated.replaceAll(
+                "<meta name=\"description\" content=\"[^\"]*\">",
+                "<meta name=\"description\" content=\"" + description + "\">"
+        );
+
+        // 4. Build JSON-LD structured data (Type-specific: TVSeries)
         String jsonLd = buildJsonLd(meta);
         if (jsonLd != null && !jsonLd.isBlank() && !jsonLd.equals("{}")) {
             String scriptTag = "\n    <script id=\"structuredData\" type=\"application/ld+json\">" + jsonLd + "</script>";
@@ -671,6 +735,17 @@ public class SeoService {
             return watchHtmlTemplate;
         } catch (Exception e) {
             logger.error("Failed to load static/watch/html/watch.html template", e);
+            return null;
+        }
+    }
+
+    private String getSeriesHtmlTemplate() {
+        if (seriesHtmlTemplate != null) return seriesHtmlTemplate;
+        try (InputStream in = new ClassPathResource("static/series/html/series.html").getInputStream()) {
+            seriesHtmlTemplate = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            return seriesHtmlTemplate;
+        } catch (Exception e) {
+            logger.error("Failed to load static/series/html/series.html template", e);
             return null;
         }
     }
