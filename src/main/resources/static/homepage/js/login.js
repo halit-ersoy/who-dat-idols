@@ -159,7 +159,7 @@ export function initLogin() {
                 document.body.style.overflow = 'hidden';
                 setTimeout(() => {
                     const emailInput = document.getElementById('email');
-                    if (emailInput) emailInput.focus();
+                    if (emailInput && window.innerWidth > 768) emailInput.focus();
                 }, 400);
             }
         });
