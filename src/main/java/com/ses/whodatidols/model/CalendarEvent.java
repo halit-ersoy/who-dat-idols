@@ -9,6 +9,16 @@ public class CalendarEvent {
     private String episode;
     private String showTime;
     private int sortOrder;
+    private String posterUrl;
+    private String platform; // "whodatidols", "bldizi", "all"
+    private Boolean isBl;
+    private String channel;
+    private String category;
+    private String summary;
+    private String slug;
+    private UUID seriesId;
+    private Integer tmdbId;
+    private Integer tvmazeId;
 
     public CalendarEvent() {
     }
@@ -68,5 +78,85 @@ public class CalendarEvent {
 
     public void setSortOrder(int sortOrder) {
         this.sortOrder = sortOrder;
+    }
+
+    public String getPosterUrl() {
+        return posterUrl;
+    }
+
+    public void setPosterUrl(String posterUrl) {
+        this.posterUrl = posterUrl;
+    }
+
+    public String getPlatform() {
+        return platform;
+    }
+
+    public void setPlatform(String platform) {
+        this.platform = platform;
+    }
+
+    public Boolean getIsBl() {
+        return isBl;
+    }
+
+    public void setIsBl(Boolean isBl) {
+        this.isBl = isBl;
+    }
+
+    public String getChannel() {
+        return channel;
+    }
+
+    public void setChannel(String channel) {
+        this.channel = channel;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public void setSummary(String summary) {
+        this.summary = summary;
+    }
+
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
+    }
+
+    public UUID getSeriesId() {
+        return seriesId;
+    }
+
+    public void setSeriesId(UUID seriesId) {
+        this.seriesId = seriesId;
+    }
+
+    public Integer getTmdbId() {
+        return tmdbId;
+    }
+
+    public void setTmdbId(Integer tmdbId) {
+        this.tmdbId = tmdbId;
+    }
+
+    public Integer getTvmazeId() {
+        return tvmazeId;
+    }
+
+    public void setTvmazeId(Integer tvmazeId) {
+        this.tvmazeId = tvmazeId;
     }
 }

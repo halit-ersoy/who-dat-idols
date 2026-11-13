@@ -662,20 +662,122 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     /* ===========================================================
-       TAKVİM YÖNETİMİ
+       TAKVİM YÖNETİMİ (GELİŞMİŞ: WDI & BL DİZİ, TMDB & TVMAZE)
        =========================================================== */
     const calendarForm = document.getElementById('calendarForm');
+    let currentCalendarFilter = 'all';
 
     if (calendarForm) {
         fetchCalendarEvents();
 
+        // Poster URL live preview
+        const posterUrlInput = document.getElementById('calendarPosterUrl');
+        const posterPreview = document.getElementById('calendarPosterPreview');
+        const posterImg = document.getElementById('calendarPosterImg');
+        if (posterUrlInput && posterPreview && posterImg) {
+            posterUrlInput.addEventListener('input', () => {
+                const val = posterUrlInput.value.trim();
+                if (val) {
+                    posterImg.src = val;
+                    posterPreview.style.display = 'block';
+                } else {
+                    posterPreview.style.display = 'none';
+                }
+            });
+        }
+
+        // Archive Search Logic for Calendar
+        const calArchiveInput = document.getElementById('calendarArchiveSearch');
+        const calArchiveResults = document.getElementById('calendarArchiveSearchResults');
+        const calRefDisplay = document.getElementById('calendarRefDisplay');
+        const btnClearCalRef = document.getElementById('btnClearCalendarRef');
+
+        if (calArchiveInput && calArchiveResults) {
+            calArchiveInput.addEventListener('input', function () {
+                const query = this.value.trim();
+                if (query.length < 2) {
+                    calArchiveResults.style.display = 'none';
+                    return;
+                }
+                fetch(`/api/search?q=${encodeURIComponent(query)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        calArchiveResults.innerHTML = '';
+                        if (!data || data.length === 0) {
+                            calArchiveResults.innerHTML = '<div class="search-result-item">Sonuç bulunamadı</div>';
+                        } else {
+                            data.slice(0, 10).forEach(item => {
+                                const div = document.createElement('div');
+                                div.className = 'search-result-item';
+                                div.innerHTML = `<span>${item.Name || item.name}</span> <small>${item.Type || item.type || ''}</small>`;
+                                div.onclick = () => {
+                                    document.getElementById('calendarTitle').value = item.Name || item.name;
+                                    if (item.Category || item.category) {
+                                        document.getElementById('calendarCategory').value = item.Category || item.category;
+                                    }
+                                    if (item.Summary || item.summary) {
+                                        document.getElementById('calendarSummary').value = item.Summary || item.summary;
+                                    }
+                                    document.getElementById('calendarSeriesId').value = item.ID || item.id || '';
+                                    document.getElementById('calendarSlug').value = item.Slug || item.slug || '';
+
+                                    // Set poster
+                                    const posterUrl = `/media/image/${item.ID || item.id}`;
+                                    document.getElementById('calendarPosterUrl').value = posterUrl;
+                                    if (posterPreview && posterImg) {
+                                        posterImg.src = posterUrl;
+                                        posterPreview.style.display = 'block';
+                                    }
+
+                                    // Set platform
+                                    const isBlItem = item.isBl || item.SeriesType === 'BL' || (item.category && item.category.includes('BL'));
+                                    const targetRadio = document.querySelector(`input[name="calendarPlatform"][value="${isBlItem ? 'bldizi' : 'whodatidols'}"]`);
+                                    if (targetRadio) targetRadio.checked = true;
+
+                                    if (calRefDisplay) {
+                                        calRefDisplay.querySelector('strong').innerText = item.Name || item.name;
+                                        calRefDisplay.style.display = 'flex';
+                                    }
+                                    calArchiveResults.style.display = 'none';
+                                    calArchiveInput.value = '';
+                                };
+                                calArchiveResults.appendChild(div);
+                            });
+                        }
+                        calArchiveResults.style.display = 'block';
+                    }).catch(err => console.error("Calendar archive search error:", err));
+            });
+
+            if (btnClearCalRef) {
+                btnClearCalRef.addEventListener('click', () => {
+                    document.getElementById('calendarSeriesId').value = '';
+                    document.getElementById('calendarSlug').value = '';
+                    if (calRefDisplay) calRefDisplay.style.display = 'none';
+                });
+            }
+        }
+
+        // Form Submit
         calendarForm.addEventListener('submit', function (e) {
             e.preventDefault();
+            const selectedPlatformRadio = document.querySelector('input[name="calendarPlatform"]:checked');
+            const platformVal = selectedPlatformRadio ? selectedPlatformRadio.value : 'whodatidols';
+
             const data = {
                 dayOfWeek: document.getElementById('calendarDay').value,
-                title: document.getElementById('calendarTitle').value,
-                episode: document.getElementById('calendarEpisode').value,
+                title: document.getElementById('calendarTitle').value.trim(),
+                episode: document.getElementById('calendarEpisode').value.trim(),
                 showTime: document.getElementById('calendarTime').value,
+                platform: platformVal,
+                isBl: platformVal === 'bldizi',
+                channel: document.getElementById('calendarChannel').value.trim(),
+                category: document.getElementById('calendarCategory').value.trim(),
+                posterUrl: document.getElementById('calendarPosterUrl').value.trim(),
+                summary: document.getElementById('calendarSummary').value.trim(),
+                slug: document.getElementById('calendarSlug').value.trim(),
+                seriesId: document.getElementById('calendarSeriesId').value.trim() || null,
+                tmdbId: document.getElementById('calendarTmdbId').value ? parseInt(document.getElementById('calendarTmdbId').value) : null,
+                tvmazeId: document.getElementById('calendarTvmazeId').value ? parseInt(document.getElementById('calendarTvmazeId').value) : null,
                 sortOrder: 0
             };
 
@@ -691,7 +793,18 @@ document.addEventListener('DOMContentLoaded', function () {
             }).then(res => {
                 if (res.ok) {
                     calendarForm.reset();
+                    if (posterPreview) posterPreview.style.display = 'none';
+                    if (calRefDisplay) calRefDisplay.style.display = 'none';
+                    document.getElementById('calendarSeriesId').value = '';
+                    document.getElementById('calendarSlug').value = '';
+                    document.getElementById('calendarTmdbId').value = '';
+                    document.getElementById('calendarTvmazeId').value = '';
+                    // Reset to WDI
+                    const wdiRadio = document.querySelector('input[name="calendarPlatform"][value="whodatidols"]');
+                    if (wdiRadio) wdiRadio.checked = true;
+
                     fetchCalendarEvents();
+                    alert("Etkinlik takvime başarıyla eklendi!");
                 } else {
                     res.text().then(msg => alert("Hata: " + msg));
                 }
@@ -703,43 +816,95 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Filter Buttons
+    window.filterCalendarTable = function (platform) {
+        currentCalendarFilter = platform;
+        document.querySelectorAll('.calendar-table-filters .btn-filter').forEach(btn => btn.classList.remove('active'));
+        if (platform === 'all') document.getElementById('calFilterAll')?.classList.add('active');
+        if (platform === 'whodatidols') document.getElementById('calFilterWdi')?.classList.add('active');
+        if (platform === 'bldizi') document.getElementById('calFilterBl')?.classList.add('active');
+        fetchCalendarEvents();
+    };
+
     function fetchCalendarEvents() {
-        fetch('/api/calendar')
+        const fetchUrl = currentCalendarFilter === 'all' ? '/admin/calendar/list?platform=all' : `/admin/calendar/list?platform=${currentCalendarFilter}`;
+        fetch(fetchUrl)
+            .then(res => {
+                if (!res.ok) return fetch('/api/calendar?platform=all');
+                return res;
+            })
             .then(res => res.json())
             .then(data => {
                 const tbody = document.querySelector('#calendarTable tbody');
                 if (!tbody) return;
                 tbody.innerHTML = '';
 
-                const daysOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
                 const dayNames = {
                     'monday': 'Pazartesi', 'tuesday': 'Salı', 'wednesday': 'Çarşamba',
                     'thursday': 'Perşembe', 'friday': 'Cuma', 'saturday': 'Cumartesi', 'sunday': 'Pazar'
                 };
 
-                daysOrder.forEach(day => {
-                    if (data[day] && data[day].length > 0) {
-                        data[day].forEach(event => {
-                            const tr = document.createElement('tr');
-                            tr.innerHTML = `
-                                <td>${dayNames[day]}</td>
-                                <td>${event.time}</td>
-                                <td style="font-weight: 600;">${event.title}</td>
-                                <td>${event.episode}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-danger" onclick='deleteCalendarEvent("${event.id}")'><i class="fas fa-trash"></i> SİL</button>
-                                </td>
-                            `;
-                            tbody.appendChild(tr);
-                        });
+                let eventsList = [];
+                if (Array.isArray(data)) {
+                    eventsList = data;
+                } else {
+                    // Object grouped by days
+                    const daysOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+                    daysOrder.forEach(d => {
+                        if (data[d]) {
+                            data[d].forEach(ev => {
+                                ev.dayOfWeek = d;
+                                eventsList.push(ev);
+                            });
+                        }
+                    });
+                }
+
+                if (eventsList.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 20px; color: #888;">Takvimde kayıtlı etkinlik bulunamadı.</td></tr>';
+                    return;
+                }
+
+                eventsList.forEach(event => {
+                    const tr = document.createElement('tr');
+                    const dayName = dayNames[(event.dayOfWeek || '').toLowerCase()] || event.dayOfWeek;
+                    const poster = event.posterUrl || 'https://via.placeholder.com/60x85?text=No+Poster';
+                    
+                    let platBadge = '<span class="badge" style="background: rgba(0, 255, 163, 0.2); color: #00ffa3; border: 1px solid rgba(0, 255, 163, 0.4); font-size: 11px; padding: 3px 8px; border-radius: 4px;">WDI</span>';
+                    if (event.platform === 'bldizi' || event.isBl === true) {
+                        platBadge = '<span class="badge" style="background: rgba(255, 64, 129, 0.2); color: #ff4081; border: 1px solid rgba(255, 64, 129, 0.4); font-size: 11px; padding: 3px 8px; border-radius: 4px;">BL Dizi</span>';
+                    } else if (event.platform === 'all' || event.platform === 'both') {
+                        platBadge = '<span class="badge" style="background: rgba(255, 183, 3, 0.2); color: #ffb703; border: 1px solid rgba(255, 183, 3, 0.4); font-size: 11px; padding: 3px 8px; border-radius: 4px;">Ortak</span>';
                     }
+
+                    const channelTag = event.channel ? `<span style="display: inline-block; background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; font-size: 11px; color: #ccc; margin-left: 6px;">${event.channel}</span>` : '';
+
+                    tr.innerHTML = `
+                        <td>
+                            <img src="${poster}" style="width: 38px; height: 54px; object-fit: cover; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);" onerror="this.onerror=null;this.src='https://via.placeholder.com/60x85?text=Yok';">
+                        </td>
+                        <td style="font-weight: 600;">${dayName}</td>
+                        <td style="color: var(--primary-color); font-weight: 700;">${event.time || ''}</td>
+                        <td style="font-weight: 600;">
+                            ${event.title}
+                            ${channelTag}
+                        </td>
+                        <td style="color: rgba(255,255,255,0.7);">${event.episode || '-'}</td>
+                        <td>${platBadge}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-danger" onclick='deleteCalendarEvent("${event.id}")'>
+                                <i class="fas fa-trash"></i> SİL
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
                 });
             })
             .catch(err => console.error("Takvim verisi alınamadı:", err));
     }
 
     window.deleteCalendarEvent = function (id) {
-        if (!confirm("Bu etkinliği silmek istediğinize emin misiniz?")) return;
+        if (!confirm("Bu etkinliği takvimden silmek istediğinize emin misiniz?")) return;
 
         fetch(`/admin/calendar/delete?id=${id}`, { method: 'DELETE' })
             .then(res => {
@@ -3634,6 +3799,27 @@ document.addEventListener('DOMContentLoaded', function () {
         searchMetadata(query, 'series', source);
     });
 
+    const fetchCalendarMetadataBtn = document.getElementById('fetchCalendarMetadataBtn');
+    if (fetchCalendarMetadataBtn) {
+        fetchCalendarMetadataBtn.addEventListener('click', () => {
+            const query = document.getElementById('calendarTitle').value.trim();
+            if (!query) return alert("Lütfen aramak için bir dizi/program adı girin!");
+            currentFetchType = 'Calendar';
+            const source = document.querySelector('input[name="calendarSource"]:checked') ? document.querySelector('input[name="calendarSource"]:checked').value : 'tvmaze';
+            searchMetadata(query, 'series', source);
+        });
+
+        const calendarTitleInput = document.getElementById('calendarTitle');
+        if (calendarTitleInput) {
+            calendarTitleInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    fetchCalendarMetadataBtn.click();
+                }
+            });
+        }
+    }
+
     const fetchUpcomingTvMazeBtn = document.getElementById('fetchUpcomingTvMazeBtn');
     if (fetchUpcomingTvMazeBtn) {
         fetchUpcomingTvMazeBtn.addEventListener('click', () => {
@@ -3758,7 +3944,7 @@ document.addEventListener('DOMContentLoaded', function () {
             'CA': 'ca', 'ES': 'es', 'IN': 'in', 'VN': 'vn',
             'KH': 'kh', 'EE': 'ee', 'DE': 'de', 'FR': 'fr',
             'HR': 'hr', 'NL': 'nl', 'GB': 'gb', 'AT': 'at', 'IT': 'it',
-            'PL': 'pl', 'AR': 'ar', 'BR': 'br', 'IE': 'ie'
+            'PL': 'pl', 'AR': 'ar', 'BR': 'br', 'IE': 'ie', 'AU': 'au'
         };
         const mappedCountry = countryMap[countryCode] || countryCode;
         const langMap = {
@@ -3783,6 +3969,69 @@ document.addEventListener('DOMContentLoaded', function () {
             'Irish': 'İrlandaca', 'ga': 'İrlandaca'
         };
         const mappedLang = langMap[language] || 'Korece';
+
+        if (currentFetchType === 'Calendar') {
+            const calTitle = document.getElementById('calendarTitle');
+            if (calTitle) calTitle.value = name || '';
+            const calPoster = document.getElementById('calendarPosterUrl');
+            if (calPoster) calPoster.value = image || '';
+            lastFetchedPosterUrl = image;
+
+            const calCat = document.getElementById('calendarCategory');
+            if (calCat) calCat.value = category || '';
+
+            const calChan = document.getElementById('calendarChannel');
+            if (calChan) {
+                let chan = '';
+                if (source === 'tvmaze') {
+                    chan = (data.network && data.network.name) ? data.network.name :
+                        (data.webChannel && data.webChannel.name ? data.webChannel.name : '');
+                } else {
+                    chan = (data.networks && data.networks.length > 0) ? data.networks[0].name : '';
+                }
+                calChan.value = chan;
+            }
+
+            const calSummary = document.getElementById('calendarSummary');
+            if (calSummary) calSummary.value = summary || '';
+
+            const calTmdb = document.getElementById('calendarTmdbId');
+            if (calTmdb) calTmdb.value = (source === 'tmdb') ? data.id : '';
+            const calTvmaze = document.getElementById('calendarTvmazeId');
+            if (calTvmaze) calTvmaze.value = (source === 'tvmaze') ? data.id : '';
+
+            // Auto-detect day and time if TVMaze schedule is available
+            if (source === 'tvmaze' && data.schedule) {
+                if (data.schedule.time) {
+                    const calTime = document.getElementById('calendarTime');
+                    if (calTime) calTime.value = data.schedule.time;
+                }
+                if (data.schedule.days && data.schedule.days.length > 0) {
+                    const calDay = document.getElementById('calendarDay');
+                    if (calDay) calDay.value = data.schedule.days[0].toLowerCase();
+                }
+            }
+
+            // Auto-detect BL platform
+            const checkText = ((name || '') + ' ' + (category || '') + ' ' + (summary || '')).toLowerCase();
+            if (/\b(bl|boys'?\s*love|yaoi|shounen\s*ai|gay|lgbt|gl|yuri)\b/i.test(checkText)) {
+                const blRadio = document.querySelector('input[name="calendarPlatform"][value="bldizi"]');
+                if (blRadio) blRadio.checked = true;
+            }
+
+            // Poster Preview
+            const preview = document.getElementById('calendarPosterPreview');
+            const previewImg = document.getElementById('calendarPosterImg');
+            if (preview && previewImg) {
+                if (image) {
+                    previewImg.src = image;
+                    preview.style.display = 'block';
+                } else {
+                    preview.style.display = 'none';
+                }
+            }
+            return;
+        }
 
         if (currentFetchType === 'StreamLive') {
             const slTitle = document.getElementById('streamLiveTitle');

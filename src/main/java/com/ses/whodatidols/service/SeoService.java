@@ -536,12 +536,21 @@ public class SeoService {
         String countryName = null;
         if (country != null && !country.isBlank()) {
             countryName = switch (country.trim().toUpperCase(Locale.ROOT)) {
-                case "KR" -> "Kore";
-                case "JP" -> "Japon";
-                case "CN" -> "Çin";
-                case "TH" -> "Tayland";
-                case "TW" -> "Tayvan";
-                case "PH" -> "Filipin";
+                case "KR", "KOR" -> "Kore";
+                case "JP", "JPN" -> "Japon";
+                case "CN", "CHN" -> "Çin";
+                case "TH", "THA" -> "Tayland";
+                case "TW", "TWN" -> "Tayvan";
+                case "PH", "PHL" -> "Filipin";
+                case "AU", "AUS" -> "Avustralya";
+                case "US", "USA" -> "Amerikan";
+                case "GB", "UK", "GBR" -> "İngiliz";
+                case "DE", "DEU" -> "Alman";
+                case "FR", "FRA" -> "Fransız";
+                case "IT", "ITA" -> "İtalyan";
+                case "ES", "ESP" -> "İspanyol";
+                case "RU", "RUS" -> "Rus";
+                case "TR", "TUR" -> "Türk";
                 default -> country.trim().toUpperCase(Locale.ROOT);
             };
         }

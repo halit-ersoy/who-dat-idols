@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 
 <head>
@@ -1049,6 +1049,7 @@
                                     <option value="nl">Hollanda</option>
                                     <option value="gb">UK</option>
                                     <option value="at">Avusturya</option>
+                                    <option value="au">Avustralya</option>
                                     <option value="it">İtalya</option>
                                     <option value="pl">Polonya</option>
                                     <option value="ar">Arjantin</option>
@@ -1319,6 +1320,7 @@
                                         <option value="nl">Hollanda</option>
                                         <option value="gb">UK</option>
                                         <option value="at">Avusturya</option>
+                                        <option value="au">Avustralya</option>
                                         <option value="it">İtalya</option>
                                         <option value="pl">Polonya</option>
                                         <option value="ar">Arjantin</option>
@@ -1495,8 +1497,62 @@
                     </div>
                     <form id="calendarForm" class="admin-form">
                         <div class="form-grid">
+                            <!-- Platform Selection -->
+                            <div class="form-group full-width">
+                                <label>Hedef Platform</label>
+                                <div class="platform-switch-group" style="display: flex; gap: 12px; margin-top: 6px;">
+                                    <label class="platform-radio-card" style="flex: 1; display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; cursor: pointer; transition: all 0.2s;">
+                                        <input type="radio" name="calendarPlatform" value="whodatidols" checked style="accent-color: #00ffa3;">
+                                        <span style="font-weight: 700; color: #00ffa3;"><i class="fas fa-globe"></i> Who Dat Idols</span>
+                                    </label>
+                                    <label class="platform-radio-card" style="flex: 1; display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; cursor: pointer; transition: all 0.2s;">
+                                        <input type="radio" name="calendarPlatform" value="bldizi" style="accent-color: #ff4081;">
+                                        <span style="font-weight: 700; color: #ff4081;"><i class="fas fa-heart"></i> BL Dizi</span>
+                                    </label>
+                                    <label class="platform-radio-card" style="flex: 1; display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; cursor: pointer; transition: all 0.2s;">
+                                        <input type="radio" name="calendarPlatform" value="all" style="accent-color: #ffb703;">
+                                        <span style="font-weight: 700; color: #ffb703;"><i class="fas fa-layer-group"></i> Her İkisi (Ortak)</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Archive Search (Optional) -->
+                            <div class="form-group full-width">
+                                <label for="calendarArchiveSearch">Arşivden Dizi/Program Seç (Opsiyonel)</label>
+                                <div class="search-select-wrapper">
+                                    <input type="text" id="calendarArchiveSearch" placeholder="Arşivden aramak için dizi adı yazın..." autocomplete="off">
+                                    <div id="calendarArchiveSearchResults" class="search-results-dropdown" style="display: none;"></div>
+                                </div>
+                                <div id="calendarRefDisplay" class="selected-item-badge" style="display: none; margin-top: 8px;">
+                                    <span class="text">Seçilen: <strong>-</strong></span>
+                                    <button type="button" class="btn-clear-calendar-ref" id="btnClearCalendarRef"><i class="fas fa-times"></i></button>
+                                </div>
+                            </div>
+
+                            <!-- Title with TVMaze / TMDB Fetch -->
+                            <div class="form-group full-width">
+                                <label for="calendarTitle">Dizi / Program Adı &amp; TVMaze / TMDB Arama</label>
+                                <div class="input-with-action">
+                                    <input type="text" id="calendarTitle" required placeholder="Dizi veya program adını girin (Örn: Lovely Runner, Pit Babe...)">
+                                    <button type="button" class="btn-fetch" id="fetchCalendarMetadataBtn" title="TVMaze veya TMDB'den Bilgileri Getir">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                    <div class="meta-source-selector">
+                                        <input type="radio" name="calendarSource" id="calendarTvMaze" value="tvmaze" checked>
+                                        <label for="calendarTvMaze" title="TVMaze">TV</label>
+                                        <input type="radio" name="calendarSource" id="calendarTmdb" value="tmdb">
+                                        <label for="calendarTmdb" title="TMDB">TM</label>
+                                        <div class="source-slider"></div>
+                                    </div>
+                                </div>
+                                <small style="color: rgba(255,255,255,0.45); font-size: 11px; margin-top: 4px; display: block;">
+                                    * İsmi yazıp arama butonuna basarak poster, kanal, tür, özet ve yayın saatini otomatik getirebilirsiniz.
+                                </small>
+                            </div>
+
+                            <!-- Schedule & Details -->
                             <div class="form-group">
-                                <label for="calendarDay">Gün</label>
+                                <label for="calendarDay">Yayın Günü</label>
                                 <select id="calendarDay" required>
                                     <option value="monday">Pazartesi</option>
                                     <option value="tuesday">Salı</option>
@@ -1507,35 +1563,73 @@
                                     <option value="sunday">Pazar</option>
                                 </select>
                             </div>
+
                             <div class="form-group">
-                                <label for="calendarTitle">Dizi/Program Adı</label>
-                                <input type="text" id="calendarTitle" required placeholder="Program ismini giriniz">
-                            </div>
-                            <div class="form-group">
-                                <label for="calendarEpisode">Bölüm Bilgisi</label>
-                                <input type="text" id="calendarEpisode" placeholder="Örn: Yeni Bölüm">
-                            </div>
-                            <div class="form-group">
-                                <label for="calendarTime">Saat</label>
+                                <label for="calendarTime">Yayın Saati (TRT)</label>
                                 <input type="time" id="calendarTime" required>
                             </div>
+
+                            <div class="form-group">
+                                <label for="calendarEpisode">Bölüm Bilgisi</label>
+                                <input type="text" id="calendarEpisode" placeholder="Örn: 1. Bölüm, Final Bölümü, Yeni Sezon">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="calendarChannel">Kanal / Yayıncı</label>
+                                <input type="text" id="calendarChannel" placeholder="Örn: tvN, GMMTV, JTBC, Netflix, WeTV">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="calendarCategory">Türler / Kategoriler</label>
+                                <input type="text" id="calendarCategory" placeholder="Örn: Romantik, Komedi, Dram, BL">
+                            </div>
+
+                            <div class="form-group full-width">
+                                <label for="calendarPosterUrl">Poster URL</label>
+                                <input type="url" id="calendarPosterUrl" placeholder="https://... (TVMaze veya TMDB ile otomatik gelir)">
+                                <div id="calendarPosterPreview" style="margin-top: 10px; display: none;">
+                                    <img id="calendarPosterImg" src="" style="width: 90px; height: 130px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);">
+                                </div>
+                            </div>
+
+                            <div class="form-group full-width">
+                                <label for="calendarSummary">Özet / Açıklama (Opsiyonel)</label>
+                                <textarea id="calendarSummary" rows="2" placeholder="Dizi hakkında kısa tanıtım yazısı..."></textarea>
+                            </div>
+
+                            <!-- Hidden Meta IDs -->
+                            <input type="hidden" id="calendarSlug">
+                            <input type="hidden" id="calendarSeriesId">
+                            <input type="hidden" id="calendarTmdbId">
+                            <input type="hidden" id="calendarTvmazeId">
                         </div>
-                        <div class="form-actions">
+
+                        <div class="form-actions" style="margin-top: 24px;">
                             <button type="submit" class="btn btn-primary" id="addEventBtn">
-                                <i class="fas fa-plus"></i> ETKİNLİK EKLE
+                                <i class="fas fa-plus"></i> TAKVİME EKLE
                             </button>
                         </div>
                     </form>
 
-                    <div class="table-container" style="margin-top: 30px;">
-                        <h3>Haftalık Program</h3>
+                    <div class="table-container" style="margin-top: 34px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                            <h3 style="margin: 0;">Haftalık Program Listesi</h3>
+                            <div class="calendar-table-filters" style="display: flex; gap: 8px;">
+                                <button type="button" class="btn btn-sm btn-filter active" id="calFilterAll">Tümü</button>
+                                <button type="button" class="btn btn-sm btn-filter" id="calFilterWdi">Who Dat Idols</button>
+                                <button type="button" class="btn btn-sm btn-filter" id="calFilterBl">BL Dizi</button>
+                            </div>
+                        </div>
                         <table class="admin-table" id="calendarTable">
                             <thead>
                                 <tr>
+                                    <th style="width: 60px;">Poster</th>
                                     <th>Gün</th>
                                     <th>Saat</th>
-                                    <th>Program</th>
+                                    <th>Program / Dizi</th>
+                                    <th>Kanal</th>
                                     <th>Bölüm</th>
+                                    <th>Platform</th>
                                     <th>İşlem</th>
                                 </tr>
                             </thead>

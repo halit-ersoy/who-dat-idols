@@ -172,7 +172,11 @@ public class FilterController {
             case "ar":
                 return "Arjantin";
             case "br":
+            case "bra":
                 return "Brezilya";
+            case "au":
+            case "aus":
+                return "Avustralya";
             default:
                 return code.toUpperCase();
         }

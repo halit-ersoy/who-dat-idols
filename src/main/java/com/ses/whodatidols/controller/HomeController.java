@@ -212,6 +212,8 @@ public class HomeController {
             return "sg";
         if (lang.contains("lehçe") || lang.contains("polon") || lang.contains("poland"))
             return "pl";
+        if (lang.contains("avustral") || lang.contains("austral"))
+            return "au";
         return "kr"; // Bilinmiyorsa Kore varsay
     }
 
@@ -241,6 +243,21 @@ public class HomeController {
         public String country;
         public int finalStatus;
         public String seriesType;
+    }
+
+    @GetMapping({"/takvim", "/calendar"})
+    public ResponseEntity<Resource> getCalendarPage() {
+        try {
+            Resource htmlPage = new ClassPathResource("static/calendar/html/calendar.html");
+            if (!htmlPage.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
+                    .body(htmlPage);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
     }
 
     @GetMapping("/about")
